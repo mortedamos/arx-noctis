@@ -12,7 +12,7 @@ const SAMPLES = { record_scratch: 'assets/sfx/record_scratch.mp3' };
 
 export const Audio_ = {
   ctx: null, master: null, sfxGain: null, noiseBuf: null,
-  settings: { music: 0.7, sfx: 0.8, muted: false, hints: true, cloak: true },     // hints = show boss attack icons + names
+  settings: { music: 0.7, sfx: 0.8, muted: false, hints: true, cloak: true, glow: true },     // hints = show boss attack icons + names
   tracks: {},          // id -> { file, type }
   available: null,     // Map (lowercase name -> real name) of the files in music/, when they can be listed (a local server, or music/files.json)
   cur: null, outgoing: [], want: null, failed: new Set(), duck: 1, duckTarget: 1, indoor: 1, indoorTarget: 1, stingEl: null, lastSfx: {}, unlocked: false, blurred: false,

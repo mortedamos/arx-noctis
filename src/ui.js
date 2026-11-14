@@ -11,6 +11,7 @@ import { SPELLS } from './player.js';
 import { ENCH, TUNE } from './enchant.js';
 import { ITEMS, KEYS } from './itemdata.js';
 import { STORY } from './story.js';
+import { BestiaryScreen } from './bestiary.js';
 
 const GOLD = '#e8b84a', PALE = '#e8dcc0', DIM = '#8a7d9a', RED = '#c23b2a';
 const icon = (ctx, name, x, y, sc = 1, a) => drawSheet(ctx, 'icons', ICON.indexOf(name), x, y, { ay: 0.5, scale: sc, alpha: a });
@@ -258,6 +259,7 @@ function optionsMenu(onBack) {
     { label: 'MUTE', val: () => (A.settings.muted ? 'ON' : 'OFF'), action: () => A.toggleMute() },
     { label: 'BOSS HINTS', val: () => (A.settings.hints ? 'ON' : 'OFF'), action: () => { A.settings.hints = !A.settings.hints; A.save(); } },
     { label: 'WHITE CLOAK', val: () => (A.settings.cloak ? 'ON' : 'OFF'), action: () => { A.settings.cloak = !A.settings.cloak; A.save(); } },
+    { label: 'GLOW', val: () => (A.settings.glow !== false ? 'ON' : 'OFF'), action: () => { A.settings.glow = A.settings.glow === false; A.save(); } },          // (bloom, heat shimmer and chromatic flash: see post.js)
     { label: 'TOUCH PAD', val: () => (Touch.on ? 'ON' : 'OFF'), action: () => Touch.show(!Touch.on, true) },
     { label: 'BACK', action: onBack },
   ]);
@@ -272,8 +274,8 @@ export function controlsScreen(ctx) {
 // what the hero has found, for the pause screen: the four powers (dim and unnamed until found), the Magic Shoes and the Tide Blade once found, and the keys he carries
 const POWERS = [['djump', 'feather', 'AETHER FEATHER'], ['dash', 'boot', 'QUICKSILVER'], ['ember', 'ember', 'SULPHUR'], ['thunder', 'thunder', 'VITRIOL']];
 // what the pause screen lists as FOUND: the four powers, the relics the bosses leave, and the keys you carry (each with what it is and what it does, for the cursor to read out)
-const RELICS = [['got_mantle', 'mantle', 'SALAMANDER', 'mantle'], ['got_lantern', 'lantern', 'IGNIS FATUUS', 'lantern'], ['got_shard', 'shard', 'SPECULUM', 'shard'], ['got_spring', 'spring', 'PERPETUUM', 'spring'], ['got_shoes', 'shoes', 'HERMES SHOES', 'shoes'], ['got_tide', 'e_ice', 'AQUA REGIA', 'tide']];
-const KEY_USE = { key_grave: "THE GRAVEKEEPER'S VAULT, OFF THE MOURNING FIELDS.", key_hall: "THE STEWARD'S VAULT, OFF THE PORTRAIT GALLERY.", key_chapel: "THE VERGER'S VAULT, OFF THE BELL GALLERY.", key_crypt: 'THE DOOR OF THE ORLOJ TOWER, HIGH ABOVE SMOULDERING LANE IN PRAGUE.', key_mire: "THE FERRYMAN'S VAULT, OFF THE WEEPING HOLLOW.", key_gear: "THE ENGINEER'S VAULT, OFF THE ESCAPEMENT." };
+const RELICS = [['got_mantle', 'mantle', 'SALAMANDER', 'mantle'], ['got_lantern', 'lantern', 'IGNIS FATUUS', 'lantern'], ['got_shard', 'shard', 'SPECULUM', 'shard'], ['got_spring', 'spring', 'PERPETUUM', 'spring'], ['got_shoes', 'shoes', 'HERMES SHOES', 'shoes'], ['got_tide', 'e_ice', 'AQUA REGIA', 'tide'], ['got_astrolabe', 'astrolabe', 'ASTROLABE', 'astrolabe']];
+const KEY_USE = { key_grave: "THE GRAVEKEEPER'S VAULT, OFF THE MOURNING FIELDS.", key_hall: "THE STEWARD'S VAULT, OFF THE PORTRAIT GALLERY.", key_chapel: "THE VERGER'S VAULT, OFF THE BELL GALLERY.", key_crypt: 'THE DOOR OF THE ORLOJ TOWER, HIGH ABOVE SMOULDERING LANE IN PRAGUE.', key_mire: "THE FERRYMAN'S VAULT, OFF THE WEEPING HOLLOW.", key_gear: "THE ENGINEER'S VAULT, OFF THE ESCAPEMENT.", key_frost: 'THE DOOR OF THE LIBRARY OF INK, AT THE CROSSING HALL.', key_gold: 'THE DOOR OF THE SHADOW THRONE, AT THE CROSSING HALL.' };
 export function foundItems(g) {
   const S = g.save, F = S.flags, AB = (g.info && g.info.ABILITIES) || {}, UP = (g.info && g.info.UPGRADES) || {}, rows = [];
   for (const [k, ic, name] of POWERS) rows.push({ ic, name: S.abilities[k] ? name : '???', has: !!S.abilities[k], title: S.abilities[k] ? (AB[k] ? AB[k].name : name) : 'NOT YET FOUND', desc: S.abilities[k] && AB[k] ? AB[k].desc : 'A POWER YOU HAVE NOT FOUND YET. THE BOSSES OF THE CASTLE GUARD THEM.' });
@@ -305,7 +307,7 @@ function foundPanel(ctx, g, pm) {
 export class PauseMenu {
   constructor(g) {
     this.g = g; this.mode = 'main'; this.foc = 'menu'; this.sel = 0; this.opts = optionsMenu(() => { this.mode = 'main'; });
-    this.main = new Menu([{ label: 'RESUME', action: () => g.resume() }, { label: 'MAP', action: () => g.openMap() }, { label: 'OPTIONS', action: () => { this.mode = 'options'; this.opts.i = 0; } }, { label: 'CONTROLS', action: () => { this.mode = 'controls'; } }, { label: 'QUIT TO TITLE', action: () => g.toTitle() }]);
+    this.main = new Menu([{ label: 'RESUME', action: () => g.resume() }, { label: 'MAP', action: () => g.openMap() }, { label: 'BESTIARY', action: () => { this.mode = 'bestiary'; this.best = new BestiaryScreen(g, () => { this.mode = 'main'; }); } }, { label: 'OPTIONS', action: () => { this.mode = 'options'; this.opts.i = 0; } }, { label: 'CONTROLS', action: () => { this.mode = 'controls'; } }, { label: 'QUIT TO TITLE', action: () => g.toTitle() }]);
   }
   // LEFT moves the cursor over to the list of found things: UP / DOWN read each one out (what it is, what it does); RIGHT, BACK or OK returns to the menu.  A tap on a thing reads it out too.
   update() { if (this.mode === 'main') {
@@ -318,7 +320,7 @@ export class PauseMenu {
       } else {
         this.main.update(this.g); if (Input.pressed.left && rows.length) { this.foc = 'found'; this.sel = Math.min(this.sel, rows.length - 1); A.sfx('select'); }
         if (Input.pressed.pkey || Input.pressed.back) this.g.resume();
-      } } else if (this.mode === 'options') { this.opts.update(this.g); if (Input.pressed.back) this.mode = 'main'; } else if (Input.pressed.back || Input.pressed.confirm || Input.taps.length) this.mode = 'main'; }
+      } } else if (this.mode === 'bestiary') this.best.update(); else if (this.mode === 'options') { this.opts.update(this.g); if (Input.pressed.back) this.mode = 'main'; } else if (Input.pressed.back || Input.pressed.confirm || Input.taps.length) this.mode = 'main'; }
   draw(ctx) {
     ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, 0, W, H);
     if (this.mode === 'main') {
@@ -330,27 +332,42 @@ export class PauseMenu {
           drawText(ctx, 'UP / DOWN CHOOSE    RIGHT: BACK', cx, 196, { align: 'center', color: DIM }); }
       } else {
       drawText(ctx, 'PAUSED', cx, 46, { align: 'center', scale: 2, color: GOLD });
-      this.main.draw(ctx, cx, 74, 13);
-      drawText(ctx, `LV ${S.level}   HP ${S.hp}/${S.maxHp}   MP ${S.mp}/${S.maxMp}`, cx, 146, { align: 'center', color: PALE }); drawText(ctx, `POWER ${g.player.atkPower}   GOLD ${S.gold}   TIME ${fmtTime(S.time)}`, cx, 158, { align: 'center', color: '#b5a47a' }); drawText(ctx, 'CASTLE SEED ' + S.seed, cx, 170, { align: 'center', color: DIM });
+      this.main.draw(ctx, cx, 66, 12);
+      drawText(ctx, `LV ${S.level}   HP ${S.hp}/${S.maxHp}   MP ${S.mp}/${S.maxMp}`, cx, 150, { align: 'center', color: PALE }); drawText(ctx, `POWER ${g.player.atkPower}   GOLD ${S.gold}   TIME ${fmtTime(S.time)}`, cx, 161, { align: 'center', color: '#b5a47a' }); drawText(ctx, 'CASTLE SEED ' + S.seed, cx, 172, { align: 'center', color: DIM });
       if (foundItems(g).length) drawText(ctx, 'LEFT: LOOK AT WHAT YOU HAVE FOUND', cx, 190, { align: 'center', color: '#6a6078' });
       }
     } else if (this.mode === 'options') { panel(ctx, 70, 40, W - 140, 150); drawText(ctx, 'OPTIONS', W / 2, 47, { align: 'center', scale: 1.5, color: GOLD, outline: '#000' }); this.opts.draw(ctx, 94, 68, 14, 'left'); }
+    else if (this.mode === 'bestiary') this.best.draw(ctx);
     else controlsScreen(ctx);
   }
 }
 
 // ---------------------------------------------------------------------------------------------- map
 // The castle is ~40 rooms wide, so the map scrolls: it centres on you (or, at a waystone, on the destination you are choosing).
-const ZCOL = { 1: '#4a6a3a', 2: '#8a6a2a', 3: '#6a4a9a', 4: '#4a7a7a', 5: '#9a2a3a', 6: '#a8542a', 7: '#3a7a5a', 8: '#9a7a3a', 9: '#3a6a9a' };
-const CW = 28, CH = 22;                                   // a map cell; every room is drawn standing on the floor of its row, so a tall tower rises above its neighbours
+const ZCOL = { 1: '#4a6a3a', 2: '#8a6a2a', 3: '#6a4a9a', 4: '#4a7a7a', 5: '#9a2a3a', 6: '#a8542a', 7: '#3a7a5a', 8: '#9a7a3a', 9: '#3a6a9a', 10: '#8a5a2a', 11: '#5aa8d0' };
+// The map is drawn like the one in Symphony of the Night: every room is a block of CELLS (one cell is about one screen of the room: a long corridor is a row of cells, a tower a column of them), filled in
+// once you have been there, with bright walls, openings in the walls where it joins its neighbours, gold door marks, red save rooms and cyan waystones.  The rooms keep the castle's layout (each chain of
+// rooms is a row, the rooms of a chain stand side by side on the floor of their row, side rooms hang below), but each takes the room it needs.
+const CELL_W = 10, CELL_H = 8, GAP_X = 6, GAP_Y = 8, CELLS_W = 24, CELLS_H = 14;          // (a cell is 10 x 8 px on the map; a room is one cell per 24 tiles across and per 14 tiles up)
+const cellsOf = (n, per, max) => clamp(Math.round(n / per), 1, max);
+function mapLayout(ROOMS) {
+  const list = Object.values(ROOMS), nx = Math.max(...list.map(r => r.map.x)) + 1, ny = Math.max(...list.map(r => r.map.y)) + 1, colW = Array(nx).fill(CELL_W), rowH = Array(ny).fill(CELL_H);
+  for (const r of list) { colW[r.map.x] = Math.max(colW[r.map.x], cellsOf(r.w, CELLS_W, 7) * CELL_W); rowH[r.map.y] = Math.max(rowH[r.map.y], cellsOf(r.h, CELLS_H, 4) * CELL_H); }
+  const colX = [], rowTop = [], rowBot = []; let x = 0, y = 0;
+  for (let i = 0; i < nx; i++) { colX[i] = x; x += colW[i] + GAP_X; } for (let j = 0; j < ny; j++) { rowTop[j] = y; rowBot[j] = y + rowH[j]; y += rowH[j] + GAP_Y; }
+  return { colX, colW, rowTop, rowBot, w: x, h: y };
+}
 export class MapScreen {
   // o.teleport = id of the waystone room we are standing in: the map becomes a destination picker for every attuned waystone
   constructor(g, o = {}) {
     this.g = g; this.t = 0; this.here = o.teleport || null; this.tele = !!o.teleport; this.pan = 0; this.panY = 0;
     const S = g.save; this.stones = (g.world.stones || []).filter(id => S.flags['tp_' + id]);
     if (this.tele) { const i = this.stones.indexOf(this.here); this.sel = i > 0 ? i - 1 : Math.min(1, this.stones.length - 1); if (this.sel < 0) this.sel = 0; }
-    const f = this.focusRoom(); this.cam = { x: f.map.x * CW + CW / 2, y: f.map.y * CH + CH / 2 };
+    this.lay = mapLayout(g.world.rooms); const c = this.centre(this.focusRoom()); this.cam = { x: c.x, y: c.y };
   }
+  // where a room sits on the map (cells; left-aligned in its column, standing on the floor of its row) and where its middle is
+  rectOf(r) { const L = this.lay, cw = cellsOf(r.w, CELLS_W, 7), ch = cellsOf(r.h, CELLS_H, 4), w = cw * CELL_W, h = ch * CELL_H; return { x: L.colX[r.map.x], y: L.rowBot[r.map.y] - h, w, h, cw, ch }; }
+  centre(r) { const q = this.rectOf(r); return { x: q.x + q.w / 2, y: q.y + q.h / 2 }; }
   focusRoom() { const g = this.g; return this.tele ? g.world.rooms[this.stones[this.sel]] : g.world.rooms[g.room.id]; }
   update() {
     this.t++; const g = this.g;
@@ -359,22 +376,22 @@ export class MapScreen {
       if (Input.pressed.confirm) { const id = this.stones[this.sel]; if (id && id !== this.here) g.teleportTo(id); else A.sfx('back'); return; }
       if (Input.pressed.map || Input.pressed.back || Input.pressed.pkey) g.resume();
     } else {
-      if (Input.held.left) this.pan -= 3; if (Input.held.right) this.pan += 3; this.pan = clamp(this.pan, -900, 900);
-      if (Input.held.up) this.panY -= 2; if (Input.held.down) this.panY += 2; this.panY = clamp(this.panY, -160, 160);
+      if (Input.held.left) this.pan -= 3; if (Input.held.right) this.pan += 3; this.pan = clamp(this.pan, -this.lay.w, this.lay.w);
+      if (Input.held.up) this.panY -= 2; if (Input.held.down) this.panY += 2; this.panY = clamp(this.panY, -this.lay.h, this.lay.h);
       if (Input.pressed.map || Input.pressed.back || Input.pressed.pause || Input.pressed.confirm) g.resume();
     }
-    const f = this.focusRoom(), want = f.map.x * CW + CW / 2 + (this.tele ? 0 : this.pan), wantY = f.map.y * CH + CH / 2 + (this.tele ? 0 : this.panY); this.cam.x += (want - this.cam.x) * 0.2; this.cam.y += (wantY - this.cam.y) * 0.2;
+    const f = this.focusRoom(), fc = this.centre(f), want = fc.x + (this.tele ? 0 : this.pan), wantY = fc.y + (this.tele ? 0 : this.panY); this.cam.x += (want - this.cam.x) * 0.2; this.cam.y += (wantY - this.cam.y) * 0.2;
   }
   draw(ctx) {
     const g = this.g, S = g.save, ROOMS = g.world.rooms; ctx.fillStyle = 'rgba(4,2,10,0.95)'; ctx.fillRect(0, 0, W, H);
     drawText(ctx, this.tele ? 'WAYSTONE' : 'CASTLE MAP', W / 2, 8, { align: 'center', scale: 2, color: this.tele ? '#9fe8ff' : GOLD });
-    const rect = r => { const w = clamp(Math.round(r.w / 4.6), 9, 18), h = clamp(Math.round(r.h / 2.6), 7, 15); return { x: r.map.x * CW + Math.round((CW - w) / 2), y: r.map.y * CH + CH - 3 - h, w, h }; };
+    const rect = r => this.rectOf(r);
     const rooms = Object.values(ROOMS).filter(r => S.visited[r.id]);
     ctx.save(); ctx.beginPath(); ctx.rect(0, 28, W, 140); ctx.clip(); ctx.translate(Math.round(W / 2 - this.cam.x), Math.round(92 - this.cam.y));          // (the view centres on you, or on the waystone being chosen; the arrows scroll it)
     // Every line starts and ends where its doorway really is, measured down the room's height: an open edge leaves a room at the height of its doorway and arrives at the height of the other room's;
     // so a tower (entered at its foot, left at its top) is plainly a way THROUGH, never a dead end.  Plain dark lines are open passages; light lines with a gold mark are doors; a dotted line is a
     // one-way door that drops you back at a crossroads.  A line is drawn once both of its rooms have been visited (a doorway whose far side is unseen shows as a short stub).
-    const at = (b, rm, row) => b.y + Math.round(clamp(row / rm.h, 0, 1) * (b.h - 1));
+    const at = (b, rm, row) => b.y + Math.floor(clamp(row / rm.h, 0, 0.999) * b.ch) * CELL_H + (CELL_H >> 1);          // (a doorway is at the middle of the cell row it opens on)
     const seg = (x0, y0, x1, y1, col, dot) => {
       ctx.fillStyle = col;
       if (y0 === y1) { const a = Math.min(x0, x1), n = Math.abs(x1 - x0) + 2; if (!dot) ctx.fillRect(a, y0, n, 2); else for (let i = 0; i < n; i += 4) ctx.fillRect(a + i, y0, 2, 2); }
@@ -382,7 +399,7 @@ export class MapScreen {
     };
     const path = (pts, col, dot) => { for (let i = 0; i + 1 < pts.length; i++) seg(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], col, dot); };
     const mark = (x, y) => { ctx.fillStyle = '#05030a'; ctx.fillRect(x - 2, y - 2, 6, 6); ctx.fillStyle = '#d8b25a'; ctx.fillRect(x - 1, y - 1, 4, 4); ctx.fillStyle = '#2a2236'; ctx.fillRect(x, y, 2, 3); };
-    const PASS = '#4c4264', DOOR = '#8a7aa8', ONEWAY = '#6f94c8', STUB = '#3a3250';
+    const PASS = '#5a74e0', DOOR = '#e0a844', ONEWAY = '#7fd8ff', STUB = '#33449a';
     const crossroad = d => d.tag && d.tag !== 'in' && d.tag !== 'out';               // a door of a crossroads (it leads to the first room of a branch)
     const fwd = {};                                                                  // each crossroads' branch doors, top to bottom: where their marks and channels sit along its right edge
     for (const r of rooms) fwd[r.id] = r.doors.filter(crossroad).sort((a, b) => ROOMS[a.room].map.y - ROOMS[b.room].map.y);
@@ -409,7 +426,7 @@ export class MapScreen {
           if (!S.visited[t.id]) continue;
           const hb = rect(t), k = fwd[t.id].findIndex(q => q.tag === d.destTag); if (k < 0) continue;
           const my = fmark(hb, fwd[t.id], k), cx = hb.x + hb.w + 4 + 2 * k, sx = rb.x + rb.w - 4, down = t.map.y > r.map.y;
-          const lane = down ? r.map.y * CH + CH + 1 : r.map.y * CH + 1;               // a lane along the foot (or the head) of the branch's row
+          const lane = down ? this.lay.rowBot[r.map.y] + 3 : this.lay.rowTop[r.map.y] - 3;               // a lane along the foot (or the head) of the branch's row
           path([[sx, down ? rb.y + rb.h : rb.y], [sx, lane], [cx, lane], [cx, my], [hb.x + hb.w - 1, my]], ONEWAY, true); mark(sx, down ? rb.y + rb.h - 1 : rb.y + 1); continue;
         }
         if (!S.visited[t.id]) continue;
@@ -425,14 +442,33 @@ export class MapScreen {
         path([[p[0].x + p[0].w, ya], [mx, ya], [mx, yb], [q[0].x, yb]], DOOR); mark(mx - 1, Math.min(ya, yb));
       }
     }
-    for (const r of rooms) {
-      const q = rect(r), x = q.x, y = q.y, w = q.w, h = q.h, stone = r.spawns.some(sp => sp.type === 'waystone');
-      ctx.fillStyle = ZCOL[r.zone] || '#555'; ctx.fillRect(x, y, w, h); ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(x + 1, y + h - 2, w - 2, 1); ctx.strokeStyle = '#05030a'; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
-      if (r.save) { ctx.fillStyle = '#e8b0ff'; ctx.fillRect(x + w / 2 - 1, y + h / 2 - 1, 3, 3); }
-      if (stone) { const lit = S.flags['tp_' + r.id], cx = x + w / 2, cy = y + h / 2; ctx.fillStyle = lit ? '#8fe8ff' : '#3a5a6a'; ctx.fillRect(cx - 1, cy - 3, 3, 7); ctx.fillRect(cx - 3, cy - 1, 7, 3); ctx.fillStyle = '#05030a'; ctx.fillRect(cx, cy - 1, 1, 3); }
-      if (r.boss) { const done = S.flags['boss_' + r.id]; icon(ctx, 'skull', x + w / 2, y + h / 2, 0.6, done ? 0.35 : 1); }
-      if (r.id === g.room.id && Math.floor(this.t / 20) % 2) { ctx.strokeStyle = '#fff'; ctx.strokeRect(x - 0.5, y - 0.5, w + 1, h + 1); }
+    const astro = !!S.flags.got_astrolabe;          // the Astrolabe: the rooms beside the ones you know show as faint shapes, and treasure left behind is marked
+    if (astro) {
+      const near = new Set(); for (const r of rooms) for (const id of [...r.exits.map(e => e.room), ...r.doors.map(d => d.room)]) if (id && ROOMS[id] && !S.visited[id]) near.add(id);
+      for (const id of near) { const q = rect(ROOMS[id]); ctx.fillStyle = 'rgba(120,110,150,0.22)'; ctx.fillRect(q.x, q.y, q.w, q.h); ctx.strokeStyle = 'rgba(180,170,210,0.35)'; ctx.strokeRect(q.x + 0.5, q.y + 0.5, q.w - 1, q.h - 1); drawText(ctx, '?', q.x + q.w / 2, q.y + q.h / 2 - 3, { align: 'center', color: 'rgba(200,190,230,0.5)' }); }
     }
+    const flash = Math.floor(this.t / 18) % 2;
+    for (const r of rooms) {                                                          // each room a block of cells: filled blue (red for a save room, cyan for a waystone), bright walls with gaps where it opens on a neighbour
+      const q = rect(r), x = q.x, y = q.y, w = q.w, h = q.h, stone = r.spawns.some(sp => sp.type === 'waystone'), lit = S.flags['tp_' + r.id];
+      const pal = r.save ? ['#a81c1c', '#d03a3a'] : stone ? (lit ? ['#0f8a8a', '#26c0c0'] : ['#0c4a56', '#1a7080']) : ['#1a2a9c', '#2c44c8'];
+      ctx.fillStyle = pal[0]; ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = pal[1]; for (let i = 1; i < q.cw; i++) ctx.fillRect(x + i * CELL_W, y, 1, h); for (let j = 1; j < q.ch; j++) ctx.fillRect(x, y + j * CELL_H, w, 1);          // the grid of cells
+      ctx.fillStyle = ZCOL[r.zone] || '#555'; ctx.fillRect(x + 1, y + h - 2, w - 2, 1);          // (a thread of the zone's colour along the floor)
+      const gaps = { L: new Set(), R: new Set() }; for (const e of r.exits) if (gaps[e.side]) gaps[e.side].add(Math.floor(clamp(((e.from + e.to) / 2) / r.h, 0, 0.999) * q.ch));
+      ctx.fillStyle = '#c4d2ff'; ctx.fillRect(x, y, w, 1); ctx.fillRect(x, y + h - 1, w, 1);
+      for (let j = 0; j < q.ch; j++) { if (!gaps.L.has(j)) ctx.fillRect(x, y + j * CELL_H, 1, CELL_H); if (!gaps.R.has(j)) ctx.fillRect(x + w - 1, y + j * CELL_H, 1, CELL_H); }
+      if (stone) { const cx = x + w / 2, cy = y + h / 2; ctx.fillStyle = lit ? '#e8ffff' : '#6a9aaa'; ctx.fillRect(Math.round(cx) - 1, Math.round(cy) - 3, 2, 6); ctx.fillRect(Math.round(cx) - 3, Math.round(cy) - 1, 6, 2); }
+      if (r.boss) { const done = S.flags['boss_' + r.id]; icon(ctx, 'skull', x + w / 2, y + h / 2, 0.6, done ? 0.4 : 1); }
+      if (r.id === g.room.id && flash) { ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillRect(x, y, w, h); }          // (where you are flashes, as in the old castle maps)
+    }
+    let left = 0;
+    if (astro) for (const r of rooms) {                                                // a gold diamond for each treasure still lying in a room you have seen
+      const q = rect(r);
+      for (const sp of r.spawns) { const o = sp.o || {}; if (!((sp.type === 'upgrade' && !S.flags[o.id]) || (sp.type === 'chest' && !S.flags[o.id + '_u']))) continue; left++;
+        const mx = Math.round(q.x + (sp.x + 0.5) / r.w * q.w), my = Math.round(q.y + (sp.y - 0.5) / r.h * q.h), pulse = Math.floor(this.t / 14) % 2;
+        ctx.fillStyle = '#05030a'; ctx.fillRect(mx - 3, my - 1, 7, 3); ctx.fillRect(mx - 1, my - 3, 3, 7); ctx.fillStyle = pulse ? '#ffe9a0' : '#e8b84a'; ctx.fillRect(mx - 2, my, 5, 1); ctx.fillRect(mx, my - 2, 1, 5); ctx.fillRect(mx - 1, my - 1, 3, 3); }
+    }
+    this.left = left;
     if (this.tele) for (let i = 0; i < this.stones.length; i++) {       // brackets round every attuned waystone; the chosen one pulses
       const r = ROOMS[this.stones[i]]; if (!r) continue; const q = rect(r), on = i === this.sel, pad = on ? 3 + (Math.floor(this.t / 8) % 2) : 2;
       ctx.strokeStyle = on ? '#bff4ff' : (r.id === this.here ? '#ffffff' : '#4aa8c8'); ctx.lineWidth = on ? 2 : 1; ctx.strokeRect(q.x - pad + 0.5, q.y - pad + 0.5, q.w + pad * 2 - 1, q.h + pad * 2 - 1);
@@ -447,8 +483,9 @@ export class MapScreen {
     }
     { const here = ROOMS[g.room.id]; if (here) { const where = (ZONES[here.zone].name + ' - ' + here.name).toUpperCase(), one = 'YOU ARE IN:  ' + where, fits = sc => textWidth(one, sc) <= W - 16; if (fits(1.1)) drawText(ctx, one, W / 2, H - 47, { align: 'center', color: '#ffffff', scale: 1.1 }); else { drawText(ctx, 'YOU ARE IN:', W / 2, H - 58, { align: 'center', color: '#ffffff', scale: 1 }); let sc = 1.1; while (sc > 0.7 && textWidth(where, sc) > W - 16) sc -= 0.05; drawText(ctx, where, W / 2, H - 48, { align: 'center', color: '#ffffff', scale: sc }); } }          // (a long place name goes on a second line, and shrinks if it must, so it never runs off the screen)
     }          // where the hero is
+    if (astro) drawText(ctx, left ? `ASTROLABE: ${left} TREASURE${left === 1 ? '' : 'S'} LEFT (GOLD DIAMONDS)` : 'ASTROLABE: NO TREASURE LEFT IN ROOMS YOU HAVE SEEN', W / 2, 21, { align: 'center', color: '#e8c872' });
     const done = Object.keys(S.flags).filter(k => /^(g2|h2|c1|u1|u2|t1|c2|v2|v3|g4|w1|w2|w3|bu)_/.test(k) && !k.endsWith('_u')).length;
-    drawText(ctx, 'WHITE = YOU   PURPLE = SAVE   CYAN CROSS = WAYSTONE', W / 2, H - 35, { align: 'center', color: DIM }); drawText(ctx, 'SKULL = BOSS   GOLD = DOOR   DOTS = ONE-WAY   ARROWS SCROLL', W / 2, H - 24, { align: 'center', color: DIM }); drawText(ctx, `ROOMS ${Object.keys(S.visited).length}/${Object.keys(ROOMS).length}   SECRETS ${done}   SEED ${S.seed}`, W / 2, H - 12, { align: 'center', color: PALE });
+    drawText(ctx, 'WHITE = YOU   RED = SAVE   CYAN CROSS = WAYSTONE', W / 2, H - 35, { align: 'center', color: DIM }); drawText(ctx, 'SKULL = BOSS   GOLD = DOOR   DOTS = ONE-WAY   ARROWS SCROLL', W / 2, H - 24, { align: 'center', color: DIM }); drawText(ctx, `ROOMS ${Object.keys(S.visited).length}/${Object.keys(ROOMS).length}   SECRETS ${done}   SEED ${S.seed}`, W / 2, H - 12, { align: 'center', color: PALE });
   }
 }
 

@@ -23,7 +23,7 @@ const ENV = [
   'gy_stone', 'gy_stone_old', 'gy_lily', 'gy_daisy', 'gy_rose', 'gy_posy', 'gy_wreath', 'gy_fence_a', 'gy_fence_b', 'gy_fence_c', 'gy_angel', 'cdl_a', 'cdl_b', 'signpost', 'gy_st1', 'gy_st3', 'gy_st4', 'gy_st5', 'gy_st6', 'gy_st7', 'gy_st8', 'orloj', 'orloj_small', 'orloj_calendar', 'gear_a', 'gear_b', 'gear_c', 'gear_d', 'gear_e',          // gear_*: strips of the Animated Gears pack (heosphorus, itch.io), packed by tools/pack-gears.ps1
            // orloj: the Prague astronomical clock, pixelated by tools/pixelate-orloj.ps1
            // Graveyard 400 Assets (worldswithoutend): her gravestones and the flowers at their feet (trimmed and shrunk to game size by buildGraveyard)
-  'sp_tank', 'sp_vent', 'sp_valve', 'sp_clock', 'sp_lamp', 'sp_furnace', 'sp_tesla',          // Steampunk Pixel Art Mega Pack (32x32): the Clockwork Dungeon's props
+  'sp_tank', 'sp_vent', 'sp_valve', 'sp_clock', 'sp_lamp', 'sp_furnace', 'sp_tesla', 'ba_castle',          // Steampunk Pixel Art Mega Pack (32x32): the Clockwork Dungeon's props
 ];
 
 // per-sheet overrides.  face: which way the art faces.  ax/ay: anchor fractions.  dx/dy: pixel nudges.
@@ -47,7 +47,7 @@ Object.assign(META, { vampire_idle: { ay: 0.9 }, vampire_run: { ay: 0.9 }, vampi
 // (an entry here replaces the "Ars sheets face left" default, so each says face: -1 itself)
 Object.assign(META, { ars_gnu_r0: { face: 1, dy: 11 }, ars_gnu_r1: { face: 1, dy: 11 }, ars_gnu_r2: { face: -1, dy: 10 }, ars_gnu_r3: { face: -1, dy: 9 }, ars_mage2_r0: { face: -1, dy: 9 }, ars_mage2_r1: { face: -1, dy: 9 } });
 // the bronze-robed, silver-masked mage (mage 1) fills its whole 85x94 cell: the hem of the robe is the bottom row
-Object.assign(META, { ars_mage1_r0: { face: -1, dy: 2 }, ars_mage1_r1: { face: -1, dy: 2 } });
+Object.assign(META, { ars_mage1_r0: { face: -1, dy: 2 }, ars_mage1_r1: { face: -1, dy: 2 }, libr_r0: { face: -1, dy: 9 }, libr_r1: { face: -1, dy: 9 }, shade_r1: { face: -1, dy: 2 }, shade_r2: { face: -1, dy: 2 }, shade_r3: { face: -1, dy: 2 }, shade_r4: { face: -1, dy: 2 } });
 // the Gothic Hero (Ansimuz): feet on the bottom row of each cell, faces right.  hero_attack's body sits a little left of the cell centre.
 Object.assign(META, { hero_idle: { ax: 0.5 }, hero_run: { ax: 0.5 }, hero_attack: { ax: 0.47 }, hero_jump: { ay: 1 }, hero_jump_attack: {}, hero_crouch: {}, hero_hurt: {} });
 
@@ -193,6 +193,9 @@ function buildRecolors() {
   for (const k of ['idle', 'appear', 'vanish', 'shriek']) recolor('ghost_' + k, 'ghostg_' + k, (h, s, l) => [0.42, s * 0.9, l]);
   // blue "frozen" nightmare is the original; make a cursed-green wraith lantern ghost
   recolor('wraith', 'wraith_g', (h, s, l) => [0.45, s, l * 1.05]);
+  // the Rime Shade: the (until now unused) shadow that rises out of the floor, turned cold blue; the Librarian: the Archmage's robes in ink and old gold
+  for (const k of [1, 2, 3, 4]) recolor('ars_shadow_r' + k, 'shade_r' + k, (h, s, l) => [0.55, Math.min(1, s * 1.1 + 0.15), Math.min(0.9, l * 1.4 + 0.08)]);
+  recolor('ars_mage2_r0', 'libr_r0', (h, s, l) => [0.09, Math.min(1, s * 1.1), Math.min(0.9, l * 1.2 + 0.04)]); recolor('ars_mage2_r1', 'libr_r1', (h, s, l) => [0.09, Math.min(1, s * 1.1), Math.min(0.9, l * 1.2 + 0.04)]);
 }
 
 // ---------- the mirror twin, as <sheet>_evil ----------

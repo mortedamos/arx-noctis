@@ -151,7 +151,7 @@ export class Player extends Entity {
     if (!this.atk && this.comboT > 0) this.comboT--;
     const locked = this.hurtT > 0 || g.cutscene || g.playerFrozen;
     const was = this.onGround;
-    if (this.ride) { if (room.gears && this.ride.active) { this.x += this.ride.dx; this.y += this.ride.dy; } else this.ride = null; }          // (standing on a turning gear's tooth: carried with it)
+    if (this.ride) { if (room.movers && this.ride.active) { this.x += this.ride.dx; this.y += this.ride.dy; } else this.ride = null; }          // (standing on a moving platform: carried with it)
     let dx = locked ? 0 : I.horiz;
 
     // ---- duck: hold Down on the ground.  You can't start a duck mid-swing, and you only stand back up when there is headroom.
@@ -190,7 +190,7 @@ export class Player extends Entity {
       }
       // ---- jump
       if (I.pressed.jump) {
-        if (I.held.down && this.onGround && room.get(Math.floor(this.x / T), Math.floor((this.y + 2) / T)) === TILE.PLAT) { this.dropThrough = 10; this.y += 2; this.onGround = false; this.jumpBuf = 0; }
+        if (I.held.down && this.onGround && (this.ride || room.get(Math.floor(this.x / T), Math.floor((this.y + 2) / T)) === TILE.PLAT)) { this.dropThrough = 10; this.y += 2; this.onGround = false; this.jumpBuf = 0; }
         else this.jumpBuf = 7;
       }
       if (this.jumpBuf > 0 && !this.crouch) {
@@ -225,10 +225,11 @@ export class Player extends Entity {
     const RUNV = RUN * (S.flags.got_shoes ? 1.1 : 1);                       // the Magic Shoes: 10% faster
     const groundLock = (this.atk && this.onGround) || this.castT || this.crouch;
     if (this.crouch && dx && !this.atk) this.dir = dx;
+    const slip = this.onGround && !this.ride && room.theme === 'ice' && room.get(Math.floor(this.x / T), Math.floor((this.y + 2) / T)) === TILE.SOLID, kA = slip ? 0.4 : 1, kF = slip ? 0.16 : 1; this.onIce = slip;
     if (this.dashT > 0) { if (S.flags.got_tide) g.dashHit(this); this.dashT--; this.vx = this.dir * DASH_V; this.vy = 0; if (this.dashT === 0) this.vx = this.dir * 2.2; if (this.t % 2 === 0) g.fx.burst(this.x - this.dir * 6, this.y - 18, 1, COLORS.purple, { speed: 0.3, s0: 12, s1: 3, l0: 14, l1: 22 }); this.trail.push({ x: this.x, y: this.y, f: this.frameInfo(), dir: this.dir, life: 14 }); }
-    else if (groundLock) { this.vx = approach(this.vx, 0, FRIC * 1.4); }
-    else if (dx) { this.vx = approach(this.vx, dx * RUNV, this.onGround ? ACC : AIRACC); if (!this.atk || !this.onGround) this.dir = dx; }
-    else this.vx = approach(this.vx, 0, this.onGround ? FRIC : 0.05);
+    else if (groundLock) { this.vx = approach(this.vx, 0, FRIC * 1.4 * kF); }
+    else if (dx) { this.vx = approach(this.vx, dx * RUNV, this.onGround ? ACC * kA : AIRACC); if (!this.atk || !this.onGround) this.dir = dx; }
+    else this.vx = approach(this.vx, 0, this.onGround ? FRIC * kF : 0.05);
     if (this.dashT === 0 && Math.abs(this.vx) > RUNV && !locked && !(this.atk && this.onGround)) this.vx = approach(this.vx, Math.sign(this.vx) * RUNV, 0.06);
 
     // ---- vertical motion
@@ -238,7 +239,7 @@ export class Player extends Entity {
     let drift = 0; if (room.currents) for (const c of room.currents) if (this.x >= c.x0 && this.x <= c.x1 && this.y <= c.y + 4 && this.y >= c.y - 40) { drift = c.vx * (this.onGround ? 1 : 0.4); break; }
     if (drift) { const v0 = this.vx; this.vx = v0 + drift; moveX(this, room); if (this.vx !== 0) this.vx = v0; } else moveX(this, room);
     moveY(this, room);
-    if (room.gears) room.gears.land(this);
+    if (room.movers) room.movers.land(this);
 
     // landing / coyote
     if (this.onGround) {

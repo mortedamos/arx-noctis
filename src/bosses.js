@@ -50,6 +50,10 @@ const ATTACKS = {
   geysers: { label: 'GEYSERS', rgb: [140, 205, 255], glyph: 'bars' },
   submerge: { label: 'SUBMERGE', rgb: [150, 210, 255], glyph: 'diag' },
   bandage: { label: 'PANACEA', rgb: [180, 255, 190], icon: 'bandage' },
+  pages: { label: 'TORN PAGES', rgb: [255, 232, 170], icon: 'scroll' },
+  shelves: { label: 'FALLING SHELVES', rgb: [255, 200, 110], glyph: 'bars' },
+  tomes: { label: 'HAUNTED TOMES', rgb: [240, 200, 120], icon: 'scroll' },
+  ink: { label: 'INK BURST', rgb: [240, 190, 90], icon: 'orb' },
 };
 const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 
@@ -70,7 +74,7 @@ export class Column {
   }
   get box() { return this.t >= this.warn && this.t < this.warn + this.active ? { x: this.x - this.w / 2, y: this.y - this.h, w: this.w, h: this.h } : { x: -999, y: -999, w: 0, h: 0 }; }
   update(g) {
-    this.t++; const col = { fire: [1, 0.5, 0.15], bolt: [0.7, 0.85, 1], steam: [0.8, 0.85, 0.95], shadow: [0.6, 0.2, 1], tentacle: [0.55, 0.4, 0.9] }[this.kind];
+    this.t++; const col = { fire: [1, 0.5, 0.15], bolt: [0.7, 0.85, 1], steam: [0.8, 0.85, 0.95], shadow: [0.6, 0.2, 1], tentacle: [0.55, 0.4, 0.9], books: [0.95, 0.75, 0.4] }[this.kind];
     if (this.t < this.warn) {                      // telegraph: pulsing marker on the floor + a faint beam that brightens until it fires
       const k = this.t / this.warn; if (this.t === 1) this.q = g.fx.quad({ kind: 'beam', x: this.x, y: this.y - this.h / 2, w: this.w * 1.1, h: this.h, color: col, life: this.warn, a0: 0.05, a1: 0.7 });
       g.fx.glow(this.x, this.y - 2, 14 + k * 14, col, 0.3 + k * 0.5); if (this.t % 6 === 0) g.fx.ring(this.x, this.y - 2, 16 + k * 10, col, 12, 0.3, 3);
@@ -80,6 +84,7 @@ export class Column {
         this.fired = true;
         if (this.kind === 'bolt') { g.fx.bolt(this.x + rand(-6, 6), g.camera.y - 20, this.x, this.y - 2, { width: 22, life: 24, segs: 20 }); g.fx.flash([0.7, 0.8, 1], 0.4); A.sfx('crack'); g.shake(3, 10); }
         else if (this.kind === 'fire' || this.kind === 'shadow') { A.sfx('fire'); g.shake(2, 14); g.fx.ring(this.x, this.y - 2, 40, col, 18, 0.2); }
+        else if (this.kind === 'books') { A.sfx('boom'); g.shake(3, 10); g.fx.burst(this.x, this.y - 2, 16, [[0.95, 0.85, 0.6], [0.5, 0.3, 0.12]], { speed: 2.4, s0: 10, up: 1.2 }); g.fx.ring(this.x, this.y - 2, 36, [1, 0.8, 0.4], 16, 0.2); }
         else if (this.kind === 'tentacle') { A.sfx('hit'); g.shake(2, 8); g.fx.burst(this.x, this.y - 2, 8, [[0.5, 0.3, 0.8], [0.15, 0.1, 0.3]], { speed: 1.8, s0: 10, up: 1 }); }
         else A.sfx('steam');
       }
@@ -114,9 +119,12 @@ export class Column {
       if (act < 0) drawSheet(ctx, 'ars_tentacles_r0', Math.min(4, Math.floor(k * 5)), this.x - cx, this.y - cy + 2, { alpha: 0.5 + 0.5 * k });
       else if (act < 16) drawSheet(ctx, 'ars_tentacles_r1', Math.min(7, Math.floor(act / 2)), this.x - cx, this.y - cy + 2, {});
       else drawSheet(ctx, 'ars_tentacles_r2', Math.floor(this.t / 3) % 8, this.x - cx, this.y - cy + 2, { alpha: Math.min(1, (this.warn + this.active - this.t) / 8) });
+    } else if (this.kind === 'books' && this.t >= this.warn) {          // a whole shelf's worth of books comes down in a stack, then lies in a heap and fades
+      const act = this.t - this.warn, fall = Math.min(1, (act + 1) / 5), cols = ['#7a2424', '#24456e', '#2f6a3a', '#6a3a7a', '#8a6a1e', '#4a4a56'], fade = Math.min(1, (this.active - act) / 6);
+      ctx.save(); ctx.globalAlpha = fade; for (let k = 0; k < Math.floor(this.h / 9); k++) { const bx = Math.round(this.x - cx - this.w / 2 + (k % 3) * 2 + ((k * 7) % 5)), by = Math.round(this.y - cy - 9 - k * 9 - (1 - fall) * this.h); ctx.fillStyle = '#12090a'; ctx.fillRect(bx - 1, by - 1, this.w - ((k * 7) % 5) + 2, 10); ctx.fillStyle = cols[k % cols.length]; ctx.fillRect(bx, by, this.w - ((k * 7) % 5), 8); ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fillRect(bx, by, this.w - ((k * 7) % 5), 1); ctx.fillStyle = 'rgba(240,210,120,0.6)'; ctx.fillRect(bx + 3, by + 3, 6, 1); } ctx.restore();
     } else if (this.kind === 'fire' && this.t >= this.warn) { /* the pillar of fire is light and flame in the effects layer (see pillar()), not a sprite */ }
     else if (this.t < this.warn) { // floor marker that fills as the attack nears
-      const k = this.t / this.warn, c = { fire: [255, 120, 50], bolt: [150, 200, 255], steam: [210, 222, 238], shadow: [170, 80, 255], tentacle: [150, 110, 220] }[this.kind];
+      const k = this.t / this.warn, c = { fire: [255, 120, 50], bolt: [150, 200, 255], steam: [210, 222, 238], shadow: [170, 80, 255], tentacle: [150, 110, 220], books: [240, 190, 100] }[this.kind];
       ctx.fillStyle = rgba(c, 0.15 + 0.35 * k); ctx.fillRect(Math.round(this.x - cx - this.w / 2), Math.round(this.y - cy - 3), this.w, 3);
       ctx.fillStyle = rgba(c, 0.5 + 0.5 * k); ctx.fillRect(Math.round(this.x - cx - this.w / 2), Math.round(this.y - cy - 1), Math.round(this.w * k), 1);
     }
@@ -125,9 +133,9 @@ export class Column {
 
 // -------------------------------------------------------------------------------------------- Boss base
 // how bosses read the player (see Boss.choose): which of their attacks are for when you are close, far off, or in the air
-const CLOSE_ATK = new Set(['slam', 'stomp', 'lunge', 'strikes', 'tentacles', 'leap', 'dive', 'vents']);
-const FAR_ATK = new Set(['embers', 'breath', 'bolts', 'tideorbs', 'spores', 'skulls', 'feathers', 'gears', 'geysers', 'pillars', 'mist', 'summon', 'charge', 'gallop']);
-const AIR_ATK = new Set(['feathers', 'bolts', 'skulls', 'pillars', 'spores', 'embers', 'breath', 'tideorbs']);
+const CLOSE_ATK = new Set(['slam', 'stomp', 'lunge', 'strikes', 'tentacles', 'leap', 'dive', 'vents', 'shelves']);
+const FAR_ATK = new Set(['embers', 'breath', 'bolts', 'tideorbs', 'spores', 'skulls', 'feathers', 'gears', 'geysers', 'pillars', 'mist', 'summon', 'charge', 'gallop', 'pages', 'tomes', 'ink']);
+const AIR_ATK = new Set(['feathers', 'bolts', 'skulls', 'pillars', 'spores', 'embers', 'breath', 'tideorbs', 'pages', 'ink']);
 const combo_min = w => Math.max(58, Math.round(w * 0.5));
 export class Boss extends Enemy {
   constructor(g, x, y, w, h, o) {
@@ -430,6 +438,48 @@ export class BossAngel extends Boss {
 
 // ============================================================================================== 4. THE BRAZEN HIEROPHANT  (code id: colossus)
 // The master of the Underworks: a giant of the bronze-robed, silver-masked mage (Ars Notoria mage 1, drawn at 1.15).  He hovers a little above the floor; the quake attack lifts him high (the tell), then drops him.
+// ------------------------------------------------------------------------------------------------ THE LIBRARIAN
+// A robed keeper of the Lord's archive, hanging in the air among the shelves.  He tears pages from his own books and flings them, brings whole shelves down on you (look for the markers on the floor),
+// calls haunted tomes out of the stacks, and - angrier, in his second phase - bursts into rings of ink.  He guards the KEY OF GOLD, the key to the Shadow Throne.
+export class BossLibrarian extends Boss {
+  constructor(g, x, y, o) { super(g, x, y + 40, 40, 80, o); this.hp = this.maxHp = 520; this.dmg = 15; this.xp = 320; this.bossName = 'THE LIBRARIAN'; this.sub = 'KEEPER OF THE KEY OF GOLD'; this.gravity = false; this.deathFx = [[1, 0.85, 0.5], [0.5, 0.3, 0.1]]; }
+  get spd() { return this.phase === 2 ? 1.25 : 1; }
+  intro(g) { if (this.st === 8) { A.sfx('shriek'); g.shake(3, 40); g.fx.flash([1, 0.9, 0.6], 0.4); g.fx.ring(this.x, this.cy, 120, [1, 0.85, 0.5], 40, 0.1); } g.fx.glow(this.x, this.cy, 70, [1, 0.8, 0.4], 0.5); this.faceP(); }
+  physics() { this.x += this.vx; this.y += this.vy; const r = this.g.room; this.x = clamp(this.x, 40, r.pw - 40); this.y = clamp(this.y, 70, r.ph - 40); if (this.flashT > 0) this.flashT--; }
+  moveTo(tx, ty, k = 0.04, max = 2) { this.vx = clamp((tx - this.x) * k, -max, max); this.vy = clamp((ty - this.cy) * k, -max, max); }
+  groundY() { return this.g.room.ph - 32; }
+  ai(g) {
+    const p = g.player, spd = this.spd;
+    g.fx.glow(this.x, this.cy, 54 + Math.sin(this.t * 0.1) * 6, [1, 0.82, 0.45], 0.26); g.fx.light(this.x, this.cy, 120, 0.85, [1, 0.8, 0.45]);
+    if (this.t % 6 === 0) g.fx.emit({ x: this.x + rand(-30, 30), y: this.cy + rand(-34, 24), vx: rand(-0.3, 0.3), vy: rand(0.1, 0.5), life: 60, s0: 4, s1: 2, c0: [0.95, 0.9, 0.7], c1: [0.7, 0.6, 0.4], a0: 0.9, a1: 0, kind: 1 });          // loose pages drifting about him
+    switch (this.state) {
+      case 'idle': this.faceP(); this.moveTo(clamp(p.x + Math.sin(this.t * 0.02) * 90, 70, g.room.pw - 70), 92 + Math.sin(this.t * 0.05) * 12, 0.03);
+        this.planNext(this.phase === 2 ? ['pages', 'shelves', 'tomes', 'ink', 'pages', 'shelves'] : ['pages', 'shelves', 'tomes'], Math.round(96 / spd)); break;
+      case 'pages': {
+        this.faceP(); this.moveTo(this.x, 92, 0.05); const times = this.phase === 2 ? [38, 66, 94] : [38, 72];
+        if (this.st < 38) this.tell('pages', this.st / 38, [{ type: 'line', x0: this.x, y0: this.cy, x1: p.x, y1: p.y - 20 }]);
+        if (times.includes(this.st)) { A.sfx('cast'); const base = Math.atan2(p.y - 24 - this.cy, p.x - this.x), n = this.phase === 2 ? 7 : 5; for (let i = 0; i < n; i++) { const a = base + (i - (n - 1) / 2) * 0.2; g.addProjectile(new Projectile(this.x, this.cy, Math.cos(a) * 2.0, Math.sin(a) * 2.0, 'page', { dmg: 9, life: 260 })); } g.fx.ring(this.x, this.cy, 40, [1, 0.9, 0.6], 16); }
+        if (this.st > times[times.length - 1] + 40) { this.state = 'idle'; this.st = -20; } break; }
+      case 'ink': {
+        this.moveTo(g.room.pw / 2, 88, 0.04); if (this.st < 30) this.tell('ink', this.st / 30);
+        for (const [k, at] of [[0, 30], [1, 46], [2, 62]]) if (this.st === at) { A.sfx('cast'); g.fx.ring(this.x, this.cy, 46, [1, 0.8, 0.3], 18); for (let i = 0; i < 9; i++) { const a = i * Math.PI * 2 / 9 + k * 0.35; g.addProjectile(new Projectile(this.x, this.cy, Math.cos(a) * 1.5, Math.sin(a) * 1.5, 'ink', { dmg: 9, life: 280 })); } }
+        if (this.st > 110) { this.state = 'idle'; this.st = -20; } break; }
+      case 'shelves': {
+        this.moveTo(g.room.pw / 2, 84, 0.04); if (this.st < 20) this.tell('shelves', this.st / 20);
+        if (this.st === 20) { A.sfx('roar'); const waves = this.phase === 2 ? 2 : 1; for (let w = 0; w < waves; w++) for (let i = 0; i < 3; i++) { const x = clamp(w === 0 ? p.x + (i - 1) * 70 + rand(-8, 8) : rand(50, g.room.pw - 50), 30, g.room.pw - 30); g.addProjectile(new Column(x, this.groundY(), 'books', { warn: 62 + w * 44, active: 16, dmg: 14, w: 32, h: 200 })); } }
+        if (this.st > (this.phase === 2 ? 190 : 130)) { this.state = 'idle'; this.st = -20; } break; }
+      case 'tomes': {
+        this.moveTo(this.x, 90, 0.05); if (this.st < 24) this.tell('tomes', this.st / 24);
+        if (this.st === 24) { A.sfx('roar'); const alive = g.enemies.filter(e => e.name === 'tome' && !e.dead).length; for (let i = 0, n = Math.min(this.phase === 2 ? 3 : 2, 5 - alive); i < n; i++) { const bx = this.x + (i - (n - 1) / 2) * 40; g.fx.burst(bx, this.cy, 12, [[0.95, 0.9, 0.7], [0.5, 0.35, 0.2]], { speed: 2, s0: 12 }); g.spawnEnemy('tome', Math.floor(bx / 16), Math.floor(this.cy / 16), {}); } }
+        if (this.st > 84) { this.state = 'idle'; this.st = -20; } break; }
+    }
+  }
+  draw(ctx, cx, cy) {
+    let id = 'libr_r0', f = Math.floor(this.t / 8) % 4; if (this.state === 'pages' || this.state === 'ink' || this.state === 'shelves' || this.state === 'tomes') { id = 'libr_r1'; f = Math.floor(this.t / 6) % 4; }
+    drawSheet(ctx, id, f, this.x - cx, this.cy - cy + Math.sin(this.t * 0.08) * 2 + 8, { flash: this.flashT > 0, ay: 0.6, scale: 0.85, dir: this.dir });
+  }
+}
+
 export class BossColossus extends Boss {
   constructor(g, x, y, o) { super(g, x, y, 46, 100, o); this.hp = this.maxHp = 420; this.dmg = 16; this.xp = 260; this.bossName = 'THE BRAZEN HIEROPHANT'; this.sub = 'MASTER OF THE UNDERWORKS'; this.scale = 1.15; this.dir = -1; this.deathFx = COLORS.gold; this.ice = { w: 84, h: 116 }; }
   get spd() { return this.phase === 2 ? 1.25 : 1; }
@@ -924,4 +974,4 @@ export class BossDrowned extends Boss {
   }
 }
 
-export const BOSS_TYPES = { boss_drowned: BossDrowned, boss_vampire: BossVampire, boss_beast: BossBeast, boss_nightmare: BossNightmare, boss_angel: BossAngel, boss_colossus: BossColossus, boss_shadow: BossShadow, boss_cinder: BossCinder, boss_bramble: BossBramble, boss_mirror: BossMirror };
+export const BOSS_TYPES = { boss_librarian: BossLibrarian, boss_drowned: BossDrowned, boss_vampire: BossVampire, boss_beast: BossBeast, boss_nightmare: BossNightmare, boss_angel: BossAngel, boss_colossus: BossColossus, boss_shadow: BossShadow, boss_cinder: BossCinder, boss_bramble: BossBramble, boss_mirror: BossMirror };

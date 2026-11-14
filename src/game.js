@@ -5,9 +5,9 @@ import { Input } from './input.js';
 import { Touch } from './touch.js';
 import { loadFonts, drawText, textWidth } from './font.js';
 import { Audio_ as A } from './audio.js';
-import { ZONES } from './rooms.js';
+import { ZONES, KEEP } from './rooms.js';
 import { buildWorld, randomSeed, GEN_VERSION, arrivalBesideStone } from './levelgen.js';
-import { Room, TILE, drawBackground, discoBeams } from './world.js';
+import { Room, TILE, drawBackground, discoBeams, drawForeground } from './world.js';
 import { Player, SPELLS } from './player.js';
 import { ENEMY_TYPES } from './enemies.js';
 import { BEAST_TYPES } from './beasts.js';
@@ -17,24 +17,26 @@ import { MirrorView } from './mirror.js';
 import { VillageScene, OpeningScene } from './scenes.js';
 import { STORY } from './story.js';
 import { Ghost } from './ghost.js';
-import { Gears } from './gears.js';
+import { Movers } from './movers.js';
+import { Icicle } from './icicles.js';
 import { KEYS } from './itemdata.js';
 import { Projectile, Shockwave, FirePatch } from './projectiles.js';
 import { Statue, Barrel, Altar, Waystone, Tablet, Chest, Upgrade, Relic, Pickup, ABILITIES, UPGRADES } from './props.js';
 import { drawDeco, isBack, roomFlames, drawFlames2D, decoCoversHazard } from './decor.js';
 import { drawIce } from './enchant.js';
 import { drawSheet } from './assets.js';
+import { noteSeen, noteKill } from './bestiary.js';
 import { HUD, drawBanner, drawPopups, drawPrompt, drawExitArrow, Dialog, TitleScreen, PauseMenu, MapScreen, IntroCrawl, GameOver, Ending } from './ui.js';
 
 const SAVE_KEY = 'shadowkeep.save.v1';
 const DOOR_CLEAR = 200;          // px: no enemy starts within this distance of a door you have just come through (about half a screen)
-const FLYERS = new Set(['bat', 'ghost', 'wraith', 'fireskull', 'wyrm', 'frostwyrm', 'emberwyrm']);
+const FLYERS = new Set(['bat', 'ghost', 'wraith', 'fireskull', 'wyrm', 'frostwyrm', 'emberwyrm', 'tome', 'grimoire']);
 const ITEM_IDS = ['br_hp', 'g2_hp', 'g2_atk', 'h2_mp', 'h2_hp', 'c1_chest_u', 'u1_hp', 'u2_atk', 't1_mp', 'v2_atk', 'v3_mp', 'g4_mp', 'w1_hp', 'w2_mp', 'w3_atk', 'bu_vb', 'bu_wb', 'got_djump', 'got_dash', 'got_ember', 'got_thunder'];
 
 const newSave = world => ({
   seed: world.seed, room: world.start.room, spawnX: world.start.x * 16 + 8, spawnY: world.start.gy * 16, hp: 60, maxHp: 60, mp: 40, maxMp: 40, atk: 8, level: 1, xp: 0, gold: 0,
   abilities: { djump: false, dash: false, ember: false, thunder: false }, flags: {}, visited: {}, time: 0, kills: 0, v: 1, gv: GEN_VERSION,
-  items: { dagger: 6 }, sel: 'dagger',                // carried disposable items (see items.js) and the hotbar selection
+  items: { dagger: 6 }, sel: 'dagger', bestiary: {},                // carried disposable items (see items.js) and the hotbar selection
 });
 
 // the tint of a room's ground fog, by its look (the darkness overlay dims it further in dark rooms)
@@ -43,7 +45,7 @@ const FOG_COL = { default: [0.64, 0.7, 0.8], graveyard: [0.66, 0.72, 0.84], swam
 // Monsters get tougher the deeper you go (you keep gaining sword power as you climb): their hit points are multiplied by their zone's number, and so is what they are worth.
 // Zone ids are not in story order (6 = the village, the first; 5 = the throne, the last).
 const hsl2rgb = h => { const k = h / 60, i = Math.floor(k) % 6, f = k - Math.floor(k); return [[1, f, 0], [1 - f, 1, 0], [0, 1, f], [0, 1 - f, 1], [f, 0, 1], [1, 0, 1 - f]][i]; };          // a full-strength colour from a hue in degrees (the disco lights)
-const ZONE_HP = { 6: 1, 1: 1.1, 7: 1.3, 9: 1.5, 2: 1.7, 3: 2.0, 4: 2.4, 8: 2.8, 5: 3.3 };
+const ZONE_HP = { 6: 1, 1: 1.1, 7: 1.3, 9: 1.5, 2: 1.7, 3: 2.0, 4: 2.4, 11: 2.6, 8: 2.8, 10: 2.8, 5: 3.3 };
 
 // the boss flags a sealed door asks for -> where that master is to be found (the door's dialogue lists the ones that still live)
 const LOCK_HINTS = {
@@ -60,7 +62,7 @@ export class Game {
     // The game is drawn in 384x216 'logical' pixels onto a K-times larger canvas (so the gothic text can be smooth and crisp);
     // sprites are snapped to the logical grid so pixel art looks exactly as before.
     for (const c of [this.ctx, this.top]) { const di = c.drawImage; c.drawImage = function (img, ...a) { if (a.length === 2 || a.length === 4) { a[0] = Math.round(a[0]); a[1] = Math.round(a[1]); } else if (a.length === 8) { a[4] = Math.round(a[4]); a[5] = Math.round(a[5]); } return di.call(this, img, ...a); }; }
-    this.fx = new FX(document.getElementById('fx')); this.fx.onThunder = p => A.sfx('thunder', { power: p });
+    this.fx = new FX(document.getElementById('fx')); this.fx.onThunder = p => A.sfx('thunder', { power: p }); this.fx.postEnabled = () => A.settings.glow !== false; this.fx.initPost(this.canvas);
     Input.init(); Touch.init(this); await A.init(); if (new URLSearchParams(location.search).get('cloak') === '0') A.settings.cloak = false; await loadFonts(); this.resize(); addEventListener('resize', () => this.resize());
     // Losing focus (clicking another window, switching tabs/apps) mutes all sound and pauses a running game; sound returns when focus does.
     // (`?nopause` in the URL turns this off - handy for automated testing in a background tab.)
@@ -104,7 +106,7 @@ export class Game {
   addProjectile(p) { this.projectiles.push(p); return p; }
   after(frames, fn) { this.delayed.push({ t: frames, fn }); }
   // the name of the area a door or an open edge leads to: the zone's name when it is another zone (THE GREAT HALL), else the room's own (WEAVER'S COTTAGE)
-  areaName(id) { const t = this.world.rooms[id]; if (!t) return ''; if (t.areaLabel) return t.areaLabel.toUpperCase(); return (t.zone !== this.room.zone ? ZONES[t.zone].name : t.name).toUpperCase(); }
+  areaName(id) { const t = this.world.rooms[id]; if (!t) return ''; if (t.areaLabel) return t.areaLabel.toUpperCase(); if (KEEP.has(t.zone) && !KEEP.has(this.room.zone)) return 'SHADOWKEEP'; return (t.zone !== this.room.zone ? ZONES[t.zone].name : t.name).toUpperCase(); }
   areaLabel(top, name, x, y, align = 'center', color = '#ffe9a0', alpha = 1) {
     if (!name) return; const w = textWidth(name, 0.9, { outline: true }), lx = align === 'center' ? clamp(x, w / 2 + 4, W - w / 2 - 4) : x;
     drawText(top, name, Math.round(lx), Math.round(y), { align, color, outline: '#000', scale: 0.9, alpha });
@@ -126,7 +128,7 @@ export class Game {
   itemPercent() { const f = this.save.flags; return Math.round(ITEM_IDS.filter(k => f[k]).length / ITEM_IDS.length * 100); }
   spawnEnemy(type, tx, gy, o = {}) {
     const C = ENEMY_TYPES[type] || BEAST_TYPES[type] || BOSS_TYPES[type]; if (!C) { console.warn('unknown enemy', type); return null; }
-    const x = tx * 16 + 8, y = FLYERS.has(type) || type === 'boss_angel' || type === 'boss_shadow' || type === 'boss_bramble' ? gy * 16 + 8 : gy * 16;
+    const x = tx * 16 + 8, y = FLYERS.has(type) || type === 'boss_angel' || type === 'boss_shadow' || type === 'boss_bramble' || type === 'boss_librarian' ? gy * 16 + 8 : gy * 16;
     const e = new C(this, x, y, o);
     const m = !e.isBoss && !e.talk && !e.calm ? ZONE_HP[this.room && this.room.zone] || 1 : 1; if (m !== 1) { e.hp = e.maxHp = Math.round(e.maxHp * m); e.xp = Math.max(1, Math.round(e.xp * Math.sqrt(m))); }
     this.enemies.push(e); return e;
@@ -155,7 +157,7 @@ export class Game {
   respawn() { // after death: back to the last save
     const s = this.loadSave(); if (s) this.useSave(s); else { this.save = newSave(this.world); this.save.flags.opening_seen = true; } this.player = new Player(this, 0, 0); this.boss = null; this.slow = 0; this.save.hp = this.save.maxHp; this.save.mp = this.save.maxMp; this.beginPlay(true);
   }
-  useSave(s) { s.items ||= {}; delete s.items.caltrops; if (s.sel === 'caltrops') s.sel = 'dagger'; this.save = s; this.world = buildWorld(s.seed || 0);
+  useSave(s) { s.items ||= {}; s.bestiary ||= {}; delete s.items.caltrops; if (s.sel === 'caltrops') s.sel = 'dagger'; this.save = s; this.world = buildWorld(s.seed || 0);
     if (s.gv !== GEN_VERSION || !this.world.rooms[s.room]) { s.gv = GEN_VERSION; s.room = this.world.start.room; s.spawnX = this.world.start.x * 16 + 8; s.spawnY = this.world.start.gy * 16; s.visited = {}; s.flags.opening_seen = true; }          // (a save made before the castle's layout last changed: the rooms are not where they were, so the hero wakes at the start with everything they carry; the maps fill in again)
   }                       // (caltrops were removed from the game)
   pause() { this.state = 'pause'; this.pauseMenu = new PauseMenu(this); A.sfx('select'); }
@@ -172,14 +174,14 @@ export class Game {
   // -------------------------------------------------------------------------------- rooms
   loadRoom(id, pos, dir = 1) {
     const def = this.world.rooms[id], S = this.save, tiles = Uint8Array.from(def.tiles);
-    for (let ty = 0; ty < def.h; ty++) for (let tx = 0; tx < def.w; tx++) { const v = tiles[ty * def.w + tx]; if ((v === 4 || v === 5 || v === 6) && S.flags[`b_${id}_${tx}_${ty}`]) tiles[ty * def.w + tx] = 0; }
+    for (let ty = 0; ty < def.h; ty++) for (let tx = 0; tx < def.w; tx++) { const v = tiles[ty * def.w + tx]; if ((v === 4 || v === 5 || v === 6 || v === 8) && S.flags[`b_${id}_${tx}_${ty}`]) tiles[ty * def.w + tx] = 0; }
     const prevZone = this.zone; this.room = new Room({ ...def, tiles }); this.room.flags = S.flags; this.room.ignited = new Set(); if (S.flags.boss_vb) S.flags.village_fire = true; S.visited[id] = true; this.zone = def.zone;          // (the room can see the save's flags: scenery such as the sigils over a locked door reads them)
     { const spk = []; for (let ty = 0; ty < def.h; ty++) for (let tx = 0; tx < def.w; tx++) if (tiles[ty * def.w + tx] === TILE.SPIKE) spk.push([tx, ty]); if (spk.length) this.room.decos = def.decos.filter(d => !decoCoversHazard(d, spk)); }          // nothing may stand in front of a hazard
     this.enemies = []; this.projectiles = []; this.pickups = []; this.props = []; this.popups = []; this.boss = null; this.delayed = []; this.fx.reset(); this.fx.setWisps(def.wisps || 0); this.flames = roomFlames(this.room); this.falls = this.room.decos.filter(d => d.t === 'waterfall'); this.fx.setWater(this.waterList()); this.mirrorView = def.mirror ? new MirrorView(def.mirror, !!S.flags['boss_' + id]) : null;          // (the Mirror Room: a great mirror - whole until you walk up to it)
     const dusk = def.zone === 6 && !S.flags.village_fire && !def.keepLook;          // Prague before the Cinder Warden's torches: a calm violet dusk, with golden dust in the air - the monsters are loose, but nothing burns yet
-    this.fx.setAmbient(dusk ? Math.max(def.ambient, 0.42) : def.ambient, dusk ? [0.05, 0.03, 0.12] : def.tint, def.vig); if (def.dark) this.fx.setDark(); this.fx.setAmbientFx(dusk ? 'dust' : def.weather); A.setIndoor(def.indoor); this.fx.setStorm(def.storm, 0.0035);
+    this.fx.setShadowMask(this.room); this.fx.setAmbient(dusk ? Math.max(def.ambient, 0.42) : def.ambient, dusk ? [0.05, 0.03, 0.12] : def.tint, def.vig); if (def.dark) this.fx.setDark(); this.fx.setAmbientFx(dusk ? 'dust' : def.weather); A.setIndoor(def.indoor); this.fx.setStorm(def.storm, 0.0035);
     this.fx.setFog(def.fog * (def.theme === 'swamp' ? 0.8 : 1), def.horizon + 4, FOG_COL[def.theme] || FOG_COL.default, def.fogH);          // rolling ground fog in the damp, dead places
-    this.room.gears = def.gears ? new Gears(def.gears) : null; this.player.ride = null; this.vents = this.room.decos.filter(d => d.t === 'img' && d.img === 'sp_vent'); this.graves = this.room.decos.filter(d => d.t === 'grave'); this.ghost.snap();
+    this.room.movers = def.movers ? new Movers(def.movers) : null; this.icicles = (def.icicleTraps || []).map(d => new Icicle(d)); this.player.ride = null; this.vents = this.room.decos.filter(d => d.t === 'img' && d.img === 'sp_vent'); this.graves = this.room.decos.filter(d => d.t === 'grave'); this.ghost.snap();
     if (def.disco) { this.room.discoState = { mode: S.flags.disco_done ? 'gone' : 'party', t0: 0 }; A.preload('record_scratch'); }
     const bossDone = !!S.flags['boss_' + id];
     for (let si = 0; si < def.spawns.length; si++) {
@@ -207,7 +209,12 @@ export class Game {
     // music + banners
     const zm = ZONES[def.zone].music, mus = def.boss ? zm : def.music;
     if (def.disco && S.flags.disco_done) A.stop(0.4); else A.play(mus, { fade: 1.2 });          // (the empty disco is silent)
-    if (def.zone !== prevZone && !def.save) this.banner(ZONES[def.zone].name.toUpperCase(), def.name.toUpperCase(), 200, { y: 52 });
+    const inKeep = KEEP.has(def.zone);
+    if (inKeep && prevZone !== undefined && !KEEP.has(prevZone) && !def.save) {          // crossing the threshold: the hero enters SHADOWKEEP (the long card, with a boom, the first time)
+      const first = !S.flags.entered_keep; S.flags.entered_keep = true;
+      this.banner('SHADOWKEEP', first ? "THE LORD'S KEEP. THE SUN DOES NOT COME HERE." : ZONES[def.zone].name.toUpperCase(), first ? 330 : 230, { y: 52, color: '#ff9a7a' });
+      if (first) this.after(36, () => { if (this.state === 'play') { A.sfx('boom'); this.shake(6, 26); this.fx.flash([0.35, 0.2, 0.4], 0.5); } });
+    } else if (def.zone !== prevZone && !def.save) this.banner(ZONES[def.zone].name.toUpperCase(), (inKeep ? 'SHADOWKEEP - ' : '') + def.name.toUpperCase(), 200, { y: 52 });
     else this.banner(def.name.toUpperCase(), '', 130, { y: 52, color: '#cfc2a0' });
     if (bossDone && def.seals.length) { /* arena stays open */ }
   }
@@ -296,13 +303,15 @@ export class Game {
     if (hit && p.hitsThisSwing++ === 0) { this.hitstop = 3; this.shake(1.5, 5); }
   }
   breakTile(tx, ty) {
-    const r = this.room, v = r.get(tx, ty); if (v !== TILE.CRACK && v !== TILE.BARRICADE && v !== TILE.CRYSTAL) return;
+    const r = this.room, v = r.get(tx, ty); if (v !== TILE.CRACK && v !== TILE.BARRICADE && v !== TILE.CRYSTAL && v !== TILE.ICE) return;
     r.set(tx, ty, TILE.EMPTY); this.save.flags[`b_${r.id}_${tx}_${ty}`] = true; const x = tx * 16 + 8, y = ty * 16 + 8;
     if (v === TILE.CRACK) { this.fx.burst(x, y, 10, [[0.7, 0.65, 0.8], [0.3, 0.28, 0.4]], { speed: 2, s0: 12, up: -0.5, gy: 0.05 }); this.fx.sparks(x, y, 8, [[0.8, 0.8, 0.9], [0.4, 0.4, 0.5]], 2.5, { gy: 0.2 }); }
     else if (v === TILE.BARRICADE) { this.fx.burst(x, y, 14, COLORS.fire, { speed: 2, s0: 16 }); this.fx.sparks(x, y, 10, COLORS.fire, 3, { gy: 0.15 }); this.fx.glow(x, y, 50, [1, 0.5, 0.2], 0.8, 14); }
+    else if (v === TILE.ICE) { this.fx.burst(x, y, 12, COLORS.ice, { speed: 2.2, s0: 12 }); this.fx.sparks(x, y, 10, COLORS.white, 3, { gy: 0.15 }); this.fx.smoke(x, y, 3, { c0: [0.85, 0.92, 1], c1: [0.6, 0.7, 0.85], s0: 6, s1: 22, l: 0.7 }); this.fx.glow(x, y, 44, [1, 0.6, 0.3], 0.6, 12); }
     else { this.fx.burst(x, y, 12, COLORS.ice, { speed: 2.5, s0: 14 }); this.fx.sparks(x, y, 14, COLORS.white, 4, { gy: 0.2 }); this.fx.flash([0.6, 0.8, 1], 0.25); }
     A.sfx('break'); this.shake(2, 8);
   }
+  meltIce(tx, ty) { const q = [[tx, ty]], seen = new Set(); while (q.length) { const [x, y] = q.pop(), k = x + ',' + y; if (seen.has(k) || this.room.get(x, y) !== TILE.ICE) continue; seen.add(k); this.breakTile(x, y); q.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]); } }          // (fire melts a whole barrier of ice, block by block)
   burnBarricade(tx, ty) { const q = [[tx, ty]], seen = new Set(); while (q.length) { const [x, y] = q.pop(), k = x + ',' + y; if (seen.has(k) || this.room.get(x, y) !== TILE.BARRICADE) continue; seen.add(k); this.breakTile(x, y); q.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]); } }
   castThunder(p) {
     const S = this.save, dmg = 20 + Math.round(p.atkPower * 1.3), cam = this.camera;
@@ -348,7 +357,9 @@ export class Game {
     A.play(def.id === 't2' ? 'boss_final' : 'boss', { fade: 0.4 }); this.banner(b.bossName, b.sub, 210, { y: 60, color: '#ff9a7a' });
     const tk = STORY.talk[b.bossName]; if (tk && !S.flags["talk_" + b.bossName]) { S.flags["talk_" + b.bossName] = true; this.talk(tk.before); }          // a few words before the fight (once)
   }
+  noteKill(e) { if (this.save) noteKill(this, e); }          // (the bestiary counts every creature you defeat)
   bossDying(b) {
+    noteKill(this, b);
     this.slow = 150; A.stop(1.5); this.player.invT = 999; this.fx.flash([1, 1, 1], 0.5);
     for (const pr of this.projectiles) pr.dead = true; for (const e of this.enemies) if (!e.isBoss && !e.dead) e.die();
   }
@@ -426,15 +437,17 @@ export class Game {
     if (this.trans && this.trans.phase === 'out') { fx.update(1); return; }
     if (Input.pressed.pause && !this.cutscene && !p.dead) { this.pause(); return; }
     if (Input.pressed.map && !this.cutscene && !p.dead) { this.openMap(); return; }
-    S.time += 1 / 60; fx.clearLights();
+    S.time += 1 / 60; fx.clearLights(); if (this.room && this.room.maskDirty) { this.room.maskDirty = false; fx.setShadowMask(this.room); }
     this.checkVillageScene(); this.checkOpening(); this.discoStep();
-    if (this.room.gears) { this.room.gears.step(); for (const d of this.room.gears.defs) fx.light(d.cx, d.cy - d.R * 0.55, 130, 0.55, [1, 0.8, 0.45]); }          // the wheels turn, and glow a little
+    if (this.room.movers) { this.room.movers.step(false, this); for (const m of this.room.movers.list) fx.light(m.x, m.y + 6, 70, 0.5, [1, 0.8, 0.45]); }          // the brass platforms glide, and glow a little
+    for (const ic of this.icicles || []) ic.step(this);                          // loose icicles: shiver when the hero comes close, then drop
     for (const d of this.vents || []) if (this.frame % 9 === 0 && d.x > this.camera.x - 20 && d.x < this.camera.x + W + 20) fx.smoke(d.x, d.y - 40, 1, { c0: [0.62, 0.6, 0.58], c1: [0.4, 0.38, 0.36], s0: 5, s1: 20, l: 0.8 });          // steam
     if (this.cutscene) this.updateCutscene();
     p.update();
     const cam = this.camera, ccx = cam.x + W / 2, ccy = cam.y + H / 2;
     const still = !!(this.cutscene && this.cutscene.scene);          // (during a scripted scene the monsters neither move nor attack)
     if (!still) for (const e of this.enemies) { if (e.dead) continue; if (e.isBoss || (Math.abs(e.x - ccx) < 380 && Math.abs(e.cy - ccy) < 240)) e.update(); }
+    if (this.frame % 12 === 0) for (const e of this.enemies) if (!e.dead && Math.abs(e.x - ccx) < W / 2 + 16 && Math.abs(e.cy - ccy) < H / 2) noteSeen(this, e);          // (the bestiary notes what you can see)
     this.enemies = this.enemies.filter(e => !e.dead || (e.isBoss && false));
     if (!still) this.updateProjectiles();
     for (const o of this.pickups) o.update(this); this.pickups = this.pickups.filter(o => !o.dead);
@@ -494,7 +507,8 @@ export class Game {
     { const n = this.state === 'play' ? this.nearInteractable() : null; r.nearDoor = n && n.kind === 'door' ? n.d : null; r.playerX = p.x; }          // (room.nearDoor / room.playerX: scenery can react to the player)
     drawBackground(ctx, r, cx, cy, t);
     for (const d of r.decos) if (isBack(d) && d.t !== 'waterfall') drawDeco(ctx, d, cx, cy, t, r);
-    if (r.gears) r.gears.draw(ctx, cx, cy);                                                         // the great gears' wheels (their teeth carry the hero)
+    for (const ic of this.icicles || []) ic.draw(ctx, cx, cy, t);
+    if (r.movers) r.movers.draw(ctx, cx, cy);                                                    // the moving brass platforms and their tracks (they carry the hero)
     if (this.falls) for (const d of this.falls) drawDeco(ctx, d, cx, cy, t, r);                    // waterfalls: in front of the far trees, behind the ground and the hero
     if (this.mirrorView) this.mirrorView.draw(ctx, cx, cy);                                          // the mirror hangs on the back wall: frame and glass, behind the ground and the hero (the reflection is the boss's, drawn over the glass)
     r.drawTiles(ctx, cx, cy, t);
@@ -508,6 +522,7 @@ export class Game {
     this.ghost.draw(ctx, cx, cy);                                                                    // (she floats a little behind the hero - and is only seen in a blue light)
     if (this.cutscene && this.cutscene.scene) this.cutscene.scene.drawWorld(ctx, cx, cy);
     p.draw(ctx, cx, cy);
+    drawForeground(ctx, r, cx, cy, t);                                                              // (out-of-focus shapes close to the lens, over everything but the picture's edges are kept clear)
     for (const d of r.decos) if (d.fore) drawDeco(ctx, d, cx, cy, t, r);                              // the foreground: things the hero walks BEHIND (fences)
     for (const e of this.enemies) if (e.isBoss) e.drawIntent(ctx, cx, cy);                              // attack icon + name over its head
     for (const o of this.projectiles) o.draw(ctx, cx, cy);

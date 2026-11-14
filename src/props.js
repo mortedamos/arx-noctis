@@ -26,6 +26,8 @@ export const UPGRADES = {
   shard: { name: 'SPECULUM SHARD', desc: 'YOUR SWORD TURNS ARROWS, BONES AND ORBS BACK AT THEIR THROWERS', icon: 'shard', color: [0.8, 0.88, 1] },
   spring: { name: 'PERPETUUM', desc: 'A SPRING THAT NEVER RUNS DOWN: YOUR DASH RECHARGES TWICE AS FAST', icon: 'spring', color: [1, 0.8, 0.4] },
   tide: { name: 'AQUA REGIA', desc: 'A DASH CUTS WHATEVER IT PASSES THROUGH', icon: 'e_ice', color: [0.4, 0.8, 1] },
+  astrolabe: { name: 'ASTROLABE', desc: "THE ORLOJ'S LITTLE SISTER. YOUR MAP NOW MARKS WHAT YOU HAVE LEFT BEHIND: TREASURE NOT TAKEN, AND THE ROOMS BESIDE THE ONES YOU KNOW.", icon: 'astrolabe', color: [1, 0.85, 0.45] },          // (its id is the flag 'got_astrolabe': the map reads it)
+  goldkey: { name: 'KEY OF GOLD', desc: 'THE LAST KEY: IT OPENS THE DOOR OF THE SHADOW THRONE.', icon: 'key', color: [1, 0.85, 0.35] },          // (the Librarian's: its id is the flag 'has_key_gold')
   shoes: { name: 'SHOES OF HERMES', desc: 'MOVE 10% FASTER', icon: 'shoes', color: [1, 0.45, 0.95] },          // (its id is the flag 'got_shoes': the Player reads it)
 };
 export const iconFrame = name => ICON.indexOf(name);
@@ -255,11 +257,12 @@ export class Upgrade {
     this.t++; const bob = Math.sin(this.t * 0.07) * 2, p = g.player; this.by = bob;
     g.fx.glow(this.x, this.y - 8 + bob, 26, this.U.color, 0.5); g.fx.light(this.x, this.y - 8, 50, 0.7);
     if (this.t % 5 === 0) g.fx.emit({ x: this.x + rand(-9, 9), y: this.y - 8 + rand(-6, 6), vx: 0, vy: -rand(0.1, 0.5), life: 36, s0: 5, s1: 1, c0: this.U.color, a0: 0.9, a1: 0, kind: 6 });
+    if (this.id && this.id.startsWith('bu_') && this.t > 150 && !p.dead) { const dx = p.x - this.x, dy = p.y - 16 - (this.y - 8), dd = Math.hypot(dx, dy) || 1, sp = Math.min(dd, 1.6); this.x += dx / dd * sp; this.y += dy / dd * sp; }          // (a boss's gift drifts to the hero if left lying: it can never be walked past - the dark rooms ahead need the lantern)
     if (!p.dead && dist(p.x, p.y - 16, this.x, this.y - 8) < 14) this.collect(g);
   }
   collect(g) {
     this.dead = true; const S = g.save; g.save.flags[this.id] = true;
-    if (this.kind === 'hpup') { S.maxHp += 20; S.hp = S.maxHp; } else if (this.kind === 'mpup') { S.maxMp += 10; S.mp = S.maxMp; } else if (this.kind === 'atkup') S.atk += 2; else if (this.kind === 'tide') S.flags.got_tide = true; else if (this.kind === 'mantle') S.flags.got_mantle = true; else if (this.kind === 'lantern') S.flags.got_lantern = true; else if (this.kind === 'shard') S.flags.got_shard = true; else if (this.kind === 'spring') S.flags.got_spring = true; else if (this.kind === 'key') S.flags['has_' + keyBase(this.id)] = true;
+    if (this.kind === 'hpup') { S.maxHp += 20; S.hp = S.maxHp; } else if (this.kind === 'mpup') { S.maxMp += 10; S.mp = S.maxMp; } else if (this.kind === 'atkup') S.atk += 2; else if (this.kind === 'tide') S.flags.got_tide = true; else if (this.kind === 'mantle') S.flags.got_mantle = true; else if (this.kind === 'lantern') S.flags.got_lantern = true; else if (this.kind === 'shard') S.flags.got_shard = true; else if (this.kind === 'spring') S.flags.got_spring = true; else if (this.kind === 'astrolabe') S.flags.got_astrolabe = true; else if (this.kind === 'goldkey') S.flags.has_key_gold = true; else if (this.kind === 'key') S.flags['has_' + keyBase(this.id)] = true;
     A.sfx('item'); A.sting('sting_item'); g.fx.ring(this.x, this.y - 8, 44, this.U.color, 30); g.fx.flash(this.U.color, 0.3); g.fx.sparks(this.x, this.y - 8, 18, [[1, 1, 0.8], this.U.color], 3);
     g.banner(this.U.name, this.kind === 'tide' && !S.abilities.dash ? 'ITS POWER WAKES ONCE YOU CAN DASH' : this.U.desc);
   }

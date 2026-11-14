@@ -114,7 +114,7 @@ class ThrownTorch extends Thrown {
     const r = this.step(g);
     g.fx.fire(this.x, this.y, { scale: 0.5, n: 1 }); g.fx.light(this.x, this.y, 46, 0.7);
     if (r === 'wall' || r === 'floor') {
-      const [tx, ty] = this.tileAt() || [0, 0]; if (g.room.get(tx, ty) === TILE.BARRICADE) { g.burnBarricade(tx, ty); this.dead = true; return; }      // wooden barricades go up in flames
+      const [tx, ty] = this.tileAt() || [0, 0]; if (g.room.get(tx, ty) === TILE.BARRICADE) { g.burnBarricade(tx, ty); this.dead = true; return; } if (g.room.get(tx, ty) === TILE.ICE) { g.meltIce(tx, ty); this.dead = true; return; }      // wooden barricades go up in flames
       if (r === 'floor') g.addProjectile(new GroundFlame(this.x, Math.floor((this.y + 4) / T) * T, this.burn)); else g.fx.burst(this.x, this.y, 5, COLORS.fire, { speed: 1.2, s0: 8 });
       A.sfx('fire'); this.dead = true; return;
     }

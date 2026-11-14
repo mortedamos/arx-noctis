@@ -23,4 +23,6 @@ export const KEYS = [
   { id: 'key_crypt', name: 'KEY OF TIN', rgb: [110, 205, 215] },
   { id: 'key_mire', name: 'KEY OF COPPER', rgb: [90, 215, 150] },
   { id: 'key_gear', name: 'KEY OF MERCURY', rgb: [205, 125, 75] },
+  { id: 'key_frost', name: 'KEY OF ANTIMONY', rgb: [150, 190, 235] },
+  { id: 'key_gold', name: 'KEY OF GOLD', rgb: [240, 200, 80] },
 ];

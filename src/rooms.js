@@ -6,6 +6,8 @@
 // Exits are always 3 tiles tall (rows gy-3 .. gy-1) so barricades/crystals/seals can block them completely.
 import { TILE, isSolid } from './world.js';
 
+// the zones inside the Lord's keep itself: crossing into one of them from outside is the moment the hero enters SHADOWKEEP (the gate, the title card, the map's label)
+export const KEEP = new Set([2, 3, 4, 5, 10]);
 export const ZONES = {
   1: { name: 'The Graveyard Approach', theme: 'graveyard', music: 'zone1' },
   2: { name: 'The Great Hall', theme: 'hall', music: 'zone2' },
@@ -16,6 +18,8 @@ export const ZONES = {
   5: { name: 'The Shadow Throne', theme: 'throne', music: 'zone5' },
   6: { name: 'Prague', theme: 'village', music: 'zone6' },
   7: { name: 'The Weeping Swamp', theme: 'swamp', music: 'zone7' },
+  10: { name: 'The Library of Ink', theme: 'library', music: 'zone3' },
+  11: { name: 'The Frozen Caverns', theme: 'ice', music: 'zone1' },
 };
 // the three Gothicvania Town houses and where their windows are, as [x offset from centre, height above the street, flame size] - the blazes are the fires burning inside
 export const HOUSES = { town_house_1: [[4, 108, 1.3], [7, 36, 1.1], [-12, 150, 1.0]], town_house_2: [[-35, 125, 1.4], [26, 125, 1.2], [4, 62, 1.2], [-50, 214, 0.9]], town_house_3: [[-42, 120, 1.2], [31, 120, 1.2], [-15, 50, 1.4]] };

@@ -60,7 +60,7 @@ export class Enemy extends Entity {
   modifyDamage(d) { return Math.max(1, Math.round(d)); }
   onHurt() {}
   die() {
-    if (this.dead) return; this.dead = true; const g = this.g; g.kills++; g.player.gainXp(this.xp); A.sfx('kill');
+    if (this.dead) return; this.dead = true; const g = this.g; g.kills++; if (g.noteKill) g.noteKill(this); g.player.gainXp(this.xp); A.sfx('kill');
     g.fx.burst(this.x, this.cy, 14, this.deathFx, { speed: 2.4, s0: 14, s1: 2 }); g.fx.souls(this.x, this.cy, 4, COLORS.blue);
     if (!this.isBoss) { randomDrop(g, this.x, this.cy); rollEnchantDrop(g, this); }
     this.onDeath();
@@ -380,4 +380,66 @@ Object.assign(FrostWyrm.prototype, { key: 'frostwyrm', variant: 'frost', fx: COL
 class EmberWyrm extends Wyrm {}
 Object.assign(EmberWyrm.prototype, { key: 'emberwyrm', variant: 'ember', fx: COLORS.fire, glowC: [1, 0.5, 0.2], spits: true });
 
-export const ENEMY_TYPES = { bat: Bat, zombie: Zombie, skeleton: Skeleton, ghost: Ghost, wraith: Wraith, fireskull: FireSkull, hound: Hound, ghoul: Ghoul, wizard: Wizard, wyrm: Wyrm, frostwyrm: FrostWyrm, emberwyrm: EmberWyrm };
+// ------------------------------------------------------------------------------------------------ HAUNTED BOOKS (the Library of Ink)
+// A TOME is a flying book: it drifts about the shelves flapping its covers like wings, shudders when it sees you, and dives.  A GRIMOIRE is a great one: it hangs in the air and throws torn pages.
+const TOME_COVERS = ['#7a2424', '#24456e', '#2f6a3a', '#6a3a7a'];
+function drawBook(ctx, x, y, t, o) {          // an open book seen from the front, its covers beating like wings (o.flap 0..1 speed, o.s scale, o.cover colour, o.glow 0..1, o.flash)
+  const flap = Math.sin(t * o.flap), s = o.s; ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.scale(s, s);
+  for (const side of [-1, 1]) {
+    ctx.save(); ctx.scale(side, 1); ctx.rotate(-(0.25 + flap * 0.55)); const c = o.flash ? '#ffffff' : o.cover;
+    ctx.fillStyle = '#1a1008'; ctx.fillRect(-1, -6, 12, 12); ctx.fillStyle = c; ctx.fillRect(0, -5, 10, 10); ctx.fillStyle = o.flash ? '#ffffff' : '#e8dcb8'; ctx.fillRect(1, -4, 8, 8); ctx.fillStyle = 'rgba(70,50,30,0.45)'; for (let k = 0; k < 3; k++) ctx.fillRect(2, -3 + k * 2.5, 6, 1);
+    ctx.restore();
+  }
+  ctx.fillStyle = o.flash ? '#fff' : '#2a1608'; ctx.fillRect(-1.5, -6, 3, 12);
+  if (o.glow > 0) { ctx.fillStyle = 'rgba(255,208,112,' + (0.6 + 0.4 * o.glow).toFixed(2) + ')'; ctx.fillRect(-3, -2, 2, 2); ctx.fillRect(1, -2, 2, 2); }          // two glowing eyes on the spine
+  ctx.restore();
+}
+class Tome extends Enemy {
+  constructor(g, x, y, o) { super(g, x, y + 8, 16, 14, o); this.hp = this.maxHp = 7; this.dmg = 6; this.xp = 6; this.gravity = false; this.kbRes = 0.2; this.state = 'drift'; this.st = 0; this.phase = rand(TAU); this.name = 'tome'; this.deathFx = [[0.95, 0.9, 0.7], [0.5, 0.35, 0.2]]; this.cover = TOME_COVERS[Math.floor(rand(4))]; }
+  ai(g) {
+    const p = g.player; this.st++; this.face();
+    if (this.state === 'drift') {
+      this.vx = approach(this.vx, Math.cos(this.t * 0.03 + this.phase) * 0.5, 0.03); this.vy = approach(this.vy, Math.sin(this.t * 0.05 + this.phase) * 0.4, 0.03);
+      if (dist(this.x, this.cy, p.x, p.y - 16) < 130 && this.st > 50) { this.state = 'tell'; this.st = 0; A.sfx('flap'); }
+    } else if (this.state === 'tell') {
+      this.vx = this.vy = 0; this.x += Math.sin(this.t * 1.8) * 0.5; g.fx.glow(this.x, this.cy, 22, [1, 0.8, 0.4], 0.5);
+      if (this.st > 24) { this.state = 'swoop'; this.st = 0; const a = Math.atan2(p.y - 16 - this.cy, p.x - this.x); this.vx = Math.cos(a) * 2.3; this.vy = Math.sin(a) * 2.3; A.sfx('flap'); }
+    } else if (this.state === 'swoop') { if (this.st > 52 || this.hitX || this.hitCeil) { this.state = 'drift'; this.st = 0; this.vx *= 0.3; this.vy *= 0.3; } }
+  }
+  physics() { const room = this.g.room; this.hitX = 0; this.hitCeil = false; const nx = this.x + this.vx; if (room.solid(Math.floor(nx / T), Math.floor(this.cy / T))) { this.hitX = 1; this.vx = 0; } else this.x = nx; const ny = this.y + this.vy; if (room.solid(Math.floor(this.x / T), Math.floor((ny - this.h / 2) / T))) { this.hitCeil = true; this.vy = 0; } else this.y = ny; if (this.flashT > 0) this.flashT--; }
+  draw(ctx, cx, cy) { drawBook(ctx, this.x - cx, this.cy - cy, this.t, { flap: this.state === 'swoop' ? 0.9 : this.state === 'tell' ? 0.2 : 0.35, s: 1, cover: this.cover, glow: this.state === 'drift' ? 0.3 : 1, flash: this.flashT > 0 }); }
+}
+class Grimoire extends Enemy {
+  constructor(g, x, y, o) { super(g, x, y + 12, 26, 22, o); this.hp = this.maxHp = 20; this.dmg = 9; this.xp = 16; this.gravity = false; this.kbRes = 0.5; this.state = 'float'; this.st = 0; this.phase = rand(TAU); this.name = 'grimoire'; this.deathFx = [[1, 0.85, 0.5], [0.5, 0.3, 0.1]]; this.cool = 70 + rand(50); }
+  ai(g) {
+    const p = g.player; this.st++; this.face(); if (this.cool > 0) this.cool--;
+    this.vx = approach(this.vx, Math.cos(this.t * 0.022 + this.phase) * 0.45 + (Math.abs(this.dx()) > 200 ? sign(p.x - this.x) * 0.35 : 0), 0.03); this.vy = approach(this.vy, Math.sin(this.t * 0.04 + this.phase) * 0.35, 0.03);
+    g.fx.glow(this.x, this.cy, 34, [1, 0.8, 0.4], 0.28); g.fx.light(this.x, this.cy, 54, 0.55, [1, 0.8, 0.45]);
+    if (this.state === 'float') { if (this.cool === 0 && dist(this.x, this.cy, p.x, p.y - 16) < 230) { this.state = 'cast'; this.st = 0; A.sfx('tell'); } }
+    else if (this.state === 'cast') { this.vx *= 0.5; this.vy *= 0.5; g.fx.glow(this.x, this.cy, 30 + this.st * 0.6, [1, 0.8, 0.3], 0.4 + this.st * 0.015);
+      if (this.st === 30) { A.sfx('cast'); const base = Math.atan2(p.y - 16 - this.cy, p.x - this.x); for (let i = -1; i <= 1; i++) { const a = base + i * 0.28; g.addProjectile(new Projectile(this.x, this.cy, Math.cos(a) * 1.9, Math.sin(a) * 1.9, 'page', { dmg: 8, life: 240 })); } }
+      if (this.st > 44) { this.state = 'float'; this.st = 0; this.cool = 110 + rand(60); } }
+  }
+  physics() { Tome.prototype.physics.call(this); }
+  draw(ctx, cx, cy) { drawBook(ctx, this.x - cx, this.cy - cy, this.t, { flap: this.state === 'cast' ? 0.12 : 0.18, s: 1.7, cover: '#4a2a14', glow: this.state === 'cast' ? 1 : 0.4, flash: this.flashT > 0 }); }
+}
+// ------------------------------------------------------------------------------------------------ RIME SHADE (the Frozen Caverns)
+// A cold shadow lies flat on the ice like a dark puddle; when you come close it climbs out of the floor, then stalks you with an outstretched arm.
+class Shade extends Enemy {
+  constructor(g, x, y, o) { super(g, x, y, 16, 34, o); this.hp = this.maxHp = 14; this.dmg = 9; this.xp = 12; this.state = 'lurk'; this.harmless = true; this.invuln = true; this.kbRes = 0.4; this.speed = 0.42 + rand(0.12); this.name = 'shade'; this.deathFx = [[0.5, 0.8, 1], [0.1, 0.2, 0.4]]; this.cool = 0; }
+  ai(g) {
+    const p = g.player; if (this.cool > 0) this.cool--;
+    if (this.state === 'lurk') { if (Math.abs(this.dx()) < 70 && Math.abs(p.y - this.y) < 50) { this.state = 'rise'; this.t = 0; this.face(); A.sfx('freeze'); g.fx.burst(this.x, this.y - 2, 8, [[0.7, 0.9, 1], [0.2, 0.3, 0.5]], { speed: 1.2, s0: 8, s1: 2, up: 0.6 }); } return; }
+    if (this.state === 'rise') { if (this.t > 60) { this.state = 'stalk'; this.harmless = false; this.invuln = false; this.st = 0; } return; }
+    this.face(); this.st++;
+    if (this.state === 'stalk') { if (Math.abs(this.dx()) > 6 && groundAhead(this, g.room, 6) && !wallAhead(this, g.room, 3)) this.vx = approach(this.vx, this.dir * this.speed, 0.05); else this.vx = approach(this.vx, 0, 0.1);
+      if (Math.abs(this.dx()) < 34 && Math.abs(p.y - this.y) < 40 && this.cool === 0) { this.state = 'strike'; this.st = 0; this.vx = 0; A.sfx('tell'); } }
+    else if (this.state === 'strike') { this.vx = 0; if (this.st === 14) { const hb = { x: this.dir > 0 ? this.x : this.x - 34, y: this.y - 34, w: 34, h: 30 }; g.fx.sparks(this.x + this.dir * 22, this.y - 18, 6, [[0.7, 0.9, 1], [0.3, 0.5, 0.9]], 2); if (overlap(hb, p.hurtbox)) p.hurt(this.dmg, this.x); } if (this.st > 30) { this.state = 'stalk'; this.cool = 50; this.st = 0; } }
+  }
+  draw(ctx, cx, cy) {
+    if (this.state === 'lurk') { this.spr(ctx, 'shade_r1', 0, cx, cy, { alpha: 0.7 }); return; }
+    if (this.state === 'rise') { const f = Math.min(7, Math.floor(this.t / 7.5)); if (f < 4) this.spr(ctx, 'shade_r1', f, cx, cy); else this.spr(ctx, 'shade_r2', f - 4, cx, cy); return; }
+    if (this.state === 'strike') this.spr(ctx, 'shade_r3', this.st < 14 ? 0 : 1, cx, cy); else this.spr(ctx, 'shade_r4', Math.floor(this.t / 8) % 4, cx, cy);
+  }
+}
+export const ENEMY_TYPES = { tome: Tome, grimoire: Grimoire, shade: Shade, bat: Bat, zombie: Zombie, skeleton: Skeleton, ghost: Ghost, wraith: Wraith, fireskull: FireSkull, hound: Hound, ghoul: Ghoul, wizard: Wizard, wyrm: Wyrm, frostwyrm: FrostWyrm, emberwyrm: EmberWyrm };

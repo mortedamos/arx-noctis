@@ -5,13 +5,14 @@ import { extra } from './world.js';
 import { T } from './util.js';
 import { drawFramedPortrait, FH } from './portraitart.js';
 import { orlojTower, TOWER_W, TOWER_H } from './orlojtower.js';
+import { keepGate, KEEP_W, KEEP_H } from './keepgate.js';
 
-const BACK_KINDS = new Set(['column', 'waterfall', 'portrait', 'cog', 'pendulum', 'animgear', 'orlojtower']);
+const BACK_KINDS = new Set(['column', 'waterfall', 'portrait', 'cog', 'pendulum', 'animgear', 'orlojtower', 'keepgate', 'icicles', 'crystals']);
 // Is this piece of scenery drawn over a hazard (a spike tile)?  Nothing may stand in front of a hazard: the room drops such pieces when it loads.
 export function decoCoversHazard(d, spikes) {
   if (isBack(d)) return false; let x0, y0, w, h;
   if (d.t === 'img') { const im = IMG[d.img]; if (!im) return false; const sc = d.scale || 1; w = Math.round(im.width * sc); h = Math.round(im.height * sc); x0 = d.x - w / 2; y0 = d.y - h + (d.sink || 0); }
-  else if (d.t === 'cdl') { const im = IMG[cdlOf(d).img]; if (!im) return false; w = im.width; h = im.height; x0 = d.x - w / 2; y0 = d.y - h; }
+  else if (d.t === 'cdl') { const im = IMG[cdlOf(d).img]; if (!im) return false; w = im.width; h = im.height; x0 = d.x - w / 2; y0 = d.y - h + CDL_DROP; }
   else if (d.t === 'brazier') { const s = SHEET.brazier; if (!s) return false; w = s.w; h = s.h; x0 = d.x - s.ax * w; y0 = d.y - s.ay * h; }
   else return false;
   return spikes.some(([tx, ty]) => x0 < tx * T + T - 1 && x0 + w > tx * T + 1 && y0 < ty * T + T && y0 + h > ty * T + 6);
@@ -19,6 +20,7 @@ export function decoCoversHazard(d, spikes) {
 // The candelabras are two CC0 pictures from freegamesprites.com (a brass one and a bronze stand), their painted flames cut away (tools/pixelate-candelabra.ps1); the flames are lit by the effects layer at each candle's top
 // (fl = the three wicks, [x from the picture's centre, y from its bottom]).  Which one stands where comes from the column, so a room always looks the same.
 const CDL = [{ img: 'cdl_a', fl: [[-10.7, -33.5], [-0.3, -35.8], [10.9, -34.3]] }, { img: 'cdl_b', fl: [[-9.2, -38.6], [-0.3, -41.8], [9.2, -39]] }];
+const CDL_DROP = 4;          // (the candelabra pictures have a little perspective painted in: they are set 4 pixels lower so the foot stands ON the ground, not above it)
 const cdlOf = d => CDL[(((Math.round(d.x) * 2654435761) >>> 0) >>> 20) & 1];
 export const isBack = d => BACK_KINDS.has(d.t) || (d.back && (d.t === 'img' || d.t === 'bookcase' || d.t === 'barwin'));
 
@@ -42,6 +44,7 @@ export function drawDeco(g, d, cx, cy, t, room) {
   if (x < -150 || x > 540) return;
   switch (d.t) {
     case 'orlojtower': { const tw = orlojTower(); if (tw) g.drawImage(tw, x - TOWER_W / 2, y - TOWER_H); break; }          // (the tower stands on the ground: y is its foot)
+    case 'keepgate': { const kg = keepGate(); if (kg) g.drawImage(kg, Math.round(x - kg.width / 2), y - kg.height); break; }          // (the great gate of Shadowkeep, standing on the ground behind a door into the keep)
     case 'animgear': {          // an accent: a cluster of meshing gears from the Animated Gears pack (a strip of 128x128 frames), turning slowly among the generated ones
       const im = IMG[d.img]; if (!im) break; const n = Math.max(1, Math.round(im.width / 128)), f = (((Math.floor((d.phase || 0) + t * (d.rate || 0.4)) % n) + n) % n), s = Math.round((d.scale || 1) * 128);
       g.save(); g.globalAlpha = d.a === undefined ? 0.8 : d.a; g.drawImage(im, f * 128, 0, 128, 128, Math.round(x - s / 2), Math.round(y - s / 2), s, s); g.restore(); break; }
@@ -56,6 +59,18 @@ export function drawDeco(g, d, cx, cy, t, room) {
     case 'hang': { const im = IMG[d.img], sc = d.scale || 1, w = Math.round(im.width * sc), h = Math.round(im.height * sc); g.drawImage(im, Math.round(x - w / 2), y, w, h); break; }       // hangs from the top edge (banners, a caged skeleton)
     case 'waterfall': break;          // (waterfalls and streams are water in the effects layer now: fx.setWater)
     case 'portrait': drawFramedPortrait(g, x, y, { ci: d.ci, a: d.emo, frame: d.frame }); break;          // a framed portrait on the wall: x = its centre, y = the bottom edge of the frame (see portraitart.js)
+    case 'icicles': {          // a cluster of icicles hanging from the ceiling: x the middle, y the top
+      const n = d.n || 2; for (let i = 0; i < n; i++) { const hs = k => { const q = Math.sin(d.x * 12.9898 + i * 78.233 + k * 4.1) * 43758.5453; return q - Math.floor(q); }, ox = (i - (n - 1) / 2) * 7 + (hs(1) - 0.5) * 4, len = 16 + hs(2) * 26, w = 3 + hs(3) * 3;
+        g.fillStyle = 'rgba(120,190,225,0.9)'; g.beginPath(); g.moveTo(x + ox - w, y); g.lineTo(x + ox + w, y); g.lineTo(x + ox, y + len); g.closePath(); g.fill();
+        g.fillStyle = 'rgba(225,246,255,0.85)'; g.beginPath(); g.moveTo(x + ox - w, y); g.lineTo(x + ox - 1, y); g.lineTo(x + ox - 1, y + len * 0.8); g.closePath(); g.fill();
+        if (Math.sin(t * 0.04 + i + d.x) > 0.96) { g.fillStyle = '#fff'; g.fillRect(Math.round(x + ox), Math.round(y + len * 0.6), 1, 1); } }
+      break; }
+    case 'crystals': {          // blue-white crystals growing out of the floor: a cold glint that comes and goes
+      const n = d.n || 3; for (let i = 0; i < n; i++) { const hs = k => { const q = Math.sin(d.x * 9.1 + i * 31.7 + k * 5.3) * 43758.5453; return q - Math.floor(q); }, ox = (i - (n - 1) / 2) * 7 + (hs(1) - 0.5) * 4, h = 12 + hs(2) * 22, w = 3 + hs(3) * 2.5, lean = (hs(4) - 0.5) * 6;
+        g.fillStyle = '#4a98c0'; g.beginPath(); g.moveTo(x + ox - w, y); g.lineTo(x + ox - w * 0.6 + lean, y - h * 0.8); g.lineTo(x + ox + lean, y - h); g.lineTo(x + ox + w * 0.6 + lean, y - h * 0.8); g.lineTo(x + ox + w, y); g.closePath(); g.fill();
+        g.fillStyle = '#9ad8f0'; g.beginPath(); g.moveTo(x + ox - w, y); g.lineTo(x + ox - w * 0.6 + lean, y - h * 0.8); g.lineTo(x + ox + lean, y - h); g.lineTo(x + ox + lean * 0.5, y); g.closePath(); g.fill();
+        const gl = 0.5 + 0.5 * Math.sin(t * 0.05 + i * 2 + d.x); g.fillStyle = 'rgba(255,255,255,' + (0.4 + 0.5 * gl).toFixed(2) + ')'; g.fillRect(Math.round(x + ox + lean - 1), Math.round(y - h * 0.7), 1, 3); }
+      break; }
     case 'dgtorch': drawSheet(g, 'dg_torch', Math.floor(t / 6 + d.x) % 4, x, y); break;
     case 'bookcase': {         // a tall bookcase drawn in code: oak frame, three shelves of books in a dozen colours (the same books every time for the same place)
       const W = 30, H = 46, x0 = x - 15, y0 = y - H, hh = n => { const s = Math.sin(d.x * 12.9898 + n * 78.233) * 43758.5453; return s - Math.floor(s); };
@@ -88,7 +103,7 @@ export function drawDeco(g, d, cx, cy, t, room) {
       g.fillStyle = 'rgba(28,64,82,0.62)'; g.fillRect(x0 + 1, y - 4, w - 2, 1); break;
     }
     case 'torch': drawSheet(g, 'torch', 0, x, y); break;
-    case 'cdl': { const im = IMG[cdlOf(d).img]; if (im) g.drawImage(im, Math.round(x - im.width / 2), Math.round(y - im.height)); else drawSheet(g, 'candelabra', 0, x, y); break; }
+    case 'cdl': { const im = IMG[cdlOf(d).img]; if (im) g.drawImage(im, Math.round(x - im.width / 2), Math.round(y - im.height) + CDL_DROP); else drawSheet(g, 'candelabra', 0, x, y); break; }
     case 'brazier': drawSheet(g, 'brazier', 0, x, y); break;
     case 'banner': {
       const len = (d.len || 5) * T, w = 20, sway = Math.sin(t * 0.03 + d.x * 0.05) * 2, top = y - 0; g.fillStyle = d.color || '#7a1e2a';
@@ -203,7 +218,7 @@ export function roomFlames(room) {
   const out = [];
   for (const d of room.decos) {
     if (d.t === 'torch') out.push({ x: d.x, y: d.y - 15, scale: 1.1, seed: d.x, light: 80 });
-    else if (d.t === 'cdl') cdlOf(d).fl.forEach(([ox, oy], i) => out.push({ x: d.x + ox, y: d.y + oy, scale: i === 1 ? 1 : 0.8, seed: d.x + ox, light: i === 1 ? 60 : 0, behind: true }));
+    else if (d.t === 'cdl') cdlOf(d).fl.forEach(([ox, oy], i) => out.push({ x: d.x + ox, y: d.y + oy + CDL_DROP, scale: i === 1 ? 1 : 0.8, seed: d.x + ox, light: i === 1 ? 60 : 0, behind: true }));
     else if (d.t === 'blaze') {      // a building fire
       if (d.burn && !(room.flags && room.flags.village_fire) && !(room.ignited && room.ignited.has(d.burn))) continue;          // (a house's fires are unlit until a torch lands on it, or the village burns) (no sprite - just fire): windows burn big, and many small fires burn all over the walls and roof. Each is a little bigger or smaller than its scale says
       const sc = d.scale || 1.5, small = !!d.small, j = 0.82 + 0.36 * hash(d.x, d.y);

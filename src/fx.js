@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { W, H, rand, clamp, noise1, TAU } from './util.js';
 import { Cloak } from './cloak.js';
+import { Post } from './post.js';
 
 const FXS = 2;   // effect canvas is rendered at 2x the pixel-art resolution (soft glows over crisp sprites)
 
@@ -82,10 +83,20 @@ const DFRAG = /* glsl */`
 precision highp float; varying vec2 vUv;
 uniform vec4 uLights[24]; uniform vec3 uLightCol[24]; uniform int uCount;
 uniform float uAmbient; uniform float uMax; uniform vec3 uTint; uniform float uVig; uniform float uHurt; uniform vec2 uRes; uniform float uPulse;
+uniform sampler2D uMask; uniform vec2 uCam; uniform vec2 uMaskSize; uniform float uShadow;
+// SHADOWS: walk from a pixel's world position to a light through the room's tiles (one texel each; 0 = open air, bright = stone).  A pixel inside the ground is judged from where its ray leaves the ground,
+// so floors and walls are lit by a nearby flame, while anything with a wall in between is not.  Three rays (the light's middle and a little to each side) soften the edge of the shadow.
+float rayVis(vec2 a, vec2 b){
+  vec2 d=b-a; float len=length(d); if(len<8.0) return 1.0; vec2 dir=d/len; float vis=1.0; bool inside=true;
+  for(int s=0;s<28;s++){ float t=float(s)*6.0; if(t>len-5.0) break; vec2 q=a+dir*t; vec2 uv=(floor(q/16.0)+0.5)/uMaskSize; if(uv.x<0.0||uv.y<0.0||uv.x>1.0||uv.y>1.0) continue;
+    float m=texture2D(uMask,uv).r; if(inside && m>0.4) continue; inside=false; vis*=1.0-m; }
+  return vis;
+}
+float shadowVis(vec2 px, vec2 lp){ vec2 a=px+uCam, b=lp+uCam; vec2 d=normalize(b-a+vec2(0.0001)); vec2 n=vec2(-d.y,d.x)*4.0; return (rayVis(a,b)+rayVis(a,b+n)+rayVis(a,b-n))/3.0; }
 void main(){
   vec2 px=vec2(vUv.x*uRes.x,vUv.y*uRes.y);   // camera is y-down, so plane v grows downward on screen
   float lit=0.0; vec3 pool=vec3(0.0);
-  for(int i=0;i<24;i++){ if(i>=uCount) break; float d=distance(px,uLights[i].xy); float f=uLights[i].w*pow(smoothstep(uLights[i].z,0.0,d),1.6); lit+=f; pool+=uLightCol[i]*f; }
+  for(int i=0;i<24;i++){ if(i>=uCount) break; float d=distance(px,uLights[i].xy); float f=uLights[i].w*pow(smoothstep(uLights[i].z,0.0,d),1.6); if(uShadow>0.0 && f>0.003) f*=mix(1.0,shadowVis(px,uLights[i].xy),uShadow); lit+=f; pool+=uLightCol[i]*f; }
   lit=clamp(lit,0.0,1.0);
   float dark=uAmbient*(1.0-lit);
   vec2 v=vUv*2.0-1.0; float vig=uVig*smoothstep(0.55,1.45,length(v*vec2(0.9,1.1)));
@@ -307,7 +318,7 @@ export class FX {
     // darkness / vignette / hurt overlay (screen space quad that follows the camera)
     this.darkU = {
       uLights: { value: Array.from({ length: 24 }, () => new THREE.Vector4()) }, uLightCol: { value: Array.from({ length: 24 }, () => new THREE.Vector3(1, 0.7, 0.4)) },
-      uCount: { value: 0 }, uAmbient: { value: 0.3 }, uMax: { value: 0.86 }, uTint: { value: new THREE.Vector3(0.015, 0.01, 0.05) }, uVig: { value: 0.5 }, uHurt: { value: 0 }, uRes: { value: new THREE.Vector2(W, H) }, uPulse: { value: 0 },
+      uCount: { value: 0 }, uMask: { value: (() => { const t = new THREE.DataTexture(new Uint8Array([0]), 1, 1, THREE.RedFormat, THREE.UnsignedByteType); t.needsUpdate = true; return t; })() }, uCam: { value: new THREE.Vector2() }, uMaskSize: { value: new THREE.Vector2(1, 1) }, uShadow: { value: 0 }, uAmbient: { value: 0.3 }, uMax: { value: 0.86 }, uTint: { value: new THREE.Vector3(0.015, 0.01, 0.05) }, uVig: { value: 0.5 }, uHurt: { value: 0 }, uRes: { value: new THREE.Vector2(W, H) }, uPulse: { value: 0 },
     };
     this.darkMesh = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.ShaderMaterial({ vertexShader: QVERT, fragmentShader: DFRAG, uniforms: this.darkU, transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide, ...NORMAL_PM }));
     this.darkMesh.renderOrder = 0; this.darkMesh.frustumCulled = false; this.scene.add(this.darkMesh);
@@ -474,6 +485,16 @@ export class FX {
   // a DARK room (def.dark): almost black; only a light - the wisp, a candle, a flame - shows what is round it
   setDark(level = 1.1) { this.ambBase = level; this.darkU.uAmbient.value = level; this.darkU.uMax.value = 0.975; }
   clearLights() { this.lights.length = 0; }
+  // the room's solid tiles as a texture for the shadows (stone blocks light; ice and crystal let some through); call again whenever a tile is broken
+  setShadowMask(room) {
+    const w = room.w, h = room.h, d = new Uint8Array(w * h);
+    for (let i = 0; i < d.length; i++) { const v = room.tiles[i]; d[i] = v === 1 || v === 4 || v === 5 || v === 7 ? 255 : (v === 6 || v === 8) ? 110 : 0; }
+    const t = this.maskTex;
+    if (!t || t.image.width !== w || t.image.height !== h) { const nt = new THREE.DataTexture(d, w, h, THREE.RedFormat, THREE.UnsignedByteType); nt.minFilter = nt.magFilter = THREE.NearestFilter; nt.unpackAlignment = 1; nt.needsUpdate = true; this.maskTex = nt; this.darkU.uMask.value = nt; }
+    else { t.image.data.set(d); t.needsUpdate = true; }
+    this.darkU.uMaskSize.value.set(w, h); this.darkU.uShadow.value = this.shadowK === undefined ? 0.8 : this.shadowK;
+    if (this.post) this.post.setReflMask(room);                                      // (and the ice's reflections)
+  }
   light(x, y, r, intensity = 1, col = null) { if (this.lights.length < 24) this.lights.push([x, y, r, intensity, col]); }       // col: the colour of its pool of light (default a warm flame colour)   // world coords; made screen-relative at render time
 
   // ---- ambient weather ------------------------------------------
@@ -484,6 +505,13 @@ export class FX {
     if (t === 'rain') { this.rainAcc = (this.rainAcc || 0) + 3 * dt; n = Math.floor(this.rainAcc); this.rainAcc -= n; }          // 3 drops per full step, scaled by the step length (slow-motion and hit-stop run at half steps)
     if (t === 'rain') for (let i = 0; i < n; i++) this.emit({ x: cx + rand(-60, W + 100), y: cy - 10, vx: -1.6, vy: rand(7, 9.5), life: 40, s0: 9, s1: 9, c0: [0.55, 0.65, 0.9], a0: 0.45, a1: 0.35, kind: 4, rot: Math.atan2(9, -1.6) });
     else if (t === 'mist') { if (Math.random() < 0.12 * dt) this.emit({ layer: 'alpha', x: cx + rand(-30, W + 30), y: cy + rand(H * 0.6, H), vx: rand(0.1, 0.35), vy: rand(-0.04, 0.02), life: 260, s0: 90, s1: 130, c0: [0.28, 0.32, 0.4], a0: 0.0, a1: 0.0, kind: 5 }); }
+    else if (t === 'snow') { if (Math.random() < 0.5 * dt) this.emit({ x: cx + rand(-30, W + 30), y: cy - 6, vx: rand(-0.35, 0.1), vy: rand(0.35, 0.9), life: rand(160, 300), s0: rand(2, 3.6), s1: rand(1.5, 2.5), c0: [0.92, 0.97, 1], a0: 0.85, a1: 0.5, kind: 0 }); }
+    else if (t === 'pages') {          // the Library: dust in the lamplight, and now and then a loose page turning over as it falls
+      if (Math.random() < 0.25 * dt) this.emit({ x: cx + rand(0, W), y: cy + rand(0, H), vx: rand(-0.1, 0.1), vy: rand(-0.08, 0.05), life: rand(120, 240), s0: 2.5, s1: 1.5, c0: [1, 0.85, 0.55], a0: 0.0, a1: 0.0, kind: 6 });
+      if (Math.random() < 0.05 * dt) this.emit({ x: cx + rand(0, W), y: cy - 4, vx: rand(-0.4, 0.4), vy: rand(0.16, 0.38), gy: 0, life: rand(260, 420), s0: rand(3, 4.5), s1: rand(2, 3), c0: [0.96, 0.92, 0.76], c1: [0.8, 0.7, 0.5], a0: 0.8, a1: 0.5, kind: 1, rot: rand(TAU) }); }
+    else if (t === 'steamworks') {          // the Clockwork Dungeon: sparks, and warm grey steam rolling up from below
+      if (Math.random() < 0.12 * dt) this.emit({ x: cx + rand(0, W), y: cy + rand(0, H * 0.5), vx: rand(-0.6, 0.6), vy: rand(0, 0.5), gy: 0.05, life: rand(30, 60), s0: 2.5, s1: 1, c0: [1, 0.85, 0.4], c1: [1, 0.4, 0.1], a0: 1, a1: 0, kind: 1 });
+      if (Math.random() < 0.06 * dt) this.emit({ layer: 'alpha', x: cx + rand(-20, W + 20), y: cy + rand(H * 0.7, H + 20), vx: rand(-0.15, 0.2), vy: -rand(0.18, 0.4), life: 220, s0: 40, s1: 90, c0: [0.5, 0.45, 0.38], a0: 0.0, a1: 0.0, kind: 5 }); }
     else if (t === 'dust') { if (Math.random() < 0.25 * dt) this.emit({ x: cx + rand(0, W), y: cy + rand(0, H), vx: rand(-0.1, 0.1), vy: rand(-0.08, 0.05), life: rand(120, 240), s0: 2.5, s1: 1.5, c0: [1, 0.85, 0.55], a0: 0.0, a1: 0.0, kind: 6 }); }
     else if (t === 'embers') { if (Math.random() < 0.3 * dt) this.emit({ x: cx + rand(0, W), y: cy + H + 4, vx: rand(-0.3, 0.3), vy: -rand(0.3, 0.9), life: rand(120, 240), s0: 2.5, s1: 1, c0: [1, 0.55, 0.2], c1: [0.7, 0.1, 0.05], a0: 0.9, a1: 0, kind: 1 }); }
     else if (t === 'wisps') { if (Math.random() < 0.06 * dt) this.emit({ x: cx + rand(0, W), y: cy + rand(H * 0.3, H), vx: rand(-0.15, 0.15), vy: -rand(0.1, 0.35), life: rand(160, 300), s0: 9, s1: 3, c0: [0.5, 0.75, 1], c1: [0.4, 0.3, 0.9], a0: 0.8, a1: 0, kind: 6 }); }
@@ -520,7 +548,7 @@ export class FX {
 
   // ------------------------------------------------------------ render
   render() {
-    const u = this.darkU; u.uCount.value = this.lights.length;
+    const u = this.darkU; u.uCount.value = this.lights.length; u.uCam.value.set(this.camX, this.camY);
     for (let i = 0; i < this.lights.length; i++) { const l = this.lights[i], c = l[4] || WARM; u.uLights.value[i].set(l[0] - this.camX, l[1] - this.camY, l[2], l[3]); u.uLightCol.value[i].set(c[0], c[1], c[2]); }
     u.uHurt.value = this.hurt; u.uAmbient.value = (this.ambBase === undefined ? u.uAmbient.value : this.ambBase) * (1 - Math.min(0.85, this.flashA * 1.15));        // a flash (lightning...) lights the whole scene while it lasts
     { const F = this.fogU; this.fogMesh.visible = F.uDensity.value > 0.01;
@@ -545,6 +573,9 @@ export class FX {
     }
     const fm = this.flashMesh; fm.visible = this.flashA > 0.01;
     if (fm.visible) { const uu = fm.userData.mat.uniforms; uu.uAlpha.value = this.flashA; uu.uColor.value.setRGB(...this.flashCol); }
-    this.renderer.render(this.scene, this.cam);
+    if (this.post && this.post.on && (!this.postEnabled || this.postEnabled())) { try { this.post.render(); return; } catch (e) { console.warn('post-processing off:', e); this.post.on = false; this.renderer.setRenderTarget(null); this.renderer.autoClear = true; } }
+    this.renderer.setRenderTarget(null); this.renderer.autoClear = true; this.renderer.render(this.scene, this.cam);
   }
+  // the whole picture goes through bloom, heat shimmer and chromatic flash (post.js) once the sprite canvas is known
+  initPost(gameCanvas) { try { this.post = new Post(this.renderer, this, gameCanvas, FXS, W, H); } catch (e) { console.warn('post-processing unavailable:', e); this.post = null; } }
 }

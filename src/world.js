@@ -1,9 +1,11 @@
 // Rooms: tile grid, collision queries, tile-art themes (auto-tiled from the Gothicvania tilesets) and parallax backgrounds.
 import { W, H, T, mulberry32, hash1 } from './util.js';
 import { IMG, SHEET, drawSheet } from './assets.js';
+import { LIBRARY_THEME, ICE_THEME, drawIceBlock, drawLibrary, drawIceCave, drawForeground } from './newzones.js';
+export { drawForeground };
 
-export const TILE = { EMPTY: 0, SOLID: 1, PLAT: 2, SPIKE: 3, CRACK: 4, BARRICADE: 5, CRYSTAL: 6, SEAL: 7 };
-export const isSolid = v => v === 1 || v === 4 || v === 5 || v === 6 || v === 7;
+export const TILE = { EMPTY: 0, SOLID: 1, PLAT: 2, SPIKE: 3, CRACK: 4, BARRICADE: 5, CRYSTAL: 6, SEAL: 7, ICE: 8 };          // (ICE: a barrier of ice that the Ember spell melts)
+export const isSolid = v => v === 1 || v === 4 || v === 5 || v === 6 || v === 7 || v === 8;
 
 // ------------------------------------------------------------------ image helpers
 const canvasOf = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
@@ -130,6 +132,8 @@ const THEME = {
     },
     plat(g, tx, ty) { const x = tx * T, y = ty * T; g.fillStyle = '#8a6a2a'; g.fillRect(x, y, T, 5); g.fillStyle = '#c8a24a'; g.fillRect(x, y, T, 1); g.fillStyle = '#2a1c0a'; for (let i = 2; i < T; i += 5) g.fillRect(x + i, y + 2, 2, 2); g.fillStyle = 'rgba(0,0,0,0.5)'; g.fillRect(x, y + 5, T, 2); },
   },
+  library: LIBRARY_THEME,
+  ice: ICE_THEME,
   throne: {
     solid(g, tx, ty, nb, depth) { THEME.chapel.solid(g, tx, ty, nb, depth, extra().throne_tiles); },
     plat(g, tx, ty) { THEME.chapel.plat(g, tx, ty, extra().throne_tiles); },
@@ -322,6 +326,8 @@ function drawDisco(g, room, camX, camY, t) {
 export function drawBackground(g, room, camX, camY, t) {
   const th = room.theme;
   if (room.disco) { drawDisco(g, room, camX, camY, t); return; }
+  if (th === 'library') { drawLibrary(g, room, camX, camY, t); return; }          // (towers too: the shelves run up the shaft)
+  if (th === 'ice') { drawIceCave(g, room, camX, camY, t); return; }
   if (th === 'clockwork') { drawGears(g, room, camX, camY, t); return; }
   if (th === 'cistern') { drawCistern(g, room, camX, camY, t); return; }          // (a gear shaft too: the tower's brickwork gives way to the wheels)
   if (room.interior) { drawInterior(g, room, camX, camY, t); return; }
@@ -408,7 +414,7 @@ export class Room {
     if (ty < 0) return this.exitCols.U[tx] ? 0 : (tx >= 0 && tx < this.w ? 1 : 1);
     return this.exitRows[tx < 0 ? 'L' : 'R'][ty] ? 0 : 1;
   }
-  set(tx, ty, v) { if (tx < 0 || ty < 0 || tx >= this.w || ty >= this.h) return; this.tiles[ty * this.w + tx] = v; this.dirty = true; }
+  set(tx, ty, v) { if (tx < 0 || ty < 0 || tx >= this.w || ty >= this.h) return; this.tiles[ty * this.w + tx] = v; this.dirty = true; this.maskDirty = true; }
   solid(tx, ty) { return isSolid(this.get(tx, ty)); }
 
   prerender() {
@@ -425,6 +431,7 @@ export class Room {
       else if (v === TILE.SPIKE) { if (!(this.rivers && this.rivers.some(c => ty * T >= c.y))) drawSheet(g, 'spikes', 0, tx * T, ty * T, { ax: 0, ay: 0 }); this.spikes.push([tx, ty]); }          // (under a river the spikes are unseen)
       else if (v === TILE.CRACK) { drawSheet(g, 't_crack', 0, tx * T, ty * T, { ax: 0, ay: 0 }); this.brk.push([tx, ty, v]); }
       else if (v === TILE.BARRICADE) { drawSheet(g, 't_barricade', 0, tx * T, ty * T, { ax: 0, ay: 0 }); this.brk.push([tx, ty, v]); }
+      else if (v === TILE.ICE) { drawIceBlock(g, tx, ty); this.brk.push([tx, ty, v]); }
       else if (v === TILE.CRYSTAL || v === TILE.SEAL) this.anim.push([tx, ty, v]);
     }
     this.dirty = false;

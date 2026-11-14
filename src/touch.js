@@ -79,8 +79,9 @@ export const Touch = {
 
   // called every step: which buttons make sense right now (the whole set while playing; just pad, OK and BACK in menus)
   sync(g) {
-    if (!this.on) return; const s = g.state, mode = s === 'play' ? 'play' : (s === 'pause' || s === 'map') ? 'pause' : 'menu'; if (mode === this.mode) return; this.mode = mode;
-    for (const b of this.btns) b.el.classList.toggle('hide', !b.modes.includes(mode));
+    if (!this.on) return; const s = g.state, base = s === 'play' ? 'play' : (s === 'pause' || s === 'map') ? 'pause' : 'menu', dash = !!(g.save && g.save.abilities && g.save.abilities.dash), mode = base + (dash ? '+dash' : '');
+    if (mode === this.mode) return; this.mode = mode;
+    for (const b of this.btns) b.el.classList.toggle('hide', !b.modes.includes(base) || (b.needs === 'dash' && !dash));       // (the DASH button waits until the dash power is won)
   },
 
   build() {
@@ -100,7 +101,7 @@ export const Touch = {
     };
     button('JUMP', ['jump', 'confirm'], { right: 0.3, bottom: 1.5 }, 1.35, ALL);
     button('HIT', ['attack', 'back'], { right: 1.95, bottom: 0.4 }, 1.35, ALL);
-    button('DASH', ['dash'], { right: 3.65, bottom: 1.55 }, 1.05, ['play']);
+    button('DASH', ['dash'], { right: 3.65, bottom: 1.55 }, 1.05, ['play']); this.btns[this.btns.length - 1].needs = 'dash';
     button('ITEM', ['spell'], { right: 1.95, bottom: 2.95 }, 1.05, ['play']);
     button('‹', ['itemPrev'], { right: 3.2, bottom: 3.15 }, 0.62, ['play'], 'small');
     button('›', ['itemNext'], { right: 1.2, bottom: 3.15 }, 0.62, ['play'], 'small');

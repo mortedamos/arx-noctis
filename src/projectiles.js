@@ -16,6 +16,8 @@ const KINDS = {
   spore: { sheet: 'orb_dark', n: 2, w: 10, h: 10, grav: 0, glow: [0.4, 1, 0.4], hitFx: COLORS.green, dmg: 9, scale: 1.5, fxTrail: COLORS.green },
   tide: { sheet: 'orb_dark', n: 2, w: 10, h: 10, grav: 0, glow: [0.4, 0.8, 1], hitFx: COLORS.blue, dmg: 9, scale: 1.5, fxTrail: COLORS.blue },
   blood: { sheet: 'orb_dark', n: 2, w: 9, h: 9, grav: 0, glow: [1, 0.1, 0.2], hitFx: COLORS.red, dmg: 9, scale: 1.3, fxTrail: COLORS.red },
+  page: { sheet: 'feather_p', n: 1, w: 12, h: 6, grav: 0, aim: true, glow: [1, 0.9, 0.6], hitFx: COLORS.white, dmg: 9, fxTrail: COLORS.gold },          // (a page torn from a haunted book)
+  ink: { sheet: 'orb_dark', n: 2, w: 9, h: 9, grav: 0, glow: [0.95, 0.75, 0.3], hitFx: COLORS.gold, dmg: 9, scale: 1.3, fxTrail: COLORS.gold },
   wisp: { sheet: 'orb_dark', n: 1, w: 12, h: 12, grav: 0, glow: [0.4, 0.7, 1], hitFx: COLORS.blue, dmg: 8, orb: true },                                  // (a haunted portrait's blue fire - see HomingWisp)
   ember: { sheet: 'fireball', n: 3, w: 8, h: 8, grav: 0.04, glow: [1, 0.4, 0.1], hitFx: COLORS.fire, dmg: 7, scale: 0.6, orb: true },          // (orb: burning light + flame particles in the effects layer, not the fireball sprite)
 };
@@ -34,6 +36,7 @@ export class Projectile {
     const tx = Math.floor(this.x / T), ty = Math.floor(this.y / T), v = g.room.get(tx, ty);
     if (g.room.solid(tx, ty)) {
       if (this.fireTiles && v === TILE.BARRICADE) g.burnBarricade(tx, ty);
+      if (this.fireTiles && v === TILE.ICE) g.meltIce(tx, ty);
       if (this.bounces > 0 && this.k.bounce) { this.bounces--; this.y -= this.vy; this.vy = -Math.abs(this.vy) * this.k.bounce; this.x -= this.vx; A.sfx('gear'); if (this.bounces === 0) this.dead = true; }
       else { this.explode(g); return; }
     }
