@@ -187,6 +187,14 @@ export const Audio_ = {
     hit() { this.noise(0.1, 1600, 300, 0.2, 'bandpass', 1); this.tone(200, 60, 0.12, 'square', 0.14); },
     block() { this.tone(1000, 420, 0.1, 'square', 0.1); this.noise(0.08, 3600, 1800, 0.14, 'bandpass', 3); },
     hurt() { this.tone(340, 80, 0.3, 'sawtooth', 0.16); this.noise(0.18, 900, 200, 0.18, 'lowpass', 1); },
+    kill_bone() { for (let i = 0; i < 5; i++) this.noise(0.05, 2800 - i * 300, 1400, 0.16, 'bandpass', 3, i * 0.055); this.noise(0.18, 500, 120, 0.2, 'lowpass', 1, 0.2); },          // a heap of bones coming down
+    kill_ghost() { this.tone(820, 180, 0.7, 'sine', 0.13); this.tone(1240, 270, 0.7, 'sine', 0.05); this.noise(0.6, 4200, 900, 0.07, 'highpass', 1, 0.05); },          // a thin wail, fading
+    kill_rot() { this.noise(0.5, 520, 110, 0.26, 'lowpass', 1); this.tone(150, 55, 0.45, 'sawtooth', 0.12); this.noise(0.2, 900, 300, 0.1, 'bandpass', 2, 0.25); },          // a wet groan and slump
+    kill_beast() { this.tone(520, 120, 0.28, 'sawtooth', 0.12); this.tone(780, 200, 0.2, 'square', 0.05); this.noise(0.14, 2500, 700, 0.12, 'bandpass', 2); },          // a yelp cut short
+    kill_fire() { this.noise(0.45, 500, 2600, 0.18, 'bandpass', 0.8); this.noise(0.3, 3000, 600, 0.1, 'highpass', 1, 0.2); this.tone(260, 70, 0.35, 'sawtooth', 0.06); },          // flame whooshing out
+    kill_ice() { this.noise(0.3, 7500, 2500, 0.2, 'highpass', 0.7); [2600, 3300, 2100].forEach((f, i) => this.tone(f, f * 0.6, 0.2, 'triangle', 0.05, i * 0.04)); },          // glass-bright shattering
+    kill_book() { for (let i = 0; i < 4; i++) this.noise(0.06, 4200 - i * 500, 1500, 0.07, 'bandpass', 2, i * 0.05); this.noise(0.14, 400, 130, 0.14, 'lowpass', 1, 0.22); },          // a flurry of pages, a soft thud
+    kill_mage() { this.tone(900, 260, 0.32, 'sine', 0.12); this.noise(0.4, 1500, 5000, 0.08, 'bandpass', 2, 0.05); this.tone(1400, 500, 0.25, 'triangle', 0.05, 0.1); },          // a gasp and a fizzle of magic
     kill() { this.noise(0.28, 1800, 160, 0.2, 'lowpass', 1); this.tone(220, 40, 0.3, 'sawtooth', 0.12); },
     coin() { this.tone(988, 988, 0.07, 'square', 0.08); this.tone(1318, 1318, 0.16, 'square', 0.08, 0.06); },
     heal() { [523, 659, 784, 1047].forEach((f, i) => this.tone(f, f, 0.14, 'triangle', 0.12, i * 0.07)); },

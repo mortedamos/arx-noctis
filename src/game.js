@@ -135,7 +135,7 @@ export class Game {
   spawnEnemy(type, tx, gy, o = {}) {
     const C = ENEMY_TYPES[type] || BEAST_TYPES[type] || BOSS_TYPES[type]; if (!C) { console.warn('unknown enemy', type); return null; }
     const x = tx * 16 + 8, y = FLYERS.has(type) || type === 'boss_angel' || type === 'boss_shadow' || type === 'boss_bramble' || type === 'boss_librarian' || type === 'boss_rimewyrm' ? gy * 16 + 8 : gy * 16;
-    const e = new C(this, x, y, o);
+    const e = new C(this, x, y, o); e.typeKey = type;          // (what kind it is: the sound it dies with depends on it)
     const m = !e.isBoss && !e.talk && !e.calm ? ZONE_HP[this.room && this.room.zone] || 1 : 1; if (m !== 1) { e.hp = e.maxHp = Math.round(e.maxHp * m); e.xp = Math.max(1, Math.round(e.xp * Math.sqrt(m))); }
     if (e.isBoss) { const [hk, dk] = BOSS_K[this.room && this.room.zone] || [2.5, 1.5]; e.hp = e.maxHp = Math.round(e.maxHp * hk); e.dmg = Math.round(e.dmg * dk); e.dmgK = dk; }
     this.enemies.push(e); return e;

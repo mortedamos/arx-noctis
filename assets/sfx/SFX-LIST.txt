@@ -53,7 +53,15 @@ hit          length 0.15-0.3 s      A blade or blow LANDING on an enemy: a meaty
 hurt         length 0.3-0.6 s       The hero is wounded: a grunt of pain, or a heavy body-blow thud.
 jump         length 0.1-0.25 s      The hero (or a boss) leaps: a light cloth-and-boot push-off.
 land         length 0.1-0.2 s       Landing after a jump: a soft thud of boots on stone.
-kill         length 0.3-0.7 s       An enemy dies: a short burst / crumble / ghostly gasp.
+kill         length 0.3-0.7 s       An enemy dies: a short burst / crumble / ghostly gasp.   (the plain version - used for anything that has no sound of its own below)
+kill_bone    length 0.3-1.5 s       Skeleton / bone wyrm dies - a clatter of bones collapsing.
+kill_ghost   length 0.4-2 s         Ghost / wraith / shade / portrait dies - a thin wail fading out.
+kill_rot     length 0.3-1.8 s       Zombie / ghoul / swamp thing dies - a wet groan and a slump.
+kill_beast   length 0.15-1 s        Hound / bat / spider dies - a yelp or screech cut short.
+kill_fire    length 0.3-1.5 s       Fire skull / ember wyrm dies - a flame whooshing out.
+kill_ice     length 0.3-1.5 s       Frost wyrm / frost hound dies - ice shattering with a crystalline tinkle.
+kill_book    length 0.3-1.5 s       Haunted book dies - a flurry of pages and a soft thud.
+kill_mage    length 0.3-1.5 s       Wizard / sorcerer / acolyte dies - a gasp and a fizzle of magic.
 coin         length 0.15-0.4 s      Gold picked up: a bright little coin clink or two.
 pickup       length 0.1-0.3 s       A heart or mana drop is picked up: a small soft chime.
 click        length 0.03-0.08 s     Menu cursor moves: a tiny tick.

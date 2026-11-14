@@ -60,7 +60,7 @@ export class Enemy extends Entity {
   modifyDamage(d) { return Math.max(1, Math.round(d)); }
   onHurt() {}
   die() {
-    if (this.dead) return; this.dead = true; const g = this.g; g.kills++; if (g.noteKill) g.noteKill(this); g.player.gainXp(this.xp); A.sfx('kill');
+    if (this.dead) return; this.dead = true; const g = this.g; g.kills++; if (g.noteKill) g.noteKill(this); g.player.gainXp(this.xp); A.sfx(killSfx(this));
     g.fx.burst(this.x, this.cy, 14, this.deathFx, { speed: 2.4, s0: 14, s1: 2 }); g.fx.souls(this.x, this.cy, 4, COLORS.blue);
     if (!this.isBoss) { randomDrop(g, this.x, this.cy); rollEnchantDrop(g, this); }
     this.onDeath();
@@ -442,4 +442,8 @@ class Shade extends Enemy {
     if (this.state === 'strike') this.spr(ctx, 'shade_r3', this.st < 14 ? 0 : 1, cx, cy); else this.spr(ctx, 'shade_r4', Math.floor(this.t / 8) % 4, cx, cy);
   }
 }
+// what each kind of creature sounds like when it dies (a recorded file named like this in assets/sfx replaces the built-in sound; `kill` is the plain one, for anything not listed)
+const KILL_SFX = { skeleton: 'kill_bone', wyrm: 'kill_bone', ghost: 'kill_ghost', wraith: 'kill_ghost', shade: 'kill_ghost', portrait: 'kill_ghost', zombie: 'kill_rot', ghoul: 'kill_rot', swampthing: 'kill_rot', hound: 'kill_beast', bat: 'kill_beast', swampspider: 'kill_beast',
+  fireskull: 'kill_fire', emberwyrm: 'kill_fire', frostwyrm: 'kill_ice', tome: 'kill_book', grimoire: 'kill_book', wizard: 'kill_mage', archmage: 'kill_mage', sorcerer: 'kill_mage', acolyte: 'kill_mage', zealot: 'kill_mage' };
+const killSfx = e => (e.o && e.o.frost && 'kill_ice') || KILL_SFX[e.typeKey] || 'kill';
 export const ENEMY_TYPES = { tome: Tome, grimoire: Grimoire, shade: Shade, bat: Bat, zombie: Zombie, skeleton: Skeleton, ghost: Ghost, wraith: Wraith, fireskull: FireSkull, hound: Hound, ghoul: Ghoul, wizard: Wizard, wyrm: Wyrm, frostwyrm: FrostWyrm, emberwyrm: EmberWyrm };
