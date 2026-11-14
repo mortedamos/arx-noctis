@@ -48,7 +48,7 @@ export class Post {
     this.r = renderer; this.fx = fx; this.on = true; this.W = W * FXS; this.H = H * FXS; this.aspect = W / H;
     const mk = (w, h, nearest) => new THREE.WebGLRenderTarget(w, h, { minFilter: nearest ? THREE.NearestFilter : THREE.LinearFilter, magFilter: nearest ? THREE.NearestFilter : THREE.LinearFilter, format: THREE.RGBAFormat, depthBuffer: true, generateMipmaps: false });
     this.rtA = mk(this.W, this.H, true); this.rtB = mk(this.W >> 1, this.H >> 1); this.rtC = mk(this.W >> 1, this.H >> 1);
-    this.tex = new THREE.CanvasTexture(gameCanvas); this.tex.minFilter = this.tex.magFilter = THREE.NearestFilter; this.tex.generateMipmaps = false;
+    this.canvas = gameCanvas; this.makeTex = () => { this.cw = gameCanvas.width; this.ch = gameCanvas.height; this.tex = new THREE.CanvasTexture(gameCanvas); this.tex.minFilter = this.tex.magFilter = THREE.NearestFilter; this.tex.generateMipmaps = false; if (this.pBase) this.pBase.u.uTex.value = this.tex; }; this.makeTex();
     this.cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     const pass = (frag, uniforms) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({ vertexShader: PV, fragmentShader: frag, uniforms, depthTest: false, depthWrite: false })); m.frustumCulled = false; const s = new THREE.Scene(); s.add(m); return { s, u: uniforms }; };
     this.pBase = pass(BASE, { uTex: { value: this.tex } });
@@ -74,6 +74,9 @@ export class Post {
   }
   render() {
     const r = this.r, fx = this.fx, U = this.pFinal.u;
+    const cv = this.canvas; if (cv.width !== this.cw || cv.height !== this.ch) {                    // the picture's canvas changed size (the window was resized): a texture cannot change size once uploaded, so make a new one
+      if (this.tex) this.tex.dispose(); this.makeTex();
+    }
     r.autoClear = false; this.tex.needsUpdate = true;
     r.setRenderTarget(this.rtA); r.clear(); r.render(this.pBase.s, this.cam); r.render(fx.scene, fx.cam);          // the sprites, then the effects over them
     r.setRenderTarget(this.rtB); r.clear(); r.render(this.pBright.s, this.cam);                                      // the bright parts, blurred twice over (at half size)

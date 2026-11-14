@@ -57,7 +57,7 @@ const LOCK_HINTS = {
 export class Game {
   async init() {
     this.noAutoPause = new URLSearchParams(location.search).has('nopause');
-    this.canvas = document.getElementById('game'); this.ctx = this.canvas.getContext('2d'); this.ctx.imageSmoothingEnabled = false; this.K = 3;
+    this.canvas = document.getElementById('game'); this.ctx = this.canvas.getContext('2d', { willReadFrequently: !new URLSearchParams(location.search).has('gpu') }); this.ctx.imageSmoothingEnabled = false;          // (a CPU-backed canvas: the effects layer copies this picture into a WebGL texture every frame, and a GPU-accelerated 2D canvas can be caught half-drawn by that copy - black blocks and torn rows, esp. in Firefox.  ?gpu turns it off) this.K = 3;
     this.topCanvas = document.getElementById('top'); this.top = this.topCanvas.getContext('2d');       // a clear layer above the effects (fog, darkness): the arrows that say 'you can use this' / 'this way out' are drawn here so nothing hides them
     // The game is drawn in 384x216 'logical' pixels onto a K-times larger canvas (so the gothic text can be smooth and crisp);
     // sprites are snapped to the logical grid so pixel art looks exactly as before.

@@ -11,6 +11,7 @@ import { SPELLS } from './player.js';
 import { ENCH, TUNE } from './enchant.js';
 import { ITEMS, KEYS } from './itemdata.js';
 import { STORY } from './story.js';
+import { BUILD } from './build.js';
 import { BestiaryScreen } from './bestiary.js';
 
 const GOLD = '#e8b84a', PALE = '#e8dcc0', DIM = '#8a7d9a', RED = '#c23b2a';
@@ -249,6 +250,7 @@ export class TitleScreen {
       drawText(ctx, 'ENTER = BEGIN     ESC = BACK', W / 2, 176, { align: 'center', color: PALE });
     }
     else controlsScreen(ctx);
+    drawText(ctx, 'BUILD ' + BUILD.n + '  ' + BUILD.when, W - 4, H - 9, { align: 'right', color: '#6a6280', alpha: 0.8 });          // (which build this is: small, bottom right)
   }
 }
 
