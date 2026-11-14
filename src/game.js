@@ -277,9 +277,8 @@ export class Game {
   // the Mirror Shard: an enemy's arrow, bone, orb or thrown item is sent back (at the nearest foe in front, else straight back), faster, and now it hurts them
   reflectable(pr) { return pr.owner === 'enemy' && !pr.reflected && typeof pr.vx === 'number' && typeof pr.vy === 'number' && !(pr instanceof Column) && !(pr instanceof Shockwave) && !(pr instanceof FirePatch) && pr.kind !== 'wisp'; }
   reflect(pr, p) {
-    const sp = Math.max(2.6, Math.hypot(pr.vx, pr.vy) * 1.25); let ang = Math.atan2(-pr.vy, -pr.vx), best = 1e9;
-    for (const e of this.enemies) { if (e.dead || e.calm || e.talk) continue; const dx = e.x - pr.x, dy = e.cy - pr.y, d = Math.hypot(dx, dy); if (d < 280 && d < best && Math.sign(dx || 1) === p.dir) { best = d; ang = Math.atan2(dy, dx); } }
-    pr.owner = 'player'; pr.reflected = true; pr.vx = Math.cos(ang) * sp; pr.vy = Math.sin(ang) * sp; pr.grav = 0; pr.pierce = false; pr.life = Math.max(pr.life || 0, 140); pr.dmg = Math.max(pr.dmg || 6, Math.round(p.swordDamage() * 0.8)) + 2;
+    const sp = Math.max(2.6, Math.hypot(pr.vx, pr.vy) * 1.25); const ang = Math.atan2(-pr.vy, -pr.vx);          // (a reflected shot is only turned aside: it flies back the way it came and hurts nothing)
+    pr.owner = 'player'; pr.reflected = true; pr.vx = Math.cos(ang) * sp; pr.vy = Math.sin(ang) * sp; pr.grav = 0; pr.pierce = false; pr.life = Math.max(pr.life || 0, 140); pr.dmg = 0;
     A.sfx('block'); this.fx.ring(pr.x, pr.y, 22, [0.8, 0.9, 1], 12, 0.25); this.fx.sparks(pr.x, pr.y, 8, [[1, 1, 1], [0.7, 0.85, 1]], 3, {}); this.popup(pr.x, pr.y - 12, 'REFLECTED', '#cfe2ff');
   }
   swordHit(p) {
@@ -340,7 +339,7 @@ export class Game {
       if (pr instanceof Column) continue;
       const box = pr.box;
       if (pr.owner === 'player') {
-        for (const e of this.enemies) if (!e.dead && e.hitBy(box)) { if (e.hurt(pr.dmg, pr.vx >= 0 ? 1 : -1, { id: -(this.attackCounter + 5000 + Math.floor(Math.random() * 1e6)), color: '#ffb060', kb: 1.4 })) { pr.explode(this); break; } }
+        if (!pr.reflected) for (const e of this.enemies) if (!e.dead && e.hitBy(box)) { if (e.hurt(pr.dmg, pr.vx >= 0 ? 1 : -1, { id: -(this.attackCounter + 5000 + Math.floor(Math.random() * 1e6)), color: '#ffb060', kb: 1.4 })) { pr.explode(this); break; } }
         for (const o of this.props) if (o.hit && !o.dead && overlap(box, o.box)) { o.hit(this, pr.dmg, 1); pr.explode(this); break; }
       } else if (!p.dead && overlap(box, p.hurtbox)) {
         if (p.hurt(pr.dmg, pr.x, { kb: pr instanceof FirePatch ? 1 : 2 })) { if (!(pr instanceof Shockwave) && !(pr instanceof FirePatch) && !pr.pierce) pr.explode ? pr.explode(this) : (pr.dead = true); }

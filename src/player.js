@@ -134,13 +134,13 @@ export class Player extends Entity {
       const [x, y] = pick();
       if (E.type === 'fire') fx.emit({ x, y, vx: rand(-0.2, 0.2), vy: -rand(0.5, 1.3), life: rand(12, 22), s0: pts.length ? 10 : 7, s1: 2, c0: COLORS.fire[0], c1: COLORS.fire[1], a0: 0.9, a1: 0, kind: 2 });
       else if (E.type === 'ice') { fx.emit({ x, y, vx: rand(-0.2, 0.2), vy: rand(0.1, 0.5), gy: 0.01, life: rand(24, 44), s0: 6, s1: 1, c0: [0.85, 0.97, 1], c1: [0.4, 0.75, 1], a0: 0.95, a1: 0, kind: 6 }); if (pts.length && Math.random() < 0.5) fx.emit({ x, y, vx: rand(-0.6, 0.6), vy: rand(0, 0.8), gy: 0.06, life: rand(14, 24), s0: 2.5, s1: 1, c0: [0.9, 1, 1], a0: 1, a1: 0, kind: 1 }); }
-      else if (E.type === 'sun') fx.emit({ x, y, vx: rand(-0.3, 0.3), vy: -rand(0.1, 0.7), life: rand(26, 46), s0: 8, s1: 1, c0: [1, 0.97, 0.7], c1: [1, 0.75, 0.2], a0: 1, a1: 0, kind: 6 });
+      else if (E.type === 'sun') fx.emit({ x, y, vx: rand(-0.3, 0.3), vy: -rand(0.1, 0.7), life: rand(26, 46), s0: 5, s1: 1, c0: [1, 0.97, 0.7], c1: [1, 0.75, 0.2], a0: 0.65, a1: 0, kind: 6 });
       else fx.emit({ x, y, vx: rand(-0.4, 0.4), vy: -rand(0.1, 0.6), life: rand(16, 30), s0: 3, s1: 1, c0: [0.9, 0.96, 1], c1: [0.4, 0.6, 1], a0: 1, a1: 0, kind: 1 });
     }
-    fx.glow(hip[0], hip[1], 20 + (pts.length ? 16 : 0) + Math.sin(t * 0.5) * 3, def.rgb, E.type === 'sun' ? 0.32 : 0.2);
-    fx.light(this.x, this.y - 20, E.type === 'sun' ? 120 : E.type === 'fire' ? 78 : 62, E.type === 'sun' ? 0.95 : 0.55);   // SUN also lights up dark rooms
+    fx.glow(hip[0], hip[1], 20 + (pts.length ? 16 : 0) + Math.sin(t * 0.5) * 3, def.rgb, E.type === 'sun' ? 0.12 : 0.2);
+    if (E.type === 'sun') fx.light(this.x, this.y - 20, 78, 0.5, [1, 0.96, 0.85]); else fx.light(this.x, this.y - 20, E.type === 'fire' ? 78 : 62, 0.55);   // SUN also lights up dark rooms - but softly (it must add to a foggy room, not drown it), in a pale light that does not make the air shimmer
     // SUN: slow rotating sunburst behind the hero
-    if (E.type === 'sun') { if (!this.sunQuad || !fx.quads.includes(this.sunQuad)) this.sunQuad = fx.quad({ kind: 'rays', x: this.x, y: this.y - 20, w: 76, h: 76, color: [1, 0.9, 0.5], life: 1, hold: true, spin: 0.015, p: [0, 10], a0: 0.3, a1: 0.3, order: 2 }); this.sunQuad.x = this.x; this.sunQuad.y = this.y - 20; }
+    if (E.type === 'sun') { if (!this.sunQuad || !fx.quads.includes(this.sunQuad)) this.sunQuad = fx.quad({ kind: 'rays', x: this.x, y: this.y - 20, w: 54, h: 54, color: [1, 0.9, 0.5], life: 1, hold: true, spin: 0.015, p: [0, 10], a0: 0.11, a1: 0.11, order: 2 }); this.sunQuad.x = this.x; this.sunQuad.y = this.y - 20; }
   }
 
   // ------------------------------------------------------------------ update
@@ -276,7 +276,7 @@ export class Player extends Entity {
     const L = this.lan; let k = dart > 0 ? 3 : 1;
     // LOOT: she flies out to the nearest thing lying within reach, touches it (a little burst of light), and only then does it drift to him; she lingers a moment, then comes back
     let pk = this.lanTarget; if (pk && (pk.dead || pk.magnet || this.dead)) pk = this.lanTarget = null;
-    if (!pk && !this.dead && !(this.lanHold > 0) && this.t % 4 === 0) { let best = 1e9; for (const q of g.pickups) { if (q.dead || q.magnet || q.touched || q.t <= 24 || q.fullT > 0) continue; const dd = Math.hypot(q.x - this.x, q.y - 5 - (this.y - 16)); if (dd < 112 && dd < best) { best = dd; pk = q; } } if (pk) { this.lanTarget = pk; this.lanChase = 0; } }
+    if (!pk && !this.dead && !(this.lanHold > 0) && this.t % 4 === 0) { let best = 1e9; for (const q of g.pickups) { if (q.dead || q.magnet || q.touched || q.t <= 24 || q.blocked) continue; const dd = Math.hypot(q.x - this.x, q.y - 5 - (this.y - 16)); if (dd < 112 && dd < best) { best = dd; pk = q; } } if (pk) { this.lanTarget = pk; this.lanChase = 0; } }
     if (this.lanHold > 0) this.lanHold--;
     if (pk) {
       tx = pk.x; ty = pk.y - 8; k = 3.2; this.lanChase = (this.lanChase || 0) + 1;

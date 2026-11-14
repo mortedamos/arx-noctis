@@ -23,7 +23,7 @@ export const UPGRADES = {
   atkup: { name: 'SAL MARTIS', desc: 'SWORD POWER UP', icon: 'atkup', color: [1, 0.85, 0.4] },
   mantle: { name: 'SALAMANDER MANTLE', desc: 'FIRE HURTS HALF AS MUCH, AND SOOT NEVER STAINS YOUR CLOAK', icon: 'mantle', color: [1, 0.55, 0.25] },
   lantern: { name: 'IGNIS FATUUS LANTERN', desc: 'A PALE BLUE WISP, WARM AS A VOICE YOU KNEW. IT FOLLOWS YOU, LIGHTS THE DARK, CLEARS THE FOG AND DRAWS LOOT TO YOU', icon: 'lantern', color: [0.5, 0.72, 1] },
-  shard: { name: 'SPECULUM SHARD', desc: 'YOUR SWORD TURNS ARROWS, BONES AND ORBS BACK AT THEIR THROWERS', icon: 'shard', color: [0.8, 0.88, 1] },
+  shard: { name: 'SPECULUM SHARD', desc: 'YOUR SWORD KNOCKS ARROWS, BONES AND ORBS ASIDE, HARMLESSLY', icon: 'shard', color: [0.8, 0.88, 1] },
   spring: { name: 'PERPETUUM', desc: 'A SPRING THAT NEVER RUNS DOWN: YOUR DASH RECHARGES TWICE AS FAST', icon: 'spring', color: [1, 0.8, 0.4] },
   tide: { name: 'AQUA REGIA', desc: 'A DASH CUTS WHATEVER IT PASSES THROUGH', icon: 'e_ice', color: [0.4, 0.8, 1] },
   astrolabe: { name: 'ASTROLABE', desc: "THE ORLOJ'S LITTLE SISTER. YOUR MAP NOW MARKS WHAT YOU HAVE LEFT BEHIND: TREASURE NOT TAKEN, AND THE ROOMS BESIDE THE ONES YOU KNOW.", icon: 'astrolabe', color: [1, 0.85, 0.45] },          // (its id is the flag 'got_astrolabe': the map reads it)
@@ -47,12 +47,13 @@ export class Pickup extends Entity {
     const pc = { x: p.x, y: p.y - 16 }, d = dist(this.x, this.y - 5, pc.x, pc.y);
     const reach = g.save && g.save.flags.got_lantern ? 96 : 44;          // (the Marshlight Lantern's wisp draws loot from much further)
     const lamp = !!(g.save && g.save.flags.got_lantern);
-    if (this.t > 24 && !p.dead && (lamp ? (this.touched || d < 20) : d < reach)) this.magnet = true;          // (with the lantern, the wisp must first fly out and TOUCH the loot - see Player.stepLantern; then it comes)
+    if (this.blocked && d > 64) { this.blocked = false; this.touched = false; }          // (a pickup you are already full of is left alone until you walk away from it and come back)
+    if (this.t > 24 && !p.dead && !this.blocked && (lamp ? (this.touched || d < 20) : d < reach)) this.magnet = true;          // (with the lantern, the wisp must first fly out and TOUCH the loot - see Player.stepLantern; then it comes)
     if (this.touchT > 0) { this.touchT--; g.fx.glow(this.x, this.y - 6, 18 + this.touchT, [0.55, 0.78, 1], 0.5 * this.touchT / 14); }
     if (this.magnet) { const a = Math.atan2(pc.y - (this.y - 5), pc.x - this.x), sp = Math.min(4.5, 2 + this.t * 0.01 + (reach - Math.min(d, reach)) * 0.05); this.vx = Math.cos(a) * sp; this.vy = Math.sin(a) * sp; this.x += this.vx; this.y += this.vy; }
     else { this.vy = Math.min(this.vy + 0.14, 4); this.vx *= 0.97; moveX(this, room); const vy0 = this.vy; moveY(this, room); if (this.onGround && Math.abs(vy0) > 1) { this.vy = -vy0 * 0.35; this.onGround = false; } }
     if (--this.life <= 0) this.dead = true;
-    if (d < 11 && !p.dead) this.collect(g, p);
+    if (d < 11 && !p.dead && !this.blocked) this.collect(g, p);
     const col = this.ench ? this.ench.rgb : (this.item ? [0.85, 0.9, 1] : { heart: [1, 0.3, 0.35], potion: [1, 0.3, 0.35], mana: [0.4, 0.7, 1], coin: [1, 0.85, 0.3], gem: [0.4, 0.95, 1] }[this.kind]);
     if (col) g.fx.glow(this.x, this.y - 6, this.ench ? 22 : 12, col, this.ench ? 0.55 : 0.35);
     if (this.ench) { g.fx.light(this.x, this.y - 6, 46, 0.6); if (this.t % 6 === 0) g.fx.emit({ x: this.x + rand(-6, 6), y: this.y - 6 + rand(-6, 6), vx: 0, vy: -rand(0.2, 0.6), life: 30, s0: 5, s1: 1, c0: col, a0: 1, a1: 0, kind: 6 }); }
@@ -61,7 +62,7 @@ export class Pickup extends Entity {
     const S = g.save;
     if (this.item) {         // a carried item: stack it (up to the item's maximum) - if you're full it stays where it is
       const it = ITEMS[this.item], add = addItem(S, this.item, this.qty);
-      if (add <= 0) { if (this.fullT-- <= 0) { g.popup(p.x, p.y - 42, it.short + ' FULL', '#cfc2a0'); this.fullT = 90; A.sfx('back'); } return; }
+      if (add <= 0) { this.blocked = true; this.magnet = false; this.touched = false; this.vx = 0; g.popup(p.x, p.y - 42, it.short + ' FULL', '#cfc2a0'); A.sfx('back'); return; }          // (said once: it stays where it is and is not pulled again until the hero has moved away)
       this.dead = true; if (this.flagId) S.flags[this.flagId] = true; A.sfx('pickup'); g.popup(p.x, p.y - 40, '+' + add + ' ' + it.short, '#e8dcc0'); g.fx.sparks(this.x, this.y - 6, 6, [[1, 1, 1], [0.7, 0.8, 1]], 1.8);
       if (!p.sel) p.sel = this.item; return;
     }

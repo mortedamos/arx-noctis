@@ -58,6 +58,13 @@ export function drawIceBlock(g, tx, ty) {
 
 // ---------------------------------------------------------------------------------------------- backgrounds (cached strips, scrolled at their own depth in both directions)
 let LIB = null, ICE = null;
+// a repeating background strip, softened once when it is built (blurring the whole picture every frame is far too slow).  It is tiled 3 x 3 before the blur so the seams between repeats stay invisible.
+function softened(img, px) {
+  const w = img.width, h = img.height, big = canvasOf(w * 3, h * 3), b = big.getContext('2d');
+  for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) b.drawImage(img, i * w, j * h);
+  const blur = canvasOf(w * 3, h * 3), q = blur.getContext('2d'); q.filter = 'blur(' + px + 'px)'; q.drawImage(big, 0, 0); q.filter = 'none';
+  const out = canvasOf(w, h); out.getContext('2d').drawImage(blur, -w, -h); return out;
+}
 function libraryStrips() {
   if (LIB) return LIB;
   // far: a wall of tall gothic windows with cold moonlight, between stone piers
@@ -82,7 +89,7 @@ function libraryStrips() {
       m.fillStyle = '#4a3018'; m.fillRect(bx + 2, ry + 30, bw - 4, 4); m.fillStyle = '#6a4626'; m.fillRect(bx + 2, ry + 30, bw - 4, 1);
     }
   }
-  return LIB = { far, mid };
+  return LIB = { far: softened(far, 0.55), mid: softened(mid, 0.25) };
 }
 function iceStrips() {
   if (ICE) return ICE;
@@ -94,7 +101,7 @@ function iceStrips() {
   for (let i = 0; i < 4; i++) { const x = i * 64 + 12 + hash1(i * 4.7) * 20, l = 50 + hash1(i * 9.1) * 70, top = i % 2 === 0;
     m.fillStyle = 'rgba(70,140,190,0.35)'; m.beginPath(); if (top) { m.moveTo(x - 10, 0); m.lineTo(x + 10, 0); m.lineTo(x + 3, l); } else { m.moveTo(x - 12, 192); m.lineTo(x + 12, 192); m.lineTo(x - 2, 192 - l); } m.fill();
     m.fillStyle = 'rgba(190,235,255,0.25)'; m.beginPath(); if (top) { m.moveTo(x - 10, 0); m.lineTo(x - 2, 0); m.lineTo(x + 2, l * 0.8); } else { m.moveTo(x - 12, 192); m.lineTo(x - 3, 192); m.lineTo(x - 3, 192 - l * 0.8); } m.fill(); }
-  return ICE = { far, mid };
+  return ICE = { far: softened(far, 0.55), mid: softened(mid, 0.25) };
 }
 const tiled = (g, img, par, camX, camY, alpha, dy = 0) => {
   const ox = -(((camX * par) % img.width) + img.width) % img.width, oy = -(((camY * par) % img.height) + img.height) % img.height + dy; g.save(); g.globalAlpha = alpha;
@@ -103,7 +110,7 @@ const tiled = (g, img, par, camX, camY, alpha, dy = 0) => {
 };
 export function drawLibrary(g, room, camX, camY, t) {
   const S = libraryStrips(), bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#0e0906'); bg.addColorStop(1, '#1a110a'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
-  g.filter = 'blur(1.6px)'; tiled(g, S.far, 0.16, camX, camY, 0.9); g.filter = 'blur(0.7px)'; tiled(g, S.mid, 0.38, camX, camY, 0.82); g.filter = 'none';          // (the far wall is soft, as if out of focus)
+  tiled(g, S.far, 0.16, camX, camY, 0.9); tiled(g, S.mid, 0.38, camX, camY, 0.82);          // (the far wall is soft, as if out of focus)
   g.save(); g.globalCompositeOperation = 'lighter';                          // a few slow shafts of lamplight, and lazily drifting pages
   for (let i = 0; i < 4; i++) { const x = ((hash1(i * 9.3 + room.w) * 700 - camX * 0.3) % 520 + 520) % 520 - 60; g.fillStyle = 'rgba(255,200,120,' + (0.025 + 0.012 * Math.sin(t * 0.018 + i * 2)).toFixed(3) + ')'; g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 26, 0); g.lineTo(x + 80, H); g.lineTo(x + 30, H); g.fill(); }
   g.restore();
@@ -116,7 +123,7 @@ export function drawIceCave(g, room, camX, camY, t) {
   g.save(); g.globalCompositeOperation = 'lighter';                          // a slow pale aurora seeping through the ice far above
   for (let i = 0; i < 3; i++) { const y = 30 + i * 36 + Math.sin(t * 0.01 + i * 2) * 8 - camY * 0.05, gr = g.createLinearGradient(0, y - 16, 0, y + 16); gr.addColorStop(0, 'rgba(60,200,180,0)'); gr.addColorStop(0.5, 'rgba(80,210,200,' + (0.06 + 0.03 * Math.sin(t * 0.02 + i)).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(60,120,220,0)'); g.fillStyle = gr; g.fillRect(0, y - 16, W, 32); }
   g.restore();
-  g.filter = 'blur(1.6px)'; tiled(g, S.far, 0.14, camX, camY, 0.95); g.filter = 'blur(0.7px)'; tiled(g, S.mid, 0.34, camX, camY, 0.9); g.filter = 'none';
+  tiled(g, S.far, 0.14, camX, camY, 0.95); tiled(g, S.mid, 0.34, camX, camY, 0.9);
   g.fillStyle = 'rgba(2,10,20,0.22)'; g.fillRect(0, 0, W, H);
 }
 
@@ -124,14 +131,14 @@ export function drawIceCave(g, room, camX, camY, t) {
 // (kept to the edges of the picture so that nothing you need to see is ever behind them)
 export function drawForeground(g, room, camX, camY, t) {
   const th = room.theme; if (th !== 'library' && th !== 'ice') return;
-  g.save(); g.filter = 'blur(1.8px)';
+  g.save();
   if (th === 'ice') {                                                          // icicles close to the lens, hanging from the top edge
     const span = 120, par = 1.7, off = -(((camX * par) % span) + span) % span;
-    for (let x = off - span; x < W + span; x += span) { const k = Math.round((x + camX * par) / span), len = 12 + hash1(k * 3.7) * 26, ox = x + hash1(k * 1.9) * 60, w = 6 + hash1(k * 5.3) * 6; g.fillStyle = 'rgba(110,170,210,0.5)'; g.beginPath(); g.moveTo(ox - w, -2); g.lineTo(ox + w, -2); g.lineTo(ox, len); g.fill(); }
+    for (let x = off - span; x < W + span; x += span) { const k = Math.round((x + camX * par) / span), len = 12 + hash1(k * 3.7) * 26, ox = x + hash1(k * 1.9) * 60, w = 6 + hash1(k * 5.3) * 6; g.fillStyle = 'rgba(110,170,210,0.16)'; g.beginPath(); g.moveTo(ox - w * 1.7, -2); g.lineTo(ox + w * 1.7, -2); g.lineTo(ox, len + 4); g.fill(); g.fillStyle = 'rgba(110,170,210,0.34)'; g.beginPath(); g.moveTo(ox - w, -2); g.lineTo(ox + w, -2); g.lineTo(ox, len); g.fill(); }
     g.fillStyle = 'rgba(6,20,38,0.35)'; g.fillRect(0, H - 5, W, 5);
   } else {                                                                      // the dark edge of a bookcase and its lamp-chain, drifting past at the sides
     const span = 600, par = 1.45, off = -(((camX * par) % span) + span) % span;
-    for (let x = off - span; x < W + span; x += span) { const k = Math.round((x + camX * par) / span), ox = x + 30 + hash1(k * 2.3) * 400; g.fillStyle = 'rgba(14,8,4,0.5)'; g.fillRect(ox, -2, 14, H + 4); g.fillStyle = 'rgba(80,50,24,0.35)'; g.fillRect(ox + 1, -2, 2, H + 4);
+    for (let x = off - span; x < W + span; x += span) { const k = Math.round((x + camX * par) / span), ox = x + 30 + hash1(k * 2.3) * 400; g.fillStyle = 'rgba(14,8,4,0.18)'; g.fillRect(ox - 3, -2, 20, H + 4); g.fillStyle = 'rgba(14,8,4,0.4)'; g.fillRect(ox, -2, 14, H + 4); g.fillStyle = 'rgba(80,50,24,0.35)'; g.fillRect(ox + 1, -2, 2, H + 4);
       g.fillStyle = 'rgba(14,8,4,0.45)'; g.fillRect(ox + 60 + hash1(k) * 40, -2, 2, 30 + hash1(k * 9) * 30); }
     g.fillStyle = 'rgba(8,4,2,0.3)'; g.fillRect(0, 0, W, 4);
   }
