@@ -140,12 +140,19 @@ export function groundScenery(def) {
   def.decos = out;
 }
 
+// BACKGROUND SCENERY NEAR A DOOR: pictures, pillars, bookcases, banners and portraits that stand or hang where a door is (they would hide it, or make it hard to tell from the wall).
+// The vertical span a decoration covers (a rough guess by kind), and whether it overlaps a door's doorway.
+const DECO_SPAN = { img: d => [d.y - 120, d.y], bookcase: d => [d.y - 46, d.y], column: d => [d.y - 112, d.y], cdl: d => [d.y - 44, d.y], brazier: d => [d.y - 40, d.y], crystals: d => [d.y - 36, d.y], hang: d => [d.y, d.y + 64], banner: d => [d.y, d.y + (d.len || 5) * 16], portrait: d => [d.y - 46, d.y] };
+export const decoHidesDoor = (d, o) => { const f = DECO_SPAN[d.t]; if (!f || (d.t === 'img' && /orloj|gate|door/.test(d.img || ''))) return false; const [y0, y1] = f(d); return Math.abs(d.x - (o.x * 16 + 8)) < 38 && y1 > o.gy * 16 - 56 && y0 < o.gy * 16 + 2; };
 export function tidyRoom(def) {
   if (def.tidied) return; def.tidied = true;
   if (def.theme === 'ice' && !def.save) def.decos = def.decos.filter(d => d.t !== 'torch' && d.t !== 'dgtorch' && d.t !== 'brazier' && d.t !== 'cdl');          // the Frozen Caverns are wilderness: no torches, braziers or candles - ghostly blue wisps (fx.js) light the way
   groundScenery(def);
   // no scenery in front of a door (carts, wells, lamps, signs, braziers...): a door must always be seen
   def.decos = def.decos.filter(d => { if (!(d.t === 'img' || d.t === 'brazier') || (d.t === 'img' && d.back)) return true; return !(def.doors || []).some(o => Math.abs(d.x - (o.x * 16 + 8)) < 30 && d.y > o.gy * 16 - 74 && d.y < o.gy * 16 + 8); });
+  { const gone = def.decos.filter(d => (def.doors || []).some(o => decoHidesDoor(d, o))), pillars = gone.filter(d => d.t === 'img' && /pillar/.test(d.img || ''));          // (no background picture, pillar, shelf, banner or portrait behind a doorway either; what hung on a pillar that goes goes with it)
+    def.decos = def.decos.filter(d => !gone.includes(d) && !(['portrait', 'barwin', 'torch', 'dgtorch'].includes(d.t) && pillars.some(q => Math.abs(q.x - d.x) < 24)));
+    if (pillars.length) def.spawns = def.spawns.filter(sp => !(sp.type === 'portrait' && pillars.some(q => Math.abs(q.x - (sp.x * 16 + 8)) < 24))); }
   // a flame is drawn in the effects layer, ABOVE the whole scene: so nothing that stands in front of a brazier or candelabra (a crate, a barrel, a cart) may stand near it, or it looks as if the crate were burning
   { const flames = def.decos.filter(d => d.t === 'brazier' || d.t === 'cdl');
     if (flames.length) {

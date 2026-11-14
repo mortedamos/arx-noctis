@@ -145,7 +145,7 @@ const THEME = {
 const PANELS = {
   hall: { img: () => IMG.gcastle_background, rects: [[192, 0, 80, 160], [288, 0, 80, 160], [16, 0, 160, 160], [192, 0, 80, 160], [384, 0, 80, 160], [288, 0, 80, 160], [192, 0, 80, 160], [16, 0, 160, 160]], base: '#05080a' },
   chapel: { img: () => IMG.church_backgrounds, rects: [[0, 0, 160, 192], [176, 0, 128, 192], [0, 0, 160, 192], [464, 0, 80, 192], [176, 0, 128, 192], [560, 0, 64, 192]], base: '#0f0d1c' },
-  throne: { img: () => extra().throne_bg, rects: [[320, 0, 128, 192], [176, 0, 128, 192], [0, 0, 160, 192], [176, 0, 128, 192], [320, 0, 128, 192], [464, 0, 80, 192]], base: '#150a14' },
+  throne: { img: () => extra().throne_bg, rects: [[320, 0, 128, 192], [176, 0, 128, 192], [0, 0, 160, 192], [176, 0, 128, 192], [320, 0, 128, 192], [464, 0, 80, 192]], base: '#150a14', gap: 0, fill: true },          // (the Shadow Throne's panels meet edge to edge, and run up to the top of a tall room)
   underworks: { img: () => extra().under_tint_bg, rects: [[16, 176, 128, 128], [160, 176, 64, 128], [304, 176, 64, 128], [16, 176, 128, 128], [384, 176, 64, 128], [16, 176, 128, 128]], base: '#040708' },
 };
 
@@ -333,7 +333,7 @@ export function drawBackground(g, room, camX, camY, t) {
   if (room.interior) { drawInterior(g, room, camX, camY, t); return; }
   if (th === 'village') {            // dusk sky over a town in flames: pink cloud bank, building silhouettes, an orange glow rising from the street
     // (before the Cinder Warden's torches the sky is a calm violet dusk; each house that catches turns it a little more towards the burning one)
-    const burn = Math.max(room.flags && room.flags.village_fire ? 1 : Math.min(1, (room.ignited ? room.ignited.size : 0) / 3), room.glow || 0);          // (room.glow: the opening scene, on the hill - the city far off begins to burn)
+    const burn = room.fireOut ? 0.2 : Math.max(room.flags && room.flags.village_fire ? 1 : Math.min(1, (room.ignited ? room.ignited.size : 0) / 3), room.glow || 0);          // (room.glow: the opening scene, on the hill - the city far off begins to burn)
     const hz = room.horizon - camY, grd = g.createLinearGradient(0, 0, 0, H); grd.addColorStop(0, '#2a1f42'); grd.addColorStop(0.6, '#6a5078'); grd.addColorStop(1, '#a8708a'); g.fillStyle = grd; g.fillRect(0, 0, W, H);
     if (burn > 0) { const fg = g.createLinearGradient(0, 0, 0, H); fg.addColorStop(0, '#3a1f3a'); fg.addColorStop(0.6, '#8a4a52'); fg.addColorStop(1, '#c0683a'); g.globalAlpha = burn; g.fillStyle = fg; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
     layerRepeat(g, IMG.town_sky, camX * 0.03, hz - IMG.town_sky.height + 70, 0);
@@ -376,10 +376,10 @@ export function drawBackground(g, room, camX, camY, t) {
   const img = P.img(), par = th === 'underworks' ? 0.4 : 0.5; let x = -(camX * par) % 2000, i = 0;
   const bottom = room.horizon - camY * par + (th === 'underworks' ? 40 : 4), base = P.rects;
   // total strip width for seamless wrap
-  const total = base.reduce((a, r) => a + r[2] + 6, 0), off = ((-camX * par) % total + total) % total - total;
+  const GAP = P.gap === undefined ? 6 : P.gap, total = base.reduce((a, r) => a + r[2] + GAP, 0), off = ((-camX * par) % total + total) % total - total;
   for (let rep = 0; rep < 4; rep++) {
     let xx = off + rep * total;
-    for (const r of base) { if (xx > W) break; if (xx + r[2] > 0) g.drawImage(img, r[0], r[1], r[2], r[3], Math.round(xx), Math.round(bottom - r[3]), r[2], r[3]); xx += r[2] + 6; }
+    for (const r of base) { if (xx > W) break; if (xx + r[2] > 0) { const px = Math.round(xx), py = Math.round(bottom - r[3]); g.drawImage(img, r[0], r[1], r[2], r[3], px, py, r[2], r[3]); if (py > 0) g.drawImage(img, r[0], r[1], r[2], 2, px, 0, r[2], py); } xx += r[2] + GAP; }          // (fill: where the panel stops short of the top of the picture, its top edge is stretched up to meet it)
   }
   // soft fog at the floor line
   const gr = g.createLinearGradient(0, bottom - 70, 0, bottom + 20); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,0.5)'); g.fillStyle = gr; g.fillRect(0, bottom - 70, W, 90);
@@ -387,11 +387,17 @@ export function drawBackground(g, room, camX, camY, t) {
 // like layerRepeat, drawn at `sc` of its size; `img` may be a list of images that follow one another
 function layerScaled(g, img, sc, scroll, y) {
   const list = Array.isArray(img) ? img : [img], ws = list.map(m => Math.round(m.width * sc)), total = ws.reduce((a, b) => a + b, 0); let x = -(((scroll % total) + total) % total), i = 0;
-  while (x < W) { const m = list[i % list.length], w = ws[i % list.length]; if (x + w > 0) { if (y > 0 && topOpaque(m)) g.drawImage(m, 0, 0, m.width, 1, Math.round(x), 0, w, Math.round(y)); g.drawImage(m, Math.round(x), Math.round(y), w, Math.round(m.height * sc)); } x += w; i++; }
+  while (x < W) { const m = list[i % list.length], w = ws[i % list.length]; if (x + w > 0) { if (y > 0 && topOpaque(m)) fadeUp(g, m, Math.round(x), w, Math.round(y)); g.drawImage(m, Math.round(x), Math.round(y), w, Math.round(m.height * sc)); } x += w; i++; }
+}
+// the top row of a picture, stretched up from its top edge and fading away over FADE pixels: the sky above a layer blends in instead of ending in a straight line (tall rooms show a lot of it)
+function fadeUp(g, img, x, w, y) {
+  const FADE = 80, y0 = Math.max(0, y - FADE), n = 10, h = (y - y0) / n, a0 = g.globalAlpha; if (y <= 0) return;
+  for (let i = 0; i < n; i++) { g.globalAlpha = a0 * Math.pow((i + 1) / n, 1.6); g.drawImage(img, 0, 0, img.width, 1, x, Math.round(y0 + i * h), w, Math.ceil(h) + 1); }
+  g.globalAlpha = a0;
 }
 function layerRepeat(g, img, scroll, y, gap) {
   const w = img.width + gap, off = -(((scroll % w) + w) % w), ext = y > 0 && topOpaque(img);
-  for (let x = off; x < W; x += w) { if (ext) g.drawImage(img, 0, 0, img.width, 1, Math.round(x), 0, img.width, Math.round(y)); g.drawImage(img, Math.round(x), Math.round(y)); }          // (above the picture: its own top row, stretched - so the top edge of a layer never shows when the camera climbs)
+  for (let x = off; x < W; x += w) { if (ext) fadeUp(g, img, Math.round(x), img.width, Math.round(y)); g.drawImage(img, Math.round(x), Math.round(y)); }          // (above the picture: its own top row, stretched upward and fading out - so the top edge of a layer never shows as a hard line when the camera climbs)
 }
 const TOPOP = new WeakMap();
 function topOpaque(img) {                                   // is the picture's top row solid (a layer that fills the sky above it), as opposed to a silhouette?

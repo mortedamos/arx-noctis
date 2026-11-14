@@ -11,9 +11,9 @@ export const ENCH = {
 
 // every balance knob in one place (all times are in 60ths of a second)
 export const TUNE = {
-  time: 120 * 60,            // how long a fresh enchantment lasts
-  addTime: 60 * 60,          // picking up the same gem again adds this much...
-  maxTime: 240 * 60,         // ...up to this cap
+  time: 60 * 60,             // how long a fresh enchantment lasts (one minute)
+  addTime: 60 * 60,          // picking up the same gem again adds this much (one more minute)...
+  maxTime: 120 * 60,         // ...up to this cap (two minutes)
   // ICE - chance to freeze per sword hit.  Stun-lock protection: a thawed enemy is immune to freezing for a while.
   freezeChance: 0.2, freezeMin: 60, freezeMax: 180, freezeImmune: 240,                  // normal enemies: 1-3s frozen, then 4s immune
   bossFreezeChance: 0.06, bossFreezeMin: 60, bossFreezeMax: 100, bossFreezeImmune: 480,  // bosses: rare, 1-1.7s, then 8s immune

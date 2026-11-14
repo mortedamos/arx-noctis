@@ -219,7 +219,8 @@ export function roomFlames(room) {
   for (const d of room.decos) {
     if (d.t === 'torch') out.push({ x: d.x, y: d.y - 15, scale: 1.1, seed: d.x, light: 80 });
     else if (d.t === 'cdl') cdlOf(d).fl.forEach(([ox, oy], i) => out.push({ x: d.x + ox, y: d.y + oy + CDL_DROP, scale: i === 1 ? 1 : 0.8, seed: d.x + ox, light: i === 1 ? 60 : 0, behind: true }));
-    else if (d.t === 'blaze') {      // a building fire
+    else if (d.t === 'blaze') {      // a building fire (none once the Cinder Warden is dead: the city only smoulders - see Game.smokeSpots)
+      if (room.fireOut) continue;
       if (d.burn && !(room.flags && room.flags.village_fire) && !(room.ignited && room.ignited.has(d.burn))) continue;          // (a house's fires are unlit until a torch lands on it, or the village burns) (no sprite - just fire): windows burn big, and many small fires burn all over the walls and roof. Each is a little bigger or smaller than its scale says
       const sc = d.scale || 1.5, small = !!d.small, j = 0.82 + 0.36 * hash(d.x, d.y);
       out.push({ x: d.x, y: d.y, fs: sc * 1.35 * j, seed: d.x + d.y, ph: Math.floor(hash(d.y, d.x) * 97), light: small ? 0 : Math.round(130 * (0.75 + 0.25 * j)), big: true, blaze: true, small, smoke: true, behind: true });

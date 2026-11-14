@@ -19,9 +19,10 @@ import { STORY } from './story.js';
 import { Ghost } from './ghost.js';
 import { Movers } from './movers.js';
 import { Icicle } from './icicles.js';
+import { Shopkeeper, ShopScreen } from './shop.js';
 import { KEYS } from './itemdata.js';
 import { Projectile, Shockwave, FirePatch } from './projectiles.js';
-import { Statue, Barrel, Altar, Waystone, Tablet, Chest, Upgrade, Relic, Pickup, ABILITIES, UPGRADES } from './props.js';
+import { Statue, Barrel, Altar, Waystone, Tablet, Chest, Upgrade, Relic, Pickup, chestGift, ABILITIES, UPGRADES } from './props.js';
 import { drawDeco, isBack, roomFlames, drawFlames2D, decoCoversHazard } from './decor.js';
 import { drawIce } from './enchant.js';
 import { drawSheet } from './assets.js';
@@ -45,7 +46,9 @@ const FOG_COL = { default: [0.64, 0.7, 0.8], graveyard: [0.66, 0.72, 0.84], swam
 // Monsters get tougher the deeper you go (you keep gaining sword power as you climb): their hit points are multiplied by their zone's number, and so is what they are worth.
 // Zone ids are not in story order (6 = the village, the first; 5 = the throne, the last).
 const hsl2rgb = h => { const k = h / 60, i = Math.floor(k) % 6, f = k - Math.floor(k); return [[1, f, 0], [1 - f, 1, 0], [0, 1, f], [0, 1 - f, 1], [f, 0, 1], [1, 0, 1 - f]][i]; };          // a full-strength colour from a hue in degrees (the disco lights)
-const ZONE_HP = { 6: 1, 1: 1.1, 7: 1.3, 9: 1.5, 2: 1.7, 3: 2.0, 4: 2.4, 11: 2.6, 8: 2.8, 10: 2.8, 5: 3.3 };
+const ZONE_HP = { 6: 1, 1: 1.15, 7: 1.4, 9: 1.7, 2: 1.95, 3: 2.35, 4: 2.9, 11: 3.2, 8: 3.4, 10: 3.5, 5: 4.2 };          // (how much tougher the ordinary monsters are in each zone: it climbs through the game)
+// BOSSES have far more life than the monsters of their zone, and hit harder, and both grow the later the zone: [life factor, damage factor]
+const BOSS_K = { 6: [2.0, 1.25], 1: [2.3, 1.3], 7: [2.6, 1.4], 9: [2.9, 1.5], 2: [3.2, 1.55], 3: [3.6, 1.65], 4: [4.0, 1.75], 11: [4.3, 1.85], 8: [4.5, 1.9], 10: [4.7, 1.95], 5: [5.2, 2.15] };
 
 // the boss flags a sealed door asks for -> where that master is to be found (the door's dialogue lists the ones that still live)
 const LOCK_HINTS = {
@@ -106,7 +109,7 @@ export class Game {
   popup(x, y, text, color = '#fff') { this.popups.push({ x, y, text, color, life: 55 }); }
   banner(title, sub = '', dur = 190, o = {}) { this.bannerObj = { title, sub, t: 0, dur, ...o }; }
   shake(a, frames) { this.shakeA = Math.max(this.shakeA, a); this.shakeT = Math.max(this.shakeT, frames); }
-  addProjectile(p) { this.projectiles.push(p); return p; }
+  addProjectile(p) { const b = this.boss; if (b && b.active && b.dmgK && p.owner === 'enemy' && !p.kScaled && typeof p.dmg === 'number') { p.dmg = Math.max(1, Math.round(p.dmg * b.dmgK)); p.kScaled = true; } this.projectiles.push(p); return p; }          // (a boss's shots hurt as much more as the boss does)
   after(frames, fn) { this.delayed.push({ t: frames, fn }); }
   // the name of the area a door or an open edge leads to: the zone's name when it is another zone (THE GREAT HALL), else the room's own (WEAVER'S COTTAGE)
   areaName(id) { const t = this.world.rooms[id]; if (!t) return ''; if (t.areaLabel) return t.areaLabel.toUpperCase(); if (KEEP.has(t.zone) && !KEEP.has(this.room.zone)) return 'SHADOWKEEP'; return (t.zone !== this.room.zone ? ZONES[t.zone].name : t.name).toUpperCase(); }
@@ -131,9 +134,10 @@ export class Game {
   itemPercent() { const f = this.save.flags; return Math.round(ITEM_IDS.filter(k => f[k]).length / ITEM_IDS.length * 100); }
   spawnEnemy(type, tx, gy, o = {}) {
     const C = ENEMY_TYPES[type] || BEAST_TYPES[type] || BOSS_TYPES[type]; if (!C) { console.warn('unknown enemy', type); return null; }
-    const x = tx * 16 + 8, y = FLYERS.has(type) || type === 'boss_angel' || type === 'boss_shadow' || type === 'boss_bramble' || type === 'boss_librarian' ? gy * 16 + 8 : gy * 16;
+    const x = tx * 16 + 8, y = FLYERS.has(type) || type === 'boss_angel' || type === 'boss_shadow' || type === 'boss_bramble' || type === 'boss_librarian' || type === 'boss_rimewyrm' ? gy * 16 + 8 : gy * 16;
     const e = new C(this, x, y, o);
     const m = !e.isBoss && !e.talk && !e.calm ? ZONE_HP[this.room && this.room.zone] || 1 : 1; if (m !== 1) { e.hp = e.maxHp = Math.round(e.maxHp * m); e.xp = Math.max(1, Math.round(e.xp * Math.sqrt(m))); }
+    if (e.isBoss) { const [hk, dk] = BOSS_K[this.room && this.room.zone] || [2.5, 1.5]; e.hp = e.maxHp = Math.round(e.maxHp * hk); e.dmg = Math.round(e.dmg * dk); e.dmgK = dk; }
     this.enemies.push(e); return e;
   }
 
@@ -160,9 +164,10 @@ export class Game {
   respawn() { // after death: back to the last save
     const s = this.loadSave(); if (s) this.useSave(s); else { this.save = newSave(this.world); this.save.flags.opening_seen = true; } this.player = new Player(this, 0, 0); this.boss = null; this.slow = 0; this.save.hp = this.save.maxHp; this.save.mp = this.save.maxMp; this.beginPlay(true);
   }
-  useSave(s) { s.items ||= {}; s.bestiary ||= {}; delete s.items.caltrops; if (s.sel === 'caltrops') s.sel = 'dagger'; this.save = s; this.world = buildWorld(s.seed || 0);
+  useSave(s) { s.items ||= {}; s.bestiary ||= {}; delete s.items.caltrops; delete s.items.axe; if (s.sel === 'caltrops' || s.sel === 'axe') s.sel = 'dagger'; this.save = s; this.world = buildWorld(s.seed || 0);
     if (s.gv !== GEN_VERSION || !this.world.rooms[s.room]) { s.gv = GEN_VERSION; s.room = this.world.start.room; s.spawnX = this.world.start.x * 16 + 8; s.spawnY = this.world.start.gy * 16; s.visited = {}; s.flags.opening_seen = true; }          // (a save made before the castle's layout last changed: the rooms are not where they were, so the hero wakes at the start with everything they carry; the maps fill in again)
   }                       // (caltrops were removed from the game)
+  openShop(keeper) { this.state = 'shop'; this.shop = new ShopScreen(this, keeper); A.sfx('select'); }
   pause() { this.state = 'pause'; this.pauseMenu = new PauseMenu(this); A.sfx('select'); }
   resume() { if (this.state === 'pause' || this.state === 'map') { this.state = 'play'; A.sfx('back'); } }
   openMap(o = {}) { this.state = 'map'; this.mapScreen = new MapScreen(this, o); A.sfx('select'); }
@@ -178,11 +183,12 @@ export class Game {
   loadRoom(id, pos, dir = 1) {
     const def = this.world.rooms[id], S = this.save, tiles = Uint8Array.from(def.tiles);
     for (let ty = 0; ty < def.h; ty++) for (let tx = 0; tx < def.w; tx++) { const v = tiles[ty * def.w + tx]; if ((v === 4 || v === 5 || v === 6 || v === 8) && S.flags[`b_${id}_${tx}_${ty}`]) tiles[ty * def.w + tx] = 0; }
-    const prevZone = this.zone; this.room = new Room({ ...def, tiles }); this.room.flags = S.flags; this.room.ignited = new Set(); if (S.flags.boss_vb) S.flags.village_fire = true; S.visited[id] = true; this.zone = def.zone;          // (the room can see the save's flags: scenery such as the sigils over a locked door reads them)
+    if (id === 'ib' && S.flags.boss_ib) for (let ty = def.h - 2; ty < def.h; ty++) for (let tx = 5; tx <= def.w - 6; tx++) tiles[ty * def.w + tx] = 0;          // (the Rimewyrm's floor stays shattered: a way down into the Frozen Well)
+    const prevZone = this.zone; this.room = new Room({ ...def, tiles }); this.room.flags = S.flags; this.room.ignited = new Set(); this.room.fireOut = def.zone === 6 && !!S.flags.boss_vb; if (S.flags.boss_vb) S.flags.village_fire = true; S.visited[id] = true; this.zone = def.zone;          // (the room can see the save's flags: scenery such as the sigils over a locked door reads them)
     { const spk = []; for (let ty = 0; ty < def.h; ty++) for (let tx = 0; tx < def.w; tx++) if (tiles[ty * def.w + tx] === TILE.SPIKE) spk.push([tx, ty]); if (spk.length) this.room.decos = def.decos.filter(d => !decoCoversHazard(d, spk)); }          // nothing may stand in front of a hazard
-    this.enemies = []; this.projectiles = []; this.pickups = []; this.props = []; this.popups = []; this.boss = null; this.delayed = []; this.fx.reset(); this.fx.setWisps(def.wisps || 0); this.flames = roomFlames(this.room); this.falls = this.room.decos.filter(d => d.t === 'waterfall'); this.fx.setWater(this.waterList()); this.mirrorView = def.mirror ? new MirrorView(def.mirror, !!S.flags['boss_' + id]) : null;          // (the Mirror Room: a great mirror - whole until you walk up to it)
+    this.blackout = null; this.well = null; this.enemies = []; this.projectiles = []; this.pickups = []; this.props = []; this.popups = []; this.boss = null; this.delayed = []; this.fx.reset(); this.fx.setWisps(def.wisps || 0); this.flames = roomFlames(this.room); this.smokeSpots = this.room.fireOut ? this.room.decos.filter(d => d.t === 'blaze' && !d.small).map(d => ({ x: d.x, y: d.y })) : []; this.falls = this.room.decos.filter(d => d.t === 'waterfall'); this.fx.setWater(this.waterList()); this.mirrorView = def.mirror ? new MirrorView(def.mirror, !!S.flags['boss_' + id]) : null;          // (the Mirror Room: a great mirror - whole until you walk up to it)
     const dusk = def.zone === 6 && !S.flags.village_fire && !def.keepLook;          // Prague before the Cinder Warden's torches: a calm violet dusk, with golden dust in the air - the monsters are loose, but nothing burns yet
-    this.fx.setShadowMask(this.room); this.fx.setAmbient(dusk ? Math.max(def.ambient, 0.42) : def.ambient, dusk ? [0.05, 0.03, 0.12] : def.tint, def.vig); if (def.dark) this.fx.setDark(); this.fx.setAmbientFx(dusk ? 'dust' : def.weather); A.setIndoor(def.indoor); this.fx.setStorm(def.storm, 0.0035);
+    this.fx.setShadowMask(this.room); this.fx.setAmbient(dusk ? Math.max(def.ambient, 0.42) : def.ambient, dusk ? [0.05, 0.03, 0.12] : this.room.fireOut ? [0.09, 0.05, 0.06] : def.tint, def.vig); if (def.dark) this.fx.setDark(); this.fx.setAmbientFx(dusk ? 'dust' : this.room.fireOut ? 'mist' : def.weather); A.setIndoor(def.indoor); this.fx.setStorm(def.storm, 0.0035);
     this.fx.setFog(def.fog * (def.theme === 'swamp' ? 0.8 : 1), def.horizon + 4, FOG_COL[def.theme] || FOG_COL.default, def.fogH);          // rolling ground fog in the damp, dead places
     this.room.movers = def.movers ? new Movers(def.movers) : null; this.icicles = (def.icicleTraps || []).map(d => new Icicle(d)); this.player.ride = null; this.vents = this.room.decos.filter(d => d.t === 'img' && d.img === 'sp_vent'); this.graves = this.room.decos.filter(d => d.t === 'grave'); this.ghost.snap();
     if (def.disco) { this.room.discoState = { mode: S.flags.disco_done ? 'gone' : 'party', t0: 0 }; A.preload('record_scratch'); }
@@ -191,15 +197,16 @@ export class Game {
       const s = def.spawns[si], o = s.o || {}, x = s.x * 16 + 8, y = s.y * 16;
       if (s.type === 'statue') this.props.push(new Statue(x, y, o));
       else if (s.type === 'altar') this.props.push(new Altar(x, y));
+      else if (s.type === 'shopkeeper') this.props.push(new Shopkeeper(x, y, o));
       else if (s.type === 'barrel') this.props.push(new Barrel(x, y, o));
       else if (s.type === 'waystone') this.props.push(new Waystone(x, y, { id: 'tp_' + id }));
       else if (s.type === 'itemspawn') { if (!S.flags[o.id]) { const pk = new Pickup('it_' + o.item, x, y - 6, 0, 0); pk.qty = o.qty || pk.qty; pk.flagId = o.id; pk.life = 1e9; this.pickups.push(pk); } }
       else if (s.type === 'tablet') this.props.push(new Tablet(x, y, o));
-      else if (s.type === 'chest') { const c = new Chest(x, y, o); if (S.flags[o.id]) { c.open = true; if (!S.flags[o.id + '_u']) this.props.push(new Upgrade(x, y - 22, { kind: o.contents, id: o.id + '_u' })); } this.props.push(c); }
+      else if (s.type === 'chest') { const c = new Chest(x, y, o); if (S.flags[o.id]) { c.open = true; if (!S.flags[o.id + '_u']) chestGift(this, x, y - 22, o.contents, o.id + '_u'); } this.props.push(c); }
       else if (s.type === 'upgrade') { if (!S.flags[o.id]) this.props.push(new Upgrade(x, y - 12 + 0, o)); }
       else if (s.type.startsWith('boss_')) {
         if (bossDone) { if (UPGRADES[o.reward]) { if (!S.flags['bu_' + id]) this.props.push(new Upgrade(this.roomCenterX(def), this.groundBelow(this.roomCenterX(def), 6 * 16) - 12, { kind: o.reward, id: 'bu_' + id })); }
-          else if (o.reward && o.reward !== 'dawn' && !S.abilities[this.rewardKey(o.reward)]) this.props.push(new Relic(this.roomCenterX(def), this.groundBelow(this.roomCenterX(def), 6 * 16), o.reward === 'djump' ? 'djump' : o.reward)); }
+          else if (o.reward && o.reward !== 'dawn' && o.reward !== 'well' && !S.abilities[this.rewardKey(o.reward)]) this.props.push(new Relic(this.roomCenterX(def), this.groundBelow(this.roomCenterX(def), 6 * 16), o.reward === 'djump' ? 'djump' : o.reward)); }
         else { const b = this.spawnEnemy(s.type, s.x, s.y, o); b.reward = o.reward; this.pendingBoss = b; }
       } else {
         const e = this.spawnEnemy(s.type, s.x, s.y, s.type === 'villager' ? { ...o, uid: id + '#' + si } : o);
@@ -238,6 +245,7 @@ export class Game {
     const row = Math.floor((p.y - 12) / T);
     if (p.x < 3) { const e = r.exitRows.L[row]; if (e && p.vx <= 0) this.changeRoom({ room: e.room, x: e.tx * 16 + 8, y: e.gy * 16 }, -1); }
     else if (p.x > r.pw - 3) { const e = r.exitRows.R[row]; if (e && p.vx >= 0) this.changeRoom({ room: e.room, x: e.tx * 16 + 8, y: e.gy * 16 }, 1); }
+    if (r.id === 'ib' && this.save.flags.boss_ib && p.y > r.ph - 4 && !p.dead && !this.well) { this.enterWell(); return; }          // (the broken arena: a drop into the Frozen Well)
     if (p.y > r.ph + 48 && !p.dead) { p.hurt(10, p.x, { kb: 0 }); this.respawnAtSafe(p); }
   }
   respawnAtSafe(p) { this.after(0, () => { p.x = p.lastSafe.x; p.y = p.lastSafe.y; p.vx = p.vy = 0; p.invT = 90; this.fx.flash([0.6, 0.4, 1], 0.3); this.fx.burst(p.x, p.y - 16, 10, COLORS.purple, { speed: 1.5 }); }); }
@@ -342,7 +350,7 @@ export class Game {
       if (pr instanceof Column) continue;
       const box = pr.box;
       if (pr.owner === 'player') {
-        if (!pr.reflected) for (const e of this.enemies) if (!e.dead && e.hitBy(box)) { if (e.hurt(pr.dmg, pr.vx >= 0 ? 1 : -1, { id: -(this.attackCounter + 5000 + Math.floor(Math.random() * 1e6)), color: '#ffb060', kb: 1.4 })) { pr.explode(this); break; } }
+        if (!pr.reflected) for (const e of this.enemies) if (!e.dead && e.hitBy(box)) { if (e.hurt(pr.dmg, pr.vx >= 0 ? 1 : -1, { id: -(this.attackCounter + 5000 + Math.floor(Math.random() * 1e6)), color: '#ffb060', kb: 1.4, fire: !!pr.fireTiles })) { pr.explode(this); break; } }
         for (const o of this.props) if (o.hit && !o.dead && overlap(box, o.box)) { o.hit(this, pr.dmg, 1); pr.explode(this); break; }
       } else if (!p.dead && overlap(box, p.hurtbox)) {
         if (p.hurt(pr.dmg, pr.x, { kb: pr instanceof FirePatch ? 1 : 2 })) { if (!(pr instanceof Shockwave) && !(pr instanceof FirePatch) && !pr.pierce) pr.explode ? pr.explode(this) : (pr.dead = true); }
@@ -370,12 +378,29 @@ export class Game {
     for (let ty = 0; ty < r.h; ty++) for (let tx = 0; tx < r.w; tx++) if (r.get(tx, ty) === TILE.SEAL) r.set(tx, ty, TILE.EMPTY);
     A.sfx('unseal'); A.sting('sting_victory'); this.shake(5, 30);
     if (b.reward === 'dawn') { const toEnding = () => { this.state = 'ending'; this.ending = new Ending(this); A.play('ending', { fade: 2 }); this.fx.setAmbient(0, [0, 0, 0], 0); this.fx.setStorm(false); this.fx.setAmbientFx('dust'); S.kills = (S.kills || 0) + this.kills; }; const tk = STORY.talk[b.bossName]; this.after(120, () => { if (tk && tk.after) this.talk(tk.after, toEnding); else toEnding(); }); return; }          // (his dying words, then the sun)
+    if (b.reward === 'well') { this.startWell(); return; }          // (the Rimewyrm drops nothing: the ice of the floor gives way, and its treasure waits below)
     const gy = this.groundBelow(b.x, b.y - 8);
     if (UPGRADES[b.reward]) this.props.push(new Upgrade(b.x, gy - 12, { kind: b.reward, id: 'bu_' + r.id })); else this.props.push(new Relic(b.x, gy, b.reward));
     for (const [kind, dx] of [['it_bandage', -26], ['it_' + randomItemId(), 26], ['it_dagger', 38]]) this.pickups.push(new Pickup(kind, b.x + dx, b.cy - 20));       // a boss leaves supplies behind
     { const tk = STORY.talk[b.bossName]; if (tk && tk.after) this.after(110, () => { if (this.state === "play") this.talk(tk.after); }); }          // and a few more as it dies
     this.after(420, () => { if (this.state === 'play' && !this.boss) A.play(ZONES[r.zone].music, { fade: 2 }); });
   }
+  // THE WELL.  The hero stands on the ice; cracks run out across the floor; then it all shatters and he falls (into the Frozen Well, a room of its own).  Falling out of the broken arena again later
+  // brings him back to the well, so the chests can always be reached.
+  startWell() { const p = this.player; this.well = { t: 0, phase: 'crack' }; this.playerFrozen = true; p.vx = 0; p.invT = 99999; this.fx.flash([0.8, 0.95, 1], 0.4); }
+  stepWell() {
+    const w = this.well, r = this.room, p = this.player, base = r.h - 2; w.t++;
+    if (w.phase === 'crack') {
+      const reach = Math.floor(w.t / 7);                                                                                // the cracks spread out from under the hero's feet
+      for (let tx = Math.floor(p.x / 16) - reach; tx <= Math.floor(p.x / 16) + reach; tx++) if (r.get(tx, base) === TILE.SOLID) { r.set(tx, base, TILE.CRACK); this.fx.sparks(tx * 16 + 8, base * 16, 3, COLORS.white, 2, { gy: 0.1 }); }
+      if (w.t % 9 === 1) { A.sfx('crack'); this.shake(2, 10); }
+      if (w.t === 118) {                                                                                                // ...and the floor goes
+        for (let tx = 5; tx <= r.w - 6; tx++) for (let ty = base; ty < r.h; ty++) { if (r.get(tx, ty) !== TILE.EMPTY) r.set(tx, ty, TILE.EMPTY); if (tx % 2 === 0 && ty === base) { this.fx.burst(tx * 16 + 8, ty * 16 + 8, 8, COLORS.ice, { speed: 2.4, s0: 12 }); this.fx.sparks(tx * 16 + 8, ty * 16, 6, COLORS.white, 3, { gy: 0.2 }); } }
+        A.sfx('shatter'); A.sfx('boom'); this.shake(10, 44); this.fx.flash([0.8, 0.95, 1], 0.5); this.playerFrozen = false; p.vx = 0; w.phase = 'fall';
+      }
+    } else if (w.phase === 'fall' && p.y > r.ph - 4) { this.well = null; this.enterWell(); }
+  }
+  enterWell() { if (this.trans) return; this.player.invT = Math.max(this.player.invT, 600); this.player.vx = 0; this.changeRoom({ room: 'ic', x: 15 * 16 + 8, y: 3 * 16 }, 1); }
   gainAbility(kind, x, y) {
     const S = this.save, a = ABILITIES[kind]; S.abilities[kind] = true; S.flags['got_' + kind] = true; this.cutscene = { t: 0, kind, x, y }; this.playerFrozen = true; this.player.invT = 999;
     A.sfx('ability'); A.sting('sting_ability'); A.play(ZONES[this.room.zone].music, { fade: 0.2 });
@@ -415,13 +440,16 @@ export class Game {
   step() {
     this.frame++; Input.poll(); Touch.sync(this); A.update(1);
     if (Input.pressed.mute) A.toggleMute();
+    if (this.blackout) { const b = this.blackout; b.a += clamp(b.aT - b.a, -0.03, 0.03); b.r += clamp(b.rT - b.r, -2, 1.4); }
     for (let i = this.delayed.length - 1; i >= 0; i--) { const d = this.delayed[i]; if (--d.t <= 0) { this.delayed.splice(i, 1); d.fn(); } }
+    if (this.well) this.stepWell();
     switch (this.state) {
       case 'title': this.title.update(); this.titleFx(); this.fx.update(1); break;
       case 'intro': this.intro.update(); this.fx.update(1); break;
       case 'play': this.stepPlay(); break;
       case 'dialog': this.dialog.update(); if (this.dialog.closed) { const dlg = this.dialog, cb = dlg.onClose; this.state = 'play'; this.dialog = null; if (cb) cb(dlg.choice); } this.fx.update(0.0); break;
       case 'pause': this.pauseMenu.update(); break;
+      case 'shop': this.shop.update(); this.fx.update(0.0); break;
       case 'map': this.mapScreen.update(); break;
       case 'dead': this.gameOver.update(); this.fx.update(1); break;
       case 'ending': this.ending.update(); this.fx.update(1); break;
@@ -442,7 +470,8 @@ export class Game {
     S.time += 1 / 60; fx.clearLights(); if (this.room && this.room.maskDirty) { this.room.maskDirty = false; fx.setShadowMask(this.room); }
     this.checkVillageScene(); this.checkOpening(); this.discoStep();
     if (this.room.movers) { this.room.movers.step(false, this); for (const m of this.room.movers.list) fx.light(m.x, m.y + 6, 70, 0.5, [1, 0.8, 0.45]); }          // the brass platforms glide, and glow a little
-    for (const ic of this.icicles || []) ic.step(this);                          // loose icicles: shiver when the hero comes close, then drop
+    if (this.icicles && this.icicles.length > 14) this.icicles = this.icicles.filter(i => !i.dead); for (const ic of this.icicles || []) ic.step(this);                          // loose icicles: shiver when the hero comes close, then drop
+    if (this.smokeSpots && this.smokeSpots.length && this.frame % 5 === 0) for (const sp of this.smokeSpots) if (sp.x > this.camera.x - 40 && sp.x < this.camera.x + W + 40 && sp.y > this.camera.y - 60 && sp.y < this.camera.y + H + 40 && Math.random() < 0.3) fx.smoke(sp.x + rand(-6, 6), sp.y, 1, { c0: [0.5, 0.47, 0.46], c1: [0.28, 0.26, 0.27], s0: 7, s1: 26, l: 1.5, a: 0.4 });          // (the burnt city smoulders: the fires are out - no flames - but smoke still rises from the ruins)
     for (const d of this.vents || []) if (this.frame % 9 === 0 && d.x > this.camera.x - 20 && d.x < this.camera.x + W + 20) fx.smoke(d.x, d.y - 40, 1, { c0: [0.62, 0.6, 0.58], c1: [0.4, 0.38, 0.36], s0: 5, s1: 20, l: 0.8 });          // steam
     if (this.cutscene) this.updateCutscene();
     p.update();
@@ -551,9 +580,17 @@ export class Game {
     drawPopups(top, this.popups, cx, cy);
     if (this.cutscene && this.cutscene.scene) this.cutscene.scene.drawTop(top); else HUD.draw(top, this);
     if (!(this.cutscene && this.cutscene.scene)) drawBanner(top, this.bannerObj);
+    if (this.blackout && (this.blackout.a > 0.004 || this.blackout.wisp)) {               // (the Shadow Lord's second life: the screen goes black; the Lady's wisp opens a pool of light round the hero)
+      const b = this.blackout, p = this.player, hx = p.x - cx, hy = p.y - 22 - cy; top.save(); top.fillStyle = `rgba(0,0,0,${b.a.toFixed(3)})`; top.fillRect(0, 0, W, H);
+      if (b.r > 2) { top.globalCompositeOperation = 'destination-out'; const gr = top.createRadialGradient(hx, hy, 2, hx, hy, b.r); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.55, 'rgba(0,0,0,0.75)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); top.fillStyle = gr; top.fillRect(0, 0, W, H); top.globalCompositeOperation = 'source-over';
+        top.fillStyle = 'rgba(150,200,255,0.5)'; top.beginPath(); top.arc(hx + Math.sin(this.frame * 0.1) * 6, hy - 18 + Math.cos(this.frame * 0.13) * 4, 2.2, 0, Math.PI * 2); top.fill(); }
+      top.restore();
+      if (b.wisp) { const i = this.fx.lights.indexOf(this._wl); if (i >= 0) this.fx.lights.splice(i, 1); this._wl = [p.x, p.y - 22, Math.max(8, b.r * 1.4), 1, [0.55, 0.78, 1]]; this.fx.lights.push(this._wl); }
+    }
     if (this.state === 'dialog') this.dialog.draw(top);
     if (this.state === 'dead') this.gameOver.draw(top);
     if (this.state === 'pause') this.pauseMenu.draw(top);
+    if (this.state === 'shop') this.shop.draw(top);
     if (this.state === 'map') this.mapScreen.draw(ctx);                // (the map is a full sheet of its own: it hides the effects layer and this one)
     this.finishFrame();
   }

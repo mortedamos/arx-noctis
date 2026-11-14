@@ -225,7 +225,7 @@ export class Player extends Entity {
     const RUNV = RUN * (S.flags.got_shoes ? 1.1 : 1);                       // the Magic Shoes: 10% faster
     const groundLock = (this.atk && this.onGround) || this.castT || this.crouch;
     if (this.crouch && dx && !this.atk) this.dir = dx;
-    const slip = this.onGround && !this.ride && room.theme === 'ice' && room.get(Math.floor(this.x / T), Math.floor((this.y + 2) / T)) === TILE.SOLID, kA = slip ? 0.4 : 1, kF = slip ? 0.16 : 1; this.onIce = slip;
+    const slip = this.onGround && !this.ride && !this.S.flags.got_crampons && room.theme === 'ice' && room.get(Math.floor(this.x / T), Math.floor((this.y + 2) / T)) === TILE.SOLID, kA = slip ? 0.4 : 1, kF = slip ? 0.16 : 1; this.onIce = slip;
     if (this.dashT > 0) { if (S.flags.got_tide) g.dashHit(this); this.dashT--; this.vx = this.dir * DASH_V; this.vy = 0; if (this.dashT === 0) this.vx = this.dir * 2.2; if (this.t % 2 === 0) g.fx.burst(this.x - this.dir * 6, this.y - 18, 1, COLORS.purple, { speed: 0.3, s0: 12, s1: 3, l0: 14, l1: 22 }); this.trail.push({ x: this.x, y: this.y, f: this.frameInfo(), dir: this.dir, life: 14 }); }
     else if (groundLock) { this.vx = approach(this.vx, 0, FRIC * 1.4 * kF); }
     else if (dx) { this.vx = approach(this.vx, dx * RUNV, this.onGround ? ACC * kA : AIRACC); if (!this.atk || !this.onGround) this.dir = dx; }

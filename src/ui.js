@@ -12,6 +12,7 @@ import { ENCH, TUNE } from './enchant.js';
 import { ITEMS, KEYS } from './itemdata.js';
 import { STORY } from './story.js';
 import { BUILD } from './build.js';
+import { secretStats } from './secrets.js';
 import { BestiaryScreen } from './bestiary.js';
 
 const GOLD = '#e8b84a', PALE = '#e8dcc0', DIM = '#8a7d9a', RED = '#c23b2a';
@@ -276,7 +277,7 @@ export function controlsScreen(ctx) {
 // what the hero has found, for the pause screen: the four powers (dim and unnamed until found), the Magic Shoes and the Tide Blade once found, and the keys he carries
 const POWERS = [['djump', 'feather', 'AETHER FEATHER'], ['dash', 'boot', 'QUICKSILVER'], ['ember', 'ember', 'SULPHUR'], ['thunder', 'thunder', 'VITRIOL']];
 // what the pause screen lists as FOUND: the four powers, the relics the bosses leave, and the keys you carry (each with what it is and what it does, for the cursor to read out)
-const RELICS = [['got_mantle', 'mantle', 'SALAMANDER', 'mantle'], ['got_lantern', 'lantern', 'IGNIS FATUUS', 'lantern'], ['got_shard', 'shard', 'SPECULUM', 'shard'], ['got_spring', 'spring', 'PERPETUUM', 'spring'], ['got_shoes', 'shoes', 'HERMES SHOES', 'shoes'], ['got_tide', 'e_ice', 'AQUA REGIA', 'tide'], ['got_astrolabe', 'astrolabe', 'ASTROLABE', 'astrolabe']];
+const RELICS = [['got_mantle', 'mantle', 'SALAMANDER', 'mantle'], ['got_lantern', 'lantern', 'IGNIS VAPOUR', 'lantern'], ['got_shard', 'shard', 'SPECULUM', 'shard'], ['got_spring', 'spring', 'PERPETUUM', 'spring'], ['got_shoes', 'shoes', 'HERMES SHOES', 'shoes'], ['got_tide', 'e_ice', 'AQUA REGIA', 'tide'], ['got_astrolabe', 'astrolabe', 'ASTROLABE', 'astrolabe'], ['got_crampons', 'crampons', 'CRAMPONS', 'crampons']];
 const KEY_USE = { key_grave: "THE GRAVEKEEPER'S VAULT, OFF THE MOURNING FIELDS.", key_hall: "THE STEWARD'S VAULT, OFF THE PORTRAIT GALLERY.", key_chapel: "THE VERGER'S VAULT, OFF THE BELL GALLERY.", key_crypt: 'THE DOOR OF THE ORLOJ TOWER, HIGH ABOVE SMOULDERING LANE IN PRAGUE.', key_mire: "THE FERRYMAN'S VAULT, OFF THE WEEPING HOLLOW.", key_gear: "THE ENGINEER'S VAULT, OFF THE ESCAPEMENT.", key_frost: 'THE DOOR OF THE LIBRARY OF INK, AT THE CROSSING HALL.', key_gold: 'THE DOOR OF THE SHADOW THRONE, AT THE CROSSING HALL.' };
 export function foundItems(g) {
   const S = g.save, F = S.flags, AB = (g.info && g.info.ABILITIES) || {}, UP = (g.info && g.info.UPGRADES) || {}, rows = [];
@@ -345,13 +346,19 @@ export class PauseMenu {
 }
 
 // ---------------------------------------------------------------------------------------------- map
-// The castle is ~40 rooms wide, so the map scrolls: it centres on you (or, at a waystone, on the destination you are choosing).
+// THE MAP.  It was criticised as confusing, so it was rethought in passes:
+//   1. A strip of the castle that only scrolls shows no whole: now there are two views - DETAIL (the rooms as blocks of cells, centred on the room you have selected) and the WHOLE CASTLE (X switches).
+//   2. A web of lines between the rooms (channels, doors, one-way routes) was the worst of it, and it is gone.  A room shows its doors as small marks INSIDE it, where they really are.  Only the room you
+//      have selected shows where it leads: gold lines to its neighbours, and their names in the panel below.
+//   3. Everything was the same blue.  Each zone now has its own colour, and its name is written over it.
+//   4. You had to nudge the map about with the arrows.  Now the arrows MOVE A CURSOR from room to room (the map follows), and a panel names what it rests on and what is in it.
+//   5. The whole room flashed white to say 'you are here'.  Now a small pulsing pip stands exactly where you stand in your room.
+// The rooms keep the castle's layout (each chain of rooms is a row, side rooms hang below), and each takes as many cells as it needs: one per screen of the room.
 const ZCOL = { 1: '#4a6a3a', 2: '#8a6a2a', 3: '#6a4a9a', 4: '#4a7a7a', 5: '#9a2a3a', 6: '#a8542a', 7: '#3a7a5a', 8: '#9a7a3a', 9: '#3a6a9a', 10: '#8a5a2a', 11: '#5aa8d0' };
-// The map is drawn like the one in Symphony of the Night: every room is a block of CELLS (one cell is about one screen of the room: a long corridor is a row of cells, a tower a column of them), filled in
-// once you have been there, with bright walls, openings in the walls where it joins its neighbours, gold door marks, red save rooms and cyan waystones.  The rooms keep the castle's layout (each chain of
-// rooms is a row, the rooms of a chain stand side by side on the floor of their row, side rooms hang below), but each takes the room it needs.
 const CELL_W = 10, CELL_H = 8, GAP_X = 6, GAP_Y = 8, CELLS_W = 24, CELLS_H = 14;          // (a cell is 10 x 8 px on the map; a room is one cell per 24 tiles across and per 14 tiles up)
 const cellsOf = (n, per, max) => clamp(Math.round(n / per), 1, max);
+const rgbOf = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+const shade = (hex, k) => { const c = rgbOf(hex).map(v => Math.round(v * k)); return `rgb(${c[0]},${c[1]},${c[2]})`; };
 function mapLayout(ROOMS) {
   const list = Object.values(ROOMS), nx = Math.max(...list.map(r => r.map.x)) + 1, ny = Math.max(...list.map(r => r.map.y)) + 1, colW = Array(nx).fill(CELL_W), rowH = Array(ny).fill(CELL_H);
   for (const r of list) { colW[r.map.x] = Math.max(colW[r.map.x], cellsOf(r.w, CELLS_W, 7) * CELL_W); rowH[r.map.y] = Math.max(rowH[r.map.y], cellsOf(r.h, CELLS_H, 4) * CELL_H); }
@@ -359,18 +366,29 @@ function mapLayout(ROOMS) {
   for (let i = 0; i < nx; i++) { colX[i] = x; x += colW[i] + GAP_X; } for (let j = 0; j < ny; j++) { rowTop[j] = y; rowBot[j] = y + rowH[j]; y += rowH[j] + GAP_Y; }
   return { colX, colW, rowTop, rowBot, w: x, h: y };
 }
+const VIEW_Y0 = 24, VIEW_Y1 = 130;          // the map's window on the screen (the panel is beneath it)
 export class MapScreen {
   // o.teleport = id of the waystone room we are standing in: the map becomes a destination picker for every attuned waystone
   constructor(g, o = {}) {
-    this.g = g; this.t = 0; this.here = o.teleport || null; this.tele = !!o.teleport; this.pan = 0; this.panY = 0;
+    this.g = g; this.t = 0; this.here = o.teleport || null; this.tele = !!o.teleport; this.whole = false; this.sc = 1; this.rep = 0; this.left = 0;
     const S = g.save; this.stones = (g.world.stones || []).filter(id => S.flags['tp_' + id]);
     if (this.tele) { const i = this.stones.indexOf(this.here); this.sel = i > 0 ? i - 1 : Math.min(1, this.stones.length - 1); if (this.sel < 0) this.sel = 0; }
-    this.lay = mapLayout(g.world.rooms); const c = this.centre(this.focusRoom()); this.cam = { x: c.x, y: c.y };
+    this.lay = mapLayout(g.world.rooms); this.selId = g.world.rooms[g.room.id] ? g.room.id : Object.keys(S.visited)[0];
+    const c = this.centre(this.focusRoom()); this.cam = { x: c.x, y: c.y };
   }
-  // where a room sits on the map (cells; left-aligned in its column, standing on the floor of its row) and where its middle is
   rectOf(r) { const L = this.lay, cw = cellsOf(r.w, CELLS_W, 7), ch = cellsOf(r.h, CELLS_H, 4), w = cw * CELL_W, h = ch * CELL_H; return { x: L.colX[r.map.x], y: L.rowBot[r.map.y] - h, w, h, cw, ch }; }
   centre(r) { const q = this.rectOf(r); return { x: q.x + q.w / 2, y: q.y + q.h / 2 }; }
-  focusRoom() { const g = this.g; return this.tele ? g.world.rooms[this.stones[this.sel]] : g.world.rooms[g.room.id]; }
+  focusRoom() { const g = this.g; return this.tele ? g.world.rooms[this.stones[this.sel]] : g.world.rooms[this.selId] || g.world.rooms[g.room.id]; }
+  targetScale() { if (!this.whole) return 1; const L = this.lay; return Math.min(1, 0.97 * W / L.w, (VIEW_Y1 - VIEW_Y0 - 4) / L.h); }
+  // the visited room nearest to the cursor in a direction (a room straight ahead beats one off to the side)
+  hop(dx, dy) {
+    const S = this.g.save, R = this.g.world.rooms, cur = this.centre(R[this.selId]); let best = null, bs = 1e9;
+    for (const r of Object.values(R)) {
+      if (!S.visited[r.id] || r.id === this.selId) continue; const c = this.centre(r), ax = (c.x - cur.x) * dx + (c.y - cur.y) * dy, off = Math.abs((c.x - cur.x) * dy) + Math.abs((c.y - cur.y) * dx);
+      if (ax < 3) continue; const s = ax + 2.4 * off; if (s < bs) { bs = s; best = r; }
+    }
+    if (best) { this.selId = best.id; A.sfx('click'); }
+  }
   update() {
     this.t++; const g = this.g;
     if (this.tele) {
@@ -378,103 +396,69 @@ export class MapScreen {
       if (Input.pressed.confirm) { const id = this.stones[this.sel]; if (id && id !== this.here) g.teleportTo(id); else A.sfx('back'); return; }
       if (Input.pressed.map || Input.pressed.back || Input.pressed.pkey) g.resume();
     } else {
-      if (Input.held.left) this.pan -= 3; if (Input.held.right) this.pan += 3; this.pan = clamp(this.pan, -this.lay.w, this.lay.w);
-      if (Input.held.up) this.panY -= 2; if (Input.held.down) this.panY += 2; this.panY = clamp(this.panY, -this.lay.h, this.lay.h);
+      const dirs = [['left', -1, 0], ['right', 1, 0], ['up', 0, -1], ['down', 0, 1]]; let any = false;
+      for (const [k, dx, dy] of dirs) { if (Input.pressed[k]) { this.hop(dx, dy); this.rep = 0; } else if (Input.held[k]) { any = true; if (++this.rep > 16 && this.rep % 7 === 0) this.hop(dx, dy); } }
+      if (!any) this.rep = 0;
+      if (Input.pressed.attack || Input.pressed.jump) { this.whole = !this.whole; A.sfx('select'); }
       if (Input.pressed.map || Input.pressed.back || Input.pressed.pause || Input.pressed.confirm) g.resume();
     }
-    const f = this.focusRoom(), fc = this.centre(f), want = fc.x + (this.tele ? 0 : this.pan), wantY = fc.y + (this.tele ? 0 : this.panY); this.cam.x += (want - this.cam.x) * 0.2; this.cam.y += (wantY - this.cam.y) * 0.2;
+    this.sc += (this.targetScale() - this.sc) * 0.25; const f = this.focusRoom(), fc = this.centre(f), L = this.lay;
+    const wantX = this.whole && !this.tele ? L.w / 2 : fc.x, wantY = this.whole && !this.tele ? L.h / 2 : fc.y; this.cam.x += (wantX - this.cam.x) * 0.25; this.cam.y += (wantY - this.cam.y) * 0.25;
   }
   draw(ctx) {
-    const g = this.g, S = g.save, ROOMS = g.world.rooms; ctx.fillStyle = 'rgba(4,2,10,0.95)'; ctx.fillRect(0, 0, W, H);
-    drawText(ctx, this.tele ? 'WAYSTONE' : 'CASTLE MAP', W / 2, 8, { align: 'center', scale: 2, color: this.tele ? '#9fe8ff' : GOLD });
-    const rect = r => this.rectOf(r);
-    const rooms = Object.values(ROOMS).filter(r => S.visited[r.id]);
-    ctx.save(); ctx.beginPath(); ctx.rect(0, 28, W, 140); ctx.clip(); ctx.translate(Math.round(W / 2 - this.cam.x), Math.round(92 - this.cam.y));          // (the view centres on you, or on the waystone being chosen; the arrows scroll it)
-    // Every line starts and ends where its doorway really is, measured down the room's height: an open edge leaves a room at the height of its doorway and arrives at the height of the other room's;
-    // so a tower (entered at its foot, left at its top) is plainly a way THROUGH, never a dead end.  Plain dark lines are open passages; light lines with a gold mark are doors; a dotted line is a
-    // one-way door that drops you back at a crossroads.  A line is drawn once both of its rooms have been visited (a doorway whose far side is unseen shows as a short stub).
-    const at = (b, rm, row) => b.y + Math.floor(clamp(row / rm.h, 0, 0.999) * b.ch) * CELL_H + (CELL_H >> 1);          // (a doorway is at the middle of the cell row it opens on)
-    const seg = (x0, y0, x1, y1, col, dot) => {
-      ctx.fillStyle = col;
-      if (y0 === y1) { const a = Math.min(x0, x1), n = Math.abs(x1 - x0) + 2; if (!dot) ctx.fillRect(a, y0, n, 2); else for (let i = 0; i < n; i += 4) ctx.fillRect(a + i, y0, 2, 2); }
-      else { const a = Math.min(y0, y1), n = Math.abs(y1 - y0) + 2; if (!dot) ctx.fillRect(x0, a, 2, n); else for (let i = 0; i < n; i += 4) ctx.fillRect(x0, a + i, 2, 2); }
-    };
-    const path = (pts, col, dot) => { for (let i = 0; i + 1 < pts.length; i++) seg(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], col, dot); };
-    const mark = (x, y) => { ctx.fillStyle = '#05030a'; ctx.fillRect(x - 2, y - 2, 6, 6); ctx.fillStyle = '#d8b25a'; ctx.fillRect(x - 1, y - 1, 4, 4); ctx.fillStyle = '#2a2236'; ctx.fillRect(x, y, 2, 3); };
-    const PASS = '#5a74e0', DOOR = '#e0a844', ONEWAY = '#7fd8ff', STUB = '#33449a';
-    const crossroad = d => d.tag && d.tag !== 'in' && d.tag !== 'out';               // a door of a crossroads (it leads to the first room of a branch)
-    const fwd = {};                                                                  // each crossroads' branch doors, top to bottom: where their marks and channels sit along its right edge
-    for (const r of rooms) fwd[r.id] = r.doors.filter(crossroad).sort((a, b) => ROOMS[a.room].map.y - ROOMS[b.room].map.y);
-    const fmark = (hb, h, k) => hb.y + Math.round((k + 1) * (hb.h - 1) / (h.length + 1)) + 1;
-    const drawn = new Set(), once = (a, b, t) => { const k = [a, b].sort().join('|') + t; if (drawn.has(k)) return false; drawn.add(k); return true; };
+    const g = this.g, S = g.save, ROOMS = g.world.rooms, sc = this.sc, rect = r => this.rectOf(r), flash = Math.floor(this.t / 14) % 2;
+    ctx.fillStyle = 'rgba(4,2,10,0.96)'; ctx.fillRect(0, 0, W, H);
+    drawText(ctx, this.tele ? 'WAYSTONE' : this.whole ? 'THE WHOLE CASTLE' : 'CASTLE MAP', W / 2, 2, { align: 'center', scale: 1.5, color: this.tele ? '#9fe8ff' : GOLD });
+    const rooms = Object.values(ROOMS).filter(r => S.visited[r.id]), sel = this.focusRoom(), astro = !!S.flags.got_astrolabe;
+    const sx = x => W / 2 + (x - this.cam.x) * sc, sy = y => (VIEW_Y0 + VIEW_Y1) / 2 + (y - this.cam.y) * sc;          // (map coordinates -> screen)
+    ctx.save(); ctx.beginPath(); ctx.rect(0, VIEW_Y0, W, VIEW_Y1 - VIEW_Y0); ctx.clip(); ctx.translate(W / 2 - this.cam.x * sc, (VIEW_Y0 + VIEW_Y1) / 2 - this.cam.y * sc); ctx.scale(sc, sc);
+    // the rooms beside the ones you know, as faint shapes (the Astrolabe)
+    if (astro) { const near = new Set(); for (const r of rooms) for (const id of [...r.exits.map(e => e.room), ...r.doors.map(d => d.room)]) if (id && ROOMS[id] && !S.visited[id]) near.add(id);
+      for (const id of near) { const q = rect(ROOMS[id]); ctx.fillStyle = 'rgba(120,110,150,0.22)'; ctx.fillRect(q.x, q.y, q.w, q.h); ctx.strokeStyle = 'rgba(180,170,210,0.35)'; ctx.strokeRect(q.x + 0.5, q.y + 0.5, q.w - 1, q.h - 1); } }
+    // the rooms: each filled in its zone's colour, a bright wall with gaps where it opens on a neighbour, and the marks of what it holds
     for (const r of rooms) {
-      const rb = rect(r);
-      for (const e of r.exits) {                                                     // open edges: drawn from the room on the left
-        if (e.side !== 'R') continue; const t = ROOMS[e.room], ya = at(rb, r, (e.from + e.to) / 2);
-        if (!t || !S.visited[t.id]) { seg(rb.x + rb.w, ya, rb.x + rb.w + 4, ya, STUB); continue; }
-        const tb = rect(t), back = t.exits.find(q => q.room === r.id), yb = at(tb, t, back ? (back.from + back.to) / 2 : e.gy - 1), mx = Math.round((rb.x + rb.w + tb.x) / 2);
-        path([[rb.x + rb.w, ya], [mx, ya], [mx, yb], [tb.x, yb]], PASS);
-      }
-      for (const d of r.doors) {
-        const t = ROOMS[d.room]; if (!t) continue;
-        if (d.tag === 'in') continue;                                                // (the crossroads draws this line)
-        if (crossroad(d)) {                                                          // a crossroads door: out of the right edge, along a channel, in at the branch's first room
-          const k = fwd[r.id].indexOf(d), my = fmark(rb, fwd[r.id], k), cx = rb.x + rb.w + 3 + 2 * k;
-          if (!S.visited[t.id]) { seg(rb.x + rb.w - 1, my, cx + 2, my, STUB); mark(rb.x + rb.w - 2, my); continue; }
-          const tb = rect(t), yb = at(tb, t, d.tgy);
-          path([[rb.x + rb.w - 1, my], [cx, my], [cx, yb], [tb.x, yb]], DOOR); mark(rb.x + rb.w - 2, my); continue;
-        }
-        if (d.tag === 'out') {                                                       // the far end of a branch: a one-way door back to its crossroads
-          if (!S.visited[t.id]) continue;
-          const hb = rect(t), k = fwd[t.id].findIndex(q => q.tag === d.destTag); if (k < 0) continue;
-          const my = fmark(hb, fwd[t.id], k), cx = hb.x + hb.w + 4 + 2 * k, sx = rb.x + rb.w - 4, down = t.map.y > r.map.y;
-          const lane = down ? this.lay.rowBot[r.map.y] + 3 : this.lay.rowTop[r.map.y] - 3;               // a lane along the foot (or the head) of the branch's row
-          path([[sx, down ? rb.y + rb.h : rb.y], [sx, lane], [cx, lane], [cx, my], [hb.x + hb.w - 1, my]], ONEWAY, true); mark(sx, down ? rb.y + rb.h - 1 : rb.y + 1); continue;
-        }
-        if (!S.visited[t.id]) continue;
-        const tb = rect(t), side = t.map.x === r.map.x && t.map.y !== r.map.y;
-        if (side) {                                                                  // a side room (a house, a sanctuary, a lair): hangs below its parent
-          if (t.map.y < r.map.y || !once(r.id, t.id, 'd')) continue;
-          const up = rooms.filter(q => q.map.x === t.map.x && q.map.y < t.map.y).sort((p, q) => q.map.y - p.map.y)[0] || r, ub = rect(up), cx = ub.x + (ub.w >> 1), ym = Math.round((ub.y + ub.h + tb.y) / 2);                    // (one straight line down the column - the rooms stacked under a parent never tangle - with a door mark in the gap)
-          path([[cx, ub.y + ub.h - 1], [cx, tb.y]], DOOR); mark(cx - 1, ym - 1); continue;
-        }
-        if (!once(r.id, t.id, 'd')) continue;                                        // two neighbours joined by a door at each end instead of an open edge
-        const L = rb.x < tb.x, p = L ? [rb, r, d.gy] : [tb, t, d.tgy], q = L ? [tb, t, d.tgy] : [rb, r, d.gy];
-        const ya = at(p[0], p[1], p[2]), yb = at(q[0], q[1], q[2]), mx = Math.round((p[0].x + p[0].w + q[0].x) / 2);
-        path([[p[0].x + p[0].w, ya], [mx, ya], [mx, yb], [q[0].x, yb]], DOOR); mark(mx - 1, Math.min(ya, yb));
-      }
-    }
-    const astro = !!S.flags.got_astrolabe;          // the Astrolabe: the rooms beside the ones you know show as faint shapes, and treasure left behind is marked
-    if (astro) {
-      const near = new Set(); for (const r of rooms) for (const id of [...r.exits.map(e => e.room), ...r.doors.map(d => d.room)]) if (id && ROOMS[id] && !S.visited[id]) near.add(id);
-      for (const id of near) { const q = rect(ROOMS[id]); ctx.fillStyle = 'rgba(120,110,150,0.22)'; ctx.fillRect(q.x, q.y, q.w, q.h); ctx.strokeStyle = 'rgba(180,170,210,0.35)'; ctx.strokeRect(q.x + 0.5, q.y + 0.5, q.w - 1, q.h - 1); drawText(ctx, '?', q.x + q.w / 2, q.y + q.h / 2 - 3, { align: 'center', color: 'rgba(200,190,230,0.5)' }); }
-    }
-    const flash = Math.floor(this.t / 18) % 2;
-    for (const r of rooms) {                                                          // each room a block of cells: filled blue (red for a save room, cyan for a waystone), bright walls with gaps where it opens on a neighbour
-      const q = rect(r), x = q.x, y = q.y, w = q.w, h = q.h, stone = r.spawns.some(sp => sp.type === 'waystone'), lit = S.flags['tp_' + r.id];
-      const pal = r.save ? ['#a81c1c', '#d03a3a'] : stone ? (lit ? ['#0f8a8a', '#26c0c0'] : ['#0c4a56', '#1a7080']) : ['#1a2a9c', '#2c44c8'];
-      ctx.fillStyle = pal[0]; ctx.fillRect(x, y, w, h);
-      ctx.fillStyle = pal[1]; for (let i = 1; i < q.cw; i++) ctx.fillRect(x + i * CELL_W, y, 1, h); for (let j = 1; j < q.ch; j++) ctx.fillRect(x, y + j * CELL_H, w, 1);          // the grid of cells
-      ctx.fillStyle = ZCOL[r.zone] || '#555'; ctx.fillRect(x + 1, y + h - 2, w - 2, 1);          // (a thread of the zone's colour along the floor)
+      const q = rect(r), x = q.x, y = q.y, w = q.w, h = q.h, stone = r.spawns.some(sp => sp.type === 'waystone'), shop = r.spawns.some(sp => sp.type === 'shopkeeper'), lit = S.flags['tp_' + r.id], zc = ZCOL[r.zone] || '#555555';
+      const base = r.save ? '#5a1010' : stone ? (lit ? '#0c5a5a' : '#0a3a44') : shade(zc, 0.42), grid = r.save ? '#8a2020' : stone ? '#1a8a8a' : shade(zc, 0.7);
+      ctx.fillStyle = base; ctx.fillRect(x, y, w, h);
+      if (sc > 0.6) { ctx.fillStyle = grid; for (let i = 1; i < q.cw; i++) ctx.fillRect(x + i * CELL_W, y, 1, h); for (let j = 1; j < q.ch; j++) ctx.fillRect(x, y + j * CELL_H, w, 1); }
       const gaps = { L: new Set(), R: new Set() }; for (const e of r.exits) if (gaps[e.side]) gaps[e.side].add(Math.floor(clamp(((e.from + e.to) / 2) / r.h, 0, 0.999) * q.ch));
-      ctx.fillStyle = '#c4d2ff'; ctx.fillRect(x, y, w, 1); ctx.fillRect(x, y + h - 1, w, 1);
+      ctx.fillStyle = '#d6defa'; ctx.fillRect(x, y, w, 1); ctx.fillRect(x, y + h - 1, w, 1);
       for (let j = 0; j < q.ch; j++) { if (!gaps.L.has(j)) ctx.fillRect(x, y + j * CELL_H, 1, CELL_H); if (!gaps.R.has(j)) ctx.fillRect(x + w - 1, y + j * CELL_H, 1, CELL_H); }
+      for (const d of r.doors) {                                                       // a door: a small mark where it really is in the room (gold; light blue for a one-way door; violet for the Keeper's)
+        const tx = Math.round(x + clamp((d.x + 0.5) / r.w, 0.04, 0.96) * w), ty = Math.round(y + clamp(d.gy / r.h, 0.1, 0.96) * h) - 2, one = d.tag === 'out', kp = ROOMS[d.room] && ROOMS[d.room].spawns.some(sp => sp.type === 'shopkeeper');
+        ctx.fillStyle = '#05030a'; ctx.fillRect(tx - 1, ty - 1, 4, 5); ctx.fillStyle = kp ? '#c8a0ff' : one ? '#7fd8ff' : '#e8b84a'; ctx.fillRect(tx, ty, 2, 3); }
       if (stone) { const cx = x + w / 2, cy = y + h / 2; ctx.fillStyle = lit ? '#e8ffff' : '#6a9aaa'; ctx.fillRect(Math.round(cx) - 1, Math.round(cy) - 3, 2, 6); ctx.fillRect(Math.round(cx) - 3, Math.round(cy) - 1, 6, 2); }
+      if (shop) { const cx = x + w / 2, cy = y + h / 2; ctx.fillStyle = '#c8a0ff'; ctx.fillRect(Math.round(cx) - 2, Math.round(cy) - 2, 4, 4); ctx.fillStyle = '#2a1646'; ctx.fillRect(Math.round(cx) - 1, Math.round(cy) - 1, 2, 2); }
       if (r.boss) { const done = S.flags['boss_' + r.id]; icon(ctx, 'skull', x + w / 2, y + h / 2, 0.6, done ? 0.4 : 1); }
-      if (r.id === g.room.id && flash) { ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillRect(x, y, w, h); }          // (where you are flashes, as in the old castle maps)
     }
+    // where you are: a pulsing pip at your very spot in your room
+    const here = ROOMS[g.room.id]; if (here && S.visited[here.id]) { const q = rect(here), px = q.x + clamp(g.player.x / g.room.pw, 0, 1) * q.w, py = q.y + clamp(g.player.y / g.room.ph, 0, 1) * q.h; ctx.fillStyle = '#05030a'; ctx.fillRect(Math.round(px) - 3, Math.round(py) - 3, 6, 6); ctx.fillStyle = flash ? '#ffffff' : '#ffe08a'; ctx.fillRect(Math.round(px) - 2, Math.round(py) - 2, 4, 4); }
+    // treasure left behind (the Astrolabe)
     let left = 0;
-    if (astro) for (const r of rooms) {                                                // a gold diamond for each treasure still lying in a room you have seen
-      const q = rect(r);
-      for (const sp of r.spawns) { const o = sp.o || {}; if (!((sp.type === 'upgrade' && !S.flags[o.id]) || (sp.type === 'chest' && !S.flags[o.id + '_u']))) continue; left++;
+    if (astro) for (const r of rooms) { const q = rect(r);
+      for (const sp of r.spawns) { const o = sp.o || {}; if (o.secret) continue; if (!((sp.type === 'upgrade' && !S.flags[o.id]) || (sp.type === 'chest' && !S.flags[o.id + '_u']))) continue; left++;
         const mx = Math.round(q.x + (sp.x + 0.5) / r.w * q.w), my = Math.round(q.y + (sp.y - 0.5) / r.h * q.h), pulse = Math.floor(this.t / 14) % 2;
-        ctx.fillStyle = '#05030a'; ctx.fillRect(mx - 3, my - 1, 7, 3); ctx.fillRect(mx - 1, my - 3, 3, 7); ctx.fillStyle = pulse ? '#ffe9a0' : '#e8b84a'; ctx.fillRect(mx - 2, my, 5, 1); ctx.fillRect(mx, my - 2, 1, 5); ctx.fillRect(mx - 1, my - 1, 3, 3); }
-    }
+        ctx.fillStyle = '#05030a'; ctx.fillRect(mx - 3, my - 1, 7, 3); ctx.fillRect(mx - 1, my - 3, 3, 7); ctx.fillStyle = pulse ? '#ffe9a0' : '#e8b84a'; ctx.fillRect(mx - 2, my, 5, 1); ctx.fillRect(mx, my - 2, 1, 5); ctx.fillRect(mx - 1, my - 1, 3, 3); } }
     this.left = left;
+    // the selected room: a bright frame, and gold lines to where its doors and openings lead
+    const links = [];
+    if (sel && !this.tele) {
+      const sq = rect(sel), a = (q, rm, row) => q.y + Math.floor(clamp(row / rm.h, 0, 0.999) * q.ch) * CELL_H + (CELL_H >> 1);
+      for (const e of sel.exits) { const t = ROOMS[e.room]; if (!t) continue; const tq = rect(t), right = e.side === 'R', seen = !!S.visited[t.id]; links.push({ id: t.id, seen, x0: right ? sq.x + sq.w : sq.x, y0: a(sq, sel, (e.from + e.to) / 2), x1: right ? tq.x : tq.x + tq.w, y1: seen ? tq.y + tq.h / 2 : a(sq, sel, (e.from + e.to) / 2), kind: 'open' }); }
+      for (const d of sel.doors) { const t = ROOMS[d.room]; if (!t) continue; const tq = rect(t), seen = !!S.visited[t.id], tx = sq.x + clamp((d.x + 0.5) / sel.w, 0.04, 0.96) * sq.w, ty = sq.y + clamp(d.gy / sel.h, 0.1, 0.96) * sq.h - 1; links.push({ id: t.id, seen, x0: tx, y0: ty, x1: tq.x + tq.w / 2, y1: tq.y + tq.h / 2, kind: d.tag === 'out' ? 'oneway' : 'door' }); }
+      for (const l of links) { ctx.strokeStyle = l.kind === 'oneway' ? '#7fd8ff' : '#ffd860'; ctx.lineWidth = 1 / Math.max(sc, 0.5); ctx.setLineDash(l.seen ? [] : [2, 2]); ctx.beginPath(); ctx.moveTo(l.x0, l.y0); ctx.lineTo(l.x1, l.y1); ctx.stroke(); ctx.setLineDash([]);
+        if (l.seen) { const tq = rect(ROOMS[l.id]); ctx.strokeStyle = l.kind === 'oneway' ? '#7fd8ff' : '#ffd860'; ctx.strokeRect(tq.x - 1.5, tq.y - 1.5, tq.w + 3, tq.h + 3); } }
+      const pulse = 0.6 + 0.4 * Math.sin(this.t * 0.2); ctx.strokeStyle = `rgba(255,255,255,${pulse.toFixed(2)})`; ctx.lineWidth = 1.5 / Math.max(sc, 0.5); ctx.strokeRect(sq.x - 2, sq.y - 2, sq.w + 4, sq.h + 4);
+    }
     if (this.tele) for (let i = 0; i < this.stones.length; i++) {       // brackets round every attuned waystone; the chosen one pulses
       const r = ROOMS[this.stones[i]]; if (!r) continue; const q = rect(r), on = i === this.sel, pad = on ? 3 + (Math.floor(this.t / 8) % 2) : 2;
       ctx.strokeStyle = on ? '#bff4ff' : (r.id === this.here ? '#ffffff' : '#4aa8c8'); ctx.lineWidth = on ? 2 : 1; ctx.strokeRect(q.x - pad + 0.5, q.y - pad + 0.5, q.w + pad * 2 - 1, q.h + pad * 2 - 1);
     }
+    ctx.restore();
+    // the zones' names, written over their rooms (in screen space, so they stay readable at any zoom)
+    ctx.save(); ctx.beginPath(); ctx.rect(0, VIEW_Y0, W, VIEW_Y1 - VIEW_Y0); ctx.clip();
+    const zb = {}; for (const r of rooms) { const q = rect(r), z = zb[r.zone] || (zb[r.zone] = { x0: 1e9, y0: 1e9, x1: -1e9 }); z.x0 = Math.min(z.x0, q.x); z.y0 = Math.min(z.y0, q.y); z.x1 = Math.max(z.x1, q.x + q.w); }
+    for (const [z, b] of Object.entries(zb)) { const name = ZONES[z] ? ZONES[z].name.toUpperCase() : ''; const x = Math.round(sx((b.x0 + b.x1) / 2)), y = Math.round(sy(b.y0)) - 9; if (x < -80 || x > W + 80 || y < VIEW_Y0 - 8 || y > VIEW_Y1) continue; drawText(ctx, name, x, y, { align: 'center', color: ZCOL[z] ? shade(ZCOL[z], 1.7) : '#aaa', outline: '#000' }); }
     ctx.restore();
     if (this.tele) {
       const id = this.stones[this.sel], r = id && ROOMS[id];
@@ -483,11 +467,21 @@ export class MapScreen {
       drawText(ctx, Input.touchOn ? 'PAD LEFT / RIGHT CHOOSE     JUMP = TRAVEL     HIT = CANCEL' : 'LEFT / RIGHT CHOOSE     ENTER TRAVEL     ESC CANCEL', W / 2, H - 12, { align: 'center', color: PALE });
       return;
     }
-    { const here = ROOMS[g.room.id]; if (here) { const where = (ZONES[here.zone].name + ' - ' + here.name).toUpperCase(), one = 'YOU ARE IN:  ' + where, fits = sc => textWidth(one, sc) <= W - 16; if (fits(1.1)) drawText(ctx, one, W / 2, H - 47, { align: 'center', color: '#ffffff', scale: 1.1 }); else { drawText(ctx, 'YOU ARE IN:', W / 2, H - 58, { align: 'center', color: '#ffffff', scale: 1 }); let sc = 1.1; while (sc > 0.7 && textWidth(where, sc) > W - 16) sc -= 0.05; drawText(ctx, where, W / 2, H - 48, { align: 'center', color: '#ffffff', scale: sc }); } }          // (a long place name goes on a second line, and shrinks if it must, so it never runs off the screen)
-    }          // where the hero is
-    if (astro) drawText(ctx, left ? `ASTROLABE: ${left} TREASURE${left === 1 ? '' : 'S'} LEFT (GOLD DIAMONDS)` : 'ASTROLABE: NO TREASURE LEFT IN ROOMS YOU HAVE SEEN', W / 2, 21, { align: 'center', color: '#e8c872' });
-    const done = Object.keys(S.flags).filter(k => /^(g2|h2|c1|u1|u2|t1|c2|v2|v3|g4|w1|w2|w3|bu)_/.test(k) && !k.endsWith('_u')).length;
-    drawText(ctx, 'WHITE = YOU   RED = SAVE   CYAN CROSS = WAYSTONE', W / 2, H - 35, { align: 'center', color: DIM }); drawText(ctx, 'SKULL = BOSS   GOLD = DOOR   DOTS = ONE-WAY   ARROWS SCROLL', W / 2, H - 24, { align: 'center', color: DIM }); drawText(ctx, `ROOMS ${Object.keys(S.visited).length}/${Object.keys(ROOMS).length}   SECRETS ${done}   SEED ${S.seed}`, W / 2, H - 12, { align: 'center', color: PALE });
+    // the panel: what the cursor rests on, what it holds, where it leads
+    ctx.fillStyle = 'rgba(14,9,28,0.95)'; ctx.fillRect(0, VIEW_Y1 + 2, W, H - VIEW_Y1 - 2); ctx.fillStyle = '#3a2f4a'; ctx.fillRect(0, VIEW_Y1 + 2, W, 1);
+    if (sel) {
+      const zc = ZCOL[sel.zone] || '#888', onHere = sel.id === g.room.id, tags = [];
+      if (sel.boss) tags.push(S.flags['boss_' + sel.id] ? 'BOSS DEFEATED' : 'BOSS'); if (sel.save) tags.push('SAVE'); if (sel.spawns.some(sp => sp.type === 'waystone')) tags.push(S.flags['tp_' + sel.id] ? 'WAYSTONE (ATTUNED)' : 'WAYSTONE'); if (sel.spawns.some(sp => sp.type === 'shopkeeper')) tags.push('THE KEEPER SELLS HERE');
+      drawText(ctx, ZONES[sel.zone].name.toUpperCase(), 8, VIEW_Y1 + 5, { color: shade(zc, 1.8) }); drawText(ctx, (sel.name + (onHere ? '   (YOU ARE HERE)' : '')).toUpperCase(), 8, VIEW_Y1 + 15, { color: '#ffffff', scale: 1.15 });
+      if (tags.length) drawText(ctx, tags.join('   '), 8, VIEW_Y1 + 28, { color: '#e8c872' });
+      const dest = [...new Set(links.filter(l => l.seen).map(l => ROOMS[l.id].name))].slice(0, 4), unk = links.filter(l => !l.seen).length;
+      const lead = (dest.length ? 'LEADS TO: ' + dest.join(', ').toUpperCase() : '') + (unk ? (dest.length ? '   +' : '') + unk + ' UNEXPLORED' : ''); if (lead) wrapText(lead, W - 16, 1).slice(0, 2).forEach((ln, i) => drawText(ctx, ln, 8, VIEW_Y1 + 38 + i * 9, { color: '#9fb0e8' }));
+    }
+    const sec = secretStats(g);
+    if (astro) drawText(ctx, left ? `ASTROLABE: ${left} TREASURE${left === 1 ? '' : 'S'} LEFT (GOLD DIAMONDS)` : 'ASTROLABE: NO TREASURE LEFT IN ROOMS YOU HAVE SEEN', W / 2, 15, { align: 'center', color: '#e8c872' });
+    drawText(ctx, `ROOMS ${Object.keys(S.visited).length}/${Object.keys(ROOMS).length}   SECRETS ${sec.found}/${sec.total}`, W - 8, VIEW_Y1 + 5, { align: 'right', color: PALE });
+    drawText(ctx, 'GOLD DOOR   BLUE ONE-WAY   VIOLET KEEPER   RED SAVE   CYAN WAYSTONE', W / 2, H - 20, { align: 'center', color: '#6a6078' });
+    drawText(ctx, Input.touchOn ? 'PAD MOVES THE CURSOR     JUMP: WHOLE CASTLE / DETAIL     MAP CLOSES' : 'ARROWS MOVE THE CURSOR     X: WHOLE CASTLE / DETAIL     M OR ESC CLOSES', W / 2, H - 10, { align: 'center', color: DIM });
   }
 }
 
@@ -532,13 +526,21 @@ export class Ending {
   update() { this.t++; if (this.t > 780 && !this.menu) this.menu = new Menu([{ label: 'RETURN TO TITLE', action: () => this.g.toTitle() }]); if (this.menu) this.menu.update(this.g); }
   draw(ctx) {
     const t = this.t, g = this.g, S = g.save; const a = clamp(t / 240, 0, 1);
-    const grd = ctx.createLinearGradient(0, 0, 0, H); grd.addColorStop(0, `rgba(${Math.round(30 + 200 * a)},${Math.round(20 + 120 * a)},${Math.round(60 + 30 * a)},${0.35 + 0.65 * a})`); grd.addColorStop(1, `rgba(${Math.round(120 + 130 * a)},${Math.round(60 + 90 * a)},${Math.round(30 + 40 * a)},${0.5 + 0.5 * a})`);
-    ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
-    const sy = H - 20 - easeOut(clamp((t - 40) / 400, 0, 1)) * 110; ctx.fillStyle = `rgba(255,236,170,${0.4 + 0.6 * a})`; ctx.beginPath(); ctx.arc(W / 2, sy + 60, 34 + a * 10, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#0a0612'; ctx.beginPath(); ctx.moveTo(0, H); ctx.lineTo(0, H - 36); for (let x = 0; x <= W; x += 24) ctx.lineTo(x, H - 36 - Math.abs(Math.sin(x * 0.07)) * 14); ctx.lineTo(W, H); ctx.fill();
+    // THE HILL ABOVE PRAGUE AT DAWN: the sky warms from violet to gold, the sun climbs from behind the mountains and the city, and the light spreads over the hill
+    const lerp3 = (A, B, C, k) => { const p = k < 0.5 ? [A, B, k * 2] : [B, C, (k - 0.5) * 2]; return p[0].map((v, i) => Math.round(v + (p[1][i] - v) * p[2])); };
+    const k = easeOut(clamp((t - 40) / 520, 0, 1)), top = lerp3([22, 14, 44], [120, 72, 120], [255, 214, 150], k), bot = lerp3([54, 28, 66], [236, 122, 78], [255, 236, 180], k), hz = 158;
+    const grd = ctx.createLinearGradient(0, 0, 0, hz); grd.addColorStop(0, `rgb(${top})`); grd.addColorStop(1, `rgb(${bot})`); ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
+    const sx = Math.round(W * 0.84), sy = hz + 30 - k * 128;                                              // (it rises behind the mountains and the city)
+    const halo = ctx.createRadialGradient(sx, sy, 4, sx, sy, 150); halo.addColorStop(0, `rgba(255,236,170,${0.75 * k})`); halo.addColorStop(1, 'rgba(255,170,80,0)'); ctx.fillStyle = halo; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = `rgb(255,${Math.round(236 + 14 * k)},${Math.round(170 + 70 * k)})`; ctx.beginPath(); ctx.arc(sx, sy, 20 + k * 8, 0, Math.PI * 2); ctx.fill();
+    const strip = (img, y, sc = 1) => { if (img) for (let x = 0; x < W; x += img.width * sc) ctx.drawImage(img, Math.round(x), Math.round(y), Math.round(img.width * sc), Math.round(img.height * sc)); };
+    strip(IMG.dusk_far, hz - (IMG.dusk_far ? IMG.dusk_far.height : 0) + 36); strip(IMG.dusk_mountains, hz - (IMG.dusk_mountains ? IMG.dusk_mountains.height : 0) + 40); strip(IMG.town_mid, hz - (IMG.town_mid ? IMG.town_mid.height * 0.5 : 0) + 6, 0.5);          // (the city, far off and small, so the sun can climb above its roofs)
+    ctx.fillStyle = `rgba(255,170,90,${0.3 * k})`; ctx.fillRect(0, 0, W, H); const gl = ctx.createLinearGradient(0, hz - 50, 0, hz + 10); gl.addColorStop(0, 'rgba(255,200,120,0)'); gl.addColorStop(1, `rgba(255,210,130,${0.45 * k})`); ctx.fillStyle = gl; ctx.fillRect(0, hz - 50, W, 60);          // (morning light on the roofs)
+    const hill = `rgb(${Math.round(10 + 70 * k)},${Math.round(6 + 56 * k)},${Math.round(18 + 22 * k)})`; ctx.fillStyle = hill; ctx.beginPath(); ctx.moveTo(0, H); ctx.lineTo(0, 150); ctx.quadraticCurveTo(70, 140, 150, 160); ctx.quadraticCurveTo(250, 182, W, 172); ctx.lineTo(W, H); ctx.fill();          // the hill, lit from the sun's side as the day comes
+    ctx.strokeStyle = `rgba(255,226,150,${0.7 * k})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, 150.5); ctx.quadraticCurveTo(70, 140.5, 150, 160.5); ctx.quadraticCurveTo(250, 182.5, W, 172.5); ctx.stroke();
     if (t > 200) { const k = clamp((t - 200) / 60, 0, 1); drawText(ctx, STORY.ending.title, W / 2, 30, { align: 'center', scale: 2, color: '#fff0b0', outline: '#3a1008', alpha: k }); }
     STORY.ending.lines.map((txt, i) => [txt, 50 + i * 12, 330 + i * 40]).forEach(([txt, yy, t0]) => { if (t > t0) drawText(ctx, txt, W / 2, yy, { align: 'center', scale: 1.15, color: '#3a1008', alpha: clamp((t - t0) / 60, 0, 1) }); });
-    if (t > 560) { const k = clamp((t - 560) / 60, 0, 1); panel(ctx, 100, 114, W - 200, 54, 0.8 * k); ctx.globalAlpha = k; drawText(ctx, `TIME ${fmtTime(S.time)}    LEVEL ${S.level}`, W / 2, 120, { align: 'center', color: PALE }); drawText(ctx, `FOES SLAIN ${g.kills + (S.kills || 0)}    ITEMS ${g.itemPercent()}%`, W / 2, 132, { align: 'center', color: PALE }); drawText(ctx, 'THANK YOU FOR PLAYING', W / 2, 150, { align: 'center', color: GOLD }); ctx.globalAlpha = 1; }
+    if (t > 560) { const k = clamp((t - 560) / 60, 0, 1), sec = secretStats(g); panel(ctx, 96, 104, W - 192, 70, 0.8 * k); ctx.globalAlpha = k; drawText(ctx, `TIME ${fmtTime(S.time)}    LEVEL ${S.level}`, W / 2, 109, { align: 'center', color: PALE }); drawText(ctx, `FOES SLAIN ${g.kills + (S.kills || 0)}    ITEMS ${g.itemPercent()}%`, W / 2, 121, { align: 'center', color: PALE }); drawText(ctx, `SECRETS FOUND ${sec.found} / ${sec.total}`, W / 2, 133, { align: 'center', color: sec.found === sec.total && sec.total ? GOLD : PALE }); drawText(ctx, 'THANK YOU FOR PLAYING', W / 2, 155, { align: 'center', color: GOLD }); ctx.globalAlpha = 1; }
     if (t > 300) {                                                                    // the hill above Prague, in the sunlight: the Stranger kneels at her grave - and she is beside him, seen at last without any blue light
       const hk = SHEET.hero_crouch_cw ? 'hero_crouch_cw' : 'hero_crouch', fa = clamp((t - 300) / 60, 0, 1), ga = clamp((t - 480) / 120, 0, 1);
       ctx.fillStyle = '#0a0612'; ctx.beginPath(); ctx.moveTo(34, 169); ctx.lineTo(34, 150); ctx.quadraticCurveTo(41, 141, 48, 150); ctx.lineTo(48, 169); ctx.fill();

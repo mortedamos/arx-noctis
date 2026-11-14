@@ -1,6 +1,6 @@
 // Disposable items: thrown with the SPELL key (C / I) once selected on the hotbar (Q / V move the selection).  Counts are capped per item,
 // saved with the game, and found as drops, in statues and lying around the castle.
-//   dagger   - weak, fast, long flat throw                       axe      - slow heavy arc that cuts through everything in its path
+//   dagger   - weak, fast, long flat throw
 //   torch    - slow arc; sets what it hits ablaze (damage over time), burns wooden barricades, leaves a short ground fire
 //   marrow   - the magic arrow: a dagger that homes in on the nearest foe, trailing white sparks
 //   holy     - a flask that shatters into a pool of holy light; the undead take much more      bandage - heals 35% of your max HP over ~1.5 s
@@ -25,7 +25,7 @@ class Thrown {
   solidAt(g, x, y) { return g.room.solid(Math.floor(x / T), Math.floor(y / T)); }
   // enemies currently touched (that haven't been hit by this throw yet)
   touching(g) { const b = this.hb(), out = []; for (const e of g.enemies) if (!e.dead && !this.hits.has(e) && e.hitBy(b)) out.push(e); return out; }
-  strike(g, e, dmg, color) { this.hits.add(e); return e.hurt(dmg, this.dir, { id: hitId(), color, kb: 1.1 }); }
+  strike(g, e, dmg, color, extra = {}) { this.hits.add(e); return e.hurt(dmg, this.dir, { id: hitId(), color, kb: 1.1, ...extra }); }
   explode() { this.dead = true; }
   step(g) {                                                       // returns 'wall' | 'floor' | null after moving one step
     this.t++; this.vy += this.grav; this.rot += this.spin; const nx = this.x + this.vx, ny = this.y + this.vy;
@@ -84,17 +84,6 @@ class MagicArrow extends Thrown {
   }
 }
 
-class Axe extends Thrown {
-  constructor(g, x, y, dir, dmg) { super(x, y, dir * 2.5, -3.4, { dmg, w: 12, h: 12, grav: 0.17, life: 110, spin: 0.28 * dir, pierce: true }); }
-  update(g) {
-    const r = this.step(g);
-    if (r === 'wall' || r === 'floor') { g.fx.sparks(this.x, this.y, 6, [[1, 1, 1], [0.7, 0.75, 0.9]], 2.2); A.sfx('block'); this.dead = true; return; }
-    for (const e of this.touching(g)) { if (this.strike(g, e, this.dmg, '#ffd8a0')) g.fx.sparks(e.x, e.cy, 5, [[1, 1, 1], [1, 0.8, 0.4]], 2.6); }
-    for (const o of g.props) if (o.hit && !o.dead && !this.hits.has(o) && o.box && this.x > o.box.x - 4 && this.x < o.box.x + o.box.w + 4 && this.y > o.box.y && this.y < o.box.y + o.box.h) { this.hits.add(o); o.hit(g, this.dmg, this.dir); }
-  }
-  draw(ctx, cx, cy) { ctx.save(); ctx.translate(Math.round(this.x - cx), Math.round(this.y - cy)); ctx.rotate(this.rot); ctx.fillStyle = '#7a4a22'; ctx.fillRect(-1, -7, 2, 14); ctx.fillStyle = '#cfd6e6'; ctx.beginPath(); ctx.moveTo(1, -7); ctx.lineTo(7, -9); ctx.lineTo(7, -1); ctx.lineTo(1, -3); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.fillRect(6, -8, 1, 6); ctx.restore(); }
-}
-
 // ground fire left by a torch: ignites ground enemies that walk through it
 class GroundFlame {
   constructor(x, y, dmg) { this.x = x; this.y = y; this.dmg = dmg; this.life = 170; this.owner = 'player'; this.dead = false; this.t = 0; this.w = 20; this.h = 12; this.vx = 0; this.vy = 0; }
@@ -109,17 +98,17 @@ class GroundFlame {
 }
 
 class ThrownTorch extends Thrown {
-  constructor(g, x, y, dir, dmg, burn) { super(x, y, dir * 2.2, -2.3, { dmg, burn, w: 8, h: 8, grav: 0.14, life: 140, spin: 0.22 * dir }); }
+  constructor(g, x, y, dir, dmg, burn) { super(x, y, dir * 1.8, -3.9, { dmg, burn, w: 8, h: 8, grav: 0.14, life: 160, spin: 0.22 * dir }); }          // (a high lob: up and over, landing about as far as before)
   update(g) {
     const r = this.step(g);
-    g.fx.fire(this.x, this.y, { scale: 0.5, n: 1 }); g.fx.light(this.x, this.y, 46, 0.7);
+    g.fx.fire(this.x, this.y, { scale: 0.5, n: 1 }); g.fx.light(this.x, this.y, 78, 0.95, [1, 0.72, 0.35]); g.fx.glow(this.x, this.y, 26, [1, 0.6, 0.2], 0.4);          // (its flame lights the air round it as it flies)
     if (r === 'wall' || r === 'floor') {
       const [tx, ty] = this.tileAt() || [0, 0]; if (g.room.get(tx, ty) === TILE.BARRICADE) { g.burnBarricade(tx, ty); this.dead = true; return; } if (g.room.get(tx, ty) === TILE.ICE) { g.meltIce(tx, ty); this.dead = true; return; }      // wooden barricades go up in flames
       if (r === 'floor') g.addProjectile(new GroundFlame(this.x, Math.floor((this.y + 4) / T) * T, this.burn)); else g.fx.burst(this.x, this.y, 5, COLORS.fire, { speed: 1.2, s0: 8 });
       A.sfx('fire'); this.dead = true; return;
     }
     for (const e of this.touching(g)) {
-      if (this.strike(g, e, this.dmg, '#ff9a40')) { e.ignite(200, this.burn); g.fx.burst(this.x, this.y, 8, COLORS.fire, { speed: 1.6, s0: 10 }); A.sfx('fire'); this.dead = true; return; }
+      if (this.strike(g, e, this.dmg, '#ff9a40', { fire: true })) { e.ignite(200, this.burn); g.fx.burst(this.x, this.y, 8, COLORS.fire, { speed: 1.6, s0: 10 }); A.sfx('fire'); this.dead = true; return; }
     }
   }
   draw(ctx, cx, cy) { ctx.save(); ctx.translate(Math.round(this.x - cx), Math.round(this.y - cy)); ctx.rotate(this.rot); ctx.fillStyle = '#6a4220'; ctx.fillRect(-1, -2, 2, 8); ctx.fillStyle = '#2a1a0c'; ctx.fillRect(-2, -3, 4, 3); ctx.restore(); }
@@ -167,7 +156,6 @@ export function releaseItem(g, p, id) {            // called mid-animation
   const atk = p.atkPower, d = p.dir, x = p.x + d * 12, y = p.y - (p.crouch ? 13 : 24);
   switch (id) {
     case 'dagger': g.addProjectile(new Dagger(g, x, y, d, Math.max(2, Math.round(2 + atk * 0.45)))); A.sfx('slash'); break;
-    case 'axe': g.addProjectile(new Axe(g, x, y - 2, d, Math.round(4 + atk * 0.95))); A.sfx('slash'); break;
     case 'torch': g.addProjectile(new ThrownTorch(g, x, y - 2, d, Math.max(1, Math.round(1 + atk * 0.2)), Math.max(1, Math.round(atk * 0.22)))); A.sfx('cast'); break;
     case 'marrow': g.addProjectile(new MagicArrow(g, x, y, d, Math.max(2, Math.round(2 + atk * 0.42)))); A.sfx('cast'); break;
     case 'holy': g.addProjectile(new HolyFlask(g, x, y - 2, d, Math.max(1, Math.round(1 + atk * 0.12)))); A.sfx('cast'); break;

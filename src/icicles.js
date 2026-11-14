@@ -9,7 +9,7 @@ import { Audio_ as A } from './audio.js';
 const WARN = 36, DMG = 9;
 
 export class Icicle {
-  constructor(d) { this.x = d.x; this.y0 = d.y; this.len = d.len; this.w = d.w; this.y = d.y; this.state = 0; this.t = 0; this.vy = 0; this.dead = false; this.shake = 0; }
+  constructor(d) { this.x = d.x; this.y0 = d.y; this.len = d.len; this.w = d.w; this.y = d.y; this.state = 0; this.t = 0; this.vy = 0; this.dead = false; this.shake = 0; this.dmg = DMG; }
   get box() { return { x: this.x - this.w * 0.5, y: this.y + 2, w: this.w, h: this.len - 2 }; }
   // is there a clear drop from the ceiling to the hero's head?  (no stone in between)
   clearTo(room, y1) {
@@ -38,7 +38,7 @@ export class Icicle {
     // falling
     this.vy = Math.min(6.2, this.vy + 0.3); this.y += this.vy; g.fx.light(this.x, this.y + this.len, 26, 0.3, [0.6, 0.85, 1]);
     const box = this.box;
-    if (!p.dead && overlap(box, p.hurtbox)) { p.hurt(DMG, this.x, { kb: 1.4, stun: 20 }); this.shatter(g); return; }
+    if (!p.dead && overlap(box, p.hurtbox)) { p.hurt(this.dmg, this.x, { kb: 1.4, stun: 20 }); this.shatter(g); return; }
     for (const e of g.enemies) if (!e.dead && e.hitBy && e.hitBy(box)) { e.hurt(DMG + 4, this.x < e.x ? 1 : -1, { id: -(Math.floor(Math.random() * 1e6) + 7000), color: '#bfe4ff', kb: 0.8 }); this.shatter(g); return; }
     const tx = Math.floor(this.x / 16), ty = Math.floor((this.y + this.len) / 16), v = r.get(tx, ty);
     if (isSolid(v) || (v === TILE.PLAT && this.y + this.len - ty * 16 < 8)) { this.y = Math.min(this.y, ty * 16 - this.len + 3); this.shatter(g); }

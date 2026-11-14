@@ -47,6 +47,7 @@ export const BEST = {
   boss_colossus: ['THE BRAZEN HIEROPHANT', 'The engineer\'s great work: a brass priest of the machine that holds the sun below the hills.'],
   boss_mirror: ['THE REFLECTION', 'It steps out of the glass wearing your face, and carries whatever you carry.'],
   boss_librarian: ['THE LIBRARIAN', 'He was asked only to keep the keys. He keeps everything, and nothing may be borrowed.'],
+  boss_rimewyrm: ['THE RIMEWYRM', 'The cold that came up from the foundations learned to move. It guards the key the Library asks for, and wears the ice like a second skin.'],
   boss_shadow: ['THE SHADOW LORD', 'The one who took the sun. He waits above, and he has been waiting a very long time.'],
 };
 export const ORDER = Object.keys(BEST);
@@ -107,10 +108,11 @@ export class BestiaryScreen {
     if (!seen) { drawText(ctx, 'NOT YET MET', X, 104, { color: '#6a6078', scale: 1.2 }); wrapText('Creatures are written here the first time you see them.', W - X - 14, 1, 'mixed').forEach((ln, i) => drawText(ctx, ln, X, 118 + i * 10, { color: DIM, font: 'mixed' })); }
     else {
       drawText(ctx, BEST[k][0], X, 103, { color: GOLD, scale: 1.2, outline: '#000' });
-      wrapText(BEST[k][1], W - X - 14, 1, 'mixed').forEach((ln, i) => drawText(ctx, ln, X, 117 + i * 10, { color: PALE, font: 'mixed' }));
-      const zones = (b.zones || []).map(z => ZONES[z] && ZONES[z].name).filter(Boolean).join(', ').toUpperCase();
-      if (zones) wrapText('SEEN IN: ' + zones, W - X - 14, 1).forEach((ln, i) => drawText(ctx, ln, X, 156 + i * 9, { color: '#b5a47a' }));
-      drawText(ctx, b.kills ? `HP ${(e && e.maxHp) || '?'}    HARM ${(e && e.dmg) || '?'}    DEFEATED ${b.kills}` : 'DEFEAT ONE TO LEARN ITS STRENGTH', X, 180, { color: b.kills ? PALE : '#6a6078' });
+      let y = 117;                                                                                                // (each block starts where the one above it ends, so a long description can never run over the next line)
+      for (const ln of wrapText(BEST[k][1], W - X - 14, 1, 'mixed')) { drawText(ctx, ln, X, y, { color: PALE, font: 'mixed' }); y += 10; }
+      y += 3; const zones = (b.zones || []).map(z => ZONES[z] && ZONES[z].name).filter(Boolean).join(', ').toUpperCase();
+      if (zones) for (const ln of wrapText('SEEN IN: ' + zones, W - X - 14, 1).slice(0, 3)) { drawText(ctx, ln, X, y, { color: '#b5a47a' }); y += 9; }
+      drawText(ctx, b.kills ? `HP ${(e && e.maxHp) || '?'}    HARM ${(e && e.dmg) || '?'}    DEFEATED ${b.kills}` : 'DEFEAT ONE TO LEARN ITS STRENGTH', X, Math.min(y + 3, H - 30), { color: b.kills ? PALE : '#6a6078' });
     }
     drawText(ctx, 'UP / DOWN CHOOSE     ESC BACK', W / 2, H - 14, { align: 'center', color: DIM });
   }
