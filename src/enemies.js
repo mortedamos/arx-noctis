@@ -381,47 +381,55 @@ class EmberWyrm extends Wyrm {}
 Object.assign(EmberWyrm.prototype, { key: 'emberwyrm', variant: 'ember', fx: COLORS.fire, glowC: [1, 0.5, 0.2], spits: true });
 
 // ------------------------------------------------------------------------------------------------ HAUNTED BOOKS (the Library of Ink)
-// A TOME is a flying book: it drifts about the shelves flapping its covers like wings, shudders when it sees you, and dives.  A GRIMOIRE is a great one: it hangs in the air and throws torn pages.
-const TOME_COVERS = ['#7a2424', '#24456e', '#2f6a3a', '#6a3a7a'];
-function drawBook(ctx, x, y, t, o) {          // an open book seen from the front, its covers beating like wings (o.flap 0..1 speed, o.s scale, o.cover colour, o.glow 0..1, o.flash)
-  const flap = Math.sin(t * o.flap), s = o.s; ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.scale(s, s);
-  for (const side of [-1, 1]) {
-    ctx.save(); ctx.scale(side, 1); ctx.rotate(-(0.25 + flap * 0.55)); const c = o.flash ? '#ffffff' : o.cover;
-    ctx.fillStyle = '#1a1008'; ctx.fillRect(-1, -6, 12, 12); ctx.fillStyle = c; ctx.fillRect(0, -5, 10, 10); ctx.fillStyle = o.flash ? '#ffffff' : '#e8dcb8'; ctx.fillRect(1, -4, 8, 8); ctx.fillStyle = 'rgba(70,50,30,0.45)'; for (let k = 0; k < 3; k++) ctx.fillRect(2, -3 + k * 2.5, 6, 1);
-    ctx.restore();
-  }
-  ctx.fillStyle = o.flash ? '#fff' : '#2a1608'; ctx.fillRect(-1.5, -6, 3, 12);
-  if (o.glow > 0) { ctx.fillStyle = 'rgba(255,208,112,' + (0.6 + 0.4 * o.glow).toFixed(2) + ')'; ctx.fillRect(-3, -2, 2, 2); ctx.fillRect(1, -2, 2, 2); }          // two glowing eyes on the spine
-  ctx.restore();
+// A TOME is an enchanted flying book (Pixel Book by Gokhan Solak, CC-BY 3.0, in four tints): it wheels about the shelves in slow loops, its pages turning, trailing sparkles; it hovers and glitters when it sees you,
+// then swoops in a great curve, banking like a bird, and sweeps up and away again.  A GRIMOIRE is a great one: it hangs in the air, circled by sparks, and throws torn pages.
+const BOOK_SPARK = [[1, 0.6, 0.75], [0.55, 1, 0.9], [0.78, 0.72, 1], [0.72, 1, 0.6]];          // the sparkle colour of each tint
+function bookSparkle(g, x, y, c, n, spread, o = {}) {
+  for (let i = 0; i < n; i++) g.fx.emit({ x: x + rand(-spread, spread), y: y + rand(-spread, spread) * 0.8, vx: (o.vx || 0) + rand(-0.25, 0.25), vy: (o.vy || 0) + rand(-0.45, 0.1), gy: o.gy === undefined ? 0.012 : o.gy, drag: 0.97, life: rand(24, 46), s0: rand(3, 6), s1: 0.5, c0: Math.random() < 0.3 ? [1, 0.96, 0.8] : c, a0: 1, a1: 0, kind: 6 });
+}
+function drawBook(ctx, x, y, frame, o) {          // o.v tint 0..3, o.s scale, o.rot tilt, o.flash
+  drawSheet(ctx, 'book_' + o.v, frame, x, y, { scale: o.s, rot: o.rot || 0, ay: 0.5, flash: o.flash });
 }
 class Tome extends Enemy {
-  constructor(g, x, y, o) { super(g, x, y + 8, 16, 14, o); this.hp = this.maxHp = 7; this.dmg = 6; this.xp = 6; this.gravity = false; this.kbRes = 0.2; this.state = 'drift'; this.st = 0; this.phase = rand(TAU); this.name = 'tome'; this.deathFx = [[0.95, 0.9, 0.7], [0.5, 0.35, 0.2]]; this.cover = TOME_COVERS[Math.floor(rand(4))]; }
+  constructor(g, x, y, o) { super(g, x, y + 8, 22, 16, o); this.hp = this.maxHp = 7; this.dmg = 6; this.xp = 6; this.gravity = false; this.kbRes = 0.2; this.state = 'drift'; this.st = 0; this.phase = rand(TAU); this.name = 'tome'; this.deathFx = [[0.95, 0.9, 0.7], [0.5, 0.35, 0.2]]; this.v = Math.floor(rand(4)); this.ang = 0; this.turn = 1; this.tilt = 0; this.pf = rand(9); }
   ai(g) {
-    const p = g.player; this.st++; this.face();
-    if (this.state === 'drift') {
-      this.vx = approach(this.vx, Math.cos(this.t * 0.03 + this.phase) * 0.5, 0.03); this.vy = approach(this.vy, Math.sin(this.t * 0.05 + this.phase) * 0.4, 0.03);
-      if (dist(this.x, this.cy, p.x, p.y - 16) < 130 && this.st > 50) { this.state = 'tell'; this.st = 0; A.sfx('page'); }
-    } else if (this.state === 'tell') {
-      this.vx = this.vy = 0; this.x += Math.sin(this.t * 1.8) * 0.5; g.fx.glow(this.x, this.cy, 22, [1, 0.8, 0.4], 0.5);
-      if (this.st > 24) { this.state = 'swoop'; this.st = 0; const a = Math.atan2(p.y - 16 - this.cy, p.x - this.x); this.vx = Math.cos(a) * 2.3; this.vy = Math.sin(a) * 2.3; A.sfx('page'); }
-    } else if (this.state === 'swoop') { if (this.st > 52 || this.hitX || this.hitCeil) { this.state = 'drift'; this.st = 0; this.vx *= 0.3; this.vy *= 0.3; } }
+    const p = g.player; this.st++; this.face(); const sp = BOOK_SPARK[this.v], tx = p.x, ty = p.y - 16;
+    if (this.state === 'drift') {          // wheels about in slow figures of eight, now and then flourishing upward
+      const w = this.t * 0.028 + this.phase;
+      this.vx = approach(this.vx, Math.cos(w) * 0.75, 0.04); this.vy = approach(this.vy, Math.sin(w * 2) * 0.55 - (Math.sin(w * 0.37) > 0.85 ? 0.5 : 0), 0.04);
+      this.pf += 0.1 + Math.abs(this.vy) * 0.1;
+      if (this.t % 3 === 0) bookSparkle(g, this.x, this.cy + 6, sp, 1, 7);
+      if (dist(this.x, this.cy, tx, ty) < 130 && this.st > 50) { this.state = 'tell'; this.st = 0; A.sfx('page'); }
+    } else if (this.state === 'tell') {          // it stops, glitters, and spins its pages up
+      this.vx *= 0.8; this.vy = approach(this.vy, -0.35, 0.04); this.pf += 0.45; this.tilt = Math.sin(this.t * 0.9) * 0.18; g.fx.glow(this.x, this.cy, 26, sp, 0.55); if (this.t % 2 === 0) bookSparkle(g, this.x, this.cy, sp, 2, 14);
+      if (this.st > 26) { this.state = 'swoop'; this.st = 0; this.ang = Math.atan2(ty - this.cy, tx - this.x); this.turn = this.x < tx ? 1 : -1; A.sfx('page'); }
+    } else if (this.state === 'swoop') {          // a curved dive: it keeps turning toward you for a moment, then bends up and away
+      const want = Math.atan2(ty - this.cy, tx - this.x); let d = want - this.ang; d = Math.atan2(Math.sin(d), Math.cos(d));
+      if (this.st < 30) this.ang += Math.max(-0.07, Math.min(0.07, d)); else this.ang += -this.turn * 0.075 * Math.min(1, (this.st - 30) / 12);
+      const spd = 2.5; this.vx = Math.cos(this.ang) * spd; this.vy = Math.sin(this.ang) * spd; this.pf += 0.8;
+      bookSparkle(g, this.x - this.vx * 3, this.cy - this.vy * 3, sp, 2, 5, { vx: -this.vx * 0.15, vy: -this.vy * 0.15, gy: 0.02 }); g.fx.glow(this.x, this.cy, 20, sp, 0.4);
+      if (this.st > 80 || this.hitX || this.hitCeil) { this.state = 'drift'; this.st = 0; this.vx *= 0.4; this.vy *= 0.4; }
+    }
+    this.tilt = approach(this.tilt, Math.max(-0.5, Math.min(0.5, this.vx * 0.22)), 0.06);
   }
   physics() { const room = this.g.room; this.hitX = 0; this.hitCeil = false; const nx = this.x + this.vx; if (room.solid(Math.floor(nx / T), Math.floor(this.cy / T))) { this.hitX = 1; this.vx = 0; } else this.x = nx; const ny = this.y + this.vy; if (room.solid(Math.floor(this.x / T), Math.floor((ny - this.h / 2) / T))) { this.hitCeil = true; this.vy = 0; } else this.y = ny; if (this.flashT > 0) this.flashT--; }
-  draw(ctx, cx, cy) { drawBook(ctx, this.x - cx, this.cy - cy, this.t, { flap: this.state === 'swoop' ? 0.9 : this.state === 'tell' ? 0.2 : 0.35, s: 1, cover: this.cover, glow: this.state === 'drift' ? 0.3 : 1, flash: this.flashT > 0 }); }
+  draw(ctx, cx, cy) { drawBook(ctx, this.x - cx, this.cy - cy, this.pf, { v: this.v, s: 0.5, rot: this.tilt, flash: this.flashT > 0 }); }
 }
 class Grimoire extends Enemy {
-  constructor(g, x, y, o) { super(g, x, y + 12, 26, 22, o); this.hp = this.maxHp = 20; this.dmg = 9; this.xp = 16; this.gravity = false; this.kbRes = 0.5; this.state = 'float'; this.st = 0; this.phase = rand(TAU); this.name = 'grimoire'; this.deathFx = [[1, 0.85, 0.5], [0.5, 0.3, 0.1]]; this.cool = 70 + rand(50); }
+  constructor(g, x, y, o) { super(g, x, y + 12, 36, 26, o); this.hp = this.maxHp = 20; this.dmg = 9; this.xp = 16; this.gravity = false; this.kbRes = 0.5; this.state = 'float'; this.st = 0; this.phase = rand(TAU); this.name = 'grimoire'; this.deathFx = [[1, 0.85, 0.5], [0.5, 0.3, 0.1]]; this.cool = 70 + rand(50); this.tilt = 0; this.pf = 0; }
   ai(g) {
     const p = g.player; this.st++; this.face(); if (this.cool > 0) this.cool--;
     this.vx = approach(this.vx, Math.cos(this.t * 0.022 + this.phase) * 0.45 + (Math.abs(this.dx()) > 200 ? sign(p.x - this.x) * 0.35 : 0), 0.03); this.vy = approach(this.vy, Math.sin(this.t * 0.04 + this.phase) * 0.35, 0.03);
-    g.fx.glow(this.x, this.cy, 34, [1, 0.8, 0.4], 0.28); g.fx.light(this.x, this.cy, 54, 0.55, [1, 0.8, 0.45]);
+    g.fx.glow(this.x, this.cy, 40, [1, 0.8, 0.5], 0.1); g.fx.light(this.x, this.cy, 60, 0.4, [1, 0.8, 0.45]);
+    const a = this.t * 0.05 + this.phase; if (this.t % 4 === 0) bookSparkle(g, this.x + Math.cos(a) * 26, this.cy + Math.sin(a) * 14, BOOK_SPARK[0], 1, 2, { gy: 0 });          // sparks circle it
+    this.pf += this.state === 'cast' ? 0.5 : 0.07; this.tilt = approach(this.tilt, Math.max(-0.3, Math.min(0.3, this.vx * 0.3)), 0.04);
     if (this.state === 'float') { if (this.cool === 0 && dist(this.x, this.cy, p.x, p.y - 16) < 230) { this.state = 'cast'; this.st = 0; A.sfx('tell'); } }
-    else if (this.state === 'cast') { this.vx *= 0.5; this.vy *= 0.5; g.fx.glow(this.x, this.cy, 30 + this.st * 0.6, [1, 0.8, 0.3], 0.4 + this.st * 0.015);
-      if (this.st === 30) { A.sfx('page'); const base = Math.atan2(p.y - 16 - this.cy, p.x - this.x); for (let i = -1; i <= 1; i++) { const a = base + i * 0.28; g.addProjectile(new Projectile(this.x, this.cy, Math.cos(a) * 1.9, Math.sin(a) * 1.9, 'page', { dmg: 8, life: 240 })); } }
+    else if (this.state === 'cast') { this.vx *= 0.5; this.vy *= 0.5; g.fx.glow(this.x, this.cy, 30 + this.st * 0.6, [1, 0.8, 0.3], 0.4 + this.st * 0.015); if (this.st % 2 === 0) bookSparkle(g, this.x, this.cy, [1, 0.85, 0.4], 2, 18);
+      if (this.st === 30) { A.sfx('page'); const base = Math.atan2(p.y - 16 - this.cy, p.x - this.x); for (let i = -1; i <= 1; i++) { const a2 = base + i * 0.28; g.addProjectile(new Projectile(this.x, this.cy, Math.cos(a2) * 1.9, Math.sin(a2) * 1.9, 'page', { dmg: 8, life: 240 })); } }
       if (this.st > 44) { this.state = 'float'; this.st = 0; this.cool = 110 + rand(60); } }
   }
   physics() { Tome.prototype.physics.call(this); }
-  draw(ctx, cx, cy) { drawBook(ctx, this.x - cx, this.cy - cy, this.t, { flap: this.state === 'cast' ? 0.12 : 0.18, s: 1.7, cover: '#4a2a14', glow: this.state === 'cast' ? 1 : 0.4, flash: this.flashT > 0 }); }
+  draw(ctx, cx, cy) { drawBook(ctx, this.x - cx, this.cy - cy, this.pf, { v: 0, s: 0.95, rot: this.tilt, flash: this.flashT > 0 }); }
 }
 // ------------------------------------------------------------------------------------------------ RIME SHADE (the Frozen Caverns)
 // A cold shadow lies flat on the ice like a dark puddle; when you come close it climbs out of the floor, then stalks you with an outstretched arm.

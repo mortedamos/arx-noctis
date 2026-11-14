@@ -60,6 +60,8 @@ Not used right now. The pack ships without a formal license file; see `assets/ar
 The packs as downloaded are kept in `assets/sprites/source/` for reference; the game only uses the pieces it cuts out of them into `assets/env/` and `assets/sprites/`.
 If you publish the game, ship the game's own files and **do not publish the `source/` folders** (several of these packs forbid redistributing them as packs).
 
+"Pixel Book (Animated)" by Gokhan Solak (hansolo), CC-BY 3.0 (https://creativecommons.org/licenses/by/3.0/), from https://opengameart.org/content/pixel-book-animated - the flying books of the Library of Ink (`assets/sprites/book_0..3.png`, recoloured in four tints with ffmpeg; the original is kept in `assets/source/book/`).
+
 Attribution: "Castlevania-esque Tilemap" by Chloe Wolfe, CC-BY 4.0 (https://creativecommons.org/licenses/by/4.0/); "Bosses and Monsters
 Spritesheets" by Balmer, with Redshrike, CC-BY 3.0 (https://creativecommons.org/licenses/by/3.0/); "Cyber-tooth" by Emcee Flesher, OGA-BY 3.0.
 The wyrm sheet, the Ars Notoria sheets and the tilemap were cropped / rearranged for use in the game; the only other change is load-time color shifts.

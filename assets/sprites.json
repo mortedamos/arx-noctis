@@ -532,5 +532,29 @@
   "n": 3,
   "w": 144,
   "h": 144
+ },
+ "book_0": {
+  "file": "sprites/book_0.png",
+  "n": 9,
+  "w": 64,
+  "h": 64
+ },
+ "book_1": {
+  "file": "sprites/book_1.png",
+  "n": 9,
+  "w": 64,
+  "h": 64
+ },
+ "book_2": {
+  "file": "sprites/book_2.png",
+  "n": 9,
+  "w": 64,
+  "h": 64
+ },
+ "book_3": {
+  "file": "sprites/book_3.png",
+  "n": 9,
+  "w": 64,
+  "h": 64
  }
 }

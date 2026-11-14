@@ -19,7 +19,7 @@ export const STORY = {
     title: 'PRAGUE  1541',
     sun: 'THE SUN HAS NOT RISEN SINCE SHADOWKEEP CAME OUT OF THE EARTH.',
     fire: 'AND NOW THE CITY BURNS.',
-    sword: ['SILBERZAHN', 'THE SILVER TOOTH'],
+    sword: ['SILBERZAHN', 'IT LIES ON THE RISE AHEAD'],
   },
 
   // ---------------------------------------------------------------------------------------------------------------------------------------- her: the gravestones and tablets (by id)

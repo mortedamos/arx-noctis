@@ -71,6 +71,55 @@ function drawGlyph(ctx, kind, x, y, dir, col, t) {
   ctx.globalAlpha = 1;
 }
 
+// -------------------------------------------------------------------------------------------- a stack of books falling from the ceiling
+// The Librarian's SHELVES attack.  A mark appears on the floor and pages sift from the roof; then a stack of books comes down on it (it hurts if it lands on you), and where it lands it
+// STAYS, as a wall of books (breakable blocks: cut your way through with the sword).  It waits until nobody is standing in it before it sets.
+const BOOK_COLS = ['#7a2424', '#24456e', '#2f6a3a', '#6a3a7a', '#8a6a1e', '#4a4a56', '#9a4a2a', '#2a5a62'];
+export class BookFall {
+  constructor(g, x, o = {}) {
+    const r = g.room; this.room = r; this.tx = Math.max(1, Math.min(r.w - 3, Math.floor(x / 16) - 1)); this.x = (this.tx + 1) * 16; this.warn = o.warn || 60; this.dmg = o.dmg || 14;
+    let fr = 2; for (; fr < r.h - 1; fr++) { const a = r.get(this.tx, fr), b = r.get(this.tx + 1, fr); if (a || b) break; }          // the first surface below the ceiling
+    this.floorY = fr * 16; this.rows = Math.min(5, fr - 2); this.h = this.rows * 16; this.y = 16 - this.h; this.vy = 0; this.t = 0; this.state = 'warn'; this.dead = false; this.owner = 'enemy'; this.vx = 0; this.seed = Math.floor(Math.random() * 99);
+    if (this.rows < 2) this.dead = true;
+  }
+  get box() { return this.state === 'fall' ? { x: this.x - 16, y: this.y, w: 32, h: this.h } : { x: -999, y: -999, w: 0, h: 0 }; }
+  update(g) {
+    if (this.dead) return; this.t++; const p = g.player;
+    if (this.state === 'warn') {
+      const k = this.t / this.warn; g.fx.glow(this.x, this.floorY - 2, 14 + k * 14, [0.95, 0.75, 0.4], 0.3 + k * 0.5);
+      if (this.t % 4 === 0) g.fx.emit({ x: this.x + rand(-14, 14), y: 18, vx: rand(-0.2, 0.2), vy: rand(0.4, 1.2), life: 26, s0: 4, s1: 2, c0: [0.95, 0.9, 0.7], a0: 0.9, a1: 0, kind: 1 });          // pages sift down from the roof
+      if (this.t >= this.warn) { this.state = 'fall'; A.sfx('roar'); }
+    } else if (this.state === 'fall') {
+      this.vy = Math.min(9, this.vy + 0.55); this.y += this.vy;
+      if (this.t % 2 === 0) g.fx.emit({ x: this.x + rand(-14, 14), y: this.y + rand(0, this.h), vx: rand(-0.3, 0.3), vy: -rand(0.2, 0.8), life: 18, s0: 4, s1: 1, c0: [0.95, 0.9, 0.7], a0: 0.8, a1: 0, kind: 1 });
+      if (overlap(this.box, p.hurtbox)) p.hurt(this.dmg, this.x);
+      if (this.y + this.h >= this.floorY) { this.y = this.floorY - this.h; this.state = 'rest'; this.rt = 0; A.sfx('boom'); g.shake(4, 12); g.fx.burst(this.x, this.floorY - 2, 18, [[0.95, 0.85, 0.6], [0.5, 0.3, 0.12]], { speed: 2.6, s0: 10, up: 1.2 }); g.fx.ring(this.x, this.floorY - 2, 40, [1, 0.8, 0.4], 16, 0.2); g.fx.sparks(this.x, this.floorY - 8, 10, [[1, 0.9, 0.6], [1, 0.7, 0.3]], 3, { gy: 0.1 }); }
+    } else if (this.state === 'rest') {          // a heap, until the way is clear - then it sets as a wall
+      this.rt++; const gone = !overlap({ x: this.x - 16, y: this.y, w: 32, h: this.h }, p.hurtbox);
+      if (gone || this.rt > 240) { this.build(g); this.dead = true; }
+    }
+  }
+  build(g) {
+    const r = this.room; r.bookWall = r.bookWall || new Map();          // (block -> hits left: each takes a few blows of the sword)
+    for (let c = 0; c < 2; c++) for (let k = 0; k < this.rows; k++) { const tx = this.tx + c, ty = Math.round(this.floorY / 16) - 1 - k; if (r.get(tx, ty) === 0) { r.set(tx, ty, 4); r.bookWall.set(tx + ',' + ty, { hp: 3, hit: 0 }); } }
+    g.fx.burst(this.x, this.floorY - this.h / 2, 8, [[0.95, 0.85, 0.6], [0.5, 0.3, 0.12]], { speed: 1.4, s0: 8 });
+  }
+  draw(ctx, cx, cy) {
+    const x = Math.round(this.x - cx), fy = Math.round(this.floorY - cy);
+    if (this.state === 'warn') {          // the mark on the floor, filling as the books near
+      const k = this.t / this.warn; ctx.fillStyle = rgba([240, 190, 100], 0.15 + 0.35 * k); ctx.fillRect(x - 16, fy - 3, 32, 3); ctx.fillStyle = rgba([240, 190, 100], 0.5 + 0.5 * k); ctx.fillRect(x - 16, fy - 1, Math.round(32 * k), 1); return;
+    }
+    ctx.save(); ctx.beginPath(); ctx.rect(x - 24, Math.round(16 - cy), 48, 4000); ctx.clip();          // (it comes out from under the ceiling)
+    const top = Math.round(this.y - cy); for (let k = 0; k < this.rows * 2; k++) {
+      const h = hash(this.seed + k), off = (h * 3) | 0, by = top + this.h - (k + 1) * 8, c = BOOK_COLS[(this.seed + k * 3) % BOOK_COLS.length];
+      ctx.fillStyle = '#12090a'; ctx.fillRect(x - 16, by, 32, 8); ctx.fillStyle = c; ctx.fillRect(x - 16 + off, by + 1, 31 - off, 6); ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fillRect(x - 16 + off, by + 1, 31 - off, 1);
+      ctx.fillStyle = '#e8dcb8'; ctx.fillRect(x - 14 + off, by + 6, 27 - off, 1); ctx.fillStyle = 'rgba(240,210,120,0.7)'; ctx.fillRect(x - 10 + ((h * 8) | 0), by + 3, 7, 1);
+    }
+    ctx.restore();
+  }
+}
+const hash = n => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+
 // -------------------------------------------------------------------------------------------- telegraphed hazard column
 // kind: fire (flame pillar), bolt (lightning), steam (vent), shadow (dark flame)
 export class Column {
@@ -458,6 +507,7 @@ export class BossLibrarian extends Boss {
   physics() { this.x += this.vx; this.y += this.vy; const r = this.g.room; this.x = clamp(this.x, 40, r.pw - 40); this.y = clamp(this.y, 70, r.ph - 40); if (this.flashT > 0) this.flashT--; }
   moveTo(tx, ty, k = 0.04, max = 2) { this.vx = clamp((tx - this.x) * k, -max, max); this.vy = clamp((ty - this.cy) * k, -max, max); }
   groundY() { return this.g.room.ph - 32; }
+  die() { const r = this.g.room; if (!this.dying && r.bookWall) { for (const k of [...r.bookWall.keys()]) { const [tx, ty] = k.split(',').map(Number); if (r.get(tx, ty) === 4) this.g.breakTile(tx, ty); } r.bookWall.clear(); } super.die(); }          // (when he falls, the walls of books he made fall with him)
   ai(g) {
     const p = g.player, spd = this.spd;
     g.fx.glow(this.x, this.cy, 54 + Math.sin(this.t * 0.1) * 6, [1, 0.82, 0.45], 0.26); g.fx.light(this.x, this.cy, 120, 0.85, [1, 0.8, 0.45]);
@@ -476,7 +526,7 @@ export class BossLibrarian extends Boss {
         if (this.st > 110) { this.state = 'idle'; this.st = -20; } break; }
       case 'shelves': {
         this.moveTo(g.room.pw / 2, 84, 0.04); if (this.st < 20) this.tell('shelves', this.st / 20);
-        if (this.st === 20) { A.sfx('roar'); const waves = this.phase === 2 ? 2 : 1; for (let w = 0; w < waves; w++) for (let i = 0; i < 3; i++) { const x = clamp(w === 0 ? p.x + (i - 1) * 70 + rand(-8, 8) : rand(50, g.room.pw - 50), 30, g.room.pw - 30); g.addProjectile(new Column(x, this.groundY(), 'books', { warn: 62 + w * 44, active: 16, dmg: 14, w: 32, h: 200 })); } }
+        if (this.st === 20) { A.sfx('roar'); const waves = this.phase === 2 ? 2 : 1; let room_ = 6 - g.projectiles.filter(q => q instanceof BookFall && !q.dead).length - Math.floor((g.room.bookWall ? g.room.bookWall.size : 0) / 10); for (let w = 0; w < waves; w++) for (let i = 0; i < 3 && room_ > 0; i++, room_--) { const x = clamp(w === 0 ? p.x + (i - 1) * 70 + rand(-8, 8) : rand(50, g.room.pw - 50), 30, g.room.pw - 30); g.addProjectile(new BookFall(g, x, { warn: 62 + w * 44, dmg: 14 })); } }
         if (this.st > (this.phase === 2 ? 190 : 130)) { this.state = 'idle'; this.st = -20; } break; }
       case 'tomes': {
         this.moveTo(this.x, 90, 0.05); if (this.st < 24) this.tell('tomes', this.st / 24);

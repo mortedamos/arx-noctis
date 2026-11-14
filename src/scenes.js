@@ -88,6 +88,7 @@ export class OpeningScene {
     this.g = g; this.r = g.room; this.t = 0; this.bars = 0; this.kneel = true; this.done = false;
     const gv = this.r.decos.find(d => d.t === 'grave'); this.gx = gv ? gv.x : 168;
     const p = g.player; p.x = this.gx + 36; p.y = 12 * T; p.vx = p.vy = 0; p.dir = -1; p.onGround = true; p.invT = 9999; p.crouch = false;
+    g.save.flags.sword_lost = true;          // (he is unarmed until he picks Silberzahn up from the rise ahead)
     g.playerFrozen = true; this.r.glow = 0; g.snapCamera(); g.ghost.snap(); g.ghost.update();
   }
   update() {
@@ -98,7 +99,7 @@ export class OpeningScene {
     if (t === 40 || t === 440) A.sfx('toll');
     if (t === 500) this.kneel = false;                                                      // he rises
     if (t === 525) p.dir = 1;                                                               // and turns to the city
-    if (t === 590) { A.sfx('slash'); fx.flash([0.8, 0.9, 1], 0.28); fx.sparks(p.x + 14, p.y - 22, 14, [[1, 1, 1], [0.7, 0.85, 1]], 3, {}); }          // the silver glints
+    if (t === 590) { A.sfx('toll'); }                                                       // (the sword is not at his side: it will glint on the rise ahead)
     if (t >= 650) { p.dir = 1; p.vx = 1.6; }                                                // and he walks
     if (r.glow > 0.1 && t % 7 === 0) fx.emit({ x: fx.camX + W + 4, y: fx.camY + rand(30, 150), vx: -rand(0.6, 1.4), vy: -rand(0.1, 0.5), life: rand(90, 160), s0: 3, s1: 1, c0: [1, 0.6, 0.2], c1: [0.7, 0.1, 0.05], a0: 0.8, a1: 0, kind: 1, gy: -0.002 });          // sparks on the wind
     if (t >= 724) this.finish();

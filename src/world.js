@@ -1,7 +1,7 @@
 // Rooms: tile grid, collision queries, tile-art themes (auto-tiled from the Gothicvania tilesets) and parallax backgrounds.
 import { W, H, T, mulberry32, hash1 } from './util.js';
 import { IMG, SHEET, drawSheet } from './assets.js';
-import { LIBRARY_THEME, ICE_THEME, drawIceBlock, drawLibrary, drawIceCave, drawForeground } from './newzones.js';
+import { LIBRARY_THEME, ICE_THEME, bookTile, drawIceBlock, drawLibrary, drawIceCave, drawForeground } from './newzones.js';
 export { drawForeground };
 
 export const TILE = { EMPTY: 0, SOLID: 1, PLAT: 2, SPIKE: 3, CRACK: 4, BARRICADE: 5, CRYSTAL: 6, SEAL: 7, ICE: 8 };          // (ICE: a barrier of ice that the Ember spell melts)
@@ -435,7 +435,7 @@ export class Room {
         th.solid(g, tx, ty, { u: this.solid(tx, ty - 1), d: this.solid(tx, ty + 1), l: this.solid(tx - 1, ty), r: this.solid(tx + 1, ty) }, depth);
       } else if (v === TILE.PLAT) th.plat(g, tx, ty);
       else if (v === TILE.SPIKE) { if (!(this.rivers && this.rivers.some(c => ty * T >= c.y))) drawSheet(g, 'spikes', 0, tx * T, ty * T, { ax: 0, ay: 0 }); this.spikes.push([tx, ty]); }          // (under a river the spikes are unseen)
-      else if (v === TILE.CRACK) { drawSheet(g, 't_crack', 0, tx * T, ty * T, { ax: 0, ay: 0 }); this.brk.push([tx, ty, v]); }
+      else if (v === TILE.CRACK) { if (this.bookWall && this.bookWall.has(tx + ',' + ty)) bookTile(g, tx, ty); else drawSheet(g, 't_crack', 0, tx * T, ty * T, { ax: 0, ay: 0 }); this.brk.push([tx, ty, v]); }
       else if (v === TILE.BARRICADE) { drawSheet(g, 't_barricade', 0, tx * T, ty * T, { ax: 0, ay: 0 }); this.brk.push([tx, ty, v]); }
       else if (v === TILE.ICE) { drawIceBlock(g, tx, ty); this.brk.push([tx, ty, v]); }
       else if (v === TILE.CRYSTAL || v === TILE.SEAL) this.anim.push([tx, ty, v]);

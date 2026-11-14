@@ -20,11 +20,10 @@ export const LIBRARY_THEME = {
       g.fillStyle = 'rgba(210,150,80,0.09)'; g.fillRect(x + 2, y + 2, T - 4, 1);
     }
   },
-  // a thin platform is a shelf: a plank with a row of book spines hanging under its edge
+  // a thin platform is a shelf: a plain plank of dark wood
   plat(g, tx, ty) {
     const x = tx * T, y = ty * T; g.fillStyle = '#6e4626'; g.fillRect(x, y, T, 4); g.fillStyle = '#b07a42'; g.fillRect(x, y, T, 1); g.fillStyle = '#35210f'; g.fillRect(x, y + 4, T, 1);
-    for (let i = 0, px = 0; px < T; i++) { const w = 2 + ((hash1(tx * 3.1 + i) * 2) | 0), hh = 4 + ((hash1(tx * 5.3 + i * 1.7) * 4) | 0); g.fillStyle = SPINES[((hash1(tx * 1.3 + i * 4.1) * SPINES.length) | 0) % SPINES.length]; g.fillRect(x + px, y + 5, w, hh); g.fillStyle = 'rgba(255,255,255,0.18)'; g.fillRect(x + px, y + 5, 1, hh); px += w + 1; }
-    g.fillStyle = 'rgba(0,0,0,0.5)'; g.fillRect(x, y + 11, T, 2);
+    g.fillStyle = 'rgba(0,0,0,0.3)'; g.fillRect(x, y + 5, T, 1);
   },
 };
 
@@ -153,4 +152,16 @@ export function drawForeground(g, room, camX, camY, t) {
     g.fillStyle = 'rgba(8,4,2,0.3)'; g.fillRect(0, 0, W, 4);
   }
   g.restore();
+}
+
+// a block of the wall the Librarian's falling books make: two flat books, one on the other (it breaks with the sword)
+export function bookTile(g, tx, ty) {
+  const x = tx * T, y = ty * T; g.fillStyle = '#12090a'; g.fillRect(x, y, T, T);
+  for (let r = 0; r < 2; r++) {
+    const k = hash1(tx * 7.3 + ty * 3.1 + r * 5.7), off = (k * 3) | 0, by = y + r * 8, c = SPINES[((hash1(tx * 2.9 + ty * 6.1 + r * 1.3) * SPINES.length) | 0) % SPINES.length];
+    g.fillStyle = c; g.fillRect(x + off, by + 1, T - off - 1, 6); g.fillStyle = 'rgba(255,255,255,0.22)'; g.fillRect(x + off, by + 1, T - off - 1, 1);
+    g.fillStyle = '#e8dcb8'; g.fillRect(x + off + 2, by + 6, T - off - 5, 1);                       // the page edge
+    g.fillStyle = 'rgba(240,210,120,0.7)'; g.fillRect(x + off + 3 + ((k * 4) | 0), by + 3, 5, 1);   // a gilt title
+    g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(x + T - 2, by + 1, 1, 6);
+  }
 }

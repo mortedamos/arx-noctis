@@ -203,7 +203,7 @@ export class Game {
       else if (s.type === 'itemspawn') { if (!S.flags[o.id]) { const pk = new Pickup('it_' + o.item, x, y - 6, 0, 0); pk.qty = o.qty || pk.qty; pk.flagId = o.id; pk.life = 1e9; this.pickups.push(pk); } }
       else if (s.type === 'tablet') this.props.push(new Tablet(x, y, o));
       else if (s.type === 'chest') { const c = new Chest(x, y, o); if (S.flags[o.id]) { c.open = true; if (!S.flags[o.id + '_u']) chestGift(this, x, y - 22, o.contents, o.id + '_u'); } this.props.push(c); }
-      else if (s.type === 'upgrade') { if (!S.flags[o.id]) this.props.push(new Upgrade(x, y - 12 + 0, o)); }
+      else if (s.type === 'upgrade') { if (!S.flags[o.id] && (o.kind !== 'silberzahn' || !S.flags.opening_seen || S.flags.sword_lost)) this.props.push(new Upgrade(x, y - 12 + 0, o)); }
       else if (s.type.startsWith('boss_')) {
         if (bossDone) { if (UPGRADES[o.reward]) { if (!S.flags['bu_' + id]) this.props.push(new Upgrade(this.roomCenterX(def), this.groundBelow(this.roomCenterX(def), 6 * 16) - 12, { kind: o.reward, id: 'bu_' + id })); }
           else if (o.reward && o.reward !== 'dawn' && o.reward !== 'well' && !S.abilities[this.rewardKey(o.reward)]) this.props.push(new Relic(this.roomCenterX(def), this.groundBelow(this.roomCenterX(def), 6 * 16), o.reward === 'djump' ? 'djump' : o.reward)); }
@@ -304,7 +304,7 @@ export class Game {
     for (const o of this.props) if (o.hit && !o.dead && overlap(box, o.box)) { if (o.hit(this, p.swordDamage(), dir)) { hit = true; p.gainMp(2); } }
     // breakable walls
     const tx0 = Math.floor(box.x / T), tx1 = Math.floor((box.x + box.w) / T), ty0 = Math.floor(box.y / T), ty1 = Math.floor((box.y + box.h) / T);
-    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) if (this.room.get(tx, ty) === TILE.CRACK) { this.breakTile(tx, ty); hit = true; }
+    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) if (this.room.get(tx, ty) === TILE.CRACK) { if (this.hitBookTile(tx, ty, p.atkId)) hit = true; else { this.breakTile(tx, ty); hit = true; } }
     for (const pr of this.projectiles) {
       if (pr.dead || pr.reflected || !overlap(box, pr.box)) continue;          // (a reflected one is already on its way: the rest of the swing must not cut it down)
       if (this.save.flags.got_shard && this.reflectable(pr)) { this.reflect(pr, p); hit = true; continue; }          // the Mirror Shard: it goes back where it came from
@@ -312,9 +312,17 @@ export class Game {
     }
     if (hit && p.hitsThisSwing++ === 0) { this.hitstop = 3; this.shake(1.5, 5); }
   }
+  // a block of the Librarian's wall of books: it takes three blows (one a swing), shaking and shedding pages, before it breaks.  Returns true if it was one of those.
+  hitBookTile(tx, ty, id) {
+    const w = this.room.bookWall, b = w && w.get(tx + ',' + ty); if (!b) return false;
+    if (b.hit === id) return true; b.hit = id; const x = tx * 16 + 8, y = ty * 16 + 8;
+    if (--b.hp <= 0) { this.breakTile(tx, ty); return true; }
+    A.sfx('hit'); this.fx.burst(x, y, 4, [[0.95, 0.85, 0.6], [0.5, 0.3, 0.12]], { speed: 1.4, s0: 8, gy: 0.05 }); this.fx.sparks(x, y, 3, [[1, 0.9, 0.6]], 2, { gy: 0.1 }); return true;
+  }
   breakTile(tx, ty) {
     const r = this.room, v = r.get(tx, ty); if (v !== TILE.CRACK && v !== TILE.BARRICADE && v !== TILE.CRYSTAL && v !== TILE.ICE) return;
-    r.set(tx, ty, TILE.EMPTY); this.save.flags[`b_${r.id}_${tx}_${ty}`] = true; const x = tx * 16 + 8, y = ty * 16 + 8;
+    const bk = r.bookWall && r.bookWall.has(tx + ',' + ty); r.set(tx, ty, TILE.EMPTY); if (bk) r.bookWall.delete(tx + ',' + ty); else this.save.flags[`b_${r.id}_${tx}_${ty}`] = true; const x = tx * 16 + 8, y = ty * 16 + 8;
+    if (bk) { this.fx.burst(x, y, 10, [[0.95, 0.85, 0.6], [0.5, 0.3, 0.12]], { speed: 2, s0: 11, up: 0.4, gy: 0.05 }); this.fx.sparks(x, y, 7, [[1, 0.9, 0.6], [1, 0.7, 0.3]], 2.5, { gy: 0.1 }); A.sfx('break'); this.shake(1.5, 6); return; }
     if (v === TILE.CRACK) { this.fx.burst(x, y, 10, [[0.7, 0.65, 0.8], [0.3, 0.28, 0.4]], { speed: 2, s0: 12, up: -0.5, gy: 0.05 }); this.fx.sparks(x, y, 8, [[0.8, 0.8, 0.9], [0.4, 0.4, 0.5]], 2.5, { gy: 0.2 }); }
     else if (v === TILE.BARRICADE) { this.fx.burst(x, y, 14, COLORS.fire, { speed: 2, s0: 16 }); this.fx.sparks(x, y, 10, COLORS.fire, 3, { gy: 0.15 }); this.fx.glow(x, y, 50, [1, 0.5, 0.2], 0.8, 14); }
     else if (v === TILE.ICE) { this.fx.burst(x, y, 12, COLORS.ice, { speed: 2.2, s0: 12 }); this.fx.sparks(x, y, 10, COLORS.white, 3, { gy: 0.15 }); this.fx.smoke(x, y, 3, { c0: [0.85, 0.92, 1], c1: [0.6, 0.7, 0.85], s0: 6, s1: 22, l: 0.7 }); this.fx.glow(x, y, 44, [1, 0.6, 0.3], 0.6, 12); }

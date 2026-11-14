@@ -174,8 +174,10 @@ export class Player extends Entity {
         } else if (canUseItem(g, this, cur.id)) { this.castT = 18; this.castCd = 14; this.castFired = true; this.castItem = cur.id; }      // the item leaves your hand mid-animation
       }
       // ---- attack (a press near the end of a swing is remembered, so combos flow)
+      const armed = S.flags.got_silberzahn || !S.flags.sword_lost;          // (a new game begins without the sword: it lies on the rise ahead - see rooms.js 'v0')
+      if (!armed && I.pressed.attack && !this.castT && !this.dashT && this.t - (this.noSwordT || -999) > 150) { this.noSwordT = this.t; g.popup(this.x, this.y - 42, 'YOUR SWORD IS AHEAD', '#cfe0ff'); }
       if (I.pressed.attack && this.atk > 0 && this.atk <= 7) this.atkBuf = 9;
-      if ((I.pressed.attack || this.atkBuf > 0) && !this.atk && !this.castT && !this.dashT) {
+      if (armed && (I.pressed.attack || this.atkBuf > 0) && !this.atk && !this.castT && !this.dashT) {
         this.atkBuf = 0; const air = !this.onGround;
         const idx = air ? 1 : this.crouch ? 0 : (this.comboT > 0 ? (this.comboN + 1) % 3 : 0);
         this.seq = air ? AIR_ATTACK : this.crouch ? CROUCH_ATTACK : ATTACKS[idx]; this.comboN = idx; if (!air) this.vx = 0;     // a ground swing is planted: no sliding, no lunging

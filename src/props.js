@@ -18,6 +18,7 @@ export const ABILITIES = {
   dawn: { name: 'AZOTH', desc: 'THE LIGHT THAT WAKES THE SUN.', icon: 'orb', color: [1, 0.9, 0.5] },
 };
 export const UPGRADES = {
+  silberzahn: { name: 'SILBERZAHN', desc: 'THE SILVER TOOTH. YOUR SWORD, LEFT LYING WHERE YOU KNELT.', icon: 'atkup', color: [0.82, 0.9, 1] },          // (its id is the flag 'got_silberzahn': the Player reads it)
   hpup: { name: 'ELIXIR VITAE', desc: 'MAX HP UP', icon: 'hpup', color: [1, 0.3, 0.35] },
   mpup: { name: 'QUINTESSENCE', desc: 'MAX MP UP', icon: 'mpup', color: [0.4, 0.7, 1] },
   atkup: { name: 'SAL MARTIS', desc: 'SWORD POWER UP', icon: 'atkup', color: [1, 0.85, 0.4] },

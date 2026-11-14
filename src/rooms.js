@@ -226,6 +226,7 @@ export function arrangeCandelabras(def) {
   b.d('grave', 10, 12);
   b.d('img', 7, 12, { img: 'gy_st4', back: true }).d('img', 19, 12, { img: 'gy_st1', back: true }).d('img', 25, 10, { img: 'gy_st5' }).d('img', 36, 12, { img: 'gy_st3', back: true }).d('img', 47, 12, { img: 'gy_st7', back: true }).d('img', 44, 11, { img: 'gy_st8' }).d('img', 58, 12, { img: 'gy_st6', back: true });          // statues on the hill (Graveyard pack): a kneeling mourner beside her grave, the others among the stones and behind the fences, a gargoyle on the rise and an owl on the step
   b.tablet(51, 12, '', 'tabv0');
+  b.e('upgrade', 25, 10, { kind: 'silberzahn', id: 'got_silberzahn' });          // the hero's sword, on top of the rise (a new game only: see game.js; the Player cannot swing until it is taken)
   b.exit('R', 9, 11, 'v1', 1, 12);
   add(b);
 }
@@ -245,7 +246,7 @@ export function arrangeCandelabras(def) {
   b.tablet(6, 12, 'THE BELLS RANG AT DUSK. THEN THE THINGS CAME DOWN FROM THE HILL. PRAGUE HAS NOT WALKED ITS OWN STREETS WITHOUT FEAR SINCE. THE KEEP IS BEYOND THE GATE.', 'tab0');
   b.candle(16, 12, 'heart').candle(38, 12, 'coin').e('statue', 55, 12, { drop: 'mana' }).candle(77, 12, 'heart');
   b.many('zombie', [20, 34, 58, 72], 12).e('skeleton', 46, 12).e('hound', 66, 12).e('fireskull', 40, 5).e('bat', 28, 3).e('bat', 60, 4);
-  for (const [x, kind] of [[9, 'woman'], [18, 'oldman'], [30, 'bearded'], [47, 'hatman'], [56, 'woman'], [67, 'bearded'], [76, 'oldman']]) b.e('villager', x, 12, { kind });
+  for (const [x, kind] of [[9, 'woman'], [30, 'bearded'], [47, 'hatman'], [76, 'oldman']]) b.e('villager', x, 12, { kind });          // (four runners, about half of what the street once had)
   b.exit('L', 9, 11, 'v0', 62, 12).exit('R', 9, 11, 'g1', 1, 12);
   add(b);
 }
