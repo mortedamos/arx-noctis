@@ -93,7 +93,7 @@ let vec = null;                                   // { body, display } once the 
 const FONT_FILES = [['body', 'SK Almendra', '../assets/fonts/Almendra-Bold.ttf', 1.06], ['display', 'SK Pirata', '../assets/fonts/PirataOne-Regular.ttf', 1.12]];
 const HAND_FONT = ['hand', 'SK Eroded', '../assets/fonts/erodedmotta.regular.ttf', 1.0];        // "Eroded Motta" (lirkiv AC): the lettering on the gravestones and tablets (font: 'hand'), in mixed case
 const STRANGER_FONT = ['stranger', 'SK Bookhand', '../assets/fonts/Elementary_Gothic_Bookhand.ttf', 0.87];        // "Elementary Gothic Bookhand" (Bill Roach, SIL OFL): the Stranger's own voice (font: 'stranger'), in mixed case
-const TITLE_FONT = ['title', 'SK Blackletter', '../assets/fonts/BLACEB__.TTF', 1.0];       // "Blackletter ExtraBold" (Typographer Mediengestaltung): the game title only
+const TITLE_FONT = ['title', 'SK Blackletter', '../assets/fonts/Blackletter-ExtraBold.otf', 1.0];       // "Blackletter ExtraBold" (Typographer Mediengestaltung): the game title only
 export async function loadFonts() {
   try {
     const m = document.createElement('canvas').getContext('2d'), spec = {};

@@ -86,7 +86,7 @@ The font files are in `assets/fonts/`; the licenses are in `assets/credits/licen
 
 | Font | Used for | Licence |
 |---|---|---|
-| **Blackletter ExtraBold** (`BLACEB__.TTF`, (c) 2001 Typographer Mediengestaltung) | the game title on the title screen | **no licence file came with it** - the font file says "All rights reserved"; confirm that it may be redistributed before a public release |
+| **Blackletter ExtraBold** (`Blackletter-ExtraBold.otf`, rebuilt from the original `BLACEB__.TTF` so browsers accept it, (c) 2001 Typographer Mediengestaltung) | the game title on the title screen | **no licence file came with it** - the font file says "All rights reserved"; confirm that it may be redistributed before a public release |
 | **Eroded Motta** (`erodedmotta.regular.ttf`, (c) 2026 lirkiv AC; supplied by the project owner) | her words: every gravestone and tablet (in mixed case) | **no licence file came with it** - the font file names its author but no licence; confirm that it may be redistributed before a public release |
 
 ## Original art made for this project

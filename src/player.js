@@ -252,8 +252,8 @@ export class Player extends Entity {
     }
     if (this.landedT > 0) this.landedT--;
     for (let i = this.trail.length - 1; i >= 0; i--) if (--this.trail[i].life <= 0) this.trail.splice(i, 1);
-    // footsteps / run animation
-    if (this.onGround && Math.abs(this.vx) > 0.3) { this.runT += Math.abs(this.vx) * 0.13; if (Math.floor(this.runT) % 6 === 0 && Math.floor(this.runT) !== this._lastStep) { this._lastStep = Math.floor(this.runT); A.sfx('step'); } } else this.runT = 0;
+    // run animation (the hero makes no footstep sound)
+    if (this.onGround && Math.abs(this.vx) > 0.3) this.runT += Math.abs(this.vx) * 0.13; else this.runT = 0;
     this.idleT = (Math.abs(this.vx) < 0.1 && this.onGround) ? this.idleT + 1 : 0;
     this.updateEnchant(); this.updateStains(); this.updateHeal(); this.swishWind(); this.stepCloak(); this.stepLantern();
     if (touchesSpikes(this, room)) this.hurtSpikes();
