@@ -90,8 +90,11 @@ export class Game {
   }
   run() {
     let last = performance.now(), acc = 0; const STEP = 1000 / 60;
+    const perf = { n: 0, slow: 0 }, fullfx = new URLSearchParams(location.search).has('fullfx');
     const loop = now => {
-      acc += Math.min(100, now - last); last = now; let n = 0;
+      const raw = now - last; acc += Math.min(100, raw); last = now; let n = 0;
+      // a SPEED GOVERNOR: if, over three seconds of play, most frames come late (slower than about 50 per second), the dearest effect - the shadows the lights cast - is switched off for the rest of the visit
+      if (!fullfx && this.state === 'play' && !document.hidden && !this.freeze && raw < 100 && this.fx.shadowK !== 0) { perf.n++; if (raw > 19.5) perf.slow++; if (perf.n >= 180) { if (perf.slow > perf.n * 0.55) { this.fx.shadowK = 0; this.fx.darkU.uShadow.value = 0; console.info('slow frames: shadows switched off (?fullfx keeps them)'); } perf.n = perf.slow = 0; } }
       if (this.freeze) acc = 0;                                           // test hook: game.freeze = true holds the current frame
       while (acc >= STEP && n < 5) { this.step(); acc -= STEP; n++; } if (n === 5) acc = 0;
       this.draw(); requestAnimationFrame(loop);

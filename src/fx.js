@@ -85,14 +85,14 @@ uniform vec4 uLights[24]; uniform vec3 uLightCol[24]; uniform int uCount;
 uniform float uAmbient; uniform float uMax; uniform vec3 uTint; uniform float uVig; uniform float uHurt; uniform vec2 uRes; uniform float uPulse;
 uniform sampler2D uMask; uniform vec2 uCam; uniform vec2 uMaskSize; uniform float uShadow;
 // SHADOWS: walk from a pixel's world position to a light through the room's tiles (one texel each; 0 = open air, bright = stone).  A pixel inside the ground is judged from where its ray leaves the ground,
-// so floors and walls are lit by a nearby flame, while anything with a wall in between is not.  Three rays (the light's middle and a little to each side) soften the edge of the shadow.
+// so floors and walls are lit by a nearby flame, while anything with a wall in between is not.  Two rays (a little to each side of the light) soften the edge of the shadow; they step half a tile at a time (it is the dearest thing the graphics card does, so it is kept lean).
 float rayVis(vec2 a, vec2 b){
   vec2 d=b-a; float len=length(d); if(len<8.0) return 1.0; vec2 dir=d/len; float vis=1.0; bool inside=true;
-  for(int s=0;s<28;s++){ float t=float(s)*6.0; if(t>len-5.0) break; vec2 q=a+dir*t; vec2 uv=(floor(q/16.0)+0.5)/uMaskSize; if(uv.x<0.0||uv.y<0.0||uv.x>1.0||uv.y>1.0) continue;
+  for(int s=0;s<22;s++){ float t=float(s)*8.0; if(t>len-5.0) break; vec2 q=a+dir*t; vec2 uv=(floor(q/16.0)+0.5)/uMaskSize; if(uv.x<0.0||uv.y<0.0||uv.x>1.0||uv.y>1.0) continue;
     float m=texture2D(uMask,uv).r; if(inside && m>0.4) continue; inside=false; vis*=1.0-m; }
   return vis;
 }
-float shadowVis(vec2 px, vec2 lp){ vec2 a=px+uCam, b=lp+uCam; vec2 d=normalize(b-a+vec2(0.0001)); vec2 n=vec2(-d.y,d.x)*4.0; return (rayVis(a,b)+rayVis(a,b+n)+rayVis(a,b-n))/3.0; }
+float shadowVis(vec2 px, vec2 lp){ vec2 a=px+uCam, b=lp+uCam; vec2 d=normalize(b-a+vec2(0.0001)); vec2 n=vec2(-d.y,d.x)*4.0; return (rayVis(a,b+n)+rayVis(a,b-n))*0.5; }
 void main(){
   vec2 px=vec2(vUv.x*uRes.x,vUv.y*uRes.y);   // camera is y-down, so plane v grows downward on screen
   float lit=0.0; vec3 pool=vec3(0.0);

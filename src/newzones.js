@@ -108,7 +108,7 @@ const tiled = (g, img, par, camX, camY, alpha, dy = 0) => {
   for (let y = oy - img.height; y < H; y += img.height) for (let x = ox - img.width; x < W; x += img.width) g.drawImage(img, Math.round(x), Math.round(y));
   g.restore();
 };
-export function drawLibrary(g, room, camX, camY, t) {
+function paintLibrary(g, room, camX, camY, t) {
   const S = libraryStrips(), bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#0e0906'); bg.addColorStop(1, '#1a110a'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
   tiled(g, S.far, 0.16, camX, camY, 0.9); tiled(g, S.mid, 0.38, camX, camY, 0.82);          // (the far wall is soft, as if out of focus)
   g.save(); g.globalCompositeOperation = 'lighter';                          // a few slow shafts of lamplight, and lazily drifting pages
@@ -118,7 +118,7 @@ export function drawLibrary(g, room, camX, camY, t) {
     g.fillStyle = 'rgba(235,225,190,0.5)'; g.fillRect(px | 0, py | 0, 4, Math.max(1, Math.round(3 + Math.sin(a) * 2))); }
   g.fillStyle = 'rgba(8,5,2,0.28)'; g.fillRect(0, 0, W, H);
 }
-export function drawIceCave(g, room, camX, camY, t) {
+function paintIceCave(g, room, camX, camY, t) {
   const S = iceStrips(), bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#071626'); bg.addColorStop(1, '#0f2f48'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
   g.save(); g.globalCompositeOperation = 'lighter';                          // a slow pale aurora seeping through the ice far above
   for (let i = 0; i < 3; i++) { const y = 30 + i * 36 + Math.sin(t * 0.01 + i * 2) * 8 - camY * 0.05, gr = g.createLinearGradient(0, y - 16, 0, y + 16); gr.addColorStop(0, 'rgba(60,200,180,0)'); gr.addColorStop(0.5, 'rgba(80,210,200,' + (0.06 + 0.03 * Math.sin(t * 0.02 + i)).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(60,120,220,0)'); g.fillStyle = gr; g.fillRect(0, y - 16, W, 32); }
@@ -126,6 +126,16 @@ export function drawIceCave(g, room, camX, camY, t) {
   tiled(g, S.far, 0.14, camX, camY, 0.95); tiled(g, S.mid, 0.34, camX, camY, 0.9);
   g.fillStyle = 'rgba(2,10,20,0.22)'; g.fillRect(0, 0, W, H);
 }
+
+// These two backgrounds are built from several full-picture layers (a gradient, an aurora, two scrolling strips, a dark veil).  Done straight onto the game canvas, which is several times larger than the picture
+// (it is scaled up for sharpness), every layer costs a full-screen blend; so they are painted onto a picture-sized buffer instead and that is stamped on once - the same look, a fraction of the work.
+let BG = null;
+function viaBuffer(g, paint, room, camX, camY, t) {
+  if (!BG) BG = canvasOf(W, H); const b = BG.getContext('2d'); b.clearRect(0, 0, W, H); paint(b, room, camX, camY, t);
+  const sm = g.imageSmoothingEnabled; g.imageSmoothingEnabled = false; g.drawImage(BG, 0, 0, W, H); g.imageSmoothingEnabled = sm;
+}
+export const drawLibrary = (g, room, camX, camY, t) => viaBuffer(g, paintLibrary, room, camX, camY, t);
+export const drawIceCave = (g, room, camX, camY, t) => viaBuffer(g, paintIceCave, room, camX, camY, t);
 
 // ---------------------------------------------------------------------------------------------- a foreground pass: out-of-focus shapes close to the lens, sliding past faster than the ground, drawn over the hero
 // (kept to the edges of the picture so that nothing you need to see is ever behind them)
