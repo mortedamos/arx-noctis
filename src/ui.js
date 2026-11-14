@@ -250,7 +250,7 @@ export class TitleScreen {
       drawText(ctx, 'ENTER = BEGIN     ESC = BACK', W / 2, 176, { align: 'center', color: PALE });
     }
     else controlsScreen(ctx);
-    drawText(ctx, 'BUILD ' + BUILD.n + '  ' + BUILD.when, W - 4, H - 9, { align: 'right', color: '#6a6280', alpha: 0.8 });          // (which build this is: small, bottom right)
+    drawText(ctx, 'BUILD ' + BUILD.n + '  ' + BUILD.when, W - 3, H - 8, { align: 'right', color: '#6a6280', alpha: 0.8, scale: 0.7 });          // (which build this is: small, bottom right)
   }
 }
 
