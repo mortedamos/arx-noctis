@@ -309,7 +309,7 @@ export class Game {
     else if (v === TILE.BARRICADE) { this.fx.burst(x, y, 14, COLORS.fire, { speed: 2, s0: 16 }); this.fx.sparks(x, y, 10, COLORS.fire, 3, { gy: 0.15 }); this.fx.glow(x, y, 50, [1, 0.5, 0.2], 0.8, 14); }
     else if (v === TILE.ICE) { this.fx.burst(x, y, 12, COLORS.ice, { speed: 2.2, s0: 12 }); this.fx.sparks(x, y, 10, COLORS.white, 3, { gy: 0.15 }); this.fx.smoke(x, y, 3, { c0: [0.85, 0.92, 1], c1: [0.6, 0.7, 0.85], s0: 6, s1: 22, l: 0.7 }); this.fx.glow(x, y, 44, [1, 0.6, 0.3], 0.6, 12); }
     else { this.fx.burst(x, y, 12, COLORS.ice, { speed: 2.5, s0: 14 }); this.fx.sparks(x, y, 14, COLORS.white, 4, { gy: 0.2 }); this.fx.flash([0.6, 0.8, 1], 0.25); }
-    A.sfx('break'); this.shake(2, 8);
+    A.sfx(v === TILE.ICE ? 'shatter' : 'break'); this.shake(2, 8);
   }
   meltIce(tx, ty) { const q = [[tx, ty]], seen = new Set(); while (q.length) { const [x, y] = q.pop(), k = x + ',' + y; if (seen.has(k) || this.room.get(x, y) !== TILE.ICE) continue; seen.add(k); this.breakTile(x, y); q.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]); } }          // (fire melts a whole barrier of ice, block by block)
   burnBarricade(tx, ty) { const q = [[tx, ty]], seen = new Set(); while (q.length) { const [x, y] = q.pop(), k = x + ',' + y; if (seen.has(k) || this.room.get(x, y) !== TILE.BARRICADE) continue; seen.add(k); this.breakTile(x, y); q.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]); } }

@@ -39,7 +39,7 @@ export class Movers {
         if (m.gone > 0) { m.fvy = Math.min(m.fvy + 0.3, 6); m.fall += m.fvy; if (--m.gone === 0) { m.active = true; m.fall = 0; m.fvy = 0; m.back = 24; } }
         else if (m.fuse > 0) {
           if (this.t % 4 === 0) g.fx.burst(m.x + (Math.random() - 0.5) * m.w * 0.8, m.y + 6, 1, [[0.55, 0.5, 0.45], [0.3, 0.27, 0.25]], { speed: 0.5, s0: 5, s1: 1, up: -0.3, l0: 14, l1: 24 });
-          if (--m.fuse === 0) { m.active = false; m.gone = 170; m.fall = 0; m.fvy = 0; A.sfx('crack'); g.fx.burst(m.x, m.y + 6, 14, [[0.6, 0.55, 0.5], [0.3, 0.27, 0.25]], { speed: 1.8, s0: 8, s1: 1, up: -0.4 }); }
+          if (--m.fuse === 0) { m.active = false; m.gone = 170; m.fall = 0; m.fvy = 0; A.sfx('crumble'); g.fx.burst(m.x, m.y + 6, 14, [[0.6, 0.55, 0.5], [0.3, 0.27, 0.25]], { speed: 1.8, s0: 8, s1: 1, up: -0.4 }); }
         }
       }
       if (d.vent) {

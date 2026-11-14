@@ -197,6 +197,10 @@ export const Audio_ = {
     seal() { this.tone(90, 400, 0.6, 'sawtooth', 0.12); this.noise(0.6, 300, 3000, 0.12, 'bandpass', 1.5); },
     unseal() { this.tone(500, 80, 0.7, 'sawtooth', 0.1); this.noise(0.7, 3000, 300, 0.1, 'bandpass', 1.5); },
     break() { this.noise(0.4, 1200, 120, 0.3, 'lowpass', 0.8); this.tone(120, 40, 0.3, 'square', 0.14); },
+    page() { for (let i = 0; i < 4; i++) this.noise(0.07, 4200 - i * 500, 1500, 0.07, 'bandpass', 2.2, i * 0.045); },          // a flutter of paper (the haunted books)
+    ink() { this.noise(0.16, 700, 160, 0.2, 'lowpass', 1); this.tone(220, 90, 0.12, 'sine', 0.12); this.noise(0.08, 3000, 1200, 0.05, 'bandpass', 2, 0.03); },          // a wet splat
+    shatter() { this.noise(0.35, 7000, 2000, 0.3, 'highpass', 0.7); [2400, 3100, 1900].forEach((f, i) => this.tone(f, f * 0.55, 0.22, 'triangle', 0.06, i * 0.03)); this.noise(0.3, 1500, 200, 0.12, 'lowpass', 0.8, 0.04); },          // ice breaking: glassy
+    crumble() { this.noise(0.55, 500, 90, 0.26, 'lowpass', 0.8); for (let i = 0; i < 4; i++) this.noise(0.05, 1800, 600, 0.1, 'bandpass', 2, 0.08 * i); },          // a slab giving way: gravel
     candle() { this.noise(0.12, 2500, 1200, 0.1, 'bandpass', 2); this.tone(1400, 900, 0.1, 'triangle', 0.07); },
     thunder(o) { const p = o.power || 1; this.noise(2.4, 700, 50, 0.5 * p, 'lowpass', 0.6, 0); this.noise(1.2, 300, 40, 0.4 * p, 'lowpass', 0.6, 0.35); this.tone(60, 28, 1.6, 'sine', 0.3 * p); },
     crack() { this.noise(0.3, 6000, 800, 0.35, 'highpass', 0.8); this.noise(0.5, 900, 80, 0.3, 'lowpass', 0.8, 0.05); },

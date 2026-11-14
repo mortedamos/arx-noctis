@@ -46,7 +46,7 @@ const LOOK = {
   9: { weather: 'mist', ambient: 0.3, horizon: 12, tint: [0.0, 0.04, 0.07], vig: 0.6 },          // the Cistern: cold, wet, teal
   8: { weather: 'steamworks', ambient: 0.36, horizon: 12, tint: [0.07, 0.04, 0.0], vig: 0.6 },          // the Clockwork Dungeon: brass-lit, with sparks
   10: { weather: 'pages', ambient: 0.3, horizon: 12, tint: [0.07, 0.035, 0.0], vig: 0.6 },          // the Library of Ink: lamplit, motes of paper dust
-  11: { weather: 'snow', ambient: 0.4, horizon: 12, tint: [0.0, 0.04, 0.09], vig: 0.55 },          // the Frozen Caverns: cold blue, snow drifting down
+  11: { weather: 'snow', wisps: 6, ambient: 0.4, horizon: 12, tint: [0.0, 0.04, 0.09], vig: 0.55 },          // the Frozen Caverns: cold blue, snow drifting down
 };
 const SPEC = {
   // ======== ZONE 6 - PRAGUE (Gothicvania Town): calm at dusk until the Cinder Warden's torches (VillageScene), then it burns
@@ -190,7 +190,7 @@ const SPEC = {
     candles: [1, 2], barrels: [1, 2], mix: { frostwyrm: [1, 2], hound: [1, 2], shade: [1, 2], bat: [2, 3], skeleton: [1, 1] } },
   i2: { kind: 'tower', zone: 11, name: 'The Icefall', w: [28, 32], h: [36, 42], top: [9, 11], opts: { ...LOOK[11], ambient: 0.45 }, abilities: ['djump', 'dash', 'ember'],
     topItem: { kind: 'mpup', id: 'i2_mp' }, candles: [1, 2], barrels: [1, 1], mix: { frostwyrm: [1, 2], ghost: [1, 2], wraith: [1, 1], bat: [2, 3] } },
-  i3: { kind: 'corridor', zone: 11, name: 'The Glacier Road', w: [84, 98], opts: { ...LOOK[11], fog: 0.15, dark: true }, abilities: ['djump', 'dash', 'ember'],          // (DARK: only the wisp, a few candles and the glare of the ice show the way - the ice throws every light back)
+  i3: { kind: 'corridor', zone: 11, name: 'The Glacier Road', w: [84, 98], opts: { ...LOOK[11], fog: 0.15, dark: true, wisps: 12 }, abilities: ['djump', 'dash', 'ember'],          // (DARK: only the hero's wisp, the ghostly blue wisps that drift here and the glare of the ice show the way - the ice throws every light back)
     mods: [{ t: 'iceWall' }, { t: 'iceWall' }, { t: 'cell', gate: 'ice', chest: true, kind: 'key', id: 'key_frost' }, { t: 'cell', gate: 'crack', kind: 'atkup', id: 'i3_atk' }],
     candles: [3, 4], barrels: [1, 2], mix: { frostwyrm: [1, 2], hound: [2, 2], wraith: [1, 2], ghost: [1, 1], bat: [1, 2] } },
   si: { kind: 'sanctuary', zone: 11, name: 'Rime Sanctuary', parent: 'i1' },
@@ -765,7 +765,7 @@ function genTeleport(id, spec, r) {
   const W = r.i(26, 32), H = 14, BASE = 12, outdoor = !!spec.outdoor, cx = W >> 1;
   const b = new B(id, spec.name, spec.zone, W, H, { ...spec.opts, music: 'save', theme: spec.theme });
   b.floor(0, W, BASE); if (!outdoor) b.ceil(0, W, 2);
-  b.e('waystone', cx, BASE, { id: 'tp_' + id }); b.d('brazier', cx - 7, BASE).d('brazier', cx + 7, BASE);
+  b.e('waystone', cx, BASE, { id: 'tp_' + id }); if (ZONES[spec.zone].theme !== 'ice') b.d('brazier', cx - 7, BASE).d('brazier', cx + 7, BASE);          // (no fires in the wilderness of the Frozen Caverns: ghostly wisps light it)
   const meta = { abilities: [...(spec.abilities || [])], back: BACK[spec.zone], entry: { L: spec.doorL ? null : { tx: 1, gy: BASE }, R: { tx: W - 2, gy: BASE } }, must: [{ tx: cx, gy: BASE, name: 'waystone' }], items: [], start: { tx: 3, gy: BASE } };
   if (spec.doorL) { b.door(4, BASE, spec.doorL.to, 3, BASE, spec.doorL.kind || 'crypt'); patchDoor(b, spec.doorL); }                   // (a branch's first room is entered by a door from the crossroads)
   b.def.meta = meta; b.def.entries = { L: meta.entry.L, R: meta.entry.R };

@@ -20,7 +20,7 @@ export class Icicle {
   shatter(g) {
     this.dead = true; const x = this.x, y = this.y + this.len;
     g.fx.burst(x, y - 4, 12, COLORS.ice, { speed: 2.4, s0: 10 }); g.fx.sparks(x, y - 4, 12, COLORS.white, 3.4, { gy: 0.2 }); g.fx.smoke(x, y - 2, 2, { c0: [0.85, 0.92, 1], c1: [0.6, 0.7, 0.85], s0: 5, s1: 18, l: 0.5 });
-    A.sfx('break'); g.shake(1.5, 6);
+    A.sfx('shatter'); g.shake(1.5, 6);
   }
   step(g) {
     if (this.dead) return; const p = g.player, r = g.room;

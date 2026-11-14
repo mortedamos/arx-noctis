@@ -400,10 +400,10 @@ class Tome extends Enemy {
     const p = g.player; this.st++; this.face();
     if (this.state === 'drift') {
       this.vx = approach(this.vx, Math.cos(this.t * 0.03 + this.phase) * 0.5, 0.03); this.vy = approach(this.vy, Math.sin(this.t * 0.05 + this.phase) * 0.4, 0.03);
-      if (dist(this.x, this.cy, p.x, p.y - 16) < 130 && this.st > 50) { this.state = 'tell'; this.st = 0; A.sfx('flap'); }
+      if (dist(this.x, this.cy, p.x, p.y - 16) < 130 && this.st > 50) { this.state = 'tell'; this.st = 0; A.sfx('page'); }
     } else if (this.state === 'tell') {
       this.vx = this.vy = 0; this.x += Math.sin(this.t * 1.8) * 0.5; g.fx.glow(this.x, this.cy, 22, [1, 0.8, 0.4], 0.5);
-      if (this.st > 24) { this.state = 'swoop'; this.st = 0; const a = Math.atan2(p.y - 16 - this.cy, p.x - this.x); this.vx = Math.cos(a) * 2.3; this.vy = Math.sin(a) * 2.3; A.sfx('flap'); }
+      if (this.st > 24) { this.state = 'swoop'; this.st = 0; const a = Math.atan2(p.y - 16 - this.cy, p.x - this.x); this.vx = Math.cos(a) * 2.3; this.vy = Math.sin(a) * 2.3; A.sfx('page'); }
     } else if (this.state === 'swoop') { if (this.st > 52 || this.hitX || this.hitCeil) { this.state = 'drift'; this.st = 0; this.vx *= 0.3; this.vy *= 0.3; } }
   }
   physics() { const room = this.g.room; this.hitX = 0; this.hitCeil = false; const nx = this.x + this.vx; if (room.solid(Math.floor(nx / T), Math.floor(this.cy / T))) { this.hitX = 1; this.vx = 0; } else this.x = nx; const ny = this.y + this.vy; if (room.solid(Math.floor(this.x / T), Math.floor((ny - this.h / 2) / T))) { this.hitCeil = true; this.vy = 0; } else this.y = ny; if (this.flashT > 0) this.flashT--; }
@@ -417,7 +417,7 @@ class Grimoire extends Enemy {
     g.fx.glow(this.x, this.cy, 34, [1, 0.8, 0.4], 0.28); g.fx.light(this.x, this.cy, 54, 0.55, [1, 0.8, 0.45]);
     if (this.state === 'float') { if (this.cool === 0 && dist(this.x, this.cy, p.x, p.y - 16) < 230) { this.state = 'cast'; this.st = 0; A.sfx('tell'); } }
     else if (this.state === 'cast') { this.vx *= 0.5; this.vy *= 0.5; g.fx.glow(this.x, this.cy, 30 + this.st * 0.6, [1, 0.8, 0.3], 0.4 + this.st * 0.015);
-      if (this.st === 30) { A.sfx('cast'); const base = Math.atan2(p.y - 16 - this.cy, p.x - this.x); for (let i = -1; i <= 1; i++) { const a = base + i * 0.28; g.addProjectile(new Projectile(this.x, this.cy, Math.cos(a) * 1.9, Math.sin(a) * 1.9, 'page', { dmg: 8, life: 240 })); } }
+      if (this.st === 30) { A.sfx('page'); const base = Math.atan2(p.y - 16 - this.cy, p.x - this.x); for (let i = -1; i <= 1; i++) { const a = base + i * 0.28; g.addProjectile(new Projectile(this.x, this.cy, Math.cos(a) * 1.9, Math.sin(a) * 1.9, 'page', { dmg: 8, life: 240 })); } }
       if (this.st > 44) { this.state = 'float'; this.st = 0; this.cool = 110 + rand(60); } }
   }
   physics() { Tome.prototype.physics.call(this); }

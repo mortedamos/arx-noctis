@@ -458,11 +458,11 @@ export class BossLibrarian extends Boss {
       case 'pages': {
         this.faceP(); this.moveTo(this.x, 92, 0.05); const times = this.phase === 2 ? [38, 66, 94] : [38, 72];
         if (this.st < 38) this.tell('pages', this.st / 38, [{ type: 'line', x0: this.x, y0: this.cy, x1: p.x, y1: p.y - 20 }]);
-        if (times.includes(this.st)) { A.sfx('cast'); const base = Math.atan2(p.y - 24 - this.cy, p.x - this.x), n = this.phase === 2 ? 7 : 5; for (let i = 0; i < n; i++) { const a = base + (i - (n - 1) / 2) * 0.2; g.addProjectile(new Projectile(this.x, this.cy, Math.cos(a) * 2.0, Math.sin(a) * 2.0, 'page', { dmg: 9, life: 260 })); } g.fx.ring(this.x, this.cy, 40, [1, 0.9, 0.6], 16); }
+        if (times.includes(this.st)) { A.sfx('page'); const base = Math.atan2(p.y - 24 - this.cy, p.x - this.x), n = this.phase === 2 ? 7 : 5; for (let i = 0; i < n; i++) { const a = base + (i - (n - 1) / 2) * 0.2; g.addProjectile(new Projectile(this.x, this.cy, Math.cos(a) * 2.0, Math.sin(a) * 2.0, 'page', { dmg: 9, life: 260 })); } g.fx.ring(this.x, this.cy, 40, [1, 0.9, 0.6], 16); }
         if (this.st > times[times.length - 1] + 40) { this.state = 'idle'; this.st = -20; } break; }
       case 'ink': {
         this.moveTo(g.room.pw / 2, 88, 0.04); if (this.st < 30) this.tell('ink', this.st / 30);
-        for (const [k, at] of [[0, 30], [1, 46], [2, 62]]) if (this.st === at) { A.sfx('cast'); g.fx.ring(this.x, this.cy, 46, [1, 0.8, 0.3], 18); for (let i = 0; i < 9; i++) { const a = i * Math.PI * 2 / 9 + k * 0.35; g.addProjectile(new Projectile(this.x, this.cy, Math.cos(a) * 1.5, Math.sin(a) * 1.5, 'ink', { dmg: 9, life: 280 })); } }
+        for (const [k, at] of [[0, 30], [1, 46], [2, 62]]) if (this.st === at) { A.sfx('ink'); g.fx.ring(this.x, this.cy, 46, [1, 0.8, 0.3], 18); for (let i = 0; i < 9; i++) { const a = i * Math.PI * 2 / 9 + k * 0.35; g.addProjectile(new Projectile(this.x, this.cy, Math.cos(a) * 1.5, Math.sin(a) * 1.5, 'ink', { dmg: 9, life: 280 })); } }
         if (this.st > 110) { this.state = 'idle'; this.st = -20; } break; }
       case 'shelves': {
         this.moveTo(g.room.pw / 2, 84, 0.04); if (this.st < 20) this.tell('shelves', this.st / 20);

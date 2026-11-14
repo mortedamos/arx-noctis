@@ -18,8 +18,8 @@ export const ZONES = {
   5: { name: 'The Shadow Throne', theme: 'throne', music: 'zone5' },
   6: { name: 'Prague', theme: 'village', music: 'zone6' },
   7: { name: 'The Weeping Swamp', theme: 'swamp', music: 'zone7' },
-  10: { name: 'The Library of Ink', theme: 'library', music: 'zone3' },
-  11: { name: 'The Frozen Caverns', theme: 'ice', music: 'zone1' },
+  10: { name: 'The Library of Ink', theme: 'library', music: 'zone10' },
+  11: { name: 'The Frozen Caverns', theme: 'ice', music: 'zone11' },
 };
 // the three Gothicvania Town houses and where their windows are, as [x offset from centre, height above the street, flame size] - the blazes are the fires burning inside
 export const HOUSES = { town_house_1: [[4, 108, 1.3], [7, 36, 1.1], [-12, 150, 1.0]], town_house_2: [[-35, 125, 1.4], [26, 125, 1.2], [4, 62, 1.2], [-50, 214, 0.9]], town_house_3: [[-42, 120, 1.2], [31, 120, 1.2], [-15, 50, 1.4]] };
@@ -142,6 +142,7 @@ export function groundScenery(def) {
 
 export function tidyRoom(def) {
   if (def.tidied) return; def.tidied = true;
+  if (def.theme === 'ice' && !def.save) def.decos = def.decos.filter(d => d.t !== 'torch' && d.t !== 'dgtorch' && d.t !== 'brazier' && d.t !== 'cdl');          // the Frozen Caverns are wilderness: no torches, braziers or candles - ghostly blue wisps (fx.js) light the way
   groundScenery(def);
   // no scenery in front of a door (carts, wells, lamps, signs, braziers...): a door must always be seen
   def.decos = def.decos.filter(d => { if (!(d.t === 'img' || d.t === 'brazier') || (d.t === 'img' && d.back)) return true; return !(def.doors || []).some(o => Math.abs(d.x - (o.x * 16 + 8)) < 30 && d.y > o.gy * 16 - 74 && d.y < o.gy * 16 + 8); });
@@ -166,7 +167,7 @@ export function tidyRoom(def) {
 
 const STATIC_SPAWNS = new Set(['statue', 'barrel', 'tablet', 'altar', 'chest', 'waystone', 'itemspawn', 'upgrade']);
 const BLOCK_DECOS = new Set(['brazier', 'column', 'pool', 'door', 'gate']);
-const OUTDOOR_THEMES = new Set(['swamp', 'graveyard']);                                       // open country: no candelabras (a mire has no use for them), whatever the builder asked for
+const OUTDOOR_THEMES = new Set(['swamp', 'graveyard', 'ice']);                                       // open country: no candelabras (a mire or a glacier has no use for them - the ice caves are lit by ghostly wisps), whatever the builder asked for
 export function arrangeCandelabras(def) {
   if (def.cdlDone) return; def.cdlDone = true;                                                          // (hand-built rooms are shared between worlds: do it once)
   if (OUTDOOR_THEMES.has(def.theme) && !def.indoor && !def.save) { def.decos = def.decos.filter(d => d.t !== 'cdl'); return; }
