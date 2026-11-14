@@ -96,8 +96,15 @@ in code - see `src/procart.js`.
 ## Code and libraries
 
 * **three.js** r187 - MIT license, https://threejs.org (`lib/three/`)
-* Game code, shaders, level data, and synthesized sound effects: written for this project.
+* Game code, shaders and level data: written for this project. Most sound effects are synthesized in code; the recorded ones are listed under Sound effects.
 * Pixel font: a 5x7 bitmap font defined in `src/font.js`.
+
+## Sound effects (recorded)
+
+* `assets/sfx/click.mp3`, `click_2.mp3` - "51 UI sound effects (buttons, switches and clicks)" (click4, click5) by gopherapps - CC0, https://opengameart.org/content/51-ui-sound-effects-buttons-switches-and-clicks
+* `assets/sfx/select.mp3` - "Game UI Confirm Selection Sound #2" by Vadim_Makes_Sound - Pixabay Content License (free for commercial use, no attribution required), https://pixabay.com/sound-effects/technology-game-ui-confirm-selection-sound-2-547852/
+
+(Each is trimmed, level-matched and re-encoded as a mono 96 kbps mp3.)
 
 ## Music
 

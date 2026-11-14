@@ -106,8 +106,18 @@ Eroded Motta (lirkiv AC) - the gravestones and tablets
 
 # CODE
 three.js - MIT licence (threejs.org)
-Game code, shaders, level generation and all sound effects were written for this project.
+Game code, shaders and level generation were written for this project.
+Most sound effects are made in code; the recorded ones are credited under SOUND EFFECTS.
 Some creatures, props and projectiles are drawn in code.
+
+---
+
+# SOUND EFFECTS
+## CC0 (public domain)
+click, click 2 - 51 UI sound effects - gopherapps (OpenGameArt)
+
+## Pixabay Content License
+select - Game UI Confirm Selection Sound #2 - Vadim_Makes_Sound
 
 ---
 
