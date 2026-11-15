@@ -113,7 +113,7 @@ void main(){
 // RAIN: three layers of falling streaks drawn by the graphics card across the whole screen, at the screen's own resolution (far: many, thin, slow and faint; near: few, long, fast and bright), leaning with the wind.
 const RAINFRAG = /* glsl */`
 precision highp float; varying vec2 vUv;
-uniform float uTime; uniform float uAmt; uniform vec3 uColor;
+uniform float uTime; uniform float uAmt; uniform float uCount; uniform vec3 uColor;
 float hh(float n){ return fract(sin(n * 127.1) * 43758.5453); }
 float drops(vec2 uv, float cols, float rep, float speed, float len, float width, float slant, float seed){
   vec2 p = vec2(uv.x * 1.7778 - (1.0 - uv.y) * slant, uv.y);            // (v grows DOWNWARD on screen here: the streaks lean down and to the left)
@@ -122,7 +122,7 @@ float drops(vec2 uv, float cols, float rep, float speed, float len, float width,
   float t = fract(-p.y * rep * (0.8 + 0.4 * rr) + uTime * speed * (0.85 + 0.3 * r) + r * 17.0);          // (the pattern slides toward larger v: down the screen; the head is the low end of each streak)
   float line = smoothstep(width, 0.0, abs(fx - (r - 0.5) * 0.5));
   float tail = smoothstep(len, 0.0, t), head = smoothstep(0.0, 0.02, t);       // (bright at the head, fading up the streak)
-  return line * tail * head * step(0.48, rr);          // (about 52% of the columns carry a drop; it was 65%)
+  return line * tail * head * step(1.0 - uCount, rr);          // (uCount: the share of the columns that carry a drop - 52% in the game, half that on the title screen)
 }
 void main(){
   float a = drops(vUv, 90.0, 1.6, 1.1, 0.18, 0.28, 0.14, 1.0) * 0.30
@@ -349,7 +349,7 @@ export class FX {
       uG: { value: Array.from({ length: 6 }, () => new THREE.Vector4()) }, uGP: { value: Array.from({ length: 6 }, () => new THREE.Vector2(1, 0)) }, uW: { value: Array.from({ length: 6 }, () => new THREE.Vector4(0, 0, 1, 0)) } };
     this.fogMesh = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.ShaderMaterial({ vertexShader: QVERT, fragmentShader: FOGFRAG, uniforms: this.fogU, transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide, ...NORMAL_PM }));
     this.fogMesh.renderOrder = -2; this.fogMesh.frustumCulled = false; this.fogMesh.visible = false; this.scene.add(this.fogMesh);
-    this.rainU = { uTime: { value: 0 }, uAmt: { value: 0 }, uColor: { value: new THREE.Vector3(0.62, 0.72, 0.95) } };
+    this.rainU = { uTime: { value: 0 }, uAmt: { value: 0 }, uCount: { value: 0.52 }, uColor: { value: new THREE.Vector3(0.62, 0.72, 0.95) } };
     this.rainMesh = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.ShaderMaterial({ vertexShader: QVERT, fragmentShader: RAINFRAG, uniforms: this.rainU, transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide, ...NORMAL_PM }));
     this.rainMesh.renderOrder = 2; this.rainMesh.frustumCulled = false; this.rainMesh.visible = false; this.scene.add(this.rainMesh);
     this.waterU = { uCam: { value: new THREE.Vector2() }, uRes: { value: new THREE.Vector2(W, H) }, uTime: { value: 0 }, uN: { value: 0 }, uR: { value: Array.from({ length: 10 }, () => new THREE.Vector4()) }, uQ: { value: Array.from({ length: 10 }, () => new THREE.Vector4()) } };
@@ -597,7 +597,7 @@ export class FX {
         for (let i = 0; i < 6; i++) { const wf = this.wisps.fog(i); F.uW.value[i].set(wf[0], wf[1], wf[2], wf[3]); }
         if (this.lantern) F.uW.value[5].set(this.lantern.x, this.lantern.y, 150, 0.92);          // (the Marshlight Lantern's wisp)
         for (let i = 0; i < 6; i++) { const g = this.gusts[i]; if (g) { F.uG.value[i].set(g.x, g.y, g.vx, g.vy); F.uGP.value[i].set(g.r, g.k); } else { F.uG.value[i].set(0, 0, 0, 0); F.uGP.value[i].set(1, 0); } } } }
-    { const R = this.rainU; R.uAmt.value += ((this.ambient === 'rain' ? 1 : 0) - R.uAmt.value) * 0.06; this.rainMesh.visible = R.uAmt.value > 0.01; if (this.rainMesh.visible) R.uTime.value = this.time; }          // (rain: one full-screen shader, fading in and out)
+    { const R = this.rainU; R.uCount.value = this.rainCount === undefined ? 0.52 : this.rainCount; R.uAmt.value += ((this.ambient === 'rain' ? (this.rainK === undefined ? 1 : this.rainK) : 0) - R.uAmt.value) * 0.06; this.rainMesh.visible = R.uAmt.value > 0.01; if (this.rainMesh.visible) R.uTime.value = this.time; }          // (rain: one full-screen shader, fading in and out)
     if (this.waterMesh.visible) { this.waterU.uCam.value.set(this.camX + this.shakeX, this.camY + this.shakeY); this.waterU.uTime.value = this.time; }
     this.add.mat.uniforms.uTime.value = this.time; this.alpha.mat.uniforms.uTime.value = this.time;
     this.add.upload(); this.alpha.upload();

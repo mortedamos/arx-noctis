@@ -36,3 +36,6 @@ snapshots/
 # trailer frames and renders (large, made by tools/trailer)
 tools/trailer/frames/
 tools/trailer/out/
+
+# the font download itself (the unzipped font and its licence are in assets/fonts/livingstone/)
+assets/fonts/livingstone.zip

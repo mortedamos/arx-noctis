@@ -168,6 +168,39 @@ function interiorBrick(th) {
   for (let row = 0; row < 2; row++) for (let i = 0; i < 4; i++) { const x = i * 16 + (row ? 8 : 0), y = row * 16, v = hash1(i * 3.7 + row * 11.3); q.fillStyle = v > 0.5 ? P[0] : P[1]; q.fillRect(x % 64 + 1, y + 1, 14, 14); if (x + 16 > 64) q.fillRect(1 - 8, y + 1, 7, 14); q.fillStyle = 'rgba(255,255,255,0.05)'; q.fillRect(x % 64 + 1, y + 1, 14, 1); }
   return INTERIOR_CACHE[th] = c;
 }
+// ---------------------------------------------------------------- the inside of a house: wooden walls
+// Vertical planks (a 64 px tile, repeated), a dark wainscot under a chair rail, a skirting board, and a small shuttered window in every bay, with the night outside it and a faint warm spill of light on the boards.
+let HOUSE_TILE = null;
+function houseWall() {
+  if (HOUSE_TILE) return HOUSE_TILE; const c = canvasOf(64, 64), g = c.getContext('2d'), cols = ['#4a2f1c', '#43291a', '#4f3421', '#3f271a'];
+  for (let i = 0; i < 4; i++) {
+    const x0 = i * 16; g.fillStyle = cols[i]; g.fillRect(x0, 0, 16, 64); g.fillStyle = '#25150c'; g.fillRect(x0, 0, 1, 64); g.fillStyle = 'rgba(255,205,150,0.08)'; g.fillRect(x0 + 1, 0, 2, 64);
+    for (let k = 0; k < 6; k++) { const h = hash1(i * 7.3 + k * 3.1), y = Math.floor(hash1(i * 2.2 + k * 5.7) * 58); g.fillStyle = 'rgba(20,10,4,0.32)'; g.fillRect(x0 + 3 + Math.floor(h * 10), y, 1, 3 + Math.floor(h * 7)); }          // grain
+    g.fillStyle = '#1a0f08'; g.fillRect(x0 + 8, 5, 1, 1); g.fillRect(x0 + 8, 37, 1, 1);          // nail heads
+  }
+  return (HOUSE_TILE = c);
+}
+function drawHouse(g, room, camX, camY, t) {
+  const tile = houseWall(), ox = -(Math.floor(camX) % 64), fy = Math.round(room.horizon - camY);          // fy: the floor line
+  g.fillStyle = '#3a2416'; g.fillRect(0, 0, W, H); for (let x = ox - 64; x < W + 64; x += 64) for (let y = 0; y < H + 64; y += 64) g.drawImage(tile, x, y - 64 + (Math.floor(-camY) % 64));
+  g.fillStyle = 'rgba(0,0,0,0.22)'; g.fillRect(0, fy - 56, W, 56);                                                  // the wainscot: darker boards below the rail
+  g.fillStyle = '#2a190d'; g.fillRect(0, fy - 60, W, 5); g.fillStyle = '#5a3c24'; g.fillRect(0, fy - 60, W, 1); g.fillStyle = 'rgba(0,0,0,0.4)'; g.fillRect(0, fy - 55, W, 2);          // the chair rail
+  g.fillStyle = '#21130a'; g.fillRect(0, fy - 11, W, 11); g.fillStyle = '#4a3220'; g.fillRect(0, fy - 11, W, 1);       // the skirting board
+  const wx = Math.floor(camX);
+  for (let bx = Math.floor((wx - 60) / 150) * 150; bx < wx + W + 60; bx += 150) {                                    // a window in each bay
+    const x = bx + 58 + Math.floor(hash1(bx * 0.07) * 40) - wx, y = fy - 132, fl = 0.85 + 0.15 * Math.sin(t * 0.05 + bx);
+    if (x < -30 || x > W + 30) continue;
+    const spill = g.createRadialGradient(x, y + 20, 4, x, y + 20, 56); spill.addColorStop(0, 'rgba(120,150,210,' + (0.16 * fl).toFixed(3) + ')'); spill.addColorStop(1, 'rgba(120,150,210,0)'); g.fillStyle = spill; g.fillRect(x - 56, y - 36, 112, 112);
+    g.fillStyle = '#1a0f08'; g.fillRect(x - 15, y - 3, 30, 44);                                                       // the frame
+    const sky = g.createLinearGradient(0, y, 0, y + 38); sky.addColorStop(0, '#1b2845'); sky.addColorStop(1, '#34476e'); g.fillStyle = sky; g.fillRect(x - 12, y, 24, 38);
+    g.fillStyle = 'rgba(235,240,255,0.7)'; g.fillRect(x + 4, y + 6, 2, 2); g.fillRect(x - 7, y + 12, 1, 1);               // a star or two
+    g.fillStyle = '#1a0f08'; g.fillRect(x - 1, y, 2, 38); g.fillRect(x - 12, y + 18, 24, 2);                           // the mullions
+    g.fillStyle = '#3a2414'; g.fillRect(x - 12, y - 6, 3, 50); g.fillRect(x + 9, y - 6, 3, 50);                        // open shutters either side
+    g.fillStyle = '#4a3220'; g.fillRect(x - 17, y + 40, 34, 4); g.fillStyle = '#21130a'; g.fillRect(x - 17, y + 44, 34, 1);                 // the sill
+  }
+  const vg = g.createLinearGradient(0, 0, 0, H); vg.addColorStop(0, 'rgba(0,0,0,0.38)'); vg.addColorStop(1, 'rgba(0,0,0,0.12)'); g.fillStyle = vg; g.fillRect(0, 0, W, H);
+}
+
 function drawInterior(g, room, camX, camY, t) {
   const th = room.theme, P = INTERIOR_TINT[th] || INTERIOR_TINT.hall, tile = interiorBrick(th), ox = -(Math.floor(camX) % 64), oy = -(Math.floor(camY) % 32);
   for (let y = oy - 32; y < H + 32; y += 32) for (let x = ox - 64; x < W + 64; x += 64) g.drawImage(tile, x, y);
@@ -340,6 +373,7 @@ export function drawBackground(g, room, camX, camY, t) {
   if (th === 'ice') { drawIceCave(g, room, camX, camY, t); return; }
   if (th === 'clockwork') { drawGears(g, room, camX, camY, t); return; }
   if (th === 'cistern') { drawCistern(g, room, camX, camY, t); return; }          // (a gear shaft too: the tower's brickwork gives way to the wheels)
+  if (room.house) { drawHouse(g, room, camX, camY, t); return; }          // (the inside of a cottage: wooden walls)
   if (room.interior) { drawInterior(g, room, camX, camY, t); return; }
   if (th === 'village') {            // dusk sky over a town in flames: pink cloud bank, building silhouettes, an orange glow rising from the street
     // (before the Cinder Warden's torches the sky is a calm violet dusk; each house that catches turns it a little more towards the burning one)

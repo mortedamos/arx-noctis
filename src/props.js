@@ -19,7 +19,7 @@ export const ABILITIES = {
   dawn: { name: 'AZOTH', desc: 'THE LIGHT THAT WAKES THE SUN.', icon: 'orb', color: [1, 0.9, 0.5] },
 };
 export const UPGRADES = {
-  silberzahn: { name: 'SILBERZAHN', desc: 'THE SILVER TOOTH. YOUR SWORD, LEFT LYING WHERE YOU KNELT.', icon: 'atkup', color: [0.82, 0.9, 1] },          // (its id is the flag 'got_silberzahn': the Player reads it)
+  silberzahn: { name: 'SILBERZAHN', desc: 'THE SILVER TOOTH. YOUR SWORD.', icon: 'atkup', color: [0.82, 0.9, 1] },          // (its id is the flag 'got_silberzahn': the Player reads it)
   hpup: { name: 'ELIXIR VITAE', desc: 'MAX HP UP', icon: 'hpup', color: [1, 0.3, 0.35] },
   mpup: { name: 'QUINTESSENCE', desc: 'MAX MP UP', icon: 'mpup', color: [0.4, 0.7, 1] },
   atkup: { name: 'SAL MARTIS', desc: 'SWORD POWER UP', icon: 'atkup', color: [1, 0.85, 0.4] },
@@ -389,12 +389,12 @@ export class Upgrade {
     if (!p.dead && dist(p.x, p.y - 16, this.x, this.y - 8) < 14) this.collect(g);
   }
   collect(g) {
-    this.dead = true; const S = g.save; g.save.flags[this.id] = true;
+    this.dead = true; const S = g.save, hadLantern = !!S.flags.got_lantern; g.save.flags[this.id] = true;
     if (this.kind === 'hpup') { S.maxHp += 20; S.hp = S.maxHp; } else if (this.kind === 'mpup') { S.maxMp += 10; S.mp = S.maxMp; } else if (this.kind === 'atkup') S.atk += 2; else if (this.kind === 'tide') S.flags.got_tide = true; else if (this.kind === 'mantle') S.flags.got_mantle = true; else if (this.kind === 'lantern') S.flags.got_lantern = true; else if (this.kind === 'shard') S.flags.got_shard = true; else if (this.kind === 'spring') S.flags.got_spring = true; else if (this.kind === 'astrolabe') S.flags.got_astrolabe = true; else if (this.kind === 'goldkey') S.flags.has_key_gold = true; else if (this.kind === 'frostkey') S.flags.has_key_frost = true; else if (this.kind === 'hoard') { S.gold += 400; g.popup(this.x, this.y - 30, '+400 GOLD', '#ffd860'); } else if (this.kind === 'crampons') S.flags.got_crampons = true; else if (this.kind === 'key') S.flags['has_' + keyBase(this.id)] = true;
     A.sfx('item'); A.sting('sting_item'); g.fx.ring(this.x, this.y - 8, 44, this.U.color, 30); g.fx.flash(this.U.color, 0.3); g.fx.sparks(this.x, this.y - 8, 18, [[1, 1, 0.8], this.U.color], 3);
     g.banner(this.U.name, this.kind === 'tide' && !S.abilities.dash ? 'ITS POWER WAKES ONCE YOU CAN DASH' : this.U.desc);
     if (this.kind === 'page') g.foundPage(this.n);
-    if (this.kind === 'lantern') g.lanternScene();
+    if (this.kind === 'lantern' && !hadLantern) g.lanternScene();          // (only the first time: a hero given the lantern by a secret code has no scene to see)
   }
   draw(ctx, cx, cy) {
     if (this.kind === 'shoes') drawSheet(ctx, 'pedestal', 0, this.x - cx, this.y + 12 - cy);          // (the shoes stand on a little pedestal of their own)

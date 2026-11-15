@@ -42,7 +42,7 @@ export const Audio_ = {
     // local server (__sfx) or from assets/sfx/files.json (tools/sfx-manifest.mjs, for a static host).  Sounds without a file keep their built-in synthesized version.  See assets/sfx/SFX-LIST.txt.
     this.fxFiles = {};
     for (const src of local ? ['__sfx', 'assets/sfx/files.json'] : ['assets/sfx/files.json']) {
-      try { const r = await fetch(src, { cache: 'no-cache' }); if (!r.ok) continue; const names = await r.json(); if (!Array.isArray(names)) continue; for (const n of names) { const m = /^([a-z0-9]+?)(?:_(\d+))?\.(mp3|ogg|wav|m4a|flac|opus)$/i.exec(n); if (m && this.S[m[1].toLowerCase()]) (this.fxFiles[m[1].toLowerCase()] ||= []).push('assets/sfx/' + n); } break; } catch {}
+      try { const r = await fetch(src, { cache: 'no-cache' }); if (!r.ok) continue; const names = await r.json(); if (!Array.isArray(names)) continue; for (const n of names) { const m = /^([a-z0-9_]+?)(?:_(\d+))?\.(mp3|ogg|wav|m4a|flac|opus)$/i.exec(n); if (m && this.S[m[1].toLowerCase()]) (this.fxFiles[m[1].toLowerCase()] ||= []).push('assets/sfx/' + n); } break; } catch {}
     }
     for (const ev of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) addEventListener(ev, () => this.unlock());          // (phones only let a touch RELEASE start the sound)
   },
@@ -57,7 +57,7 @@ export const Audio_ = {
       const len = this.ctx.sampleRate * 2, b = this.ctx.createBuffer(1, len, this.ctx.sampleRate), d = b.getChannelData(0); for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1; this.noiseBuf = b;
     }
     this.ctx.resume(); this.unlocked = true; this.applyVolumes();
-    this.loadFx();
+    if (!this.deferFx) this.loadFx();          // (src/loader.js loads them a stage at a time instead)
     if (this.wantSamples) { const w = [...this.wantSamples]; this.wantSamples.clear(); for (const n of w) this.loadSample(n); }          // (samples asked for before the first touch/key)
     if (this.cur && this.cur.el.paused) this.cur.el.play().catch(() => {});
   },
@@ -104,7 +104,7 @@ export const Audio_ = {
     const prev = this.cur && this.cur.real;
     if (this.cur) { this.outgoing.push({ ...this.cur, fadeTime: fade }); this.cur = null; }
     const pk = this.pick(id, prev); if (!pk) return;
-    const el = new window.Audio(pk.url); el.loop = this.tracks[pk.real].type !== 'STING'; el.preload = 'auto'; el.volume = 0;
+    const el = new window.Audio(this.urlHook ? this.urlHook(pk.url) : pk.url); el.loop = this.tracks[pk.real].type !== 'STING'; el.preload = 'auto'; el.volume = 0;
     el.addEventListener('error', () => {                                                  // the file would not load: remember it, and look for something else to play
       const first = !this.failed.has(pk.real); this.failed.add(pk.real);
       if (this.cur && this.cur.el === el) { this.cur = null; if (first && this.want === id) { this.want = null; this.play(id, { fade }); } }
@@ -115,13 +115,21 @@ export const Audio_ = {
   // Inside a building (a house, a shed, a hut...) the background music drops by 60%; stepping back outside lifts it to where it was.  It glides rather than jumps (instant = true at once, e.g. on the title screen).
   setIndoor(on, instant = false) { this.indoorTarget = on ? INDOOR_VOL : 1; if (instant) this.indoor = this.indoorTarget; },
   fxBuf: {},
-  loadFx() {          // fetch and decode the recorded replacements for the built-in sounds (once, after the first touch / key)
-    if (this.fxLoading || !this.ctx || !this.fxFiles) return; this.fxLoading = true;
-    for (const [name, urls] of Object.entries(this.fxFiles)) for (const u of urls) fetch(u).then(r => r.arrayBuffer()).then(b => new Promise((ok, no) => this.ctx.decodeAudioData(b, ok, no))).then(buf => { (this.fxBuf[name] ||= []).push(buf); }).catch(() => {});
+  // fetch and decode the recorded replacements for the built-in sounds: all of them, or just the named ones (a sound that is not loaded yet plays its synthesized stand-in); resolves when they are ready
+  fxLoaded: new Set(),
+  loadFx(names) {
+    if (!this.ctx || !this.fxFiles) return Promise.resolve();
+    const jobs = [];
+    for (const [name, urls] of Object.entries(this.fxFiles)) {
+      if (names && !names.includes(name)) continue;
+      for (const u of urls) { if (this.fxLoaded.has(u)) continue; this.fxLoaded.add(u); jobs.push(fetch(u).then(r => r.arrayBuffer()).then(b => new Promise((ok, no) => this.ctx.decodeAudioData(b, ok, no))).then(buf => { (this.fxBuf[name] ||= []).push(buf); }).catch(() => { this.fxLoaded.delete(u); })); }
+    }
+    return Promise.all(jobs);
   },
   playFx(name, o) {
     const bufs = this.fxBuf[name]; if (!bufs || !bufs.length) return false;
-    const s = this.ctx.createBufferSource(), g = this.ctx.createGain(); s.buffer = bufs[Math.floor(Math.random() * bufs.length)]; s.playbackRate.value = 0.93 + Math.random() * 0.14; g.gain.value = Math.min(1.2, 0.9 * (o && o.power ? Math.max(0.5, o.power) : 1));
+    const s = this.ctx.createBufferSource(), g = this.ctx.createGain(); s.buffer = bufs[Math.floor(Math.random() * bufs.length)]; s.playbackRate.value = name === 'toll' ? 1 : 0.93 + Math.random() * 0.14;          // (every recording is bent a little so repeats never sound the same - except the church bell, which must keep its pitch)
+    g.gain.value = Math.min(1.2, 0.9 * (o && o.power ? Math.max(0.5, o.power) : 1));
     s.connect(g); g.connect(this.sfxGain); s.start(); return true;
   },
   // recorded sound effects: preload() fetches and decodes them (call it when a room that needs one is entered); sample() plays one (quietly skipping it if it is not ready or the game is silent)
@@ -239,3 +247,8 @@ export const Audio_ = {
     gameover() { this.tone(220, 55, 1.6, 'sawtooth', 0.15); this.noise(1.6, 400, 60, 0.2, 'lowpass', 1); },
   },
 };
+// each boss's own cry and death (boss_<id>, boss_<id>_die): until a recording is added to assets/sfx/, the shared roar or shriek stands in for it
+for (const [id, base] of Object.entries({ beast: 'roar', nightmare: 'shriek', angel: 'shriek', librarian: 'ghost', rimewyrm: 'roar', colossus: 'roar', shadow: 'roar', cinder: 'roar', bramble: 'ghost', vampire: 'shriek', mirror: 'shriek', drowned: 'ghost' })) {
+  Audio_.S['boss_' + id] = function (o) { this.S[base].call(this, o); };
+  Audio_.S['boss_' + id + '_die'] = function (o) { this.S[base].call(this, o); };
+}

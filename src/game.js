@@ -6,12 +6,12 @@ import { Touch } from './touch.js';
 import { loadFonts, drawText, textWidth } from './font.js';
 import { Audio_ as A } from './audio.js';
 import { ZONES, KEEP } from './rooms.js';
-import { buildWorld, randomSeed, GEN_VERSION, arrivalBesideStone } from './levelgen.js';
+import { buildWorld, buildWorldAsync, worldReady, randomSeed, GEN_VERSION, arrivalBesideStone } from './levelgen.js';
 import { Room, TILE, drawBackground, discoBeams, drawForeground, drawGateTile } from './world.js';
 import { Player, SPELLS } from './player.js';
 import { ENEMY_TYPES } from './enemies.js';
 import { BEAST_TYPES } from './beasts.js';
-import { randomItemId } from './itemdata.js';
+import { randomItemId, ITEMS, addItem } from './itemdata.js';
 import { BOSS_TYPES, Column } from './bosses.js';
 import { MirrorView } from './mirror.js';
 import { VillageScene, OpeningScene } from './scenes.js';
@@ -28,7 +28,8 @@ import { drawIce } from './enchant.js';
 import { drawSheet } from './assets.js';
 import { noteSeen, noteKill } from './bestiary.js';
 import { HUD, drawBanner, drawPopups, drawPrompt, drawExitArrow, Dialog, TitleScreen, PauseMenu, MapScreen, IntroCrawl, GameOver, Ending } from './ui.js';
-import { LetterReader, markPage, loadLetters } from './letters.js';
+import { LetterReader, markPage, loadLetters, PAGE_COUNT } from './letters.js';
+import { focus as loaderFocus } from './loader.js';
 
 const SAVE_KEY = 'shadowkeep.save.v1';
 const DOOR_CLEAR = 200;          // px: no enemy starts within this distance of a door you have just come through (about half a screen)
@@ -157,12 +158,37 @@ export class Game {
   toTitle(first = false) {
     this.state = 'title'; this.save = null; this.boss = null; this.cutscene = null; this.playerFrozen = false; this.trans = null; this.room = null; this.title = new TitleScreen(this);
     A.setIndoor(false, true); this.fx.reset(); this.fx.setAmbient(0.0, [0, 0, 0], 0.5); this.fx.setAmbientFx('rain'); this.fx.setStorm(true, 0.004); this.fx.setCamera(0, 0); this.fx.setShake(0, 0); A.play('title', { fade: 1.5 });
+    this.loadingWorld = null; this.prebuild(); this.fx.rainCount = 0.26;          // (half as much rain behind the title)
   }
-  newGame(seed) {
-    if (seed === undefined) { const q = new URLSearchParams(location.search).get('seed'); seed = q !== null && /^d{1,9}$/.test(q) ? +q : randomSeed(); }
-    this.world = buildWorld(seed); this.save = newSave(this.world); this.kills = 0; this.player = new Player(this, 0, 0); this.fx.setStorm(false); this.beginPlay(false); }          // (a new game begins on the hill above Prague: see checkOpening)
+  // Making the castle takes a few seconds, so it is done while the title screen is up: first the castle of the saved game (if there is one), then the one a NEW GAME will use.  Choosing either before it is ready
+  // shows a short "gathering the dead" bar instead of freezing.
+  worldJobs = {};
+  ensureWorld(seed) { seed |= 0; if (worldReady(seed)) return Promise.resolve(buildWorld(seed)); return this.worldJobs[seed] ||= buildWorldAsync(seed, f => { this.worldFrac = f; }).finally(() => { delete this.worldJobs[seed]; }); }
+  prebuild() {
+    const s = this.loadSave(); const q = new URLSearchParams(location.search).get('seed'); if (this.nextSeed === undefined || this.nextSeed === null) this.nextSeed = q !== null && /^\d{1,9}$/.test(q) ? +q : randomSeed();
+    (s ? this.ensureWorld(s.seed || 0) : Promise.resolve()).catch(() => {}).then(() => this.ensureWorld(this.nextSeed)).catch(() => {});
+  }
+  whenWorld(seed, fn) {
+    if (worldReady(seed)) { fn(); return; } if (this.loadingWorld) return; this.loadingWorld = { seed }; this.worldFrac = 0;
+    this.ensureWorld(seed).then(() => { this.loadingWorld = null; if (this.state === 'title') fn(); }).catch(e => { this.loadingWorld = null; console.error(e); });
+  }
+  // SECRET CODES, typed on the seed screen (CHOOSE SEED) instead of a seed: the castle is a random one, and ...
+  //   02151979  everything is yours from the start: every power, every relic, every page, a full satchel, every waystone attuned (the bosses are all still there to be fought)
+  codeFor(text) { return { '02151979': 'all' }[text] || null; }
+  applyCode(code) {
+    if (code !== 'all') return; const S = this.save;
+    for (const k of Object.keys(S.abilities)) S.abilities[k] = true;
+    for (const f of ['got_mantle', 'got_lantern', 'got_shard', 'got_spring', 'got_tide', 'got_astrolabe', 'got_crampons', 'got_shoes']) S.flags[f] = true;
+    for (let n = 1; n <= PAGE_COUNT; n++) { S.flags['page' + n] = true; markPage(n); }
+    for (const id of Object.keys(ITEMS)) addItem(S, id, ITEMS[id].max);
+    for (const id of this.world.stones || []) S.flags['tp_' + id] = true;
+    S.hp = S.maxHp; S.mp = S.maxMp; A.sfx('ability');
+  }
+  newGame(seed, code) {
+    if (seed === undefined) { if (this.nextSeed === undefined || this.nextSeed === null) this.prebuild(); seed = this.nextSeed; }
+    this.whenWorld(seed, () => { this.nextSeed = null; this.world = buildWorld(seed); this.save = newSave(this.world); if (code) this.applyCode(code); this.kills = 0; this.player = new Player(this, 0, 0); this.fx.setStorm(false); this.beginPlay(false); }); }          // (a new game begins on the hill above Prague: see checkOpening)
   continueGame() {
-    const s = this.loadSave(); if (!s) return; this.useSave(s); this.kills = 0; this.player = new Player(this, 0, 0); this.beginPlay(true);
+    const s = this.loadSave(); if (!s) return; this.whenWorld(s.seed || 0, () => { this.useSave(s); this.kills = 0; this.player = new Player(this, 0, 0); this.beginPlay(true); });
   }
   beginPlay(cont = false) {
     const S = this.save; this.state = 'play'; this.slow = 0; this.cutscene = null;
@@ -198,7 +224,8 @@ export class Game {
     this.blackout = null; this.well = null; this.enemies = []; this.projectiles = []; this.pickups = []; this.props = []; this.popups = []; this.boss = null; this.delayed = []; this.fx.reset(); this.fx.setWisps(def.wisps || 0); this.flames = roomFlames(this.room); this.smokeSpots = this.room.fireOut ? this.room.decos.filter(d => d.t === 'blaze' && !d.small).map(d => ({ x: d.x, y: d.y })) : []; this.falls = this.room.decos.filter(d => d.t === 'waterfall'); this.fx.setWater(this.waterList()); this.mirrorView = def.mirror ? new MirrorView(def.mirror, !!S.flags['boss_' + id]) : null;          // (the Mirror Room: a great mirror - whole until you walk up to it)
     const dusk = def.zone === 6 && !S.flags.village_fire && !def.keepLook;          // Prague before the Cinder Warden's torches: a calm violet dusk, with golden dust in the air - the monsters are loose, but nothing burns yet
     this.fx.setShadowMask(this.room); this.fx.setAmbient(dusk ? Math.max(def.ambient, 0.42) : def.ambient, dusk ? [0.05, 0.03, 0.12] : this.room.fireOut ? [0.09, 0.05, 0.06] : def.tint, def.vig); if (def.dark) this.fx.setDark(); this.fx.setAmbientFx(dusk ? 'dust' : this.room.fireOut ? 'mist' : def.weather); A.setIndoor(def.indoor); this.fx.setStorm(def.storm, 0.0035);
-    this.fx.setFog(def.fog * (def.theme === 'swamp' ? 0.8 : 1), def.horizon + 4, FOG_COL[def.theme] || FOG_COL.default, def.fogH);          // rolling ground fog in the damp, dead places
+    this.fx.setFog(def.theme === 'graveyard' && def.weather === 'rain' ? 0 : def.fog * (def.theme === 'swamp' ? 0.8 * 0.9 : 1),          // (no ground fog in the rain of the Graveyard)
+       def.horizon + 4, FOG_COL[def.theme] || FOG_COL.default, def.fogH);          // rolling ground fog in the damp, dead places
     this.room.movers = def.movers ? new Movers(def.movers) : null; this.icicles = (def.icicleTraps || []).map(d => new Icicle(d)); this.player.ride = null; this.vents = this.room.decos.filter(d => d.t === 'img' && d.img === 'sp_vent'); this.graves = this.room.decos.filter(d => d.t === 'grave'); this.ghost.snap();
     if (def.disco) { this.room.discoState = { mode: S.flags.disco_done ? 'gone' : 'party', t0: 0 }; A.preload('record_scratch'); }
     const bossDone = !!S.flags['boss_' + id];
@@ -230,6 +257,8 @@ export class Game {
     const dirp = pos.dir || dir; this.player.place(pos.x, pos.y, dirp); this.player.invT = Math.max(this.player.invT, 40);
     this.snapCamera();
     // music + banners
+    this.chase = def.chase && pos && pos.y > def.h * 8 ? this.beginChase(def) : null;          // (the Bell Tower: entered from the street, it is already burning)
+    loaderFocus(def.zone);          // (the background loader fetches this zone's music and sounds first, then the next ones)
     const zm = ZONES[def.zone].music, mus = def.boss ? zm : def.music;
     if (def.disco && S.flags.disco_done) A.stop(0.4); else A.play(mus, { fade: 1.2 });          // (the empty disco is silent)
     const inKeep = KEEP.has(def.zone);
@@ -283,7 +312,7 @@ export class Game {
     }
     if (n.d.lock) {                                          // a door sealed until bosses fall: one sigil for each
       const left = n.d.lock.filter(f => !this.save.flags[f]);
-      if (left.length && left[0] === 'skulls_done') { A.sfx('back'); this.showDialog('THE DOOR IS SHUT FAST. ' + this.skullsBroken() + ' OF ' + SKULL_COUNT + ' SKULLS ARE BROKEN. THEY LIE HIDDEN ABOUT THE CASTLE, OUT OF THE WAY.'); return true; }
+      if (left.length && left[0] === 'skulls_done') { A.sfx('back'); return true; }          // (the door of the Reliquary says nothing: the skulls are a secret)
       if (left.length) { A.sfx('back'); this.showDialog('THE DOOR WILL NOT OPEN. ' + (n.d.lock.length - left.length) + ' OF ' + n.d.lock.length + ' SIGILS BURN. ' + (left.map(f => LOCK_HINTS[f]).filter(Boolean).join(' ') || n.d.lockText || '')); return true; }          // (and it says where each master that still lives is to be found)
     }
     A.sfx('door'); this.changeRoom({ room: n.d.room, x: n.d.tx * 16 + 8, y: n.d.tgy * 16, door: true }, 1); return true;
@@ -528,7 +557,7 @@ export class Game {
     for (let i = this.delayed.length - 1; i >= 0; i--) { const d = this.delayed[i]; if (--d.t <= 0) { this.delayed.splice(i, 1); d.fn(); } }
     if (this.well) this.stepWell();
     switch (this.state) {
-      case 'title': this.title.update(); this.titleFx(); this.fx.update(1); break;
+      case 'title': if (!this.loadingWorld) this.title.update(); this.titleFx(); this.fx.update(1); break;
       case 'intro': this.intro.update(); this.fx.update(1); break;
       case 'play': this.stepPlay(); break;
       case 'dialog': this.dialog.update(); if (this.dialog.closed) { const dlg = this.dialog, cb = dlg.onClose; this.state = 'play'; this.dialog = null; if (cb) cb(dlg.choice); } this.fx.update(0.0); break;
@@ -553,7 +582,7 @@ export class Game {
     if (Input.pressed.pause && !this.cutscene && !p.dead) { this.pause(); return; }
     if (Input.pressed.map && !this.cutscene && !p.dead) { this.openMap(); return; }
     S.time += 1 / 60; fx.clearLights(); if (this.room && this.room.maskDirty) { this.room.maskDirty = false; fx.setShadowMask(this.room); }
-    this.checkVillageScene(); this.checkOpening(); this.discoStep();
+    this.checkVillageScene(); this.checkOpening(); this.discoStep(); this.stepChase();
     if (this.room.movers) { this.room.movers.step(false, this); for (const m of this.room.movers.list) fx.light(m.x, m.y + 6, 70, 0.5, [1, 0.8, 0.45]); }          // the brass platforms glide, and glow a little
     if (this.icicles && this.icicles.length > 14) this.icicles = this.icicles.filter(i => !i.dead); for (const ic of this.icicles || []) ic.step(this);                          // loose icicles: shiver when the hero comes close, then drop
     if (this.smokeSpots && this.smokeSpots.length && this.frame % 5 === 0) for (const sp of this.smokeSpots) if (sp.x > this.camera.x - 40 && sp.x < this.camera.x + W + 40 && sp.y > this.camera.y - 60 && sp.y < this.camera.y + H + 40 && Math.random() < 0.3) fx.smoke(sp.x + rand(-6, 6), sp.y, 1, { c0: [0.5, 0.47, 0.46], c1: [0.28, 0.26, 0.27], s0: 7, s1: 26, l: 1.5, a: 0.4 });          // (the burnt city smoulders: the fires are out - no flames - but smoke still rises from the ruins)
@@ -603,11 +632,57 @@ export class Game {
     if (this.shakeT > 0) { this.shakeT--; if (this.shakeT === 0) this.shakeA = 0; }
     fx.update(1);
   }
+  // THE BELL TOWER ON FIRE: she appears and warns him, then flames begin to climb the tower from the bottom.  Touching them hurts badly (and throws him up out of them); falling below their edge is death.  They stop
+  // climbing just under the top landing, so the way out is safe.  (Entering the tower from the top - the way back - starts nothing.)
+  beginChase(def) {
+    const c = { y: def.h * 16 + 6, cap: (def.chaseTop || 8) * 16 + 46, on: false, t: 0 }, S = this.save;
+    const start = () => { if (this.chase !== c) return; c.on = true; A.sfx('fire'); this.shake(2, 20); };
+    const go = () => {
+      if (this.chase !== c) return; if (this.state !== 'play' || this.cutscene) { this.after(20, go); return; }
+      const gh = this.ghost; gh.snapped = false; gh.scene = 240; gh.reveal(240); A.sfx('ghost'); this.fx.ring(this.player.x - this.player.dir * 22, this.player.y - 22, 50, [0.55, 0.78, 1], 30, 0.1);
+      if (!S.flags.bell_warned) { S.flags.bell_warned = true; this.after(30, () => { if (this.chase === c) this.talk([[STORY.speaker, STORY.chase, 'hand']], start); }); }
+      else { this.popup(this.player.x, this.player.y - 58, 'THE FLAMES ARE RIGHT BEHIND YOU!', '#bcd8ff'); this.after(70, start); }
+    };
+    this.after(40, go); return c;
+  }
+  stepChase() {
+    const c = this.chase, p = this.player, fx = this.fx, r = this.room; if (!c || !c.on || !r) return; c.t++;
+    if (c.t > 140 && c.y > c.cap) c.y -= 0.38;          // (a moment to get moving, then slowly up)
+    const cam = this.camera;
+    if (this.frame % 2 === 0 && c.y < cam.y + H + 30) for (let x = Math.max(6, Math.floor((cam.x - 20) / 22) * 22); x < Math.min(r.pw, cam.x + W + 20); x += 22) fx.fire(x + rand(-6, 6), c.y + rand(2, 12), { scale: 0.9 + rand(0, 0.7), n: 1 });
+    fx.light(Math.max(0, Math.min(r.pw, p.x)), c.y - 24, 190, 0.9, [1, 0.5, 0.2]);
+    if (this.frame % 45 === 0 && c.y < cam.y + H + 40) A.sfx('fire');
+    if (p.dead || this.cutscene) return;
+    if (p.y > c.y + 30) { this.save.hp = 0; this.fx.flash([1, 0.5, 0.2], 0.5); p.die(); return; }          // (below the flames: that is the end)
+    if (p.y > c.y + 4 && p.invT <= 0 && p.hurt(24, p.x + (Math.random() < 0.5 ? -1 : 1), { kb: 0, el: 'soot' })) { p.vy = -6.6; p.onGround = false; this.fx.burst(p.x, p.y - 8, 14, COLORS.fire, { speed: 2.6, s0: 14 }); }          // (touching them: badly burnt, and thrown up out of the fire)
+  }
+  drawChase(ctx, cx, cy, t) {
+    const c = this.chase; if (!c || !c.on) return; const y = c.y - cy; if (y > H + 8) return;
+    ctx.save(); const gr = ctx.createLinearGradient(0, y - 12, 0, y + 46); gr.addColorStop(0, 'rgba(255,210,90,0)'); gr.addColorStop(0.22, 'rgba(255,150,40,0.9)'); gr.addColorStop(1, 'rgba(150,30,8,0.97)'); ctx.fillStyle = gr;
+    ctx.beginPath(); ctx.moveTo(0, H + 40);
+    for (let x = 0; x <= W; x += 4) { const wx = x + cx, tongue = Math.max(0, Math.sin(wx * 0.19 + t * 0.21)) * 7 + Math.max(0, Math.sin(wx * 0.37 - t * 0.33)) * 4 + Math.sin(wx * 0.09 + t * 0.1) * 2; ctx.lineTo(x, y - tongue); }
+    ctx.lineTo(W, H + 40); ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+  // SMOKE HAZE: while Prague burns, a pall of smoke hangs in the air at the top of the screen (a dark band that thins out downwards, with slow banks of smoke drifting through it)
+  drawHaze(ctx, cx, t) {
+    const r = this.room; if (!r || r.zone !== 6 || r.indoor || r.house || !r.flags || !r.flags.village_fire || r.fireOut) return;
+    ctx.save(); const base = ctx.createLinearGradient(0, 0, 0, H * 0.62); base.addColorStop(0, 'rgba(62,48,46,0.8)'); base.addColorStop(0.45, 'rgba(84,66,62,0.4)'); base.addColorStop(1, 'rgba(96,76,70,0)'); ctx.fillStyle = base; ctx.fillRect(0, 0, W, H * 0.62);
+    for (let i = 0; i < 7; i++) {
+      const sp = 0.12 + (i % 3) * 0.05, wx = ((i * 131 + t * sp - cx * (0.18 + (i % 2) * 0.08)) % (W + 240) + (W + 240)) % (W + 240) - 120, y = 6 + (i % 4) * 11 + Math.sin(t * 0.012 + i * 1.7) * 6, rad = 95 + (i % 3) * 28;
+      const gr = ctx.createRadialGradient(wx, y, 4, wx, y, rad); gr.addColorStop(0, 'rgba(120,98,90,0.42)'); gr.addColorStop(1, 'rgba(120,98,90,0)'); ctx.fillStyle = gr; ctx.fillRect(wx - rad, y - rad, rad * 2, rad * 2);
+    }
+    ctx.restore();
+  }
+  drawGathering(ctx) {          // the castle is still being made: a dim card and a bar
+    ctx.fillStyle = 'rgba(2,1,6,0.72)'; ctx.fillRect(0, 0, W, H); drawText(ctx, 'GATHERING THE DEAD...', W / 2, H / 2 - 12, { align: 'center', color: '#e8b84a', scale: 1.4 });
+    ctx.fillStyle = '#1a1020'; ctx.fillRect(W / 2 - 60, H / 2 + 6, 120, 5); ctx.fillStyle = '#e6a23a'; ctx.fillRect(W / 2 - 60, H / 2 + 6, Math.round(120 * Math.min(1, this.worldFrac || 0)), 5);
+  }
   snapCamera() { const p = this.player, r = this.room; this.camera.x = this.camTargetX(p, r); this.camera.y = this.camTargetY(p, r); }
   camTargetX(p, r) { return r.pw <= W ? (r.pw - W) / 2 : clamp(p.x + p.dir * 18 - W / 2, 0, r.pw - W); }
   camTargetY(p, r) { return r.ph <= H ? (r.ph - H) / 2 : clamp(p.y - 30 - H / 2, 0, r.ph - H); }          // (the hero stands about two thirds of the way down the picture, as everywhere: on the bridge too, where the river still shows below him)
   updateCamera() {
     const p = this.player, r = this.room, c = this.camera, gz = this.gaze;
+    this.fx.rainCount = 0.52; this.fx.rainK = r && r.id === 'v0' && p ? Math.max(0, Math.min(1, 1 - (p.x - r.pw * 0.38) / (r.pw * 0.5 - 24))) : 1;          // (the rain on the hill thins out as he walks towards the way down to Prague, and is gone by the time he reaches it)
     if (gz && gz.t < gz.pan + 62) { const tx = r.pw <= W ? (r.pw - W) / 2 : clamp(gz.x - W / 2, 0, r.pw - W), ty = r.ph <= H ? (r.ph - H) / 2 : clamp(gz.y - H / 2, 0, r.ph - H); c.x += (tx - c.x) * 0.12; c.y += (ty - c.y) * 0.12; return; }          // (a lever thrown: the camera looks at the gate it opens)
     c.x += (this.camTargetX(p, r) - c.x) * 0.1; c.y += (this.camTargetY(p, r) - c.y) * 0.12;
   }
@@ -617,7 +692,7 @@ export class Game {
     const ctx = this.ctx, t = this.frame; ctx.setTransform(this.K, 0, 0, this.K, 0, 0); ctx.imageSmoothingEnabled = false; ctx.globalAlpha = 1; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
     const top = this.top; if (this.topCanvas.width !== W * this.K) { this.topCanvas.width = W * this.K; this.topCanvas.height = H * this.K; } top.setTransform(this.K, 0, 0, this.K, 0, 0); top.imageSmoothingEnabled = false; top.globalAlpha = 1; top.clearRect(0, 0, W, H);
     const fx = this.fx;
-    if (this.state === 'title') { this.title.draw(ctx); fx.setCamera(0, 0); this.finishFrame(); return; }
+    if (this.state === 'title') { this.title.draw(ctx); if (this.loadingWorld) this.drawGathering(ctx); fx.setCamera(0, 0); this.finishFrame(); return; }
     if (this.state === 'intro') { ctx.fillStyle = '#05030a'; ctx.fillRect(0, 0, W, H); this.intro.draw(ctx); fx.setCamera(0, 0); this.finishFrame(); return; }
     if (this.state === 'ending') { this.ending.draw(ctx); this.finishFrame(); return; }
     if (!this.room) { this.finishFrame(); return; }
@@ -633,6 +708,7 @@ export class Game {
     if (this.mirrorView) this.mirrorView.draw(ctx, cx, cy);                                          // the mirror hangs on the back wall: frame and glass, behind the ground and the hero (the reflection is the boss's, drawn over the glass)
     r.drawTiles(ctx, cx, cy, t); if (this.gateAnims && this.gateAnims.length) this.drawGates(ctx, cx, cy);
     for (const d of r.decos) if (!isBack(d) && !d.fore) drawDeco(ctx, d, cx, cy, t, r);
+    this.drawChase(ctx, cx, cy, t); this.drawHaze(ctx, cx, t);
     drawFlames2D(ctx, this.flames, cx, cy, t);                       // braziers, burning windows, candelabra flames: in the scene, behind the hero
     for (const o of this.props) o.draw(ctx, cx, cy);
     for (const o of this.pickups) o.draw(ctx, cx, cy);

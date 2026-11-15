@@ -26,6 +26,8 @@ export const STORY = {
 
   // ---------------------------------------------------------------------------------------------------------------------------------------- her: the gravestones and tablets (by id)
   speaker: 'HER VOICE',
+  // the Bell Tower is burning (game.js beginChase): she comes to warn him
+  chase: 'The flames are right behind you! Jump! Climb higher!',
   // the bell of the bell tower (props.js Bell): she comes to its sound, the first time it is rung
   bell: [
     'You rang it. After everything, I wanted to hear that bell once more. It rang the day we came home.',

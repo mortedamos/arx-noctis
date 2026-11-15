@@ -151,14 +151,17 @@ export function canUseItem(g, p, id) {
   if (id === 'bandage' && g.save.hp >= g.save.maxHp - 0.5) { g.popup(p.x, p.y - 42, 'HP FULL', '#9fe8a8'); A.sfx('back'); return false; }
   return true;
 }
+// THE POWER OF THE THROWN ITEMS grows with the hero's sword, but only three quarters as fast: when the sword has become twice as strong as it was at the start (power 8), a dagger does three quarters as much again, not twice as much.
+// Each number below is what the item does at the starting power; ITEM_SHARE is how much of the sword's growth it takes up.
+const START_POWER = 8, ITEM_SHARE = 0.75, itemK = atk => 1 + ITEM_SHARE * (atk / START_POWER - 1);
 export function releaseItem(g, p, id) {            // called mid-animation
   const S = g.save; if (itemCount(S, id) <= 0) return; S.items[id]--;
-  const atk = p.atkPower, d = p.dir, x = p.x + d * 12, y = p.y - (p.crouch ? 13 : 24);
+  const atk = p.atkPower, k = itemK(atk), d = p.dir, x = p.x + d * 12, y = p.y - (p.crouch ? 13 : 24);
   switch (id) {
-    case 'dagger': g.addProjectile(new Dagger(g, x, y, d, Math.max(2, Math.round(2 + atk * 0.45)))); A.sfx('slash'); break;
-    case 'torch': g.addProjectile(new ThrownTorch(g, x, y - 2, d, Math.max(1, Math.round(1 + atk * 0.2)), Math.max(1, Math.round(atk * 0.22)))); A.sfx('cast'); break;
-    case 'marrow': g.addProjectile(new MagicArrow(g, x, y, d, Math.max(2, Math.round(2 + atk * 0.42)))); A.sfx('cast'); break;
-    case 'holy': g.addProjectile(new HolyFlask(g, x, y - 2, d, Math.max(1, Math.round(1 + atk * 0.12)))); A.sfx('cast'); break;
+    case 'dagger': g.addProjectile(new Dagger(g, x, y, d, Math.max(2, Math.round(5.6 * k)))); A.sfx('slash'); break;
+    case 'torch': g.addProjectile(new ThrownTorch(g, x, y - 2, d, Math.max(1, Math.round(2.6 * k)), Math.max(1, Math.round(1.76 * k)))); A.sfx('cast'); break;
+    case 'marrow': g.addProjectile(new MagicArrow(g, x, y, d, Math.max(2, Math.round(5.36 * k)))); A.sfx('cast'); break;
+    case 'holy': g.addProjectile(new HolyFlask(g, x, y - 2, d, Math.max(1, Math.round(1.96 * k)))); A.sfx('cast'); break;
     case 'bandage': p.healT = 100; p.healPer = S.maxHp * 0.35 / 100; A.sfx('heal'); g.fx.ring(p.x, p.y - 18, 20, [0.95, 0.95, 0.9], 18, 0.2); g.popup(p.x, p.y - 42, 'PANACEA', '#f2efe6'); break;
   }
   if (S.items[id] <= 0) delete S.items[id];

@@ -310,7 +310,7 @@ export class Player extends Entity {
     return false;
   }
   updateStains() {
-    const g = this.g, st = this.stain, inPool = this.inWater(), rain = g.room.weather === 'rain', wash = inPool ? POOL_WASH : rain ? RAIN_WASH : 0;
+    const g = this.g, st = this.stain, inPool = this.inWater(), rain = g.room.weather === 'rain' || g.room.weather === 'snow', wash = inPool ? POOL_WASH : rain ? RAIN_WASH : 0;          // (snow, like rain, washes the cloak clean)
     if (inPool && Math.abs(this.vx) > 0.2 && this.t % 4 === 0) g.fx.burst(this.x - this.dir * 3, this.y - 2, 3, [[0.6, 0.8, 0.9], [0.3, 0.5, 0.65]], { speed: 0.9, s0: 4, s1: 1, up: 0.8 });     // splashes
     let top = null, worst = 0.01;
     for (const k of STAIN_KEYS) { if (st[k] <= 0) continue; st[k] = Math.max(0, st[k] - STAINS[k].fade - wash); if (st[k] > worst) { worst = st[k]; top = k; } }   // they fade by themselves, and water takes them off quickly

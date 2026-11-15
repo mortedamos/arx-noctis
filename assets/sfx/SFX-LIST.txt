@@ -112,6 +112,37 @@ toll         length 2.5-4.5 s       A single deep church BELL tolling (the openi
 gameover     length 1.5-3.0 s       The hero dies: a sinking, mournful drone or a low descending toll.
 
 
+---------- 4. THE BOSSES' VOICES ----------
+
+Each boss has its OWN cry (used for its entrance, its attack calls and the moment it turns fierce) and its own death sound.
+Until a recording is added they use the shared roar / shriek.
+
+boss_beast           length 0.8-2.5 s   Baelphegaz (a demon in the Shadow Lord's service, harvesting misery): a deep demonic growl / bellow.
+boss_beast_die       length 1.0-3.5 s   Baelphegaz dies: a demon's dying roar, ending in a rattle.
+boss_nightmare       length 0.8-2.5 s   the Phantom Steed (a spectral horse): a horse's shrill, ghostly scream / whinny.
+boss_nightmare_die   length 1.0-3.5 s   the Phantom Steed dies: a horse's last scream fading into echo.
+boss_angel           length 0.8-2.5 s   the Seraph of Ash (a fallen angel): a high, ethereal, burning shriek, almost a choir.
+boss_angel_die       length 1.0-3.5 s   the Seraph of Ash dies: a fading heavenly wail.
+boss_librarian       length 0.8-2.5 s   the Librarian (a robed keeper of the Lord's archive): a dry, rasping, whispering voice - paper and dust in it.
+boss_librarian_die   length 1.0-3.5 s   the Librarian dies: a papery sigh as he comes apart.
+boss_rimewyrm        length 0.8-2.5 s   the Rimewyrm (an ice wyrm): an icy dragon roar / screech.
+boss_rimewyrm_die    length 1.0-3.5 s   the Rimewyrm dies: a dragon's dying cry with ice cracking.
+boss_colossus        length 0.8-2.5 s   the Brazen Hierophant (a clockwork giant): a mechanical bellow - a steam horn, grinding metal.
+boss_colossus_die    length 1.0-3.5 s   the Brazen Hierophant dies: a machine breaking down - grinding, steam, collapse.
+boss_shadow          length 0.8-2.5 s   the Shadow Lord (who took the sun): a vast, dark, reverberating voice - low and unearthly.
+boss_shadow_die      length 1.0-3.5 s   the Shadow Lord dies: a huge unearthly scream and a collapse of dark energy.
+boss_cinder          length 0.8-2.5 s   the Cinder Warden (a burning knight who set the village alight): a roaring, crackling bellow of a man on fire.
+boss_cinder_die      length 1.0-3.5 s   the Cinder Warden dies: a burning scream ending in a burst of flame.
+boss_bramble         length 0.8-2.5 s   the Mire Mother (what the swamp dreams): a wet, gurgling, groaning moan - swamp and roots.
+boss_bramble_die     length 1.0-3.5 s   the Mire Mother dies: a long wet groan as she sinks.
+boss_vampire         length 0.8-2.5 s   the Crimson Count (a vampire): a hiss and snarl, with a touch of bat screech.
+boss_vampire_die     length 1.0-3.5 s   the Crimson Count dies: a vampire's dying shriek.
+boss_mirror          length 0.8-2.5 s   the Reflection (what the glass kept): a distorted, echoing cry with a glassy ring.
+boss_mirror_die      length 1.0-3.5 s   the Reflection dies: a big mirror shattering.
+boss_drowned         length 0.8-2.5 s   the Drowned Warden (keeper of the flooded gate): a drowned, bubbling groan from under water.
+boss_drowned_die     length 1.0-3.5 s   the Drowned Warden dies: a gurgling death rattle and a rush of water.
+
+
 NOT USED RIGHT NOW (ignore these): candle, zap, shield.  They exist in the
 game but nothing plays them at the moment.
 

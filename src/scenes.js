@@ -27,7 +27,7 @@ export class VillageScene {
     g.playerFrozen = true; g.player.invT = 9999; g.player.vx = 0; g.player.dir = 1;
   }
   appear() {
-    const g = this.g, w = this.w; w.on = true; A.sfx('roar'); g.shake(4, 36); g.fx.flash([1, 0.5, 0.2], 0.35); g.fx.ring(w.x, w.y - 40, 120, [1, 0.5, 0.2], 40, 0.1);
+    const g = this.g, w = this.w; w.on = true; A.sfx('boss_cinder'); g.shake(4, 36); g.fx.flash([1, 0.5, 0.2], 0.35); g.fx.ring(w.x, w.y - 40, 120, [1, 0.5, 0.2], 40, 0.1);
     for (let i = 0; i < 8; i++) g.fx.fire(w.x + rand(-22, 22), w.y - rand(0, 70), { scale: 1.0, n: 1 });
     g.fx.sparks(w.x, w.y - 40, 26, [[1, 0.7, 0.3], [1, 0.4, 0.1]], 4, { gy: 0.05 });
   }
@@ -50,7 +50,7 @@ export class VillageScene {
       fx.light(w.x, w.y - 40, 100, 0.7); if (t % 5 === 0) fx.fire(w.x + rand(-14, 14), w.y - rand(8, 60), { scale: 0.5, n: 1 });
       if (t < 215) w.pose = 'idle';
       for (const th of this.throws) { if (t >= th.t && t < th.t + 40) { w.pose = 'throw'; w.st = t - th.t; } if (t === th.t + 22) this.launch(th); }
-      if (t === 200) { A.sfx('roar'); g.shake(4, 30); fx.flash([1, 0.5, 0.2], 0.2); fx.ring(w.x, w.y - 40, 100, [1, 0.5, 0.2], 36, 0.1); }       // he turns on the hero, and roars
+      if (t === 200) { A.sfx('boss_cinder'); g.shake(4, 30); fx.flash([1, 0.5, 0.2], 0.2); fx.ring(w.x, w.y - 40, 100, [1, 0.5, 0.2], 36, 0.1); }       // he turns on the hero, and roars
       if (t >= 215 && t < 246) { w.dir = 1; w.pose = 'walk'; w.vx = 2.2; w.x += w.vx; if (t % 3 === 0) fx.fire(w.x - 12, w.y - rand(0, 34), { scale: 0.6, n: 1 }); }
       if (t === 246) { w.on = false; A.sfx('boom'); g.shake(3, 14); fx.flash([1, 0.5, 0.2], 0.25); fx.ring(w.x, w.y - 40, 90, [1, 0.5, 0.2], 28, 0.12); for (let i = 0; i < 10; i++) fx.fire(w.x + rand(-20, 20), w.y - rand(0, 70), { scale: 1.0, n: 1 }); fx.sparks(w.x, w.y - 40, 30, [[1, 0.7, 0.3], [1, 0.4, 0.1]], 4, { gy: 0.05 }); }          // he turns to flame and is gone
     }

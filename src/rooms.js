@@ -212,6 +212,7 @@ export function arrangeCandelabras(def) {
   const spots = [];                                                                                  // everywhere one can stand: flat solid floor or platform with headroom
   for (let x = 3; x < W - 3; x++) for (let y = 2; y < H; y++) {
     const v = T(x, y); if (v !== TILE.SOLID && v !== TILE.PLAT) continue;
+    if (def.rivers && def.rivers.some(c => y * 16 >= c.y && x * 16 >= c.x0 && x * 16 <= c.x1)) continue;          // (never under water)
     if (T(x, y - 1) !== 0 || T(x, y - 2) !== 0 || T(x, y - 3) !== 0) continue;
     if (![x - 1, x + 1].every(xx => { const u = T(xx, y); return u === TILE.SOLID || u === TILE.PLAT; })) continue;
     spots.push({ x, y, wall: isSolid(T(x - 1, y - 1)) || isSolid(T(x + 1, y - 1)) || isSolid(T(x - 2, y - 1)) || isSolid(T(x + 2, y - 1)) });

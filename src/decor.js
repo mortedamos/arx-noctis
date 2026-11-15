@@ -22,6 +22,7 @@ export function decoCoversHazard(d, spikes) {
 const CDL = [{ img: 'cdl_a', fl: [[-10.7, -33.5], [-0.3, -35.8], [10.9, -34.3]] }, { img: 'cdl_b', fl: [[-9.2, -38.6], [-0.3, -41.8], [9.2, -39]] }];
 const CDL_DROP = 4;          // (the candelabra pictures have a little perspective painted in: they are set 4 pixels lower so the foot stands ON the ground, not above it)
 const cdlOf = d => CDL[(((Math.round(d.x) * 2654435761) >>> 0) >>> 20) & 1];
+const SINK = { town_well: 6 };          // (pictures with a little perspective painted into their base: they are drawn lower, so they stand ON the ground instead of hovering over it)
 export const isBack = d => BACK_KINDS.has(d.t) || (d.back && (d.t === 'img' || d.t === 'bookcase' || d.t === 'barwin'));
 
 // a turning brass cogwheel (the Orloj Tower's works): a toothed rim, six spokes and a hub.  r = radius, n = teeth, spin = radians a frame (the sign is the direction), a = its opacity
@@ -55,7 +56,7 @@ export function drawDeco(g, d, cx, cy, t, room) {
       g.fillStyle = '#3a2a10'; g.beginPath(); g.arc(x, y, 4, 0, Math.PI * 2); g.fill();
       g.fillStyle = '#a07c32'; g.beginPath(); g.arc(bx, by, d.bob || 9, 0, Math.PI * 2); g.fill(); g.fillStyle = '#5d4519'; g.beginPath(); g.arc(bx + 1.5, by + 1.5, (d.bob || 9) * 0.62, 0, Math.PI * 2); g.fill(); g.fillStyle = 'rgba(255,235,170,0.5)'; g.beginPath(); g.arc(bx - 2.5, by - 2.5, (d.bob || 9) * 0.25, 0, Math.PI * 2); g.fill();
       g.restore(); break; }
-    case 'img': { const im = IMG[d.img], sc = d.scale || 1, w = Math.round(im.width * sc), h = Math.round(im.height * sc); g.drawImage(im, Math.round(x - w / 2), y - h + (d.sink || 0), w, h); break; }
+    case 'img': { const im = IMG[d.img], sc = d.scale || 1, w = Math.round(im.width * sc), h = Math.round(im.height * sc); g.drawImage(im, Math.round(x - w / 2), y - h + (d.sink === undefined ? (SINK[d.img] || 0) : d.sink), w, h); break; }
     case 'hang': { const im = IMG[d.img], sc = d.scale || 1, w = Math.round(im.width * sc), h = Math.round(im.height * sc); g.drawImage(im, Math.round(x - w / 2), y, w, h); break; }       // hangs from the top edge (banners, a caged skeleton)
     case 'voidpit': {          // a pit with no bottom (the Pit of Despair): the scenery fades into black below the banks, behind the planks and the hero.  x = its middle, y = the floor's row, w = its width, in pixels
       const w = d.w, top = y - 6, h = (room && room.ph ? room.ph - d.y : 128) + 40, gr = g.createLinearGradient(0, top, 0, top + Math.min(h, 90)); gr.addColorStop(0, 'rgba(2,0,6,0)'); gr.addColorStop(0.35, 'rgba(2,0,6,0.8)'); gr.addColorStop(1, 'rgba(1,0,3,1)');

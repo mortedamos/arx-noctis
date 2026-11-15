@@ -194,7 +194,7 @@ export class TitleScreen {
     this.main = new Menu([
       { label: 'NEW GAME', action: () => g.newGame() }, { label: 'CONTINUE', disabled: !has, action: () => g.continueGame() },
       { label: 'CHOOSE SEED', action: () => {
-        if (Input.touchOn) { const v = window.prompt('Choose a seed: numbers only (empty = a random castle)', ''); if (v !== null) { const d = v.replace(/\D/g, '').slice(0, 9); g.newGame(d === '' ? undefined : +d); } }          // (a phone has no keys to type the number with: its own keyboard asks)
+        if (Input.touchOn) { const v = window.prompt('Choose a seed: numbers only (empty = a random castle)', ''); if (v !== null) { const d = v.replace(/\D/g, '').slice(0, 9), code = g.codeFor(d); if (code) g.newGame(undefined, code); else g.newGame(d === '' ? undefined : +d); } }          // (a phone has no keys to type the number with: its own keyboard asks)
         else { this.mode = 'seed'; this.seed = ''; Input.typed.length = 0; } } },
       { label: 'CONTROLS', action: () => { this.mode = 'controls'; } }, { label: 'OPTIONS', action: () => { this.mode = 'options'; this.opts.i = 0; } }, { label: 'CREDITS', action: () => this.openCredits() },
     ]); if (has) this.main.i = 1;
@@ -216,7 +216,7 @@ export class TitleScreen {
     }
     else if (this.mode === 'seed') {
       for (const k of Input.typed.splice(0)) { if (k === '<') this.seed = this.seed.slice(0, -1); else if (this.seed.length < 9) this.seed += k; }
-      if (Input.pressed.esc) { this.mode = 'main'; A.sfx('back'); } else if (Input.pressed.confirm) g.newGame(this.seed === '' ? undefined : +this.seed);
+      if (Input.pressed.esc) { this.mode = 'main'; A.sfx('back'); } else if (Input.pressed.confirm) { const code = g.codeFor(this.seed); if (code) g.newGame(undefined, code); else g.newGame(this.seed === '' ? undefined : +this.seed); }
     } else if (this.mode === 'options') { this.opts.update(g); if (Input.pressed.back) { this.mode = 'main'; A.sfx('back'); } }
     else if (Input.pressed.back || Input.pressed.confirm || Input.taps.length) { this.mode = 'main'; A.sfx('back'); }
   }

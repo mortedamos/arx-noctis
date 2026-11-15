@@ -201,16 +201,17 @@ export class Boss extends Enemy {
     super(g, x, y, w, h, o); this.isBoss = true; this.active = false; this.invuln = true; this.harmless = true; this.state = 'dormant'; this.st = 0; this.dying = 0; this.reward = o.reward; this.bossName = 'BOSS'; this.phase = 1; this.cool = 60; this.triggerDist = 200; this.kbRes = 1; this.noKb = true; this.heavy = true; this.sub = '';
     this.plan = null; this.lastAtk = null; this.intent = null; this.warns = null; this.tellP = 0; this._tellKind = null;
   }
+  cry(die) { A.sfx('boss_' + (this.voice || 'beast') + (die ? '_die' : '')); }          // (each boss has its own voice and its own death cry: see assets/sfx/SFX-LIST.txt)
   start() { this.active = true; this.state = 'intro'; this.st = 0; this.g.startBoss(this); }
   hurt(dmg, dir, opts = {}) { opts.noKb = true; return super.hurt(dmg, dir, opts); }
   onHurt() { if (this.phase === 1 && this.hp < this.maxHp * 0.5) { this.phase = 2; this.onPhase2(); } }
   onPhase2() {
-    const g = this.g; g.fx.flash([1, 0.4, 0.3], 0.5); g.shake(5, 24); A.sfx('roar'); g.fx.ring(this.x, this.cy, 90, [1, 0.4, 0.3], 34, 0.14);
+    const g = this.g; g.fx.flash([1, 0.4, 0.3], 0.5); g.shake(5, 24); this.cry(); g.fx.ring(this.x, this.cy, 90, [1, 0.4, 0.3], 34, 0.14);
     dropItem(g, 'heart', this.x - 36, this.cy - 20); dropItem(g, 'heart', this.x + 36, this.cy - 20); dropItem(g, 'mana', this.x, this.cy - 30);     // a breather when the fight escalates
     this.state = this.state === 'dormant' ? this.state : 'idle'; this.st = -40; this.plan = null;
   }
   die() {
-    if (this.dying) return; this.dying = 1; this.invuln = true; this.harmless = true; this.hp = 0; this.g.bossDying(this); A.sfx('roar');
+    if (this.dying) return; this.dying = 1; this.invuln = true; this.harmless = true; this.hp = 0; this.g.bossDying(this); this.cry(true);
   }
   dyingSeq() {
     const g = this.g; this.dying++; this.vx = 0; this.flashT = this.dying % 6 < 3 ? 4 : 0;
@@ -338,11 +339,11 @@ function breathHits(i0, i1, x, y, D, r) {
 // Plenty of warning, generous openings:  CHARGE (stuns itself on the wall), FIRE BREATH (a crescent of flame - duck beneath it, right next to the boss),
 // LEAP SLAM (landing spot is marked), and in phase 2 FLAME PILLARS.
 export class BossBeast extends Boss {
-  constructor(g, x, y, o) { super(g, x, y, 46, 84, o); this.hp = this.maxHp = 210; this.dmg = 12; this.xp = 120; this.bossName = 'BAELPHEGAZ'; this.sub = 'HARVESTER OF MISERY'; this.scale = 2; this.dir = -1; this.deathFx = COLORS.fire; this.stunDur = 100; this.tx = x; this.ice = { w: 94, h: 124 }; }
+  constructor(g, x, y, o) { super(g, x, y, 46, 84, o); this.hp = this.maxHp = 210; this.dmg = 12; this.xp = 120; this.bossName = 'BAELPHEGAZ'; this.voice = 'beast'; this.sub = 'HARVESTER OF MISERY'; this.scale = 2; this.dir = -1; this.deathFx = COLORS.fire; this.stunDur = 100; this.tx = x; this.ice = { w: 94, h: 124 }; }
   get spd() { return this.phase === 2 ? 1.2 : 1; }
   tele(k) { return Math.round({ charge: 60, breath: 48, leap: 50 }[k] / this.spd); }
   dangerous() { return (this.state === 'charge' && this.st >= this.tele('charge')) || (this.state === 'leap' && this.st >= this.tele('leap')); }
-  intro(g) { if (this.st === 8) { A.sfx('roar'); g.shake(4, 40); g.fx.flash([1, 0.5, 0.2], 0.3); g.fx.ring(this.x, this.cy, 120, [1, 0.5, 0.2], 40, 0.1); } if (this.st % 4 === 0) g.fx.fire(this.x + rand(-20, 20), this.y - 20, { scale: 1.2, n: 1 }); this.faceP(); }
+  intro(g) { if (this.st === 8) { this.cry(); g.shake(4, 40); g.fx.flash([1, 0.5, 0.2], 0.3); g.fx.ring(this.x, this.cy, 120, [1, 0.5, 0.2], 40, 0.1); } if (this.st % 4 === 0) g.fx.fire(this.x + rand(-20, 20), this.y - 20, { scale: 1.2, n: 1 }); this.faceP(); }
   ai(g) {
     const p = g.player, spd = this.spd, d = Math.abs(this.dx());
     switch (this.state) {
@@ -354,7 +355,7 @@ export class BossBeast extends Boss {
         if (this.st < T0) {
           this.vx = 0; if (this.st < T0 - 24) this.faceP();                                  // direction locks 24 frames before it runs
           const x1 = this.dir > 0 ? g.room.pw - 24 : 24; this.tell('charge', this.st / T0, [{ type: 'lane', x0: this.x, x1, y: this.y }]);
-          if (this.st === 2) A.sfx('roar'); if (this.st % 5 === 0) { g.fx.fire(this.x + this.dir * 18, this.y - 70, { scale: 0.7, n: 1 }); g.fx.burst(this.x - this.dir * 20, this.y - 2, 2, [[0.6, 0.55, 0.5], [0.2, 0.2, 0.25]], { speed: 1, s0: 8, up: 0.5 }); }
+          if (this.st === 2) this.cry(); if (this.st % 5 === 0) { g.fx.fire(this.x + this.dir * 18, this.y - 70, { scale: 0.7, n: 1 }); g.fx.burst(this.x - this.dir * 20, this.y - 2, 2, [[0.6, 0.55, 0.5], [0.2, 0.2, 0.25]], { speed: 1, s0: 8, up: 0.5 }); }
         } else {
           this.vx = this.dir * 3.1 * spd; if (this.st % 3 === 0) g.fx.fire(this.x - this.dir * 20, this.y - 4, { scale: 1.1, n: 1 }); if (this.st % 12 === 0) A.sfx('step');
           if (this.hitX) { this.vx = 0; this.state = 'stun'; this.st = 0; this.stunDur = 110; g.shake(5, 20); A.sfx('boom'); g.fx.burst(this.x + this.dir * 24, this.y - 40, 16, [[0.7, 0.65, 0.6], [0.3, 0.3, 0.35]], { speed: 3, s0: 14, up: 1 }); g.fx.ring(this.x + this.dir * 24, this.y - 40, 50, [1, 0.8, 0.5], 18); }
@@ -382,7 +383,7 @@ export class BossBeast extends Boss {
         } else if (this.st > T0 + SW + 18) { this.state = 'idle'; this.st = -24; } break; }
       case 'leap': {
         const T0 = this.tele('leap');
-        if (this.st === 1) { this.tx = clamp(p.x, 70, g.room.pw - 70); A.sfx('roar'); }
+        if (this.st === 1) { this.tx = clamp(p.x, 70, g.room.pw - 70); this.cry(); }
         if (this.st < T0) { this.vx = 0; this.dir = this.tx >= this.x ? 1 : -1; this.tell('leap', this.st / T0, [{ type: 'ring', x: this.tx, y: this.y, r: 38 }]); }
         else if (this.st === T0) { this.vy = -6.6; this.vx = clamp((this.tx - this.x) / 62.9, -3.8, 3.8); this.onGround = false; A.sfx('jump'); }
         else if (this.st > T0 + 8 && this.onGround) {
@@ -392,7 +393,7 @@ export class BossBeast extends Boss {
         } else this.warns = [{ type: 'ring', x: this.tx, y: this.y, r: 38 }]; break; }
       case 'pillars':
         this.vx = 0; this.faceP(); if (this.st < 30) this.tell('pillars', this.st / 30);
-        if (this.st === 30) { A.sfx('roar'); const base = p.x; for (let i = -1; i <= 1; i++) { const x = clamp(base + i * 70 + (i ? rand(-6, 6) : 0), 30, g.room.pw - 30); g.addProjectile(new Column(x, this.y, 'fire', { warn: 60, active: 28, dmg: 14, w: 34 })); } }
+        if (this.st === 30) { this.cry(); const base = p.x; for (let i = -1; i <= 1; i++) { const x = clamp(base + i * 70 + (i ? rand(-6, 6) : 0), 30, g.room.pw - 30); g.addProjectile(new Column(x, this.y, 'fire', { warn: 60, active: 28, dmg: 14, w: 34 })); } }
         if (this.st > 130) { this.state = 'idle'; this.st = -16; } break;
     }
   }
@@ -412,10 +413,10 @@ export class BossBeast extends Boss {
 
 // ============================================================================================== 2. THE PHANTOM STEED (nightmare)
 export class BossNightmare extends Boss {
-  constructor(g, x, y, o) { super(g, x, y, 84, 54, o); this.hp = this.maxHp = 290; this.dmg = 14; this.xp = 160; this.bossName = 'THE PHANTOM STEED'; this.sub = 'NIGHTMARE OF THE GREAT HALL'; this.dir = -1; this.deathFx = COLORS.blue; this.passes = 0; this.gT = 54; this.tx = x; this.ice = { w: 112, h: 80 }; }
+  constructor(g, x, y, o) { super(g, x, y, 84, 54, o); this.hp = this.maxHp = 290; this.dmg = 14; this.xp = 160; this.bossName = 'THE PHANTOM STEED'; this.voice = 'nightmare'; this.sub = 'NIGHTMARE OF THE GREAT HALL'; this.dir = -1; this.deathFx = COLORS.blue; this.passes = 0; this.gT = 54; this.tx = x; this.ice = { w: 112, h: 80 }; }
   get spd() { return this.phase === 2 ? 1.2 : 1; }
   dangerous() { return (this.state === 'gallop' && this.st >= this.gT) || (this.state === 'stomp' && this.st >= 50); }
-  intro(g) { if (this.st === 8) { A.sfx('roar'); g.shake(4, 40); g.fx.flash([0.4, 0.7, 1], 0.3); g.fx.ring(this.x, this.cy, 120, [0.4, 0.8, 1], 40, 0.1); } this.faceP(); g.fx.fire(this.x + rand(-30, 30), this.y - 40, { scale: 1.1, n: 1, color: 'blue' }); }
+  intro(g) { if (this.st === 8) { this.cry(); g.shake(4, 40); g.fx.flash([0.4, 0.7, 1], 0.3); g.fx.ring(this.x, this.cy, 120, [0.4, 0.8, 1], 40, 0.1); } this.faceP(); g.fx.fire(this.x + rand(-30, 30), this.y - 40, { scale: 1.1, n: 1, color: 'blue' }); }
   ai(g) {
     const p = g.player, spd = this.spd;
     g.fx.fire(this.x - this.dir * 36, this.y - 46, { scale: 0.9, n: 1, color: 'blue' }); g.fx.light(this.x, this.y - 40, 100, 0.6);
@@ -426,7 +427,7 @@ export class BossNightmare extends Boss {
         if (this.st < this.gT) {   // windup (the second/third pass gets a shorter, still-marked windup)
           this.vx = 0; if (this.passes === 0 && this.st < this.gT - 24) this.faceP();
           this.tell('gallop', this.st / this.gT, [{ type: 'lane', x0: this.x, x1: this.dir > 0 ? g.room.pw - 20 : 20, y: this.y }]);
-          if (this.st === 3) A.sfx('roar'); if (this.st % 5 === 0) g.fx.burst(this.x, this.y - 4, 3, [[0.5, 0.8, 1], [0.1, 0.3, 0.8]], { speed: 1.3, s0: 10, up: 0.6 });
+          if (this.st === 3) this.cry(); if (this.st % 5 === 0) g.fx.burst(this.x, this.y - 4, 3, [[0.5, 0.8, 1], [0.1, 0.3, 0.8]], { speed: 1.3, s0: 10, up: 0.6 });
         } else {
           this.vx = this.dir * 4.0 * spd; if (this.st % 6 === 0) A.sfx('step'); if (this.st % 10 === 0) g.addProjectile(new FirePatch(this.x - this.dir * 34, this.y, this.phase === 2 ? 130 : 90, { dmg: 7, color: 'blue', w: 24 }));
           if (this.hitX) {
@@ -436,11 +437,11 @@ export class BossNightmare extends Boss {
           }
         } break; }
       case 'summon':
-        this.vx = 0; this.faceP(); if (this.st < 44) this.tell('summon', this.st / 44); if (this.st === 6) A.sfx('roar');
+        this.vx = 0; this.faceP(); if (this.st < 44) this.tell('summon', this.st / 44); if (this.st === 6) this.cry();
         if (this.st === 44) { const n = this.phase === 2 ? 4 : 3; let cnt = g.enemies.filter(e => e.name === 'fireskull' && !e.dead).length; for (let i = 0; i < n && cnt < 5; i++, cnt++) g.spawnEnemy('fireskull', (g.room.pw / (n + 1)) * (i + 1) / 16, 5, {}); g.fx.flash([0.4, 0.7, 1], 0.2); A.sfx('cast'); }
         if (this.st > 100) { this.state = 'idle'; this.st = -20; } break;
       case 'stomp':
-        if (this.st === 1) { this.tx = clamp(p.x, 70, g.room.pw - 70); A.sfx('roar'); }
+        if (this.st === 1) { this.tx = clamp(p.x, 70, g.room.pw - 70); this.cry(); }
         if (this.st < 50) { this.vx = 0; this.dir = this.tx >= this.x ? 1 : -1; this.tell('stomp', this.st / 50, [{ type: 'ring', x: this.tx, y: this.y, r: 44 }]); break; }
         if (this.st === 50) { this.vy = -7; this.onGround = false; this.vx = clamp((this.tx - this.x) / 66.7, -3.4, 3.4); A.sfx('jump'); }
         if (this.st > 56 && this.onGround) { this.vx = 0; g.shake(7, 22); A.sfx('boom'); g.fx.ring(this.x, this.y - 4, 100, [0.4, 0.8, 1], 28, 0.15); for (const s of [-1, 1]) g.addProjectile(new Shockwave(this.x + s * 30, this.y, s, { dmg: 10, speed: 2.2, life: 80, big: true, color: COLORS.blue })); this.state = 'idle'; this.st = -30; }
@@ -457,10 +458,10 @@ export class BossNightmare extends Boss {
 
 // ============================================================================================== 3. THE SERAPH OF ASH (angel)
 export class BossAngel extends Boss {
-  constructor(g, x, y, o) { super(g, x, y + 36, 34, 72, o); this.hp = this.maxHp = 340; this.dmg = 14; this.xp = 200; this.bossName = 'THE SERAPH OF ASH'; this.sub = 'FALLEN GUARDIAN OF THE CHAPEL'; this.gravity = false; this.deathFx = COLORS.ice; this.dive = null; this.ice = { w: 84, h: 88 }; }
+  constructor(g, x, y, o) { super(g, x, y + 36, 34, 72, o); this.hp = this.maxHp = 340; this.dmg = 14; this.xp = 200; this.bossName = 'THE SERAPH OF ASH'; this.voice = 'angel'; this.sub = 'FALLEN GUARDIAN OF THE CHAPEL'; this.gravity = false; this.deathFx = COLORS.ice; this.dive = null; this.ice = { w: 84, h: 88 }; }
   get spd() { return this.phase === 2 ? 1.25 : 1; }
   dangerous() { return this.state === 'dive' && this.st >= 44 && this.st < 92; }
-  intro(g) { if (this.st === 8) { A.sfx('shriek'); g.shake(3, 40); g.fx.flash([1, 1, 1], 0.5); g.fx.ring(this.x, this.cy, 130, [0.9, 0.95, 1], 40, 0.1); } g.fx.glow(this.x, this.cy, 70, [0.8, 0.9, 1], 0.5); this.faceP(); }
+  intro(g) { if (this.st === 8) { this.cry(); g.shake(3, 40); g.fx.flash([1, 1, 1], 0.5); g.fx.ring(this.x, this.cy, 130, [0.9, 0.95, 1], 40, 0.1); } g.fx.glow(this.x, this.cy, 70, [0.8, 0.9, 1], 0.5); this.faceP(); }
   physics() { this.x += this.vx; this.y += this.vy; const r = this.g.room; this.x = clamp(this.x, 34, r.pw - 34); this.y = clamp(this.y, 70, r.ph - 40); if (this.flashT > 0) this.flashT--; }
   moveTo(tx, ty, k = 0.04, max = 2.2) { this.vx = clamp((tx - this.x) * k, -max, max); this.vy = clamp((ty - this.cy) * k, -max, max); }
   groundY() { return this.g.room.ph - 32; }
@@ -478,10 +479,10 @@ export class BossAngel extends Boss {
         if (this.st > times[times.length - 1] + 40) { this.state = 'idle'; this.st = -20; } break; }
       case 'strikes':
         this.moveTo(g.room.pw / 2, 78, 0.04); if (this.st < 18) this.tell('strikes', this.st / 18);
-        if (this.st === 18) { A.sfx('shriek'); const waves = this.phase === 2 ? 2 : 1; for (let w = 0; w < waves; w++) for (let i = 0; i < 3; i++) { const x = clamp(w === 0 ? p.x + (i - 1) * 64 + rand(-8, 8) : rand(50, g.room.pw - 50), 30, g.room.pw - 30); g.addProjectile(new Column(x, this.groundY(), 'bolt', { warn: 62 + w * 44, active: 14, dmg: 14, w: 28, h: 220 })); } }
+        if (this.st === 18) { this.cry(); const waves = this.phase === 2 ? 2 : 1; for (let w = 0; w < waves; w++) for (let i = 0; i < 3; i++) { const x = clamp(w === 0 ? p.x + (i - 1) * 64 + rand(-8, 8) : rand(50, g.room.pw - 50), 30, g.room.pw - 30); g.addProjectile(new Column(x, this.groundY(), 'bolt', { warn: 62 + w * 44, active: 14, dmg: 14, w: 28, h: 220 })); } }
         if (this.st > (this.phase === 2 ? 190 : 130)) { this.state = 'idle'; this.st = -20; } break;
       case 'dive': {
-        if (this.st < 20) { this.moveTo(clamp(p.x, 80, g.room.pw - 80) + (p.x < g.room.pw / 2 ? 90 : -90), 66, 0.05); this.faceP(); this.tell('dive', this.st / 44); if (this.st === 2) A.sfx('shriek'); }
+        if (this.st < 20) { this.moveTo(clamp(p.x, 80, g.room.pw - 80) + (p.x < g.room.pw / 2 ? 90 : -90), 66, 0.05); this.faceP(); this.tell('dive', this.st / 44); if (this.st === 2) this.cry(); }
         else if (this.st < 44) { this.vx *= 0.8; this.vy *= 0.8; if (this.st === 20) this.dive = { x: p.x, y: p.y - 18 };    // target locks here - you have ~0.4s to move out of the line
           this.tell('dive', this.st / 44, [{ type: 'line', x0: this.x, y0: this.cy, x1: this.dive.x + (this.dive.x - this.x) * 0.6, y1: this.dive.y + (this.dive.y - this.cy) * 0.6 }]); g.fx.ring(this.x, this.cy, 20 + (this.st - 20) * 1.5, [1, 0.9, 0.6], 10, 0.3, 4); }
         else if (this.st === 44) { const a = Math.atan2(this.dive.y - this.cy, this.dive.x - this.x); this.vx = Math.cos(a) * 4.2 * spd; this.vy = Math.sin(a) * 4.2 * spd; A.sfx('slash'); }
@@ -501,9 +502,9 @@ export class BossAngel extends Boss {
 // A robed keeper of the Lord's archive, hanging in the air among the shelves.  He tears pages from his own books and flings them, brings whole shelves down on you (look for the markers on the floor),
 // calls haunted tomes out of the stacks, and - angrier, in his second phase - bursts into rings of ink.  He guards the KEY OF GOLD, the key to the Shadow Throne.
 export class BossLibrarian extends Boss {
-  constructor(g, x, y, o) { super(g, x, y + 40, 40, 80, o); this.hp = this.maxHp = 520; this.dmg = 15; this.xp = 320; this.bossName = 'THE LIBRARIAN'; this.sub = 'KEEPER OF THE KEY OF GOLD'; this.gravity = false; this.deathFx = [[1, 0.85, 0.5], [0.5, 0.3, 0.1]]; }
+  constructor(g, x, y, o) { super(g, x, y + 40, 40, 80, o); this.hp = this.maxHp = 520; this.dmg = 15; this.xp = 320; this.bossName = 'THE LIBRARIAN'; this.voice = 'librarian'; this.sub = 'KEEPER OF THE KEY OF GOLD'; this.gravity = false; this.deathFx = [[1, 0.85, 0.5], [0.5, 0.3, 0.1]]; }
   get spd() { return this.phase === 2 ? 1.25 : 1; }
-  intro(g) { if (this.st === 8) { A.sfx('shriek'); g.shake(3, 40); g.fx.flash([1, 0.9, 0.6], 0.4); g.fx.ring(this.x, this.cy, 120, [1, 0.85, 0.5], 40, 0.1); } g.fx.glow(this.x, this.cy, 70, [1, 0.8, 0.4], 0.5); this.faceP(); }
+  intro(g) { if (this.st === 8) { this.cry(); g.shake(3, 40); g.fx.flash([1, 0.9, 0.6], 0.4); g.fx.ring(this.x, this.cy, 120, [1, 0.85, 0.5], 40, 0.1); } g.fx.glow(this.x, this.cy, 70, [1, 0.8, 0.4], 0.5); this.faceP(); }
   physics() { this.x += this.vx; this.y += this.vy; const r = this.g.room; this.x = clamp(this.x, 40, r.pw - 40); this.y = clamp(this.y, 70, r.ph - 40); if (this.flashT > 0) this.flashT--; }
   moveTo(tx, ty, k = 0.04, max = 2) { this.vx = clamp((tx - this.x) * k, -max, max); this.vy = clamp((ty - this.cy) * k, -max, max); }
   groundY() { return this.g.room.ph - 32; }
@@ -526,11 +527,11 @@ export class BossLibrarian extends Boss {
         if (this.st > 110) { this.state = 'idle'; this.st = -20; } break; }
       case 'shelves': {
         this.moveTo(g.room.pw / 2, 84, 0.04); if (this.st < 20) this.tell('shelves', this.st / 20);
-        if (this.st === 20) { A.sfx('roar'); const waves = this.phase === 2 ? 2 : 1; let room_ = 6 - g.projectiles.filter(q => q instanceof BookFall && !q.dead).length - Math.floor((g.room.bookWall ? g.room.bookWall.size : 0) / 10); for (let w = 0; w < waves; w++) for (let i = 0; i < 3 && room_ > 0; i++, room_--) { const x = clamp(w === 0 ? p.x + (i - 1) * 70 + rand(-8, 8) : rand(50, g.room.pw - 50), 30, g.room.pw - 30); g.addProjectile(new BookFall(g, x, { warn: 62 + w * 44, dmg: 14 })); } }
+        if (this.st === 20) { this.cry(); const waves = this.phase === 2 ? 2 : 1; let room_ = 6 - g.projectiles.filter(q => q instanceof BookFall && !q.dead).length - Math.floor((g.room.bookWall ? g.room.bookWall.size : 0) / 10); for (let w = 0; w < waves; w++) for (let i = 0; i < 3 && room_ > 0; i++, room_--) { const x = clamp(w === 0 ? p.x + (i - 1) * 70 + rand(-8, 8) : rand(50, g.room.pw - 50), 30, g.room.pw - 30); g.addProjectile(new BookFall(g, x, { warn: 62 + w * 44, dmg: 14 })); } }
         if (this.st > (this.phase === 2 ? 190 : 130)) { this.state = 'idle'; this.st = -20; } break; }
       case 'tomes': {
         this.moveTo(this.x, 90, 0.05); if (this.st < 24) this.tell('tomes', this.st / 24);
-        if (this.st === 24) { A.sfx('roar'); const alive = g.enemies.filter(e => e.name === 'tome' && !e.dead).length; for (let i = 0, n = Math.min(this.phase === 2 ? 3 : 2, 5 - alive); i < n; i++) { const bx = this.x + (i - (n - 1) / 2) * 40; g.fx.burst(bx, this.cy, 12, [[0.95, 0.9, 0.7], [0.5, 0.35, 0.2]], { speed: 2, s0: 12 }); g.spawnEnemy('tome', Math.floor(bx / 16), Math.floor(this.cy / 16), {}); } }
+        if (this.st === 24) { this.cry(); const alive = g.enemies.filter(e => e.name === 'tome' && !e.dead).length; for (let i = 0, n = Math.min(this.phase === 2 ? 3 : 2, 5 - alive); i < n; i++) { const bx = this.x + (i - (n - 1) / 2) * 40; g.fx.burst(bx, this.cy, 12, [[0.95, 0.9, 0.7], [0.5, 0.35, 0.2]], { speed: 2, s0: 12 }); g.spawnEnemy('tome', Math.floor(bx / 16), Math.floor(this.cy / 16), {}); } }
         if (this.st > 84) { this.state = 'idle'; this.st = -20; } break; }
     }
   }
@@ -550,11 +551,11 @@ const rot16 = a => ((Math.round(a / (Math.PI / 8)) % 16) + 16) % 16;
 const angDiff = (a, b) => ((b - a + 3 * Math.PI) % (Math.PI * 2)) - Math.PI;
 export class BossRimewyrm extends Boss {
   constructor(g, x, y, o) {
-    super(g, x, y + 28, 69, 57, o); this.hp = this.maxHp = 560; this.dmg = 16; this.xp = 380; this.bossName = 'THE RIMEWYRM'; this.sub = 'WARDEN OF THE KEY OF ANTIMONY'; this.gravity = false; this.deathFx = COLORS.ice; this.triggerDist = 260; this.noDrop = true; this.alive = RW.segs; this.chunks = []; this.rage = 1; this.rageT = 1;
+    super(g, x, y + 28, 69, 57, o); this.hp = this.maxHp = 560; this.dmg = 16; this.xp = 380; this.bossName = 'THE RIMEWYRM'; this.voice = 'rimewyrm'; this.sub = 'WARDEN OF THE KEY OF ANTIMONY'; this.gravity = false; this.deathFx = COLORS.ice; this.triggerDist = 260; this.noDrop = true; this.alive = RW.segs; this.chunks = []; this.rage = 1; this.rageT = 1;
     this.ang = Math.PI; this.dir = -1; this.trail = []; this.parts = Array.from({ length: RW.segs + 1 }, () => ({ x, y })); this.rime = 0; this.rimeT = 0; this.bodyHit = false; this.lock = { x, y }; this.wind = 0; this.nIcicle = 0;
   }
   get spd() { return (this.phase === 2 ? 1.22 : 1) * this.rage; }
-  intro(g) { if (this.st === 8) { A.sfx('roar'); g.shake(4, 40); g.fx.flash([0.7, 0.9, 1], 0.4); g.fx.ring(this.x, this.cy, 120, [0.6, 0.85, 1], 40, 0.1); } g.fx.glow(this.x, this.cy, 70, [0.5, 0.8, 1], 0.5); this.steerSoft(g.room.pw / 2, 104, 1.2); }
+  intro(g) { if (this.st === 8) { this.cry(); g.shake(4, 40); g.fx.flash([0.7, 0.9, 1], 0.4); g.fx.ring(this.x, this.cy, 120, [0.6, 0.85, 1], 40, 0.1); } g.fx.glow(this.x, this.cy, 70, [0.5, 0.8, 1], 0.5); this.steerSoft(g.room.pw / 2, 104, 1.2); }
   // THE BODY FALLS AWAY: it has 11 segments, and loses one each time its life drops by a eleventh.  A lost segment tumbles off and shatters on the floor; every one lost makes the wyrm quicker (up to 75% quicker when only the head is left).
   onHurt(dmg, dir, opts) { super.onHurt(dmg, dir, opts); this.syncSegs(); }
   syncSegs() { const want = Math.max(0, Math.ceil(RW.segs * Math.max(0, this.hp) / this.maxHp)); while (this.alive > want) this.dropSeg(); this.rageT = 1 + 0.75 * (RW.segs - this.alive) / RW.segs; }
@@ -600,12 +601,12 @@ export class BossRimewyrm extends Boss {
     g.popup(this.x, this.y - 54, 'MELTED!', '#ffd49a');
   }
   thaw(g) {                        // the shell thaws by itself: the wyrm heals a little and flings shards all round
-    this.rime = 0; this.hp = Math.min(this.maxHp, this.hp + Math.round(this.maxHp * 0.08)); A.sfx('roar'); A.sfx('shatter'); g.shake(4, 16); g.fx.ring(this.x, this.cy, 90, [0.6, 0.85, 1], 28, 0.14);
+    this.rime = 0; this.hp = Math.min(this.maxHp, this.hp + Math.round(this.maxHp * 0.08)); this.cry(); A.sfx('shatter'); g.shake(4, 16); g.fx.ring(this.x, this.cy, 90, [0.6, 0.85, 1], 28, 0.14);
     const n = this.phase === 2 ? 12 : 9; for (let i = 0; i < n; i++) { const a = i * Math.PI * 2 / n; g.addProjectile(new Projectile(this.x, this.cy, Math.cos(a) * 1.7, Math.sin(a) * 1.7, 'tide', { dmg: 8, life: 220 })); }
     g.popup(this.x, this.y - 54, 'THAWED', '#bfe4ff'); this.state = 'idle'; this.st = -30; this.plan = null;
   }
   onPhase2() {                     // the lights go out
-    const g = this.g; g.fx.flash([0.7, 0.9, 1], 0.5); g.shake(5, 24); A.sfx('roar'); g.fx.ring(this.x, this.cy, 100, [0.6, 0.85, 1], 34, 0.14);
+    const g = this.g; g.fx.flash([0.7, 0.9, 1], 0.5); g.shake(5, 24); this.cry(); g.fx.ring(this.x, this.cy, 100, [0.6, 0.85, 1], 34, 0.14);
     dropItem(g, 'heart', this.x - 36, this.cy - 10); dropItem(g, 'mana', this.x + 36, this.cy - 10); dropItem(g, 'mana', this.x, this.cy - 20);
     this.rime = 0; this.harmless = false; this.state = 'idle'; this.st = -40; this.plan = null; g.fx.wisps.set(0); g.fx.setDark(0.85); g.popup(this.x, this.y - 54, 'THE LIGHTS GO OUT', '#bfe4ff');
   }
@@ -624,17 +625,17 @@ export class BossRimewyrm extends Boss {
         if (this.st < T0) {                                                       // it rears back, the line to you showing where it will dive (the line stops following you in the last moments)
           if (this.st < T0 - 12) this.lock = { x: p.x, y: p.y - 18 };
           this.steerSoft(this.x - Math.sign(this.lock.x - this.x) * 40, 74, 0.9); this.tell('swoop', this.st / T0, [{ type: 'line', x0: this.x, y0: this.cy, x1: this.lock.x, y1: this.lock.y }]);
-        } else if (this.st === T0) { A.sfx('roar'); g.shake(3, 12); const dx = this.lock.x - this.x, dy = this.lock.y - this.cy, d = Math.hypot(dx, dy) || 1, sp = 5.4 * spd; this.vx = dx / d * sp; this.vy = dy / d * sp; }
+        } else if (this.st === T0) { this.cry(); g.shake(3, 12); const dx = this.lock.x - this.x, dy = this.lock.y - this.cy, d = Math.hypot(dx, dy) || 1, sp = 5.4 * spd; this.vx = dx / d * sp; this.vy = dy / d * sp; }
         else if (this.st < T0 + 38) { if (this.cy > r.ph - 66 && this.vy > 0) { this.vy = -Math.abs(this.vy) * 0.25; this.vx *= 0.9; g.shake(2, 6); } g.fx.sparks(this.x, this.cy, 2, COLORS.white, 2, { gy: 0.05 }); }
         else if (this.st < T0 + 86) { this.steerSoft(clamp(this.x, 80, pw - 80), 88, 2.2); }
         else { this.state = 'idle'; this.st = -20; } break; }
       case 'spikes': {
         this.steerSoft(clamp(p.x, 90, pw - 90), 98, 1.8 * spd); if (this.st < 26) this.tell('spikes', this.st / 26);
-        if (this.st === 26) { A.sfx('roar'); const n = this.phase === 2 ? 7 : 5; for (let i = 0; i < n; i++) { const off = i - (n - 1) / 2, x = clamp(p.x + off * 54 + rand(-6, 6), 26, pw - 26); g.addProjectile(new Column(x, this.groundY(), 'rime', { warn: 54 + Math.abs(off) * 9, active: 38, dmg: 13, w: 30, h: 84 })); } }
+        if (this.st === 26) { this.cry(); const n = this.phase === 2 ? 7 : 5; for (let i = 0; i < n; i++) { const off = i - (n - 1) / 2, x = clamp(p.x + off * 54 + rand(-6, 6), 26, pw - 26); g.addProjectile(new Column(x, this.groundY(), 'rime', { warn: 54 + Math.abs(off) * 9, active: 38, dmg: 13, w: 30, h: 84 })); } }
         if (this.st > 126) { this.state = 'idle'; this.st = -20; } break; }
       case 'icefall': {
         this.steerSoft(clamp(pw - p.x, 100, pw - 100), 76, 1.4); if (this.st < 30) this.tell('icefall', this.st / 30);
-        if (this.st === 30) { A.sfx('roar'); g.shake(3, 30); const n = this.phase === 2 ? 9 : 6; for (let i = 0; i < n; i++) this.fallIcicle(clamp(i < 6 ? p.x + (i - 2.5) * 52 + rand(-10, 10) : rand(40, pw - 40), 30, pw - 30), i * 6); }
+        if (this.st === 30) { this.cry(); g.shake(3, 30); const n = this.phase === 2 ? 9 : 6; for (let i = 0; i < n; i++) this.fallIcicle(clamp(i < 6 ? p.x + (i - 2.5) * 52 + rand(-10, 10) : rand(40, pw - 40), 30, pw - 30), i * 6); }
         if (this.st > 150) { this.state = 'idle'; this.st = -20; } break; }
       case 'encase': {
         const E0 = 50;
@@ -679,7 +680,7 @@ export class BossRimewyrm extends Boss {
 }
 
 export class BossColossus extends Boss {
-  constructor(g, x, y, o) { super(g, x, y, 46, 100, o); this.hp = this.maxHp = 420; this.dmg = 16; this.xp = 260; this.bossName = 'THE BRAZEN HIEROPHANT'; this.sub = 'MASTER OF THE UNDERWORKS'; this.scale = 1.15; this.dir = -1; this.deathFx = COLORS.gold; this.ice = { w: 84, h: 116 }; }
+  constructor(g, x, y, o) { super(g, x, y, 46, 100, o); this.hp = this.maxHp = 420; this.dmg = 16; this.xp = 260; this.bossName = 'THE BRAZEN HIEROPHANT'; this.voice = 'colossus'; this.sub = 'MASTER OF THE UNDERWORKS'; this.scale = 1.15; this.dir = -1; this.deathFx = COLORS.gold; this.ice = { w: 84, h: 116 }; }
   get spd() { return this.phase === 2 ? 1.25 : 1; }
   intro(g) { if (this.st === 8) { A.sfx('boom'); g.shake(5, 50); g.fx.flash([1, 0.6, 0.3], 0.3); A.sfx('steam'); } if (this.st % 8 === 0) g.fx.smoke(this.x + rand(-20, 20), this.y - 96, 1, { s0: 10, s1: 26, c0: [0.8, 0.82, 0.88], c1: [0.4, 0.42, 0.5], a: 0.4 }); this.faceP(); }
   ai(g) {
@@ -717,7 +718,7 @@ export class BossColossus extends Boss {
 
 // ============================================================================================== 5. THE SHADOW LORD (final)
 export class BossShadow extends Boss {
-  constructor(g, x, y, o) { super(g, x, y + 44, 50, 88, o); this.hp = this.maxHp = 680; this.dmg = 16; this.xp = 600; this.bossName = 'THE SHADOW LORD'; this.sub = 'WHO TOOK THE SUN'; this.gravity = false; this.dir = -1; this.deathFx = COLORS.purple; this.triggerDist = 260; this.zapT = 0; this.alphaT = 1; this.summonCd = 0; this.ice = { w: 96, h: 100 }; }
+  constructor(g, x, y, o) { super(g, x, y + 44, 50, 88, o); this.hp = this.maxHp = 680; this.dmg = 16; this.xp = 600; this.bossName = 'THE SHADOW LORD'; this.voice = 'shadow'; this.sub = 'WHO TOOK THE SUN'; this.gravity = false; this.dir = -1; this.deathFx = COLORS.purple; this.triggerDist = 260; this.zapT = 0; this.alphaT = 1; this.summonCd = 0; this.ice = { w: 96, h: 100 }; }
   get spd() { return this.phase === 2 ? 1.25 : 1; }
   dangerous() { return this.state === 'slam' && this.st >= 60 && this.st < 80; }
   // THE SECOND LIFE.  The first time he falls the fight is not over: the screen holds, then goes black; he laughs in the dark (he is the lord of darkness; he stole the light); the Lady's wisp comes in and lights
@@ -731,7 +732,7 @@ export class BossShadow extends Boss {
     g.playerFrozen = true; p.vx = 0; p.invT = 99999; g.hitstop = 80; g.shake(8, 60); g.fx.flash([1, 1, 1], 0.9); A.sfx('thunder'); A.duckTarget = 0.12;          // (the screen holds for a moment)
     g.after(90, () => { g.blackout = { a: 0, aT: 1, r: 0, rT: 0 }; });                                                                                 // ...and goes to black
     g.after(165, () => {
-      g.fx.wisps.set(0); g.fx.setDark(1.05); g.fx.setStorm(false); A.sfx('roar'); A.sfx('ghost');
+      g.fx.wisps.set(0); g.fx.setDark(1.05); g.fx.setStorm(false); this.cry(); A.sfx('ghost');
       g.talk([['THE SHADOW LORD', 'HA HA HA HA HA... DID YOU THINK THE LIGHT WOULD COME SO EASILY, LITTLE SPARK? I AM THE LORD OF DARKNESS.'], ['THE SHADOW LORD', 'I STOLE THE LIGHT FROM THE WORLD, AND I WILL TAKE IT FROM YOU AS WELL. THERE IS ONLY THE DARK NOW. THERE HAS ONLY EVER BEEN THE DARK.']], () => {
         g.blackout.wisp = true; g.blackout.rT = 96; g.blackout.aT = 0.78; A.sfx('cast'); A.sfx('heal');                                                // the wisp's light comes in, round the hero
         g.after(100, () => g.showDialog('I AM HERE. I NEVER LEFT YOU. LET HIM KEEP HIS DARKNESS - I WILL BE THE LIGHT TO GUIDE OUR WAY.', { name: 'HER VOICE', font: 'hand', onClose: () => this.rise() }));
@@ -740,10 +741,10 @@ export class BossShadow extends Boss {
   }
   rise() {
     const g = this.g, p = g.player; this.revived = true; this.reviving = false; this.hp = this.maxHp; this.invuln = false; this.harmless = false; this.dying = 0; this.phase = 2; this.state = 'idle'; this.st = -50; this.plan = null; this.zapT = 150;
-    this.dmg = Math.round(this.dmg * 1.25); this.dmgK = (this.dmgK || 1) * 1.25; g.playerFrozen = false; p.invT = 90; A.duckTarget = 1; A.sfx('roar'); g.shake(6, 30); g.fx.flash([0.5, 0.3, 1], 0.4);
+    this.dmg = Math.round(this.dmg * 1.25); this.dmgK = (this.dmgK || 1) * 1.25; g.playerFrozen = false; p.invT = 90; A.duckTarget = 1; this.cry(); g.shake(6, 30); g.fx.flash([0.5, 0.3, 1], 0.4);
     g.blackout.aT = 0; g.blackout.rT = 120; g.after(60, () => { g.blackout = null; }); g.banner('THE LORD OF DARKNESS', 'HE RISES AGAIN', 200, { y: 60, color: '#c8a0ff' });
   }
-  intro(g) { if (this.st === 6) { A.sfx('roar'); g.shake(6, 70); g.fx.flash([0.6, 0.3, 1], 0.5); g.fx.ring(this.x, this.cy, 160, [0.6, 0.3, 1], 50, 0.1); g.fx.strike(this.x, g.room.ph - 32, { flash: 0.4 }); } this.faceP(); g.fx.glow(this.x, this.cy, 80, [0.5, 0.2, 1], 0.4); }
+  intro(g) { if (this.st === 6) { this.cry(); g.shake(6, 70); g.fx.flash([0.6, 0.3, 1], 0.5); g.fx.ring(this.x, this.cy, 160, [0.6, 0.3, 1], 50, 0.1); g.fx.strike(this.x, g.room.ph - 32, { flash: 0.4 }); } this.faceP(); g.fx.glow(this.x, this.cy, 80, [0.5, 0.2, 1], 0.4); }
   physics() { this.x += this.vx; this.y += this.vy; const r = this.g.room; this.x = clamp(this.x, 50, r.pw - 50); this.y = clamp(this.y, 90, r.ph - 32); if (this.flashT > 0) this.flashT--; }
   moveTo(tx, ty, k = 0.04, max = 2) { this.vx = clamp((tx - this.x) * k, -max, max); this.vy = clamp((ty - this.cy) * k, -max, max); }
   onPhase2() { super.onPhase2(); const g = this.g; g.fx.setAmbient(0.8, [0.03, 0, 0.06], 0.9); g.banner('THE ECLIPSE', 'DARKNESS FALLS'); g.fx.setStorm(true, 0); }
@@ -784,7 +785,7 @@ export class BossShadow extends Boss {
         else if (this.st > 126) { this.state = 'idle'; this.st = -20; } this.alphaT = this.st > 60 ? 1 : this.alphaT; break;
       case 'summon':
         this.moveTo(g.room.pw / 2, 100, 0.04); this.faceP(); if (this.st < 40) this.tell('summon', this.st / 40);
-        if (this.st === 40) { A.sfx('roar'); g.fx.flash([0.5, 0.2, 1], 0.3); const cnt = g.enemies.filter(e => !e.isBoss && !e.dead).length; if (cnt < 4) { g.spawnEnemy('wraith', 5, 7); g.spawnEnemy('wraith', g.room.w - 6, 7); if (this.phase === 2) g.spawnEnemy('bat', g.room.w / 2, 5); } this.summonCd = 600; }
+        if (this.st === 40) { this.cry(); g.fx.flash([0.5, 0.2, 1], 0.3); const cnt = g.enemies.filter(e => !e.isBoss && !e.dead).length; if (cnt < 4) { g.spawnEnemy('wraith', 5, 7); g.spawnEnemy('wraith', g.room.w - 6, 7); if (this.phase === 2) g.spawnEnemy('bat', g.room.w / 2, 5); } this.summonCd = 600; }
         if (this.st > 100) { this.state = 'idle'; this.st = -20; } break;
     }
   }
@@ -801,11 +802,11 @@ export class BossShadow extends Boss {
 // The first boss: a horned staff-bearer wreathed in the fires he set.  Easy to read - EMBER VOLLEY (arcing fireballs), STAFF SLAM (a marked box in front of him, then shockwaves),
 // LEAP (the landing spot is ringed) and, once he is hurt, FLAME PILLARS.
 export class BossCinder extends Boss {
-  constructor(g, x, y, o) { super(g, x, y, 40, 84, o); this.hp = this.maxHp = 160; this.dmg = 10; this.xp = 90; this.bossName = 'THE CINDER WARDEN'; this.sub = 'WHO SET THE VILLAGE ALIGHT'; this.scale = 0.95; this.dir = -1; this.deathFx = COLORS.fire; this.tx = x; this.ice = { w: 80, h: 100 }; }
+  constructor(g, x, y, o) { super(g, x, y, 40, 84, o); this.hp = this.maxHp = 160; this.dmg = 10; this.xp = 90; this.bossName = 'THE CINDER WARDEN'; this.voice = 'cinder'; this.sub = 'WHO SET THE VILLAGE ALIGHT'; this.scale = 0.95; this.dir = -1; this.deathFx = COLORS.fire; this.tx = x; this.ice = { w: 80, h: 100 }; }
   get spd() { return this.phase === 2 ? 1.2 : 1; }
   tele(k) { return Math.round({ embers: 52, slam: 56, leap: 52 }[k] / this.spd); }
   dangerous() { return (this.state === 'slam' && this.st >= this.tele('slam') && this.st < this.tele('slam') + 12) || (this.state === 'leap' && this.st >= this.tele('leap')); }
-  intro(g) { if (this.st === 8) { A.sfx('roar'); g.shake(4, 40); g.fx.flash([1, 0.5, 0.2], 0.3); g.fx.ring(this.x, this.cy, 110, [1, 0.5, 0.2], 40, 0.1); } if (this.st % 4 === 0) g.fx.fire(this.x + rand(-18, 18), this.y - 10, { scale: 1.0, n: 1 }); this.faceP(); }
+  intro(g) { if (this.st === 8) { this.cry(); g.shake(4, 40); g.fx.flash([1, 0.5, 0.2], 0.3); g.fx.ring(this.x, this.cy, 110, [1, 0.5, 0.2], 40, 0.1); } if (this.st % 4 === 0) g.fx.fire(this.x + rand(-18, 18), this.y - 10, { scale: 1.0, n: 1 }); this.faceP(); }
   ai(g) {
     const p = g.player, spd = this.spd, d = Math.abs(this.dx());
     if (this.t % 5 === 0) g.fx.fire(this.x + rand(-14, 14), this.y - rand(8, 60), { scale: 0.5, n: 1 }); g.fx.light(this.x, this.y - 40, 90, 0.6);
@@ -831,7 +832,7 @@ export class BossCinder extends Boss {
         } else if (this.st > T0 + 44) { this.state = 'idle'; this.st = -10; } break; }
       case 'leap': {
         const T0 = this.tele('leap');
-        if (this.st === 1) { this.tx = clamp(p.x, 70, g.room.pw - 70); A.sfx('roar'); }
+        if (this.st === 1) { this.tx = clamp(p.x, 70, g.room.pw - 70); this.cry(); }
         if (this.st < T0) { this.vx = 0; this.dir = this.tx >= this.x ? 1 : -1; this.tell('leap', this.st / T0, [{ type: 'ring', x: this.tx, y: this.y, r: 38 }]); }
         else if (this.st === T0) { this.vy = -6.4; this.vx = clamp((this.tx - this.x) / 61, -3.8, 3.8); this.onGround = false; A.sfx('jump'); }
         else if (this.st > T0 + 8 && this.onGround) { this.vx = 0; g.shake(6, 20); A.sfx('boom'); g.fx.ring(this.x, this.y - 4, 90, [1, 0.6, 0.2], 26, 0.15); for (const sd of [-1, 1]) g.addProjectile(new Shockwave(this.x + sd * 20, this.y, sd, { dmg: 8, speed: 2.0, life: 66, big: true })); this.state = 'idle'; this.st = -26; }
@@ -839,7 +840,7 @@ export class BossCinder extends Boss {
         break; }
       case 'pillars':
         this.vx = 0; this.faceP(); if (this.st < 30) this.tell('pillars', this.st / 30);
-        if (this.st === 30) { A.sfx('roar'); const base = p.x; for (let i = -1; i <= 1; i++) { const x = clamp(base + i * 70 + (i ? rand(-6, 6) : 0), 30, g.room.pw - 30); g.addProjectile(new Column(x, this.y, 'fire', { warn: 64, active: 26, dmg: 12, w: 34 })); } }
+        if (this.st === 30) { this.cry(); const base = p.x; for (let i = -1; i <= 1; i++) { const x = clamp(base + i * 70 + (i ? rand(-6, 6) : 0), 30, g.room.pw - 30); g.addProjectile(new Column(x, this.y, 'fire', { warn: 64, active: 26, dmg: 12, w: 34 })); } }
         if (this.st > 130) { this.state = 'idle'; this.st = -16; } break;
     }
   }
@@ -859,9 +860,9 @@ export class BossCinder extends Boss {
 // ============================================================================================== 7. THE MIRE MOTHER (the weeping swamp)
 // A floating, many-tentacled head.  TENTACLES erupt from marked holes in the ground (stay out of the circles), SPORE BURST is a slow fan of poison orbs, SUMMONS calls swamp spiders.
 export class BossBramble extends Boss {
-  constructor(g, x, y, o) { super(g, x, y + 36, 36, 70, o); this.hp = this.maxHp = 260; this.dmg = 12; this.xp = 150; this.bossName = 'THE MIRE MOTHER'; this.sub = 'WHAT THE SWAMP DREAMS'; this.scale = 1.05; this.gravity = false; this.dir = -1; this.deathFx = COLORS.green; this.ice = { w: 76, h: 96 }; }
+  constructor(g, x, y, o) { super(g, x, y + 36, 36, 70, o); this.hp = this.maxHp = 260; this.dmg = 12; this.xp = 150; this.bossName = 'THE MIRE MOTHER'; this.voice = 'bramble'; this.sub = 'WHAT THE SWAMP DREAMS'; this.scale = 1.05; this.gravity = false; this.dir = -1; this.deathFx = COLORS.green; this.ice = { w: 76, h: 96 }; }
   get spd() { return this.phase === 2 ? 1.25 : 1; }
-  intro(g) { if (this.st === 8) { A.sfx('shriek'); g.shake(3, 40); g.fx.flash([0.4, 1, 0.5], 0.4); g.fx.ring(this.x, this.cy, 120, [0.4, 1, 0.5], 40, 0.1); } g.fx.glow(this.x, this.cy, 70, [0.4, 1, 0.5], 0.4); this.faceP(); }
+  intro(g) { if (this.st === 8) { this.cry(); g.shake(3, 40); g.fx.flash([0.4, 1, 0.5], 0.4); g.fx.ring(this.x, this.cy, 120, [0.4, 1, 0.5], 40, 0.1); } g.fx.glow(this.x, this.cy, 70, [0.4, 1, 0.5], 0.4); this.faceP(); }
   physics() { this.x += this.vx; this.y += this.vy; const r = this.g.room; this.x = clamp(this.x, 34, r.pw - 34); this.y = clamp(this.y, 70, r.ph - 40); if (this.flashT > 0) this.flashT--; }
   moveTo(tx, ty, k = 0.04, max = 2) { this.vx = clamp((tx - this.x) * k, -max, max); this.vy = clamp((ty - this.cy) * k, -max, max); }
   groundY() { return this.g.room.ph - 32; }
@@ -874,7 +875,7 @@ export class BossBramble extends Boss {
         this.planNext(this.phase === 2 ? ['tentacles', 'spores', 'tentacles', 'summon'] : ['tentacles', 'spores', 'summon'], Math.round(94 / spd)); break;
       case 'tentacles': {
         this.moveTo(this.x, 84, 0.05); this.faceP(); if (this.st < 24) this.tell('tentacles', this.st / 24);
-        if (this.st === 24) { A.sfx('shriek'); const n = this.phase === 2 ? 4 : 3; for (let i = 0; i < n; i++) { const x = clamp(i === 0 ? p.x : p.x + rand(-140, 140), 30, g.room.pw - 30); g.addProjectile(new Column(x, this.groundY(), 'tentacle', { warn: 54 + i * 12, active: 40, dmg: 11, w: 22, h: 90 })); } }
+        if (this.st === 24) { this.cry(); const n = this.phase === 2 ? 4 : 3; for (let i = 0; i < n; i++) { const x = clamp(i === 0 ? p.x : p.x + rand(-140, 140), 30, g.room.pw - 30); g.addProjectile(new Column(x, this.groundY(), 'tentacle', { warn: 54 + i * 12, active: 40, dmg: 11, w: 22, h: 90 })); } }
         if (this.st > (this.phase === 2 ? 150 : 128)) { this.state = 'idle'; this.st = -16; } break; }
       case 'spores': {
         this.faceP(); this.moveTo(this.x, 90, 0.05); const T0 = this.phase === 2 ? [40, 72] : [40];
@@ -883,7 +884,7 @@ export class BossBramble extends Boss {
         if (this.st > T0[T0.length - 1] + 40) { this.state = 'idle'; this.st = -20; } break; }
       case 'summon':
         this.moveTo(g.room.pw / 2, 90, 0.04); this.faceP(); if (this.st < 40) this.tell('summon', this.st / 40);
-        if (this.st === 40) { A.sfx('roar'); g.fx.flash([0.4, 1, 0.5], 0.25); const cnt = g.enemies.filter(e => !e.isBoss && !e.dead).length, row = Math.floor(g.room.ph / 16) - 2; if (cnt < 4) { g.spawnEnemy('swampspider', 5, row, {}); g.spawnEnemy('swampspider', g.room.w - 6, row, {}); if (this.phase === 2) g.spawnEnemy('swampspider', Math.round(g.room.w / 2), row, {}); } }
+        if (this.st === 40) { this.cry(); g.fx.flash([0.4, 1, 0.5], 0.25); const cnt = g.enemies.filter(e => !e.isBoss && !e.dead).length, row = Math.floor(g.room.ph / 16) - 2; if (cnt < 4) { g.spawnEnemy('swampspider', 5, row, {}); g.spawnEnemy('swampspider', g.room.w - 6, row, {}); if (this.phase === 2) g.spawnEnemy('swampspider', Math.round(g.room.w / 2), row, {}); } }
         if (this.st > 104) { this.state = 'idle'; this.st = -20; } break;
     }
   }
@@ -898,14 +899,14 @@ export class BossBramble extends Boss {
 // MIST STEP: he dissolves and returns behind you with a slash (the ring on the floor shows where).  In the second half he also LEAPS onto where you stand, and is quicker.
 export class BossVampire extends Boss {
   constructor(g, x, y, o) {
-    super(g, x, y, 26, 66, o); this.hp = this.maxHp = 200; this.dmg = 12; this.xp = 120; this.bossName = 'THE CRIMSON COUNT'; this.sub = 'WHO DRINKS THE DARK'; this.dir = -1; this.deathFx = COLORS.red; this.ice = { w: 56, h: 84 };
+    super(g, x, y, 26, 66, o); this.hp = this.maxHp = 200; this.dmg = 12; this.xp = 120; this.bossName = 'THE CRIMSON COUNT'; this.voice = 'vampire'; this.sub = 'WHO DRINKS THE DARK'; this.dir = -1; this.deathFx = COLORS.red; this.ice = { w: 56, h: 84 };
     this.live = false; this.hitDone = false; this.tx = x;
   }
   get spd() { return this.phase === 2 ? 1.2 : 1; }
   tele(k) { return Math.round({ lunge: 52, bolts: 50, mist: 46, leap: 54 }[k] / this.spd); }
   dangerous() { return this.live; }
   intro(g) {
-    if (this.st === 8) { A.sfx('roar'); g.shake(3, 36); g.fx.flash([0.9, 0.1, 0.2], 0.3); g.fx.ring(this.x, this.cy, 100, [1, 0.2, 0.3], 40, 0.1); g.fx.burst(this.x, this.cy, 24, [[0.8, 0.05, 0.12], [0.15, 0, 0.05]], { speed: 3, s0: 14, up: 0.4 }); }
+    if (this.st === 8) { this.cry(); g.shake(3, 36); g.fx.flash([0.9, 0.1, 0.2], 0.3); g.fx.ring(this.x, this.cy, 100, [1, 0.2, 0.3], 40, 0.1); g.fx.burst(this.x, this.cy, 24, [[0.8, 0.05, 0.12], [0.15, 0, 0.05]], { speed: 3, s0: 14, up: 0.4 }); }
     this.faceP();
   }
   swordBox(reach = 58) { return { x: this.dir > 0 ? this.x - 4 : this.x - reach + 4, y: this.y - 66, w: reach, h: 58 }; }
@@ -978,7 +979,7 @@ const TOSS = new Set(['dagger', 'torch', 'marrow', 'holy']), LOB = { torch: [42,
 const P1 = ['slash', 'slash', 'dash', 'dagger', 'torch', 'marrow', 'holy'], P2 = ['slash', 'slash', 'dash', 'dash', 'dagger', 'torch', 'marrow', 'holy', 'leap'];
 export class BossMirror extends Boss {
   constructor(g, x, y, o) {
-    super(g, x, y, HPW, HPH, o); this.hp = this.maxHp = 400; this.dmg = 17; this.xp = 220; this.bossName = 'THE REFLECTION'; this.sub = 'WHAT THE GLASS KEPT'; this.dir = -1; this.deathFx = [[0.85, 0.85, 1], [0.3, 0.2, 0.6]]; this.ice = { w: 30, h: 56 };
+    super(g, x, y, HPW, HPH, o); this.hp = this.maxHp = 400; this.dmg = 17; this.xp = 220; this.bossName = 'THE REFLECTION'; this.voice = 'mirror'; this.sub = 'WHAT THE GLASS KEPT'; this.dir = -1; this.deathFx = [[0.85, 0.85, 1], [0.3, 0.2, 0.6]]; this.ice = { w: 30, h: 56 };
     this.mv = g.mirrorView; this.axis = this.mv ? this.mv.m.axis : x; this.triggerDist = 26; this.name = 'twin';
     this.reflecting = true; this.evil = 0; this.hold = null; this.live = false; this.hitDone = false; this.blow = 0; this.bt = 0; this.tx = x; this.trail = []; this.heals = 0; this.thrown = 0; this.lastToss = -99; this.hi = false;
   }
@@ -1008,7 +1009,7 @@ export class BossMirror extends Boss {
       this.reflecting = false; if (mv) mv.shatter(g, this.x, this.y - 22);                                                    // it crashes out of the glass and lands beside you, never on top of you
       const side = this.x >= p.x ? 1 : -1, tgt = clamp(p.x + side * Math.max(46, Math.abs(this.x - p.x)), 28, g.room.pw - 28);
       this.y = m ? m.y1 : this.y; this.vx = (tgt - this.x) / 32; this.vy = -3.4; this.onGround = false; this.dir = tgt >= this.x ? 1 : -1; this.evil = 1; this.hold = null;
-      g.fx.ring(this.x, this.cy, 60, [0.7, 0.45, 1], 26, 0.12); g.fx.burst(this.x, this.cy, 18, [[0.7, 0.5, 1], [0.15, 0.05, 0.3]], { speed: 2.6, s0: 14 }); A.sfx('roar');
+      g.fx.ring(this.x, this.cy, 60, [0.7, 0.45, 1], 26, 0.12); g.fx.burst(this.x, this.cy, 18, [[0.7, 0.5, 1], [0.15, 0.05, 0.3]], { speed: 2.6, s0: 14 }); this.cry();
     }
     if (st > 56) { this.faceP(); if (this.onGround) this.vx = approach(this.vx, 0, 0.3); g.fx.glow(this.x + this.dir * 4, this.y - 28, 7, [1, 0.12, 0.2], 0.8); }
   }
@@ -1110,7 +1111,7 @@ export class BossMirror extends Boss {
     super.dyingSeq();
   }
   onPhase2() {
-    const g = this.g; g.fx.flash([0.7, 0.5, 1], 0.5); g.shake(5, 24); A.sfx('roar'); g.fx.ring(this.x, this.cy, 90, [0.7, 0.5, 1], 34, 0.14);
+    const g = this.g; g.fx.flash([0.7, 0.5, 1], 0.5); g.shake(5, 24); this.cry(); g.fx.ring(this.x, this.cy, 90, [0.7, 0.5, 1], 34, 0.14);
     const X = x => clamp(x, 20, g.room.pw - 20); dropItem(g, 'heart', X(this.x - 36), this.cy - 20); dropItem(g, 'heart', X(this.x + 36), this.cy - 20); dropItem(g, 'mana', X(this.x), this.cy - 30);          // (a breather, as every boss gives)
     this.state = 'idle'; this.st = -40; this.plan = null; g.banner('IT LEARNS', 'FROM YOU', 150, { y: 60, color: '#c9c0ff' });
   }
@@ -1139,11 +1140,11 @@ export class BossMirror extends Boss {
 // floor warn you).  SUBMERGE: it sinks out of sight - nothing can touch it - and bursts up again somewhere else, and where it rises is a geyser too.  In the second half it is quicker and does more at once.
 export class BossDrowned extends Boss {
   constructor(g, x, y, o) {
-    super(g, x, y + 39, 40, 78, o); this.hp = this.maxHp = 320; this.dmg = 13; this.xp = 170; this.bossName = 'THE DROWNED WARDEN'; this.sub = 'WHO KEEPS THE FLOODED GATE'; this.scale = 1.75; this.gravity = false; this.dir = -1;
+    super(g, x, y + 39, 40, 78, o); this.hp = this.maxHp = 320; this.dmg = 13; this.xp = 170; this.bossName = 'THE DROWNED WARDEN'; this.voice = 'drowned'; this.sub = 'WHO KEEPS THE FLOODED GATE'; this.scale = 1.75; this.gravity = false; this.dir = -1;
     this.deathFx = COLORS.blue; this.ice = { w: 80, h: 112 }; this.tx = x; this.under = false;
   }
   get spd() { return this.phase === 2 ? 1.25 : 1; }
-  intro(g) { if (this.st === 8) { A.sfx('roar'); g.shake(4, 40); g.fx.flash([0.4, 0.8, 1], 0.4); g.fx.ring(this.x, this.cy, 130, [0.4, 0.8, 1], 40, 0.1); } g.fx.glow(this.x, this.cy, 70, [0.4, 0.8, 1], 0.35); this.faceP(); }
+  intro(g) { if (this.st === 8) { this.cry(); g.shake(4, 40); g.fx.flash([0.4, 0.8, 1], 0.4); g.fx.ring(this.x, this.cy, 130, [0.4, 0.8, 1], 40, 0.1); } g.fx.glow(this.x, this.cy, 70, [0.4, 0.8, 1], 0.35); this.faceP(); }
   physics() { this.x += this.vx; this.y += this.vy; const r = this.g.room; this.x = clamp(this.x, 40, r.pw - 40); this.y = clamp(this.y, 80, r.ph - 20); if (this.flashT > 0) this.flashT--; }
   moveTo(tx, ty, k = 0.04, max = 2.2) { this.vx = clamp((tx - this.x) * k, -max, max); this.vy = clamp((ty - this.cy) * k, -max, max); }
   groundY() { return this.g.room.ph - 32; }

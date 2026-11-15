@@ -59,7 +59,7 @@ const SPEC = {
   v2: { kind: 'corridor', zone: 6, name: 'Smouldering Lane', tall: 26, w: [90, 104], outdoor: true, opts: LOOK[6],
     mods: [{ t: 'door', to: 'sv', kind: 'wood' }, { t: 'door', to: 'hv4', kind: 'house' }, { t: 'djLedge', kind: 'atkup', id: 'v2_atk' }, { t: 'djLedge', kind: 'hpup', id: 'v2_hp' }, { t: 'tablet', id: 'tab9', near: 'start', text: 'THE BELLS WERE THE FIRST TO FALL SILENT. THE PRIEST BARRED THE CHAPEL DOOR AND PRAYED. IT DID NOT HELP.' }],
     candles: [3, 5], barrels: [1, 2], mix: { zombie: [2, 3], skeleton: [1, 2], hound: [1, 1], bat: [1, 2], fireskull: [1, 1], villager: [1, 2] } },
-  v3: { kind: 'tower', zone: 6, name: 'The Bell Tower', bell: true, w: [28, 32], h: [34, 38], top: [8, 10], opts: { ...LOOK[6], ambient: 0.4 },
+  v3: { kind: 'tower', zone: 6, name: 'The Bell Tower', bell: true, chase: true, w: [28, 32], h: [34, 38], top: [8, 10], opts: { ...LOOK[6], ambient: 0.4 },
     mods: [{ t: 'tablet', id: 'tab10', text: 'HE CALLS IT MERCY, TO BURN WHAT HE CANNOT PROTECT. THE WARDEN WAITS IN THE SQUARE BELOW THE HILL ROAD.' }], topItem: { kind: 'mpup', id: 'v3_mp' }, candles: [3, 4], mix: { bat: [2, 3], fireskull: [2, 3], zombie: [1, 2] } },
   vb: { kind: 'arena', zone: 6, name: 'The Burning Square', w: [40, 46], outdoor: true, boss: 'cinder', reward: 'mantle', plats: 2, rise: 3, seal: 'both', candles: [3, 3], decor: 'village',
     opts: { ...LOOK[6], boss: 'cinder', music: 'boss' } },
@@ -578,6 +578,7 @@ function genCorridor(id, spec, r) {
       b.rect(e0 + 7, CF, 9, 4, TILE.EMPTY); b.rect(e0 + 7, CF + 4, 9, 1, TILE.SPIKE);                  // the gulf: nine wide, spikes at the bottom of it
       b.rect(hx, BASE, 3, 3, TILE.EMPTY); b.rect(hx, BASE, 3, 1, TILE.PLAT);                           // the trapdoor: planks in the deck
       b.plat(e0 + 29, 3, CF - 3); b.plat(e0 + 31, 3, CF - 6); b.plat(e0 + 33, 3, CF - 9); b.plat(hx, 3, CF - 12);          // the stairs up to it
+      b.plat(e0 - 1, 3, CF - 3); b.plat(e0, 3, CF - 6); b.plat(e0 - 1, 3, CF - 9); b.plat(e0, 3, CF - 11);          // and a second staircase under the hole itself: whoever dropped in (even without the double jump) can climb back out
       b.d('torch', e0 + 4, CF - 4); b.d('torch', e0 + 18, CF - 4); b.d('torch', e0 + 31, CF - 14);
       b.d('waterfall', e0 + 36, CF, { top: (BASE + 3) * 16, w: 12 });                                    // (a trickle of the Vltava seeping through the trapdoor's stones)
     }
@@ -738,6 +739,7 @@ function genTower(id, spec, r) {
   if (spec.bell) { const LEN = 5, LX = Math.max(1, W - 28), bx = LX + 2; b.plat(LX, LEN, top); b.e('bell', bx, top, { id: 'page5', secret: true }); meta.items.push({ id: 'page5', tx: bx, gy: top, needs: ['djump', 'dash'] }); }          // (the BELL of the bell tower: hidden on a ledge at the far side of the top from the way out, across a gulf nine tiles wide that only the double jump and the dash together can cross)
   if (spec.topItem) { b.e('upgrade', W - 7, top, { kind: spec.topItem.kind, id: spec.topItem.id }); meta.must.push({ tx: W - 7, gy: top, name: 'top item' }); }
   b.def.meta = meta; b.def.entries = { L: meta.entry.L, R: meta.entry.R };
+  if (spec.chase) { b.def.chase = true; b.def.chaseTop = top; }          // (the Bell Tower is on fire: see Game.beginChase)
   for (const t of (spec.mods || []).filter(m => m.t === 'tablet')) { b.tablet(W - 4, top, t.text, t.id); meta.must.push({ tx: W - 4, gy: top, name: 'tablet' }); }
   const v = validateMoving(b.def, movers); if (!v.ok) return { ok: false, errs: v.errs, def: b.def };
   const g = new Array(W).fill(floor);
@@ -829,7 +831,7 @@ function genTeleport(id, spec, r) {
 function genInterior(id, spec, r) {
   const W = r.i(spec.w ? spec.w[0] : 22, spec.w ? spec.w[1] : 28), H = 14, look = spec.look || 'cottage';
   const b = new B(id, spec.name, spec.zone, W, H, { theme: spec.theme || 'hall', ambient: spec.ambient === undefined ? 0.4 : spec.ambient, tint: spec.tint || [0.14, 0.06, 0.01], vig: 0.6, horizon: 12, weather: spec.weather || null, indoor: true });
-  b.floor(0, W, 12).ceil(0, W, 2).door(3, 12, spec.parent, 0, 12, 'wood').torches([7, W - 5], 6);
+  b.floor(0, W, 12).ceil(0, W, 2).door(3, 12, spec.parent, 0, 12, 'wood').torches([7, W - 5], 6); if (look === 'cottage') b.def.house = true;          // (a cottage has wooden walls: see drawHouse in world.js)
   const slots = r.shuffle(Array.from({ length: Math.floor((W - 13) / 3) + 1 }, (_, i) => 8 + i * 3)), take = () => slots.pop();
   const furnish = {
     cottage: [['bookcase', null, true], ['bookcase', null, true], ['img', 'town_crates'], ['img', 'dg_crates'], ['img', 'dg_urn_' + r.i(1, 3)], ['img', 'dg_urn_' + r.i(1, 3)]],
@@ -839,7 +841,7 @@ function genInterior(id, spec, r) {
     vault: [['column', null, true], ['img', 'dg_urn_' + r.i(1, 3)], ['img', 'dg_crates'], ['column', null, true], ['img', 'dg_urn_' + r.i(1, 3)], ['img', 'dg_crates']],
   }[look] || [];
   for (const [t, img, back, scale] of furnish) { const x = take(); if (x === undefined) break; if (t === 'img') b.d('img', x, 12, { img, back: !!back, ...(scale ? { scale } : {}) }); else b.d(t, x, 12, { back: !!back }); }
-  for (const x of [Math.floor(W * 0.35), Math.floor(W * 0.7)]) if (r.chance(0.8)) b.d('barwin', x, 8, { back: true });
+  for (const x of [Math.floor(W * 0.35), Math.floor(W * 0.7)]) if (r.chance(0.8) && look !== 'cottage') b.d('barwin', x, 8, { back: true });          // (a cottage's windows are part of its wooden wall)
   for (let i = 0; i < 3; i++) b.candle(8, 12);                                                      // (set properly by arrangeCandelabras: beside the door and about the room)
   const used = [];
   const spot = () => { for (let k = 0; k < 40; k++) { const x = r.i(7, W - 4); if (used.every(u => Math.abs(u - x) >= 3)) { used.push(x); return x; } } return null; };
@@ -1024,7 +1026,9 @@ function layoutMap(rooms) {
 
 // ------------------------------------------------------------------------------------------------ the world
 const cache = new Map();
-export function buildWorld(seed, opts = {}) {
+// The whole castle takes several seconds to make (every room is generated and then proved passable), so it is made in STEPS, one room at a time: buildWorld() runs them all at once (tools, tests), and
+// buildWorldAsync() runs them in slices between frames, so the title screen keeps moving while the castle is made behind it (see Game.prebuild).
+function* buildSteps(seed, opts = {}) {
   seed = seed | 0; if (cache.has(seed) && !opts.fresh) return cache.get(seed);
   const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now()), t0 = now();
   const rooms = {}, report = { seed, attempts: {}, fallbacks: [], errors: {}, version: GEN_VERSION };
@@ -1033,7 +1037,9 @@ export function buildWorld(seed, opts = {}) {
   for (const [k, kind] of Object.entries(DOOR_LINK)) { const [a, b2] = k.split('>'); (ends[a] ||= {}).doorR = { to: b2, kind }; (ends[b2] ||= {}).doorL = { to: a, kind }; }
   for (const p of PAIRS) { if (p.side === 'R') (ends[p.a] ||= {}).doorR = { to: p.b, tag: p.ta, destTag: p.tb, kind: p.kind }; else ((ends[p.a] ||= {}).mods ||= []).push({ t: p.mod, to: p.b, tag: p.ta, destTag: p.tb, kind: p.kind, label: p.label, hint: p.hint, lock: p.lock, gate: p.gate, key: p.key, wide: p.wide }); (ends[p.b] ||= {}).doorL = { to: p.a, tag: p.tb, destTag: p.ta, kind: p.kind }; }
   for (const [a, ta, b2, tb] of RETURNS) (ends[a] ||= {}).doorR = { to: b2, tag: ta, destTag: tb, kind: 'crypt' };
+  let stepNo = 0;
   for (const id of ORDER) {
+    yield stepNo++ / ORDER.length;
     let def = null; const e = ends[id] || {}, spec = { ...SPEC[id], ...e, mods: [...(SPEC[id].mods || []), ...(e.mods || [])] }, hand = SPEC[id].kind === 'authored';
     if ((spec.kind === 'interior' || spec.lair) && !(rooms[spec.parent] && rooms[spec.parent].doors.some(d => d.room === id))) continue;          // no door leads here in this world (a hand-built parent): no room
     // seed 0 is the classic castle: every hand-built room as authored (the rooms that were added later have no hand-built version, so they use seed 1)
@@ -1059,6 +1065,16 @@ export function buildWorld(seed, opts = {}) {
   const world = { seed, rooms, start: { room: 'v0', x: 12, gy: 12 }, order: ORDER.filter(id => rooms[id]), stones: ORDER.filter(id => rooms[id] && rooms[id].spawns.some(s => s.type === 'waystone')), report };
   report.ms = Math.round(now() - t0); cache.set(seed, world); if (cache.size > 6) cache.delete(cache.keys().next().value);
   return world;
+}
+export function buildWorld(seed, opts = {}) { const it = buildSteps(seed, opts); for (;;) { const r = it.next(); if (r.done) return r.value; } }
+export const worldReady = seed => cache.has(seed | 0);
+export function buildWorldAsync(seed, onProgress, sliceMs = 6) {
+  return new Promise((resolve, reject) => {
+    const it = buildSteps(seed), tick = () => {
+      try { const t0 = performance.now(); for (;;) { const r = it.next(); if (r.done) { if (onProgress) onProgress(1); return resolve(r.value); } if (onProgress) onProgress(r.value); if (performance.now() - t0 > sliceMs) break; } setTimeout(tick, 0); } catch (e) { reject(e); }
+    };
+    tick();
+  });
 }
 // Where a hero who travels by waystone appears: beside the stone, on SOLID floor with room to stand - never over a pit.  [x in pixels] - tries the right side, then the left, then nearer and nearer, at last the stone itself.
 export function arrivalBesideStone(def, w) {
