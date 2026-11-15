@@ -40,6 +40,20 @@ function drawCog(g, x, y, r, n, ang, a) {
   g.restore();
 }
 
+// ALCHEMICAL SYMBOLS for the sigils on a sealed door (each boss that must fall has its own): sulphur, mercury, salt, iron, and for the Reliquary the skull.  Strokes only, about 12 px tall, centred on (x, y).
+const SIGIL_OF = { boss_h4: 'sulphur', boss_qb: 'mercury', boss_u3: 'salt', boss_kb: 'iron', skulls_done: 'skull' };
+const SIGILS_BY_ORDER = ['sulphur', 'mercury', 'salt', 'iron'];
+function glyph(g, name, x, y) {
+  g.beginPath();
+  if (name === 'sulphur') { g.moveTo(x, y - 6); g.lineTo(x + 4.6, y + 1); g.lineTo(x - 4.6, y + 1); g.closePath(); g.moveTo(x, y + 1); g.lineTo(x, y + 6.5); g.moveTo(x - 2.6, y + 3); g.lineTo(x + 2.6, y + 3); g.moveTo(x - 2.6, y + 5.4); g.lineTo(x + 2.6, y + 5.4); }          // a triangle on a double cross
+  else if (name === 'mercury') { g.arc(x, y - 0.5, 2.8, 0, Math.PI * 2); g.moveTo(x - 3, y - 5.6); g.arc(x, y - 4.6, 3, Math.PI * 0.8, Math.PI * 0.2, true); g.moveTo(x - 2.2, y - 6.4); g.arc(x, y - 4.2, 3, Math.PI * 1.15, Math.PI * 1.85); g.moveTo(x, y + 2.3); g.lineTo(x, y + 6.6); g.moveTo(x - 2.2, y + 4.6); g.lineTo(x + 2.2, y + 4.6); }          // a circle with horns above and a cross below
+  else if (name === 'salt') { g.arc(x, y, 4.6, 0, Math.PI * 2); g.moveTo(x - 6, y); g.lineTo(x + 6, y); }          // a circle cut by a bar
+  else if (name === 'iron') { g.arc(x - 1.6, y + 1.8, 3.4, 0, Math.PI * 2); g.moveTo(x + 0.9, y - 0.7); g.lineTo(x + 5.4, y - 5.2); g.moveTo(x + 1.6, y - 5.4); g.lineTo(x + 5.6, y - 5.4); g.lineTo(x + 5.6, y - 1.4); }          // a circle with an arrow
+  else if (name === 'skull') { g.arc(x, y - 1, 4.4, Math.PI * 0.82, Math.PI * 0.18, false); g.lineTo(x + 2.2, y + 4.8); g.lineTo(x - 2.2, y + 4.8); g.closePath(); g.moveTo(x - 2, y - 1); g.lineTo(x - 0.8, y - 1); g.moveTo(x + 0.8, y - 1); g.lineTo(x + 2, y - 1); g.moveTo(x - 1, y + 4.8); g.lineTo(x - 1, y + 3); g.moveTo(x + 1, y + 4.8); g.lineTo(x + 1, y + 3); }          // the death's-head, for the door the six skulls open
+  else { g.arc(x, y, 4.2, 0, Math.PI * 2); g.moveTo(x, y); g.lineTo(x + 0.01, y); }
+  g.stroke();
+}
+
 export function drawDeco(g, d, cx, cy, t, room) {
   const x = Math.round(d.x - cx), y = Math.round(d.y - cy);
   if (x < -150 || x > 540) return;
@@ -143,13 +157,23 @@ export function drawDeco(g, d, cx, cy, t, room) {
       g.strokeStyle = '#b9c0d0'; g.lineWidth = 2; g.beginPath(); g.arc(x, ly - 6, 4.5, Math.PI, 0); g.stroke(); g.fillStyle = '#1a1020'; g.fillRect(x - 1, ly - 2, 2, 4);
       break;
     }
-    case 'sigils': {          // the sigils of a door that is locked until bosses fall: a small diamond for each, lit once its boss is dead; the door is barred until they all burn
+    case 'sigils': {          // the sigils of a door that is locked until bosses fall: an ALCHEMICAL SYMBOL for each, dark and cold until its boss is dead, then burning with a small steady flame; the door is barred until they all burn
       const fl = d.flags || [], n = fl.length, F = (room && room.flags) || {}, lit = fl.filter(f => F[f]).length;
       if (lit < n) { g.fillStyle = 'rgba(8,4,16,0.55)'; g.fillRect(x - 15, y - 44, 30, 44); g.fillStyle = '#2c2838'; g.fillRect(x - 15, y - 36, 30, 3); g.fillRect(x - 15, y - 16, 30, 3); g.fillStyle = '#4a4458'; g.fillRect(x - 1, y - 44, 2, 44); }
       for (let i = 0; i < n; i++) {
-        const sx = x + Math.round((i - (n - 1) / 2) * 13), sy = y - 58, on = !!F[fl[i]], pulse = 0.7 + 0.3 * Math.sin(t * 0.12 + i * 2);
-        g.fillStyle = '#0a0612'; g.beginPath(); g.moveTo(sx, sy - 7); g.lineTo(sx + 6, sy); g.lineTo(sx, sy + 7); g.lineTo(sx - 6, sy); g.closePath(); g.fill();
-        g.fillStyle = on ? 'rgba(255,214,110,' + pulse + ')' : '#3a3050'; g.beginPath(); g.moveTo(sx, sy - 5); g.lineTo(sx + 4, sy); g.lineTo(sx, sy + 5); g.lineTo(sx - 4, sy); g.closePath(); g.fill();
+        const sx = x + Math.round((i - (n - 1) / 2) * 17), sy = y - 56, on = !!F[fl[i]], fk = 0.8 + 0.2 * Math.sin(t * 0.17 + i * 2.3) + 0.08 * Math.sin(t * 0.41 + i);
+        g.save(); g.lineCap = 'round'; g.lineJoin = 'round';
+        if (on) {          // lit: a warm glow, the symbol in gold, and a little flame standing on it
+          g.globalCompositeOperation = 'lighter'; const gr = g.createRadialGradient(sx, sy - 3, 1, sx, sy - 3, 15); gr.addColorStop(0, 'rgba(255,170,70,' + (0.30 * fk).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(255,120,30,0)'); g.fillStyle = gr; g.fillRect(sx - 15, sy - 18, 30, 30); g.globalCompositeOperation = 'source-over';
+        } else { g.fillStyle = 'rgba(6,3,12,0.7)'; g.beginPath(); g.arc(sx, sy, 9, 0, Math.PI * 2); g.fill(); }
+        g.strokeStyle = on ? '#050208' : '#050208'; g.lineWidth = 3.2; glyph(g, SIGIL_OF[fl[i]] || SIGILS_BY_ORDER[i % SIGILS_BY_ORDER.length], sx, sy);          // (a dark edge, so it reads on any wall)
+        g.strokeStyle = on ? 'rgba(255,214,130,' + (0.82 + 0.18 * fk).toFixed(3) + ')' : '#5d5772'; g.lineWidth = 1.4; glyph(g, SIGIL_OF[fl[i]] || SIGILS_BY_ORDER[i % SIGILS_BY_ORDER.length], sx, sy);
+        if (on) {          // the flame: small, soft, never still
+          const h = 6 + 2.4 * fk + 1.2 * Math.sin(t * 0.33 + i * 1.7), fx = sx + Math.sin(t * 0.21 + i) * 0.9, fy = sy - 8;
+          g.fillStyle = 'rgba(255,120,30,0.78)'; g.beginPath(); g.moveTo(fx - 2.4, fy); g.quadraticCurveTo(fx - 2.6, fy - h * 0.55, fx + Math.sin(t * 0.3 + i) * 0.8, fy - h); g.quadraticCurveTo(fx + 2.6, fy - h * 0.5, fx + 2.4, fy); g.closePath(); g.fill();
+          g.fillStyle = 'rgba(255,226,140,0.9)'; g.beginPath(); g.moveTo(fx - 1.2, fy); g.quadraticCurveTo(fx - 1.3, fy - h * 0.35, fx, fy - h * 0.62); g.quadraticCurveTo(fx + 1.3, fy - h * 0.3, fx + 1.2, fy); g.closePath(); g.fill();
+        }
+        g.restore();
       }
       break;
     }

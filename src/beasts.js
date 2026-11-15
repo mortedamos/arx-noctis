@@ -9,6 +9,7 @@ import { COLORS } from './fx.js';
 import { groundAhead, wallAhead } from './entity.js';
 import { T, rand, dist, approach, overlap } from './util.js';
 import { HauntedPortrait } from './portraits.js';
+import * as D from './dialogue.js';
 
 // ------------------------------------------------------------------------------------------------ VILLAGER (harmless, terrified)
 const SHOUTS = ['HELP!', 'RUN!', 'THEY COME!', 'MERCY!', 'THE FIRE!', 'NO, NO!', 'SAVE US!', 'MONSTERS!'];
@@ -24,6 +25,9 @@ const LINES = {
 // what a merchant says when you speak to him (the offer follows)
 const plural = (n, w) => n === 1 || /S$|WATER$/.test(w) ? w : /(X|CH|SH)$/.test(w) ? w + 'ES' : w + 'S';
 const SHOP = { woman: ['WELCOME, STRANGER. I HAVE A LITTLE TO SPARE - FOR A PRICE.', 'COME IN, COME IN. MIND THE FLOOR.'], bearded: ['YOU LOOK LIKE YOU CAN PAY. GOOD.', 'I TRADE IN WHAT I CAN CARRY OUT OF THE FIRE.'], hatman: ['A CUSTOMER! IN THESE TIMES!', 'COIN IS COIN, EVEN NOW. LET US TALK.'], oldman: ['AH. A BUYER. SIT, IF YOU LIKE.', 'I HAVE KEPT A FEW THINGS BACK FOR A RAINY DAY. IT IS RAINING.'] };
+// (the words are read from assets/dialogue.txt; the ones above are only what is said if a section is missing there)
+const fileList = (kind, part, fallback) => D.lines('villager ' + kind + ' ' + part) || [].concat(fallback);
+const shouts = () => D.lines('villager shouts') || SHOUTS, thanks = () => D.lines('villager thanks') || THANKS;
 const GIFTS = { woman: ['it_bandage'], bearded: ['it_dagger'], hatman: ['coin', 'it_torch'], oldman: ['it_holy', 'heart'] };
 export class Villager extends Enemy {
   constructor(g, x, y, o) {
@@ -34,11 +38,11 @@ export class Villager extends Enemy {
   hitBy() { return false; }                                  // the sword passes through them
   // UP: a few words, and a gift the first time
   talk(g) {
-    const key = 'talk_' + (this.uid || g.room.id + '_' + Math.round(this.x / 16)), L = LINES[this.kind] || LINES.woman, first = !g.save.flags[key], pickOne = a => a[Math.floor(rand(a.length))];
-    const name = this.o.title || TITLES[this.kind] || 'VILLAGER', gifts = this.o.gifts || (this.sells ? [] : GIFTS[this.kind] || ['coin']);
+    const key = 'talk_' + (this.uid || g.room.id + '_' + Math.round(this.x / 16)), kind = LINES[this.kind] ? this.kind : 'woman', npc = D.fields('npc ' + g.room.id) || {}, nf = k => npc[k] ? npc[k].join(' ') : null, F = LINES[kind], L = { street: fileList(kind, 'street', F.street), home: fileList(kind, 'home', F.home)[0], again: fileList(kind, 'again', F.again) }, first = !g.save.flags[key], pickOne = a => a[Math.floor(rand(a.length))];
+    const shopSay = () => pickOne(fileList(kind, 'shop', SHOP[kind] || SHOP.woman)), name = nf('TITLE') || this.o.title || D.text('villager ' + kind + ' title') || TITLES[this.kind] || 'VILLAGER', gifts = this.o.gifts || (this.sells ? [] : GIFTS[this.kind] || ['coin']);
     this.dir = g.player.x >= this.x ? 1 : -1;
-    if (this.sells && !(first && gifts.length)) { g.save.flags[key] = true; return this.offer(g, name, first ? pickOne(SHOP[this.kind] || SHOP.woman) : (this.o.again || pickOne(SHOP[this.kind] || SHOP.woman))); }       // a merchant: a greeting and the offer in one box
-    const text = first ? (this.o.text || (this.calm ? L.home : pickOne(L.street))) : (this.o.again || pickOne(L.again));
+    if (this.sells && !(first && gifts.length)) { g.save.flags[key] = true; return this.offer(g, name, first ? shopSay() : (nf('AGAIN') || this.o.again || shopSay())); }       // a merchant: a greeting and the offer in one box
+    const text = first ? (nf('TEXT') || this.o.text || (this.calm ? L.home : pickOne(L.street))) : (nf('AGAIN') || this.o.again || pickOne(L.again));
     g.showDialog(text, { name, onClose: () => {
       if (first) {
         g.save.flags[key] = true; const hx = this.x + this.dir * 8, hy = this.y - 22;
@@ -82,12 +86,12 @@ export class Villager extends Enemy {
     this.st++; if (this.calm) return this.calmAi(g);
     if (this.shout > 0) this.shout--;
     const th = this.threat(), p = g.player;
-    if (g.kills > this.kills && Math.abs(p.x - this.x) < 110 && Math.random() < 0.5) g.popup(this.x, this.y - 54, THANKS[Math.floor(rand(THANKS.length))], '#ffe9a0');     // you just killed something nearby
+    if (g.kills > this.kills && Math.abs(p.x - this.x) < 110 && Math.random() < 0.5) g.popup(this.x, this.y - 54, thanks()[Math.floor(rand(thanks().length))], '#ffe9a0');     // you just killed something nearby
     this.kills = g.kills;
     if (th) {                                                // flee from the monster, flat out
       this.dir = this.x >= th.x ? 1 : -1; if (wallAhead(this, g.room, 3) || !groundAhead(this, g.room, 6)) this.dir *= -1;
       this.vx = approach(this.vx, this.dir * this.speed * 1.7, 0.12); this.mode = 'run';
-      if (this.shout === 0) { this.shout = 140 + rand(160); g.popup(this.x, this.y - 54, SHOUTS[Math.floor(rand(SHOUTS.length))], '#ff9a7a'); }
+      if (this.shout === 0) { this.shout = 140 + rand(160); g.popup(this.x, this.y - 54, shouts()[Math.floor(rand(shouts().length))], '#ff9a7a'); }
       return;
     }
     if (this.mode === 'run') {                               // milling about in a panic: dash one way, stop, dash back
@@ -95,7 +99,7 @@ export class Villager extends Enemy {
       this.vx = approach(this.vx, this.dir * this.speed, 0.08);
       if (this.st > this.len) { this.mode = Math.random() < 0.4 ? 'cower' : 'run'; this.st = 0; this.len = this.mode === 'cower' ? 50 + rand(70) : 40 + rand(110); if (this.mode === 'run' && Math.random() < 0.6) this.dir *= -1; }
     } else { this.vx = approach(this.vx, 0, 0.2); if (this.st > this.len) { this.mode = 'run'; this.st = 0; this.len = 50 + rand(80); this.dir = Math.random() < 0.5 ? -1 : 1; } }
-    if (this.shout === 0 && Math.abs(p.x - this.x) < 150) { this.shout = 200 + rand(240); g.popup(this.x, this.y - 54, SHOUTS[Math.floor(rand(SHOUTS.length))], '#ffd0a0'); }
+    if (this.shout === 0 && Math.abs(p.x - this.x) < 150) { this.shout = 200 + rand(240); g.popup(this.x, this.y - 54, shouts()[Math.floor(rand(shouts().length))], '#ffd0a0'); }
   }
   draw(ctx, cx, cy) { const moving = Math.abs(this.vx) > 0.15, id = `npc_${this.kind}_${moving ? 'walk' : 'idle'}`, sh = SHEETS_N[id] || 4; this.spr(ctx, id, Math.floor(this.t / (moving ? 5 : 9)) % sh, cx, cy, { dir: moving ? Math.sign(this.vx) : this.dir }); }     // always face the way they are actually running (dir flips a beat before vx does)
 }

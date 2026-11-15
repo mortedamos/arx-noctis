@@ -89,7 +89,7 @@ export class B {
     scatter(sp.roof, 3, 1); scatter(sp.wall, 3, 2); scatter(sp.foot, 2, 3);
     return this;
   }
-  tablet(x, gy, text, id) { return this.e('tablet', x, gy, { text, id }); }
+  tablet(x, gy, text, id, sign) { return this.e('tablet', x, gy, { text, id, ...(sign ? { sign } : {}) }); }
   // transitions  (side, first row, last row, target room, target tile x, target ground row)
   exit(side, from, to, room, tx, gy) { this.def.exits.push({ side, from, to, room, tx, gy }); return this; }
   door(x, gy, room, tx, tgy, kind = 'wood') { this.def.doors.push({ x, gy, room, tx, tgy, house: kind === 'house' }); if (kind !== 'house') this.d('door', x, gy, { kind }); return this; }      // (kind 'house': no sprite - the house's own painted door is the door)

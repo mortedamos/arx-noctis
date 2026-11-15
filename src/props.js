@@ -1,6 +1,7 @@
 // World objects: pickups, breakable candles, save altar, lore tablets, chests, upgrades, ability relics.
 import { KEYS } from './itemdata.js';
 import { STORY } from './story.js';
+import { text as dtext } from './dialogue.js';
 import { Entity, moveX, moveY } from './entity.js';
 import { drawSheet, drawKey, IMG, SHEET } from './assets.js';
 import { ICON } from './procart.js';
@@ -310,7 +311,7 @@ export class Waystone {
 
 // ------------------------------------------------------------------------------------------------ lore tablet
 export class Tablet {
-  constructor(x, y, o) { this.x = x; this.y = y; this.text = STORY.tablets[o.id] || o.text; this.id = o.id; this.sign = /^sign_/.test(o.id || ''); this.narr = !!o.narr; this.convo = STORY.convos && STORY.convos[o.id] || null; this.t = 0; this.dead = false; }          // (a signpost is a sign; every gravestone and tablet is her: see story.js)
+  constructor(x, y, o) { this.x = x; this.y = y; this.text = (o.sign && dtext('sign ' + o.sign)) || STORY.tablets[o.id] || o.text; this.id = o.id; this.sign = /^sign_/.test(o.id || ''); this.narr = !!o.narr; this.convo = STORY.convos && STORY.convos[o.id] || null; this.t = 0; this.dead = false; }          // (a signpost is a sign; every gravestone and tablet is her: see story.js)
   get box() { return this.narr ? { x: this.x - 20, y: this.y - 30, w: 40, h: 30 } : { x: this.x - 12, y: this.y - 26, w: 24, h: 26 }; }          // (a narr stone is only a place to read: the picture is the grave scenery already there, and the words are the game speaking, not her)
   update(g) { this.t++; if (!this.sign && !this.narr) { const unread = !g.save.flags['read_' + this.id]; g.fx.glow(this.x, this.y - 13, 22 + 2 * Math.sin(this.t * 0.05), [0.6, 0.8, 1], (unread ? 0.3 : 0.14) + 0.04 * Math.sin(this.t * 0.04)); }          // (her stones glow faintly, softly: that is what tells them from the headstones that are only scenery, and from signs)
     if (this.t % 10 === 0 && !g.save.flags['read_' + this.id]) g.fx.emit({ x: this.x + rand(-5, 5), y: this.y - 18, vx: 0, vy: -rand(0.2, 0.5), life: 40, s0: 5, s1: 1, c0: [0.7, 0.85, 1], a0: 0.8, a1: 0, kind: 6 }); }

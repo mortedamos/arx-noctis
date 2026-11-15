@@ -25,8 +25,8 @@ export const STAGES = [
   { id: 'crypts', zone: [4], music: ['general_track_1', 'general_track_2'], sfx: ['boss_vampire', 'boss_vampire_die'] },          // (the Crypts have no track of their own yet: a general one plays)
   { id: 'library', zone: [10], music: ['zone10'], sfx: ['page', 'ink', 'boss_librarian', 'boss_librarian_die'] },
   { id: 'ice', zone: [11], music: ['zone11'], sfx: ['shatter', 'boss_rimewyrm', 'boss_rimewyrm_die'] },
-  { id: 'throne', zone: [5], music: ['general_track_3', 'general_track_4'], sfx: ['boss_shadow', 'boss_shadow_die'] },
-  { id: 'rest', zone: [], music: ['disco', 'ending'], sfx: 'rest' },
+  { id: 'throne', zone: [5], music: ['general_track_3', 'general_track_4', 'ending'], sfx: ['boss_shadow', 'boss_shadow_die'] },
+  { id: 'rest', zone: [], music: ['disco'], sfx: 'rest' },
 ];
 
 export const Loader = { started: false, running: false, again: false, focusZone: null, blobs: new Map(), sfxDone: new Set(), bytes: 0, lean: false, log: [] };

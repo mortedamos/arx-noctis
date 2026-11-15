@@ -6,7 +6,7 @@ import { Touch } from './touch.js';
 import { loadFonts, drawText, textWidth } from './font.js';
 import { Audio_ as A } from './audio.js';
 import { ZONES, KEEP } from './rooms.js';
-import { buildWorld, buildWorldAsync, worldReady, randomSeed, GEN_VERSION, arrivalBesideStone } from './levelgen.js';
+import { buildWorld, buildWorldAsync, adoptWorld, worldReady, randomSeed, GEN_VERSION, arrivalBesideStone } from './levelgen.js';
 import { Room, TILE, drawBackground, discoBeams, drawForeground, drawGateTile } from './world.js';
 import { Player, SPELLS } from './player.js';
 import { ENEMY_TYPES } from './enemies.js';
@@ -25,10 +25,11 @@ import { Projectile, Shockwave, FirePatch } from './projectiles.js';
 import { Skull, SKULL_COUNT, Bell, LitCandle, Statue, Barrel, Altar, Waystone, Tablet, Chest, Lever, Upgrade, Relic, Pickup, chestGift, ABILITIES, UPGRADES } from './props.js';
 import { drawDeco, isBack, roomFlames, drawFlames2D, decoCoversHazard } from './decor.js';
 import { drawIce } from './enchant.js';
-import { drawSheet } from './assets.js';
+import { drawSheet, IMG } from './assets.js';
 import { noteSeen, noteKill } from './bestiary.js';
 import { HUD, drawBanner, drawPopups, drawPrompt, drawExitArrow, Dialog, TitleScreen, PauseMenu, MapScreen, IntroCrawl, GameOver, Ending } from './ui.js';
 import { LetterReader, markPage, loadLetters, PAGE_COUNT } from './letters.js';
+import { loadDialogue, text as dtext } from './dialogue.js';
 import { focus as loaderFocus } from './loader.js';
 
 const SAVE_KEY = 'shadowkeep.save.v1';
@@ -54,9 +55,9 @@ const BOSS_K = { 6: [2.0, 1.25], 1: [2.3, 1.3], 7: [2.6, 1.4], 9: [2.9, 1.5], 2:
 
 // the boss flags a sealed door asks for -> where that master is to be found (the door's dialogue lists the ones that still live)
 const LOCK_HINTS = {
-  boss_h4: 'THE PHANTOM STEED STILL RIDES THE GREAT HALL, THROUGH THE WOODEN DOOR AT THE THREE ROADS.',
-  boss_qb: 'THE DROWNED WARDEN STILL KEEPS THE FLOODED GATE. IT LIES DEEP IN THE CISTERN, BEYOND THE WEEPING MIRE AND ITS MOTHER: TAKE THE HIGH DOOR AT THE THREE ROADS.',
-  boss_u3: 'THE CRIMSON COUNT STILL WAITS IN THE CRYPTS: BURN THE BARRICADE AT THE CROSSING HALL.',
+  boss_h4: 'THE PHANTOM STEED STILL RIDES THE GREAT HALL, THROUGH THE WOODEN DOOR AT THE GATE OF SHADOWKEEP.',
+  boss_qb: 'THE DROWNED WARDEN STILL KEEPS THE FLOODED GATE. IT LIES DEEP IN THE CISTERN, BEYOND THE WEEPING MIRE AND ITS MOTHER: TAKE THE HIGH DOOR ON THE MIRE ROAD.',
+  boss_u3: 'THE CRIMSON COUNT STILL WAITS IN THE CRYPTS: BURN THE BARRICADE IN THE BARRICADED GALLERY.',
   boss_kb: 'THE BRAZEN HIEROPHANT STILL WORKS THE CLOCKWORK DUNGEON. ITS ENTRANCE IS IN PRAGUE: A LOCKED DOOR HIGH IN SMOULDERING LANE LEADS UP THE ORLOJ TOWER. YOU NEED THE KEY OF TIN.',
 };
 export class Game {
@@ -68,7 +69,7 @@ export class Game {
     // sprites are snapped to the logical grid so pixel art looks exactly as before.
     for (const c of [this.ctx, this.top]) { const di = c.drawImage; c.drawImage = function (img, ...a) { if (a.length === 2 || a.length === 4) { a[0] = Math.round(a[0]); a[1] = Math.round(a[1]); } else if (a.length === 8) { a[4] = Math.round(a[4]); a[5] = Math.round(a[5]); } return di.call(this, img, ...a); }; }
     this.fx = new FX(document.getElementById('fx')); this.fx.onThunder = p => A.sfx('thunder', { power: p }); this.fx.postEnabled = () => A.settings.glow !== false; this.fx.initPost(this.canvas);
-    Input.init(); Touch.init(this); await A.init(); if (new URLSearchParams(location.search).get('cloak') === '0') A.settings.cloak = false; await loadFonts(); loadLetters(); this.resize(); addEventListener('resize', () => this.resize());
+    Input.init(); Touch.init(this); await A.init(); if (new URLSearchParams(location.search).get('cloak') === '0') A.settings.cloak = false; await loadFonts(); await loadDialogue(); loadLetters(); this.resize(); addEventListener('resize', () => this.resize());
     // Losing focus (clicking another window, switching tabs/apps) mutes all sound and pauses a running game; sound returns when focus does.
     // (`?nopause` in the URL turns this off - handy for automated testing in a background tab.)
     const lose = () => { if (this.noAutoPause) return; A.focusLost(); if (this.state === 'play') this.pause(); };
@@ -163,7 +164,21 @@ export class Game {
   // Making the castle takes a few seconds, so it is done while the title screen is up: first the castle of the saved game (if there is one), then the one a NEW GAME will use.  Choosing either before it is ready
   // shows a short "gathering the dead" bar instead of freezing.
   worldJobs = {};
-  ensureWorld(seed) { seed |= 0; if (worldReady(seed)) return Promise.resolve(buildWorld(seed)); return this.worldJobs[seed] ||= buildWorldAsync(seed, f => { this.worldFrac = f; }).finally(() => { delete this.worldJobs[seed]; }); }
+  // the castle is made on a worker thread (src/worldworker.js) so nothing stutters; if the browser cannot do that, it is made in small slices between frames instead
+  buildInWorker(seed) {
+    return new Promise((resolve, reject) => {
+      let w; try { w = new Worker(new URL('./worldworker.js', import.meta.url), { type: 'module' }); } catch (e) { reject(e); return; }
+      const sizes = {}; for (const [k, im] of Object.entries(IMG)) if (im && im.width) sizes[k] = [im.width, im.height];
+      const t0 = performance.now(), tick = setInterval(() => { this.worldFrac = Math.min(0.94, (performance.now() - t0) / 9000); }, 150), done = () => { clearInterval(tick); w.terminate(); };
+      w.onmessage = e => { done(); if (e.data.error) reject(new Error(e.data.error)); else { adoptWorld(seed, e.data.world); this.worldFrac = 1; resolve(e.data.world); } };
+      w.onerror = e => { done(); reject(new Error('the castle worker failed')); };
+      w.postMessage({ seed, sizes });
+    });
+  }
+  ensureWorld(seed) {
+    seed |= 0; if (worldReady(seed)) return Promise.resolve(buildWorld(seed));
+    return this.worldJobs[seed] ||= this.buildInWorker(seed).catch(e => { console.warn('castle worker unavailable, building in slices:', e.message); return buildWorldAsync(seed, f => { this.worldFrac = f; }); }).finally(() => { delete this.worldJobs[seed]; });
+  }
   prebuild() {
     const s = this.loadSave(); const q = new URLSearchParams(location.search).get('seed'); if (this.nextSeed === undefined || this.nextSeed === null) this.nextSeed = q !== null && /^\d{1,9}$/.test(q) ? +q : randomSeed();
     (s ? this.ensureWorld(s.seed || 0) : Promise.resolve()).catch(() => {}).then(() => this.ensureWorld(this.nextSeed)).catch(() => {});
@@ -307,13 +322,13 @@ export class Game {
     if (n.kind === 'npc') { n.e.talk(this); return true; }
     if (n.d.key && !this.save.flags['unlocked_' + n.d.key]) {          // a locked door: it opens (for good) if you carry its key
       const K = KEYS.find(k => k.id === n.d.key);
-      if (!this.save.flags['has_' + n.d.key]) { A.sfx('back'); this.showDialog('THE DOOR IS LOCKED. IT NEEDS THE ' + (K ? K.name : 'KEY') + '.'); return true; }
+      if (!this.save.flags['has_' + n.d.key]) { A.sfx('back'); this.showDialog((dtext('door locked') || 'THE DOOR IS LOCKED. IT NEEDS THE {KEY}.').replace('{KEY}', K ? K.name : 'KEY')); return true; }
       this.save.flags['unlocked_' + n.d.key] = true; A.sfx('door'); this.fx.burst(n.d.x * 16 + 8, n.d.gy * 16 - 22, 12, K ? [K.rgb.map(v => v / 255), [1, 1, 0.9]] : COLORS.gold, { speed: 1.6 }); this.banner('UNLOCKED', K ? K.name + ' USED' : '', 110, { y: 52, color: '#ffe9a0' });
     }
     if (n.d.lock) {                                          // a door sealed until bosses fall: one sigil for each
       const left = n.d.lock.filter(f => !this.save.flags[f]);
       if (left.length && left[0] === 'skulls_done') { A.sfx('back'); return true; }          // (the door of the Reliquary says nothing: the skulls are a secret)
-      if (left.length) { A.sfx('back'); this.showDialog('THE DOOR WILL NOT OPEN. ' + (n.d.lock.length - left.length) + ' OF ' + n.d.lock.length + ' SIGILS BURN. ' + (left.map(f => LOCK_HINTS[f]).filter(Boolean).join(' ') || n.d.lockText || '')); return true; }          // (and it says where each master that still lives is to be found)
+      if (left.length) { A.sfx('back'); this.showDialog((dtext('door sigils') || 'THE DOOR WILL NOT OPEN. {LIT} OF {TOTAL} SIGILS BURN. {HINTS}').replace('{LIT}', n.d.lock.length - left.length).replace('{TOTAL}', n.d.lock.length).replace('{HINTS}', left.map(f => dtext('lockhint ' + f) || LOCK_HINTS[f]).filter(Boolean).join(' ') || n.d.lockText || '')); return true; }          // (and it says where each master that still lives is to be found)
     }
     A.sfx('door'); this.changeRoom({ room: n.d.room, x: n.d.tx * 16 + 8, y: n.d.tgy * 16, door: true }, 1); return true;
   }

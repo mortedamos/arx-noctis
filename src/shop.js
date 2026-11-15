@@ -14,6 +14,8 @@ import { markPage } from './letters.js';
 const GOLD = '#e8b84a', PALE = '#e8dcc0', DIM = '#8a7f9a', VIOLET = '#c8a0ff';
 const GREET = ['COME CLOSER. EVERYTHING HERE HAS A PRICE. MOST OF IT IS PAID IN GOLD.', 'THE DEAD HAVE NO USE FOR THESE. YOU, I THINK, DO.', 'I WAS HERE BEFORE THE KEEP. I WILL BE HERE WHEN THE LAST CANDLE GOES OUT.', 'DO NOT LOOK FOR MY FACE. LOOK AT MY WARES.', 'GOLD IS ALL THE CASTLE LEAVES BEHIND. SPEND IT WELL.'];
 const THANKS = ['A FAIR TRADE.', 'YES. THAT WILL SERVE YOU... FOR A WHILE.', 'THE GOLD IS COLD. HOW PLEASANT.', 'WE BOTH GO AWAY SATISFIED.'];
+import * as D from './dialogue.js';
+const kl = (k, d) => D.lines('keeper ' + k) || d, pickOf = a => a[Math.floor(Math.random() * a.length)];          // (the Keeper's words are read from assets/dialogue.txt; the lists here are only what he says if a section is missing)
 const POOR = ['YOUR POCKETS ARE AS EMPTY AS THIS CASTLE.', 'COME BACK WITH MORE. I AM PATIENT.', 'I TAKE GOLD. ONLY GOLD. NOT PROMISES.'];
 
 export class Shopkeeper {
@@ -35,7 +37,7 @@ export class Shopkeeper {
 
 export class ShopScreen {
   constructor(g, keeper) {
-    this.g = g; this.keeper = keeper; this.t = 0; this.sel = 0; this.top = 0; this.hit = []; this.say = GREET[Math.floor(Math.random() * GREET.length)]; this.sayT = 0;
+    this.g = g; this.keeper = keeper; this.t = 0; this.sel = 0; this.top = 0; this.hit = []; this.say = pickOf(kl('greet', GREET)); this.sayT = 0;
     this.stock = this.build();
   }
   flag(key) { return 'shop_' + this.keeper.id + '_' + key; }
@@ -59,8 +61,8 @@ export class ShopScreen {
   buy() {
     const g = this.g, S = g.save, e = this.stock[this.sel], why = e.can();
     if (why) { A.sfx('back'); this.speak(why === 'SOLD' ? 'THAT, I HAVE ALREADY SOLD YOU.' : 'YOU HAVE ALL YOU CAN CARRY OF THAT.'); return; }
-    if (S.gold < e.price) { A.sfx('back'); this.speak(POOR[Math.floor(Math.random() * POOR.length)]); return; }
-    S.gold -= e.price; e.buy(); A.sfx('coin'); A.sfx('item'); this.speak(THANKS[Math.floor(Math.random() * THANKS.length)]); this.stock = this.build();
+    if (S.gold < e.price) { A.sfx('back'); this.speak(pickOf(kl('poor', POOR))); return; }
+    S.gold -= e.price; e.buy(); A.sfx('coin'); A.sfx('item'); this.speak(pickOf(kl('thanks', THANKS))); this.stock = this.build();
   }
   speak(s) { this.say = s; this.sayT = 0; }
   update() {

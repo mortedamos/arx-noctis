@@ -11,6 +11,7 @@ import { SPELLS } from './player.js';
 import { ENCH, TUNE } from './enchant.js';
 import { ITEMS, KEYS } from './itemdata.js';
 import { STORY } from './story.js';
+import { lines as dlines } from './dialogue.js';
 import { BUILD } from './build.js';
 import { secretStats } from './secrets.js';
 import { BestiaryScreen } from './bestiary.js';
@@ -190,6 +191,24 @@ function layoutCredits(text) {
   return { items, height: y };
 }
 
+// the lines of the credits, scrolled by c.scroll, inside the band [top, top + view)
+function drawCreditLines(ctx, c, top, view) {
+  ctx.save(); ctx.beginPath(); ctx.rect(0, top, W, view); ctx.clip();
+  if (!c.lines) drawText(ctx, 'LOADING...', W / 2, top + 20, { align: 'center', color: DIM });
+  else for (const it of c.lines.items) {
+    const y = Math.round(top + 4 + it.y - c.scroll); if (y < top - 22 || y > top + view) continue;
+    if (it.k === 'rule') { ctx.fillStyle = '#4a3a2a'; ctx.fillRect(W / 2 - 60, y, 120, 1); }
+    else if (it.k === 'h1') drawText(ctx, it.text, W / 2, y, { align: 'center', scale: 1.5, color: GOLD, outline: '#000', font: 'hand' });
+    else if (it.k === 'h2') drawText(ctx, it.text, W / 2, y, { align: 'center', color: '#e6c27a', outline: '#000', font: 'hand' });
+    else drawText(ctx, it.text, W / 2, y, { align: 'center', color: PALE, outline: '#000', font: 'hand' });
+  }
+  ctx.restore();
+}
+function loadCredits(cr) {
+  fetch('credits.txt', { cache: 'no-cache' }).then(r => r.ok ? r.text() : Promise.reject(new Error(r.status))).then(t => { cr.lines = layoutCredits(t); })
+    .catch(() => { cr.lines = layoutCredits('# CREDITS\ncredits.txt could not be loaded.'); });
+}
+
 export class TitleScreen {
   constructor(g) {
     this.g = g; this.t = 0; this.mode = 'main'; const has = g.hasSave();
@@ -204,9 +223,7 @@ export class TitleScreen {
   }
   // the credits are read from credits.txt (a plain text file the game's owner can edit) each time they are opened
   openCredits() {
-    this.mode = 'credits'; const cr = this.cr = { lines: null, scroll: 0, t: 0 };
-    fetch('credits.txt', { cache: 'no-cache' }).then(r => r.ok ? r.text() : Promise.reject(new Error(r.status))).then(t => { cr.lines = layoutCredits(t); })
-      .catch(() => { cr.lines = layoutCredits('# CREDITS\ncredits.txt could not be loaded.'); });
+    this.mode = 'credits'; loadCredits(this.cr = { lines: null, scroll: 0, t: 0 });
   }
   update() {
     this.t++; const g = this.g;
@@ -233,16 +250,7 @@ export class TitleScreen {
     else if (this.mode === 'main') { this.main.draw(ctx, W / 2, 110); drawText(ctx, Input.touchOn ? 'TAP AN ITEM' : 'ENTER / Z TO SELECT', W / 2, H - 14, { align: 'center', color: DIM }); }
     else if (this.mode === 'credits') {
       const c = this.cr; ctx.fillStyle = 'rgba(6,4,14,0.95)'; ctx.fillRect(0, 0, W, H); drawText(ctx, 'CREDITS', W / 2, 12, { align: 'center', scale: 1.8, color: GOLD, outline: '#000', font: 'hand' });
-      const top = 38, view = H - top - 30; ctx.save(); ctx.beginPath(); ctx.rect(0, top, W, view); ctx.clip();
-      if (!c.lines) drawText(ctx, 'LOADING...', W / 2, top + 20, { align: 'center', color: DIM });
-      else for (const it of c.lines.items) {
-        const y = Math.round(top + 4 + it.y - c.scroll); if (y < top - 22 || y > top + view) continue;
-        if (it.k === 'rule') { ctx.fillStyle = '#4a3a2a'; ctx.fillRect(W / 2 - 60, y, 120, 1); }
-        else if (it.k === 'h1') drawText(ctx, it.text, W / 2, y, { align: 'center', scale: 1.5, color: GOLD, outline: '#000', font: 'hand' });
-        else if (it.k === 'h2') drawText(ctx, it.text, W / 2, y, { align: 'center', color: '#e6c27a', outline: '#000', font: 'hand' });
-        else drawText(ctx, it.text, W / 2, y, { align: 'center', color: PALE, outline: '#000', font: 'hand' });
-      }
-      ctx.restore(); ctx.fillStyle = 'rgba(10,10,28,0.9)'; ctx.fillRect(0, top - 6, W, 6);
+      const top = 38, view = H - top - 30; drawCreditLines(ctx, c, top, view); ctx.fillStyle = 'rgba(10,10,28,0.9)'; ctx.fillRect(0, top - 6, W, 6);
       drawText(ctx, Input.touchOn ? 'UP / DOWN SCROLL     TAP TO GO BACK' : 'UP / DOWN SCROLL     ESC BACK', W / 2, H - 14, { align: 'center', color: DIM });
     }
     else if (this.mode === 'options') { panel(ctx, 60, 66, W - 120, 148); drawText(ctx, 'OPTIONS', W / 2, 73, { align: 'center', scale: 1.5, color: GOLD, outline: '#000' }); this.opts.draw(ctx, 84, 92, 14, 'left'); }
@@ -491,6 +499,7 @@ export class MapScreen {
 }
 
 // ---------------------------------------------------------------------------------------------- story screens
+const introText = () => dlines('intro') || INTRO;          // (read from assets/dialogue.txt; the list below is only used if it is missing there)
 const INTRO = [
   'FOR A HUNDRED YEARS THE SUN HAS NOT RISEN OVER BOHEMIA.',
   'IT WAS TAKEN BY THE LORD OF THE SHADOWKEEP, WHO WALLED THE DAWN BEHIND HIS THRONE.',
@@ -502,14 +511,14 @@ const INTRO = [
 export class IntroCrawl {
   constructor(g) { this.g = g; this.t = 0; this.i = 0; this.chars = 0; this.hold = 0; this.done = false; }
   update() {
-    this.t++; const line = INTRO[this.i];
+    this.t++; const line = introText()[this.i];
     if (this.chars < line.length) this.chars += 0.7; else { this.hold++; if (this.hold > 150) this.next(); }
     if (Input.pressed.confirm || Input.pressed.attack) { if (this.chars < line.length) this.chars = line.length; else this.next(); }
     if (Input.pressed.pkey || Input.pressed.esc) this.g.beginPlay();
   }
-  next() { this.i++; this.chars = 0; this.hold = 0; if (this.i >= INTRO.length) this.g.beginPlay(); }
+  next() { this.i++; this.chars = 0; this.hold = 0; if (this.i >= introText().length) this.g.beginPlay(); }
   draw(ctx) {
-    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, 0, W, H); const l = INTRO[Math.min(this.i, INTRO.length - 1)];
+    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, 0, W, H); const l = introText()[Math.min(this.i, introText().length - 1)];
     const SC = 1.3, rows = wrapText(l, 330, SC, 'body'), y0 = H / 2 - rows.length * 8;
     rows.reduce((y, row, k, arr) => { const n = Math.max(0, Math.floor(this.chars) - arr.slice(0, k).join(' ').length - (k ? 1 : 0)); drawText(ctx, row.slice(0, n), W / 2 - textWidth(row, SC, 'body') / 2, y, { color: PALE, outline: '#000', scale: SC, font: 'body' }); return y + 16; }, y0);
     drawText(ctx, Input.touchOn ? 'TAP TO CONTINUE   II TO SKIP' : 'ENTER TO CONTINUE   ESC TO SKIP', W / 2, H - 12, { align: 'center', color: '#5a4a6a' });
@@ -527,8 +536,18 @@ export class GameOver {
 }
 
 export class Ending {
-  constructor(g) { this.g = g; this.t = 0; this.menu = null; }
-  update() { this.t++; if (this.t > 780 && !this.menu) this.menu = new Menu([{ label: 'RETURN TO TITLE', action: () => this.g.toTitle() }]); if (this.menu) this.menu.update(this.g); }
+  constructor(g) { this.g = g; this.t = 0; this.menu = null; this.cr = null; }
+  // after the ending, CONTINUE rolls the credits (credits.txt) over the dawn; the ending music goes on playing underneath.  UP / DOWN speed it up, ESC leaves.  At the end: back to the title.
+  startCredits() { this.menu = null; loadCredits(this.cr = { lines: null, scroll: -(H - 24 - 14), t: 0, done: false }); A.sfx('select'); }
+  update() {
+    this.t++;
+    if (this.cr) {
+      const c = this.cr; c.t++;
+      if (c.lines && !c.done) { c.scroll += Input.held.down ? 1.6 : Input.held.up ? -0.6 : 0.32; c.scroll = Math.max(-(H - 38), c.scroll); if (c.scroll > c.lines.height + 24) { c.done = true; this.menu = new Menu([{ label: 'RETURN TO TITLE', action: () => this.g.toTitle() }]); } }
+      if (Input.pressed.esc || (!c.done && Input.taps.length)) { this.g.toTitle(); return; } if (this.menu) this.menu.update(this.g); return;
+    }
+    if (this.t > 780 && !this.menu) this.menu = new Menu([{ label: 'CONTINUE', action: () => this.startCredits() }]); if (this.menu) this.menu.update(this.g);
+  }
   draw(ctx) {
     const t = this.t, g = this.g, S = g.save; const a = clamp(t / 240, 0, 1);
     // THE HILL ABOVE PRAGUE AT DAWN: the sky warms from violet to gold, the sun climbs from behind the mountains and the city, and the light spreads over the hill
@@ -552,6 +571,12 @@ export class Ending {
       drawSheet(ctx, hk, 0, 68, 169, { dir: -1, alpha: fa });
       drawSheet(ctx, 'ghost_lady', Math.floor(t / 10) % 7, 94, 169, { dir: -1, alpha: ga * 0.92 });
     }
-    if (this.menu) this.menu.draw(ctx, W / 2, H - 38, 14);
+    if (this.cr) {
+      const c = this.cr, top = 24, view = H - top - 14; ctx.fillStyle = 'rgba(6,4,14,0.97)'; ctx.fillRect(0, 0, W, H);
+      if (!c.done) { drawCreditLines(ctx, c, top, view); const f1 = ctx.createLinearGradient(0, top, 0, top + 18); f1.addColorStop(0, 'rgba(6,4,14,1)'); f1.addColorStop(1, 'rgba(6,4,14,0)'); ctx.fillStyle = f1; ctx.fillRect(0, top, W, 18); const f2 = ctx.createLinearGradient(0, H - 30, 0, H - 14); f2.addColorStop(0, 'rgba(6,4,14,0)'); f2.addColorStop(1, 'rgba(6,4,14,1)'); ctx.fillStyle = f2; ctx.fillRect(0, H - 30, W, 16); }
+      else { const k = clamp((c.t - 0) / 60, 0, 1); drawText(ctx, 'THANK YOU FOR PLAYING', W / 2, H / 2 - 22, { align: 'center', scale: 1.6, color: GOLD, outline: '#000', font: 'hand' }); }
+      if (!c.done) drawText(ctx, Input.touchOn ? 'TAP TO LEAVE' : 'DOWN SPEEDS UP     ESC LEAVES', W / 2, H - 12, { align: 'center', color: DIM });
+    }
+    if (this.menu) this.menu.draw(ctx, W / 2, this.cr ? H / 2 + 4 : H - 38, 14);
   }
 }
