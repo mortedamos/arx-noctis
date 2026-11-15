@@ -47,10 +47,11 @@ Super Dead Gunner: Cyber-tooth
 The bone, frost and ember wyrms.
 Sliced and re-assembled in code.
 
-## Gokhan Solak (hansolo) - CC BY 3.0
-Pixel Book (Animated), opengameart.org/content/pixel-book-animated
-The haunted tomes and grimoires of the Library of Ink.
-Recoloured in four tints; the page-flip frames are used as drawn.
+## CaptainSkolot - Magic Books pack (itch.io)
+Magic Book pixel-art grimoires, captainskolot.itch.io/magic-books-pixelart-pixel-art-sprite-grimoire-pack-for-rpg-fantasy
+The haunted tomes and grimoires of the Library of Ages: all 32 covers, drawn half-seen.
+Also the open pages they show as they cast (Magic Books interface pack).
+; (the page lists the licence as CC BY-NC-SA 4.0 but its text says free and commercial projects are welcome: ask the author to confirm before a commercial release)
 
 ## Anokolisa
 The moonlit graveyard set.
@@ -98,6 +99,9 @@ Some sprites are recoloured while the game loads.
 Pirata One - Rodrigo Fuenzalida and Nicolas Massi
 Elementary Gothic Bookhand - Bill Roach - the Stranger's voice
 Almendra Bold - Ana Sanfelippo
+
+## PrimaFont (free font, American Collection)
+Livingstone - the voices of villagers, the Keeper and the bosses
 
 ## Typographer Mediengestaltung
 Blackletter ExtraBold - the title

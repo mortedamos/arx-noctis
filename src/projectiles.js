@@ -19,6 +19,7 @@ const KINDS = {
   page: { sheet: 'feather_p', n: 1, w: 12, h: 6, grav: 0, aim: true, glow: [1, 0.9, 0.6], hitFx: COLORS.white, dmg: 9, fxTrail: COLORS.gold },          // (a page torn from a haunted book)
   ink: { sheet: 'orb_dark', n: 2, w: 9, h: 9, grav: 0, glow: [0.95, 0.75, 0.3], hitFx: COLORS.gold, dmg: 9, scale: 1.3, fxTrail: COLORS.gold },
   wisp: { sheet: 'orb_dark', n: 1, w: 12, h: 12, grav: 0, glow: [0.4, 0.7, 1], hitFx: COLORS.blue, dmg: 8, orb: true },                                  // (a haunted portrait's blue fire - see HomingWisp)
+  shard: { sheet: 'feather_p', n: 1, w: 10, h: 7, grav: 0, aim: true, glow: [0.6, 0.85, 1], hitFx: COLORS.ice, dmg: 7 },
   ember: { sheet: 'fireball', n: 3, w: 8, h: 8, grav: 0.04, glow: [1, 0.4, 0.1], hitFx: COLORS.fire, dmg: 7, scale: 0.6, orb: true },          // (orb: burning light + flame particles in the effects layer, not the fireball sprite)
 };
 
@@ -52,20 +53,45 @@ export class Projectile {
   }
 }
 
+const TONES = { blue: { glow: [0.4, 0.7, 1], c0: [0.5, 0.8, 1], c1: [0.2, 0.4, 1] }, fire: { glow: [1, 0.55, 0.2], c0: [1, 0.8, 0.35], c1: [0.95, 0.25, 0.05] }, purple: { glow: [0.7, 0.4, 1], c0: [0.85, 0.6, 1], c1: [0.4, 0.15, 0.8] } };
 // a wisp of blue fire that follows the hero for a while (a haunted portrait lets them go).  It turns at a limited rate, so it can be dodged; the sword can cut it down.
 export class HomingWisp extends Projectile {
-  constructor(x, y, vx, vy, dmg = 8) { super(x, y, vx, vy, 'wisp', { dmg, life: 330 }); this.destructible = true; this.w = 12; this.h = 12; this.spd = Math.hypot(vx, vy) || 1; this.ph = rand(TAU); }
+  constructor(x, y, vx, vy, dmg = 8, tone = 'blue') { super(x, y, vx, vy, 'wisp', { dmg, life: 330 }); this.tone = tone; this.TN = TONES[tone] || TONES.blue; this.destructible = true; this.w = 12; this.h = 12; this.spd = Math.hypot(vx, vy) || 1; this.ph = rand(TAU); }
   update(g) {
     this.t++; if (--this.life <= 0) { this.explode(g); return; }
     const p = g.player, want = Math.atan2(p.y - 20 - this.y, p.x - this.x), cur = Math.atan2(this.vy, this.vx);
     let da = want - cur; da = Math.atan2(Math.sin(da), Math.cos(da)); const a = cur + clamp(da, -0.06, 0.06) + Math.sin(this.t * 0.12 + this.ph) * 0.035;       // a little waver, like a flame
     this.spd = Math.min(1.5, this.spd + 0.012); this.vx = Math.cos(a) * this.spd; this.vy = Math.sin(a) * this.spd; this.x += this.vx; this.y += this.vy; this.dir = this.vx >= 0 ? 1 : -1;
     if (g.room.solid(Math.floor(this.x / T), Math.floor(this.y / T))) { this.explode(g); return; }
-    g.fx.fire(this.x, this.y + 4, { scale: 0.5, color: 'blue', n: 1 }); g.fx.glow(this.x, this.y, 10, [0.4, 0.7, 1], 0.5); g.fx.light(this.x, this.y, 40, 0.55, [0.4, 0.7, 1]);
-    if (this.t % 3 === 0) g.fx.emit({ x: this.x - this.vx * 2 + rand(-2, 2), y: this.y + rand(-2, 2), vx: rand(-0.1, 0.1), vy: -rand(0.1, 0.4), life: rand(16, 28), s0: 6, s1: 1, c0: [0.5, 0.8, 1], c1: [0.2, 0.4, 1], a0: 0.8, a1: 0, kind: 6 });
+    const T_ = this.TN; g.fx.fire(this.x, this.y + 4, { scale: 0.5, color: this.tone, n: 1 }); g.fx.glow(this.x, this.y, 10, T_.glow, 0.5); g.fx.light(this.x, this.y, 40, 0.55, T_.glow);
+    if (this.t % 3 === 0) g.fx.emit({ x: this.x - this.vx * 2 + rand(-2, 2), y: this.y + rand(-2, 2), vx: rand(-0.1, 0.1), vy: -rand(0.1, 0.4), life: rand(16, 28), s0: 6, s1: 1, c0: T_.c0, c1: T_.c1, a0: 0.8, a1: 0, kind: 6 });
   }
-  explode(g) { this.dead = true; g.fx.burst(this.x, this.y, 8, COLORS.blue, { speed: 1.6, s0: 9, s1: 2 }); g.fx.sparks(this.x, this.y, 6, [[1, 1, 1], [0.5, 0.8, 1]], 2.2); g.fx.ring(this.x, this.y, 12, [0.5, 0.8, 1], 12, 0.25); A.sfx('hit'); }
+  explode(g) { this.dead = true; g.fx.burst(this.x, this.y, 8, COLORS[this.tone] || COLORS.blue, { speed: 1.6, s0: 9, s1: 2 }); g.fx.sparks(this.x, this.y, 6, [[1, 1, 1], this.TN.c0], 2.2); g.fx.ring(this.x, this.y, 12, this.TN.glow, 12, 0.25); A.sfx('hit'); }
   draw() {}                                                                                                                                       // (all of it is in the effects layer)
+}
+
+// a shard of magical ice, flung by a haunted book: it flies straight and fast, leaving a cold glitter
+export class IceShard extends Projectile {
+  constructor(x, y, vx, vy, dmg = 7) { super(x, y, vx, vy, 'shard', { dmg, life: 220 }); this.w = 10; this.h = 7; this.rot = Math.atan2(vy, vx); }
+  update(g) { super.update(g); if (this.t % 2 === 0) g.fx.emit({ x: this.x + rand(-2, 2), y: this.y + rand(-2, 2), vx: rand(-0.1, 0.1), vy: rand(0.05, 0.3), life: rand(14, 26), s0: 3, s1: 0.5, c0: [0.85, 0.97, 1], c1: [0.4, 0.7, 1], a0: 1, a1: 0, kind: 6 }); }
+  draw(ctx, cx, cy) {
+    ctx.save(); ctx.translate(Math.round(this.x - cx), Math.round(this.y - cy)); ctx.rotate(this.rot);
+    ctx.fillStyle = '#7fb8ff'; ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(-5, -3.2); ctx.lineTo(-3, 0); ctx.lineTo(-5, 3.2); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#dff4ff'; ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(-3, -1.4); ctx.lineTo(-2, 0); ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+}
+
+// a bolt of lightning called down on a spot: the floor is marked, a moment later the sky strikes it
+export class SkyBolt {
+  constructor(x, y, o = {}) { this.x = x; this.y = y; this.warn = o.warn || 42; this.active = 12; this.dmg = o.dmg || 9; this.w = 22; this.h = 180; this.t = 0; this.dead = false; this.owner = 'enemy'; this.vx = 0; this.vy = 0; this.pierce = true; this.reflected = true; this.fired = false; this.destructible = false; }
+  get box() { return this.t >= this.warn && this.t < this.warn + this.active ? { x: this.x - this.w / 2, y: this.y - this.h, w: this.w, h: this.h } : { x: -999, y: -999, w: 0, h: 0 }; }
+  update(g) {
+    this.t++; const col = [0.7, 0.85, 1];
+    if (this.t < this.warn) { const k = this.t / this.warn; g.fx.glow(this.x, this.y - 2, 12 + k * 14, col, 0.25 + k * 0.5); if (this.t % 6 === 0) g.fx.ring(this.x, this.y - 2, 14 + k * 10, col, 12, 0.3, 3); }
+    else if (this.t < this.warn + this.active) { if (!this.fired) { this.fired = true; g.fx.bolt(this.x + rand(-6, 6), g.camera.y - 20, this.x, this.y - 2, { width: 18, life: 22, segs: 18 }); g.fx.flash([0.7, 0.8, 1], 0.3); A.sfx('crack'); g.shake(2, 8); } g.fx.light(this.x, this.y - 40, 90, 1, col); }
+    else this.dead = true;
+  }
+  draw() {}
 }
 
 export class Fireball extends Projectile {

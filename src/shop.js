@@ -1,7 +1,7 @@
 // THE KEEPER: a hooded figure in a dark little room off a corridor in the later zones.  It sells what the dead no longer need - for the gold the hero has gathered: a blade steeped in fire, frost or sun,
 // healing and mana, throwing weapons, and a few things that make the hero lastingly stronger (each of those only once per stall).
 // Shopkeeper  - the prop you speak to (UP);  ShopScreen - the menu that opens (game.state 'shop').
-import { drawText, wrapText } from './font.js';
+import { drawText, wrapText, hasFace } from './font.js';
 import { Input } from './input.js';
 import { Audio_ as A } from './audio.js';
 import { W, H, clamp, rand } from './util.js';
@@ -9,6 +9,7 @@ import { ITEMS, ITEM_ORDER, addItem } from './itemdata.js';
 import { ENCH } from './enchant.js';
 import { drawSheet } from './assets.js';
 import { panel } from './ui.js';
+import { markPage } from './letters.js';
 
 const GOLD = '#e8b84a', PALE = '#e8dcc0', DIM = '#8a7f9a', VIOLET = '#c8a0ff';
 const GREET = ['COME CLOSER. EVERYTHING HERE HAS A PRICE. MOST OF IT IS PAID IN GOLD.', 'THE DEAD HAVE NO USE FOR THESE. YOU, I THINK, DO.', 'I WAS HERE BEFORE THE KEEP. I WILL BE HERE WHEN THE LAST CANDLE GOES OUT.', 'DO NOT LOOK FOR MY FACE. LOOK AT MY WARES.', 'GOLD IS ALL THE CASTLE LEAVES BEHIND. SPEND IT WELL.'];
@@ -51,9 +52,10 @@ export class ShopScreen {
     once('hp', 'VITA: +20 MAX LIFE', 1400, 'YOUR LIFE GROWS BY TWENTY, AND IS MADE WHOLE. THIS STALL OFFERS IT ONLY ONCE.', () => { S.maxHp += 20; S.hp = S.maxHp; });
     once('mp', 'VIS: +10 MAX MANA', 1100, 'YOUR MANA GROWS BY TEN, AND IS MADE WHOLE. THIS STALL OFFERS IT ONLY ONCE.', () => { S.maxMp += 10; S.mp = S.maxMp; });
     once('atk', 'WHETSTONE: +2 SWORD POWER', 1600, 'YOUR SWORD HITS A LITTLE HARDER, FOR GOOD. THIS STALL OFFERS IT ONLY ONCE.', () => { S.atk += 2; });
+    if (!S.flags.page1) out.push({ name: 'A FOLDED PAGE', tag: 'LETTER', price: pr(350), desc: 'I DO NOT READ THE LETTERS OF OTHERS. THIS ONE WAS LEFT WITH ME BY A MAN WHO NEVER CAME BACK FOR THE CHANGE. IT IS YOURS, FOR A PRICE. THIS STALL OFFERS IT ONLY ONCE.', can: () => '', buy: () => { S.flags.page1 = true; markPage(1); this.read = 1; g.fx.flash([0.9, 0.85, 0.6], 0.2); } });          // the first letter of the story: sold by the Keeper
     return out;
   }
-  close() { this.g.state = 'play'; A.sfx('back'); }
+  close() { this.g.state = 'play'; A.sfx('back'); if (this.read) { const n = this.read, g = this.g; this.read = 0; g.after(24, () => { if (g.state === 'play') g.openLetter(n); }); } }
   buy() {
     const g = this.g, S = g.save, e = this.stock[this.sel], why = e.can();
     if (why) { A.sfx('back'); this.speak(why === 'SOLD' ? 'THAT, I HAVE ALREADY SOLD YOU.' : 'YOU HAVE ALL YOU CAN CARRY OF THAT.'); return; }
@@ -78,7 +80,7 @@ export class ShopScreen {
     // the Keeper, large, at the left, with what it says beneath
     const kx = 54, ky = 142; const gl = ctx.createRadialGradient(kx, ky - 40, 4, kx, ky - 40, 70); gl.addColorStop(0, 'rgba(150,80,220,0.35)'); gl.addColorStop(1, 'rgba(60,20,110,0)'); ctx.fillStyle = gl; ctx.fillRect(0, 40, 112, 130);
     drawSheet(ctx, 'keeper_r0', Math.floor(this.t / 12) % 4, kx, ky, { ay: 1, scale: 1.5, dir: 1 }); ctx.fillStyle = 'rgba(255,90,200,' + (0.6 + 0.3 * Math.sin(this.t * 0.1)).toFixed(2) + ')'; ctx.fillRect(kx + 4, ky - 64, 2, 2); ctx.fillRect(kx + 9, ky - 64, 2, 2);
-    const words = this.say.slice(0, Math.floor(this.sayT / 1.2)); wrapText(words, 100, 1, 'mixed').forEach((ln, i) => drawText(ctx, ln, 8, 148 + i * 10, { color: VIOLET, font: 'mixed' }));
+    const words = this.say.slice(0, Math.floor(this.sayT / 1.2)), sf = hasFace('npc') ? 'npc' : 'mixed'; wrapText(words, 100, 1, sf).forEach((ln, i) => drawText(ctx, ln, 8, 148 + i * 10, { color: VIOLET, font: sf }));
     drawText(ctx, 'THE KEEPER', 8, 12, { color: VIOLET, scale: 1.3, outline: '#000' });
     // the wares
     panel(ctx, 112, 8, W - 118, H - 16, 0.92); drawText(ctx, 'WARES', 122, 14, { color: GOLD, scale: 1.2 }); drawText(ctx, 'GOLD ' + S.gold, W - 12, 14, { align: 'right', color: GOLD, scale: 1.2 });

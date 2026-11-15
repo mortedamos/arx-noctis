@@ -36,7 +36,7 @@ export class Villager extends Enemy {
   talk(g) {
     const key = 'talk_' + (this.uid || g.room.id + '_' + Math.round(this.x / 16)), L = LINES[this.kind] || LINES.woman, first = !g.save.flags[key], pickOne = a => a[Math.floor(rand(a.length))];
     const name = this.o.title || TITLES[this.kind] || 'VILLAGER', gifts = this.o.gifts || (this.sells ? [] : GIFTS[this.kind] || ['coin']);
-    A.sfx('select'); this.dir = g.player.x >= this.x ? 1 : -1;
+    this.dir = g.player.x >= this.x ? 1 : -1;
     if (this.sells && !(first && gifts.length)) { g.save.flags[key] = true; return this.offer(g, name, first ? pickOne(SHOP[this.kind] || SHOP.woman) : (this.o.again || pickOne(SHOP[this.kind] || SHOP.woman))); }       // a merchant: a greeting and the offer in one box
     const text = first ? (this.o.text || (this.calm ? L.home : pickOne(L.street))) : (this.o.again || pickOne(L.again));
     g.showDialog(text, { name, onClose: () => {

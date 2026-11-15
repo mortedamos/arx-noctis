@@ -14,6 +14,7 @@ import { STORY } from './story.js';
 import { BUILD } from './build.js';
 import { secretStats } from './secrets.js';
 import { BestiaryScreen } from './bestiary.js';
+import { LetterBook, foundPages, PAGE_COUNT } from './letters.js';
 
 const GOLD = '#e8b84a', PALE = '#e8dcc0', DIM = '#8a7d9a', RED = '#c23b2a';
 const icon = (ctx, name, x, y, sc = 1, a) => drawSheet(ctx, 'icons', ICON.indexOf(name), x, y, { ay: 0.5, scale: sc, alpha: a });
@@ -108,7 +109,7 @@ export function drawExitArrow(ctx, x, y, t, dir) {
 }
 
 export class Dialog {
-  constructor(text, o = {}) { this.font = o.font || (o.name && /^the stranger$/i.test(o.name) && hasFace('stranger') ? 'stranger' : o.name ? 'mixed' : undefined); if (this.font === 'hand') text = handText(text); else if (this.font === 'mixed' || this.font === 'stranger') text = sentenceCase(text);          // (the Stranger speaks in his own bookhand)          // (a named speaker - an NPC, a boss - talks in sentence case; the gravestones in their own face)
+  constructor(text, o = {}) { this.font = o.font || (o.name && /^the stranger$/i.test(o.name) && hasFace('stranger') ? 'stranger' : o.name ? (hasFace('npc') ? 'npc' : 'mixed') : undefined); if (this.font === 'hand') text = handText(text); else if (this.font === 'mixed' || this.font === 'stranger' || this.font === 'npc') text = sentenceCase(text);          // (the Stranger speaks in his own bookhand)          // (a named speaker - an NPC, a boss - talks in sentence case; the gravestones in their own face)
     this.lines = wrapText(text, 300, 1, this.font); this.full = this.lines.join('\n'); this.t = 0; this.done = false; this.closed = false; this.name = o.name || null; this.onClose = o.onClose || null; this.choices = o.choices || null; this.sel = 0; this.choice = -1; this.footer = o.footer || null; }
   update() {
     this.t += 1.2; const skip = Input.pressed.confirm || Input.pressed.back || Input.pressed.attack || Input.pressed.jump;
@@ -278,7 +279,7 @@ export function controlsScreen(ctx) {
 const POWERS = [['djump', 'feather', 'AETHER FEATHER'], ['dash', 'boot', 'QUICKSILVER'], ['ember', 'ember', 'SULPHUR'], ['thunder', 'thunder', 'VITRIOL']];
 // what the pause screen lists as FOUND: the four powers, the relics the bosses leave, and the keys you carry (each with what it is and what it does, for the cursor to read out)
 const RELICS = [['got_mantle', 'mantle', 'SALAMANDER', 'mantle'], ['got_lantern', 'lantern', 'IGNIS VAPOUR', 'lantern'], ['got_shard', 'shard', 'SPECULUM', 'shard'], ['got_spring', 'spring', 'PERPETUUM', 'spring'], ['got_shoes', 'shoes', 'HERMES SHOES', 'shoes'], ['got_tide', 'e_ice', 'AQUA REGIA', 'tide'], ['got_astrolabe', 'astrolabe', 'ASTROLABE', 'astrolabe'], ['got_crampons', 'crampons', 'CRAMPONS', 'crampons']];
-const KEY_USE = { key_grave: "THE GRAVEKEEPER'S VAULT, OFF THE MOURNING FIELDS.", key_hall: "THE STEWARD'S VAULT, OFF THE PORTRAIT GALLERY.", key_chapel: "THE VERGER'S VAULT, OFF THE BELL GALLERY.", key_crypt: 'THE DOOR OF THE ORLOJ TOWER, HIGH ABOVE SMOULDERING LANE IN PRAGUE.', key_mire: "THE FERRYMAN'S VAULT, OFF THE WEEPING HOLLOW.", key_gear: "THE ENGINEER'S VAULT, OFF THE ESCAPEMENT.", key_frost: 'THE DOOR OF THE LIBRARY OF INK, AT THE CROSSING HALL.', key_gold: 'THE DOOR OF THE SHADOW THRONE, AT THE CROSSING HALL.' };
+const KEY_USE = { key_grave: "THE GRAVEKEEPER'S VAULT, OFF THE MOURNING FIELDS.", key_hall: "THE STEWARD'S VAULT, OFF THE PORTRAIT GALLERY.", key_chapel: "THE VERGER'S VAULT, OFF THE BELL GALLERY.", key_crypt: 'THE DOOR OF THE ORLOJ TOWER, HIGH ABOVE SMOULDERING LANE IN PRAGUE.', key_mire: "THE FERRYMAN'S VAULT, OFF THE WEEPING HOLLOW.", key_gear: "THE ENGINEER'S VAULT, OFF THE ESCAPEMENT.", key_frost: 'THE DOOR OF THE LIBRARY OF AGES, AT THE CROSSING HALL.', key_gold: 'THE DOOR OF THE SHADOW THRONE, AT THE CROSSING HALL.' };
 export function foundItems(g) {
   const S = g.save, F = S.flags, AB = (g.info && g.info.ABILITIES) || {}, UP = (g.info && g.info.UPGRADES) || {}, rows = [];
   for (const [k, ic, name] of POWERS) rows.push({ ic, name: S.abilities[k] ? name : '???', has: !!S.abilities[k], title: S.abilities[k] ? (AB[k] ? AB[k].name : name) : 'NOT YET FOUND', desc: S.abilities[k] && AB[k] ? AB[k].desc : 'A POWER YOU HAVE NOT FOUND YET. THE BOSSES OF THE CASTLE GUARD THEM.' });
@@ -310,7 +311,7 @@ function foundPanel(ctx, g, pm) {
 export class PauseMenu {
   constructor(g) {
     this.g = g; this.mode = 'main'; this.foc = 'menu'; this.sel = 0; this.opts = optionsMenu(() => { this.mode = 'main'; });
-    this.main = new Menu([{ label: 'RESUME', action: () => g.resume() }, { label: 'MAP', action: () => g.openMap() }, { label: 'BESTIARY', action: () => { this.mode = 'bestiary'; this.best = new BestiaryScreen(g, () => { this.mode = 'main'; }); } }, { label: 'OPTIONS', action: () => { this.mode = 'options'; this.opts.i = 0; } }, { label: 'CONTROLS', action: () => { this.mode = 'controls'; } }, { label: 'QUIT TO TITLE', action: () => g.toTitle() }]);
+    this.main = new Menu([{ label: 'RESUME', action: () => g.resume() }, { label: 'MAP', action: () => g.openMap() }, { label: 'BESTIARY', action: () => { this.mode = 'bestiary'; this.best = new BestiaryScreen(g, () => { this.mode = 'main'; }); } }, { label: () => 'LETTERS  ' + foundPages().size + '/' + PAGE_COUNT, action: () => { this.mode = 'letters'; this.book = new LetterBook(() => { this.mode = 'main'; }); } }, { label: 'OPTIONS', action: () => { this.mode = 'options'; this.opts.i = 0; } }, { label: 'CONTROLS', action: () => { this.mode = 'controls'; } }, { label: 'QUIT TO TITLE', action: () => g.toTitle() }]);
   }
   // LEFT moves the cursor over to the list of found things: UP / DOWN read each one out (what it is, what it does); RIGHT, BACK or OK returns to the menu.  A tap on a thing reads it out too.
   update() { if (this.mode === 'main') {
@@ -323,7 +324,7 @@ export class PauseMenu {
       } else {
         this.main.update(this.g); if (Input.pressed.left && rows.length) { this.foc = 'found'; this.sel = Math.min(this.sel, rows.length - 1); A.sfx('select'); }
         if (Input.pressed.pkey || Input.pressed.back) this.g.resume();
-      } } else if (this.mode === 'bestiary') this.best.update(); else if (this.mode === 'options') { this.opts.update(this.g); if (Input.pressed.back) this.mode = 'main'; } else if (Input.pressed.back || Input.pressed.confirm || Input.taps.length) this.mode = 'main'; }
+      } } else if (this.mode === 'bestiary') this.best.update(); else if (this.mode === 'letters') this.book.update(); else if (this.mode === 'options') { this.opts.update(this.g); if (Input.pressed.back) this.mode = 'main'; } else if (Input.pressed.back || Input.pressed.confirm || Input.taps.length) this.mode = 'main'; }
   draw(ctx) {
     ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, 0, W, H);
     if (this.mode === 'main') {
@@ -335,12 +336,13 @@ export class PauseMenu {
           drawText(ctx, 'UP / DOWN CHOOSE    RIGHT: BACK', cx, 196, { align: 'center', color: DIM }); }
       } else {
       drawText(ctx, 'PAUSED', cx, 46, { align: 'center', scale: 2, color: GOLD });
-      this.main.draw(ctx, cx, 66, 12);
+      this.main.draw(ctx, cx, 64, 11);
       drawText(ctx, `LV ${S.level}   HP ${S.hp}/${S.maxHp}   MP ${S.mp}/${S.maxMp}`, cx, 150, { align: 'center', color: PALE }); drawText(ctx, `POWER ${g.player.atkPower}   GOLD ${S.gold}   TIME ${fmtTime(S.time)}`, cx, 161, { align: 'center', color: '#b5a47a' }); drawText(ctx, 'CASTLE SEED ' + S.seed, cx, 172, { align: 'center', color: DIM });
       if (foundItems(g).length) drawText(ctx, 'LEFT: LOOK AT WHAT YOU HAVE FOUND', cx, 190, { align: 'center', color: '#6a6078' });
       }
     } else if (this.mode === 'options') { panel(ctx, 70, 40, W - 140, 150); drawText(ctx, 'OPTIONS', W / 2, 47, { align: 'center', scale: 1.5, color: GOLD, outline: '#000' }); this.opts.draw(ctx, 94, 68, 14, 'left'); }
     else if (this.mode === 'bestiary') this.best.draw(ctx);
+    else if (this.mode === 'letters') this.book.draw(ctx);
     else controlsScreen(ctx);
   }
 }

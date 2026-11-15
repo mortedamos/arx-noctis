@@ -91,7 +91,7 @@ tell         length 0.15-0.35 s     The WARNING just before a boss attack: a sha
                                     signal, so keep it clear and short).
 steam        length 0.3-0.8 s       A burst of steam: a hiss (the Clockwork Dungeon).
 gear         length 0.05-0.2 s      A cog or mechanism clunk: a small metal tick or clank (Clockwork Dungeon).
-page         length 0.1-0.8 s       A flutter of paper: a haunted book flapping or hurling a page (Library of Ink).
+page         length 0.1-0.8 s       A flutter of paper: a haunted book flapping or hurling a page (Library of Ages).
 ink          length 0.1-0.6 s       A wet splat or burst: the Librarian's rings of ink.
 shatter      length 0.2-1.0 s       Ice breaking: a glassy crystalline shatter (ice walls melting, falling icicles).
 crumble      length 0.3-1.0 s       A stone slab giving way: a short gravel-and-rubble rumble (crumbling platforms).

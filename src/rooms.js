@@ -18,7 +18,7 @@ export const ZONES = {
   5: { name: 'The Shadow Throne', theme: 'throne', music: 'zone5' },
   6: { name: 'Prague', theme: 'village', music: 'zone6' },
   7: { name: 'The Weeping Swamp', theme: 'swamp', music: 'zone7' },
-  10: { name: 'The Library of Ink', theme: 'library', music: 'zone10' },
+  10: { name: 'The Library of Ages', theme: 'library', music: 'zone10' },
   11: { name: 'The Frozen Caverns', theme: 'ice', music: 'zone11' },
 };
 // the three Gothicvania Town houses and where their windows are, as [x offset from centre, height above the street, flame size] - the blazes are the fires burning inside
@@ -121,7 +121,7 @@ export function groundScenery(def) {
   const floorBelow = (tx, y0) => { for (let y = Math.max(0, y0); y < H; y++) if (stand(tx, y)) return y; return -1; };
   const flat = (tx, fy) => [-1, 0, 1].every(k => stand(tx + k, fy) && at(tx + k, fy - 1) === 0 && at(tx + k, fy - 2) === 0);
   const lit = def.decos.filter(d => d.t === 'brazier' || d.t === 'column').map(d => ({ x: Math.floor(d.x / 16), y: Math.floor(d.y / 16) }));
-  const USED = new Set(['waystone', 'altar', 'tablet', 'chest', 'statue', 'barrel', 'upgrade']);
+  const USED = new Set(['waystone', 'altar', 'tablet', 'chest', 'statue', 'barrel', 'upgrade', 'lever', 'skull', 'bell', 'litcandle']);
   const clear = tx => !def.doors.some(d => Math.abs(d.x - tx) < 3) && !def.spawns.some(s => USED.has(s.type) && Math.abs(s.x - tx) < 2);
   const pillars = def.decos.filter(d => d.t === 'img' && /^dg_pillar/.test(d.img)).map(d => Math.floor(d.x / 16));
   const pillar = (tx, ty) => { if (pillars.some(p => Math.abs(p - tx) < 2)) return null; const fy = floorBelow(tx, ty + 1); if (fy < 0) return null; pillars.push(tx); return { t: 'img', x: tx * 16 + 8, y: fy * 16, img: 'dg_pillar_' + (1 + ((tx * 7 + fy) % 4)), back: true }; };
@@ -143,7 +143,7 @@ export function groundScenery(def) {
 // BACKGROUND SCENERY NEAR A DOOR: pictures, pillars, bookcases, banners and portraits that stand or hang where a door is (they would hide it, or make it hard to tell from the wall).
 // The vertical span a decoration covers (a rough guess by kind), and whether it overlaps a door's doorway.
 const DECO_SPAN = { img: d => [d.y - 120, d.y], bookcase: d => [d.y - 46, d.y], column: d => [d.y - 112, d.y], cdl: d => [d.y - 44, d.y], brazier: d => [d.y - 40, d.y], crystals: d => [d.y - 36, d.y], hang: d => [d.y, d.y + 64], banner: d => [d.y, d.y + (d.len || 5) * 16], portrait: d => [d.y - 46, d.y] };
-export const decoHidesDoor = (d, o) => { const f = DECO_SPAN[d.t]; if (!f || (d.t === 'img' && /orloj|gate|door/.test(d.img || ''))) return false; const [y0, y1] = f(d); return Math.abs(d.x - (o.x * 16 + 8)) < 38 && y1 > o.gy * 16 - 56 && y0 < o.gy * 16 + 2; };
+export const decoHidesDoor = (d, o) => { const f = DECO_SPAN[d.t]; if (!f || (d.t === 'img' && /orloj|gate|door|town_house|town_sign/.test(d.img || ''))) return false; const [y0, y1] = f(d); return Math.abs(d.x - (o.x * 16 + 8)) < 38 && y1 > o.gy * 16 - 56 && y0 < o.gy * 16 + 2; };
 export function tidyRoom(def) {
   if (def.tidied) return; def.tidied = true;
   if (def.theme === 'ice' && !def.save) def.decos = def.decos.filter(d => d.t !== 'torch' && d.t !== 'dgtorch' && d.t !== 'brazier' && d.t !== 'cdl');          // the Frozen Caverns are wilderness: no torches, braziers or candles - ghostly blue wisps (fx.js) light the way
@@ -172,7 +172,7 @@ export function tidyRoom(def) {
   }
 }
 
-const STATIC_SPAWNS = new Set(['statue', 'barrel', 'tablet', 'altar', 'chest', 'waystone', 'itemspawn', 'upgrade']);
+const STATIC_SPAWNS = new Set(['statue', 'barrel', 'tablet', 'altar', 'chest', 'waystone', 'itemspawn', 'upgrade', 'lever', 'skull', 'bell', 'litcandle']);
 const BLOCK_DECOS = new Set(['brazier', 'column', 'pool', 'door', 'gate']);
 const OUTDOOR_THEMES = new Set(['swamp', 'graveyard', 'ice']);                                       // open country: no candelabras (a mire or a glacier has no use for them - the ice caves are lit by ghostly wisps), whatever the builder asked for
 export function arrangeCandelabras(def) {
@@ -223,7 +223,7 @@ export function arrangeCandelabras(def) {
   b.block(44, 11, 2, 1);                                                    // and a low step a little further on
   b.d('img', 3, 12, { img: 'forest_tree_2', back: true }).d('img', 21, 12, { img: 'forest_tree_4', back: true }).d('img', 33, 12, { img: 'forest_tree_1', back: true }).d('img', 46, 12, { img: 'cemetery_tree-2', back: true }).d('img', 58, 12, { img: 'forest_tree_3', back: true });
   b.d('img', 6, 12, { img: 'cemetery_stone-1' }).d('img', 17, 12, { img: 'cemetery_stone-3' }).d('img', 29, 12, { img: 'cemetery_stone-2' }).d('img', 30, 12, { img: 'cemetery_bush-small' }).d('img', 38, 12, { img: 'cemetery_stone-4' }).d('img', 42, 12, { img: 'cemetery_stone-1' }).d('img', 54, 12, { img: 'cemetery_bush-small' });
-  b.d('grave', 10, 12);
+  b.d('grave', 10, 12); b.e('tablet', 9, 12, { id: 'tabgrave', narr: true, text: 'You cannot read this because of the tears in your eyes. You miss her terribly.' });          // (the headstone he kneels at: you can read it, after a fashion)
   b.d('img', 7, 12, { img: 'gy_st4', back: true }).d('img', 19, 12, { img: 'gy_st1', back: true }).d('img', 25, 10, { img: 'gy_st5' }).d('img', 36, 12, { img: 'gy_st3', back: true }).d('img', 47, 12, { img: 'gy_st7', back: true }).d('img', 44, 11, { img: 'gy_st8' }).d('img', 58, 12, { img: 'gy_st6', back: true });          // statues on the hill (Graveyard pack): a kneeling mourner beside her grave, the others among the stones and behind the fences, a gargoyle on the rise and an owl on the step
   b.tablet(51, 12, '', 'tabv0');
   b.e('upgrade', 25, 10, { kind: 'silberzahn', id: 'got_silberzahn' });          // the hero's sword, on top of the rise (a new game only: see game.js; the Player cannot swing until it is taken)
@@ -280,7 +280,7 @@ export function arrangeCandelabras(def) {
   add(b);
 }
 {
-  const b = new B('g3', "Gatekeeper's Court", 1, 38, 14, { weather: 'rain', storm: true, ambient: 0.16, horizon: 12, boss: 'beast', music: 'boss', map: { x: 2, y: 3 } });
+  const b = new B('g3', "Baelphegaz's Court", 1, 38, 14, { weather: 'rain', storm: true, ambient: 0.16, horizon: 12, boss: 'beast', music: 'boss', map: { x: 2, y: 3 } });
   b.floor(0, 38, 12).plat(6, 4, 9).plat(28, 4, 9);
   b.d('brazier', 4, 12).d('brazier', 33, 12).d('img', 18, 12, { img: 'cemetery_statue', back: true }).d('img', 10, 12, { img: 'cemetery_stone-4' }).d('img', 26, 12, { img: 'cemetery_stone-1' });
   b.candle(9, 12, 'heart').e('statue', 31, 12, { drop: 'heart' }).candle(19, 12, 'mana');                 // a little healing in the arena

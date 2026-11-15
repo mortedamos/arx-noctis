@@ -3,7 +3,7 @@ import { Entity, moveX, moveY, groundAhead, wallAhead } from './entity.js';
 import { drawSheet } from './assets.js';
 import { Audio_ as A } from './audio.js';
 import { COLORS } from './fx.js';
-import { Projectile, FirePatch } from './projectiles.js';
+import { Projectile, FirePatch, HomingWisp, IceShard, SkyBolt } from './projectiles.js';
 import { randomDrop, rollEnchantDrop } from './props.js';
 import { TUNE } from './enchant.js';
 import { T, clamp, rand, dist, approach, sign, TAU, overlap } from './util.js';
@@ -380,18 +380,41 @@ Object.assign(FrostWyrm.prototype, { key: 'frostwyrm', variant: 'frost', fx: COL
 class EmberWyrm extends Wyrm {}
 Object.assign(EmberWyrm.prototype, { key: 'emberwyrm', variant: 'ember', fx: COLORS.fire, glowC: [1, 0.5, 0.2], spits: true });
 
-// ------------------------------------------------------------------------------------------------ HAUNTED BOOKS (the Library of Ink)
-// A TOME is an enchanted flying book (Pixel Book by Gokhan Solak, CC-BY 3.0, in four tints): it wheels about the shelves in slow loops, its pages turning, trailing sparkles; it hovers and glitters when it sees you,
+// ------------------------------------------------------------------------------------------------ HAUNTED BOOKS (the Library of Ages)
+// A TOME is a ghostly flying book - one of 32 different grimoires (Magic Book pack by CaptainSkolot, drawn half-seen with a pale halo, so the Library holds a whole shelf of kinds): it wheels about the shelves in slow loops, its pages turning, trailing sparkles; it hovers and glitters when it sees you,
 // then swoops in a great curve, banking like a bird, and sweeps up and away again.  A GRIMOIRE is a great one: it hangs in the air, circled by sparks, and throws torn pages.
-const BOOK_SPARK = [[1, 0.6, 0.75], [0.55, 1, 0.9], [0.78, 0.72, 1], [0.72, 1, 0.6]];          // the sparkle colour of each tint
+const ROW_SPARK = [[1, 0.72, 0.5], [1, 0.58, 0.28], [0.55, 0.85, 1], [0.92, 0.62, 0.55], [0.5, 0.75, 1], [0.78, 0.6, 1], [0.62, 0.52, 1], [1, 0.72, 0.4]];          // the sparkle colour of each row of covers in the sheet (red, fire, ice, ember-violet, blue, violet, dark, brown)
+const BOOK_SPARK = Array.from({ length: 32 }, (_, v) => { const c = ROW_SPARK[v >> 2]; return [c[0] * 0.75 + 0.2, c[1] * 0.75 + 0.22, c[2] * 0.75 + 0.25]; });          // (each pulled toward a pale ghostly white)
+const GRAND_BOOKS = [3, 7, 11, 15, 19, 22, 26, 30];
+// What a book casts when it opens (by the row of its cover): the open page that shows is one of the eight in bookpages.png (the Magic Books interface art)
+const SPELLS = {
+  fire: { page: 2, glow: [1, 0.5, 0.15], name: 'fire' }, flame: { page: 3, glow: [1, 0.6, 0.2], name: 'homing flame' }, ice: { page: 1, glow: [0.55, 0.85, 1], name: 'icicles' },
+  bolt: { page: 6, glow: [0.7, 0.85, 1], name: 'lightning' }, arcane: { page: 7, glow: [0.75, 0.45, 1], name: 'homing violet flame' },
+};
+const ROW_SPELL = ['fire', 'flame', 'ice', 'flame', 'ice', 'arcane', 'bolt', 'fire'];
+const spellOf = v => SPELLS[ROW_SPELL[v >> 2]];
+function castSpell(g, e, sp) {          // what comes out of an open book
+  const p = g.player, base = Math.atan2(p.y - 16 - e.cy, p.x - e.x), at = (a, s) => [Math.cos(a) * s, Math.sin(a) * s];
+  if (sp === SPELLS.fire) { A.sfx('fire'); for (let i = -1; i <= 1; i++) { const [vx, vy] = at(base + i * 0.24, 1.9); g.addProjectile(new Projectile(e.x, e.cy, vx, vy, 'fire', { dmg: 6, life: 200 })); } }
+  else if (sp === SPELLS.flame || sp === SPELLS.arcane) { A.sfx('cast'); const [vx, vy] = at(base, 1.2); g.addProjectile(new HomingWisp(e.x, e.cy, vx, vy, 7, sp === SPELLS.arcane ? 'purple' : 'fire')); }
+  else if (sp === SPELLS.ice) { A.sfx('freeze'); for (let i = -1; i <= 1; i++) { const [vx, vy] = at(base + i * 0.2, 2.5); g.addProjectile(new IceShard(e.x, e.cy, vx, vy, 7)); } }
+  else if (sp === SPELLS.bolt) { A.sfx('cast'); for (const dx of [0, p.x < e.x ? -46 : 46]) { const bx = Math.max(24, Math.min(g.room.pw - 24, p.x + dx)); g.addProjectile(new SkyBolt(bx, g.groundBelow(bx, p.y - 8), { warn: 40 + (dx ? 12 : 0), dmg: 9 })); } }
+  g.fx.burst(e.x, e.cy, 8, [sp.glow, [1, 1, 0.9]], { speed: 1.8, s0: 8 });
+}          // the big, ornate covers: the grimoires
 function bookSparkle(g, x, y, c, n, spread, o = {}) {
   for (let i = 0; i < n; i++) g.fx.emit({ x: x + rand(-spread, spread), y: y + rand(-spread, spread) * 0.8, vx: (o.vx || 0) + rand(-0.25, 0.25), vy: (o.vy || 0) + rand(-0.45, 0.1), gy: o.gy === undefined ? 0.012 : o.gy, drag: 0.97, life: rand(24, 46), s0: rand(3, 6), s1: 0.5, c0: Math.random() < 0.3 ? [1, 0.96, 0.8] : c, a0: 1, a1: 0, kind: 6 });
 }
-function drawBook(ctx, x, y, frame, o) {          // o.v tint 0..3, o.s scale, o.rot tilt, o.flash
-  drawSheet(ctx, 'book_' + o.v, frame, x, y, { scale: o.s, rot: o.rot || 0, ay: 0.5, flash: o.flash });
+// o.v cover 0..31, o.s scale, o.rot tilt, o.flash.  The covers are single pictures, so the pages 'turn' by the book breathing wider and flatter (frame drives it); the whole thing is half-seen and wavers.
+function drawBook(ctx, x, y, frame, o) {          // o.open 0..1: the book opens, and the page of its spell shows (o.page)
+  const open = o.open || 0, fl = Math.sin(frame * 1.7) * (1 - open), a = (o.flash ? 1 : 0.72 + 0.1 * Math.sin(frame * 0.6 + o.v)), g = ctx;
+  g.save(); g.translate(Math.round(x), Math.round(y)); g.scale(1 + 0.07 * fl, 1 - 0.07 * fl);
+  g.globalCompositeOperation = 'lighter'; drawSheet(g, 'magicbooks', o.v, 0, 0, { scale: o.s * 1.08, rot: o.rot || 0, ay: 0.5, alpha: 0.16 * (1 - open) });          // a pale ghost-glow of the cover behind it
+  g.globalCompositeOperation = 'source-over'; if (open < 1) drawSheet(g, 'magicbooks', o.v, 0, 0, { scale: o.s * (1 + 0.5 * open), rot: o.rot || 0, ay: 0.5, flash: o.flash, alpha: a * (1 - open) });
+  if (open > 0) drawSheet(g, 'bookpages', o.page, 0, 0, { scale: o.s * 0.84 * (0.6 + 0.4 * open), rot: (o.rot || 0) * 0.5, ay: 0.5, flash: o.flash, alpha: Math.min(1, open * 1.2) * (o.flash ? 1 : 0.85) });          // (the open book: cover and pages, from the Magic Books interface pack)
+  g.restore();
 }
 class Tome extends Enemy {
-  constructor(g, x, y, o) { super(g, x, y + 8, 22, 16, o); this.hp = this.maxHp = 7; this.dmg = 6; this.xp = 6; this.gravity = false; this.kbRes = 0.2; this.state = 'drift'; this.st = 0; this.phase = rand(TAU); this.name = 'tome'; this.deathFx = [[0.95, 0.9, 0.7], [0.5, 0.35, 0.2]]; this.v = Math.floor(rand(4)); this.ang = 0; this.turn = 1; this.tilt = 0; this.pf = rand(9); }
+  constructor(g, x, y, o) { super(g, x, y + 8, 22, 16, o); this.hp = this.maxHp = 7; this.dmg = 6; this.xp = 6; this.gravity = false; this.kbRes = 0.2; this.state = 'drift'; this.st = 0; this.phase = rand(TAU); this.name = 'tome'; this.deathFx = [[0.95, 0.9, 0.7], [0.5, 0.35, 0.2]]; this.openK = 0; this.castCd = 60 + rand(120); this.v = Math.floor(rand(32)); this.ang = 0; this.turn = 1; this.tilt = 0; this.pf = rand(9); }
   ai(g) {
     const p = g.player; this.st++; this.face(); const sp = BOOK_SPARK[this.v], tx = p.x, ty = p.y - 16;
     if (this.state === 'drift') {          // wheels about in slow figures of eight, now and then flourishing upward
@@ -399,7 +422,15 @@ class Tome extends Enemy {
       this.vx = approach(this.vx, Math.cos(w) * 0.75, 0.04); this.vy = approach(this.vy, Math.sin(w * 2) * 0.55 - (Math.sin(w * 0.37) > 0.85 ? 0.5 : 0), 0.04);
       this.pf += 0.1 + Math.abs(this.vy) * 0.1;
       if (this.t % 3 === 0) bookSparkle(g, this.x, this.cy + 6, sp, 1, 7);
-      if (dist(this.x, this.cy, tx, ty) < 130 && this.st > 50) { this.state = 'tell'; this.st = 0; A.sfx('page'); }
+      if (this.castCd > 0) this.castCd--;
+      const dd = dist(this.x, this.cy, tx, ty);
+      if (dd < 130 && this.st > 50) { this.state = 'tell'; this.st = 0; A.sfx('page'); }
+      else if (dd < 230 && dd > 90 && this.st > 80 && this.castCd === 0 && Math.random() < 0.012) { this.state = 'open'; this.st = 0; this.spell = spellOf(this.v); A.sfx('page'); }          // (from afar, a book may open and cast instead)
+    } else if (this.state === 'open') {          // it stops, its cover falls open on a page of its spell, glows, casts, and closes again
+      this.vx *= 0.85; this.vy = approach(this.vy, Math.sin(this.t * 0.08) * 0.15, 0.06); this.pf += 0.1; this.tilt = approach(this.tilt, 0, 0.1); this.openK = Math.min(1, this.openK + 0.07);
+      const SP = this.spell || spellOf(this.v); g.fx.glow(this.x, this.cy, 14 + this.st * 0.18, SP.glow, 0.1 + Math.min(0.16, this.st * 0.005)); if (this.t % 2 === 0) bookSparkle(g, this.x, this.cy, SP.glow, 1, 12);
+      if (this.st === 34) castSpell(g, this, SP);
+      if (this.st > 52) { this.openK = Math.max(0, this.openK - 0.1); if (this.openK === 0) { this.state = 'drift'; this.st = 0; this.castCd = 220 + rand(120); } }
     } else if (this.state === 'tell') {          // it stops, glitters, and spins its pages up
       this.vx *= 0.8; this.vy = approach(this.vy, -0.35, 0.04); this.pf += 0.45; this.tilt = Math.sin(this.t * 0.9) * 0.18; g.fx.glow(this.x, this.cy, 26, sp, 0.55); if (this.t % 2 === 0) bookSparkle(g, this.x, this.cy, sp, 2, 14);
       if (this.st > 26) { this.state = 'swoop'; this.st = 0; this.ang = Math.atan2(ty - this.cy, tx - this.x); this.turn = this.x < tx ? 1 : -1; A.sfx('page'); }
@@ -413,23 +444,23 @@ class Tome extends Enemy {
     this.tilt = approach(this.tilt, Math.max(-0.5, Math.min(0.5, this.vx * 0.22)), 0.06);
   }
   physics() { const room = this.g.room; this.hitX = 0; this.hitCeil = false; const nx = this.x + this.vx; if (room.solid(Math.floor(nx / T), Math.floor(this.cy / T))) { this.hitX = 1; this.vx = 0; } else this.x = nx; const ny = this.y + this.vy; if (room.solid(Math.floor(this.x / T), Math.floor((ny - this.h / 2) / T))) { this.hitCeil = true; this.vy = 0; } else this.y = ny; if (this.flashT > 0) this.flashT--; }
-  draw(ctx, cx, cy) { drawBook(ctx, this.x - cx, this.cy - cy, this.pf, { v: this.v, s: 0.5, rot: this.tilt, flash: this.flashT > 0 }); }
+  draw(ctx, cx, cy) { if (this.state !== 'open' && this.openK > 0) this.openK = Math.max(0, this.openK - 0.1); drawBook(ctx, this.x - cx, this.cy - cy, this.pf, { v: this.v, s: 0.5, rot: this.tilt, flash: this.flashT > 0, open: this.openK, page: (this.spell || spellOf(this.v)).page }); }
 }
 class Grimoire extends Enemy {
-  constructor(g, x, y, o) { super(g, x, y + 12, 36, 26, o); this.hp = this.maxHp = 20; this.dmg = 9; this.xp = 16; this.gravity = false; this.kbRes = 0.5; this.state = 'float'; this.st = 0; this.phase = rand(TAU); this.name = 'grimoire'; this.deathFx = [[1, 0.85, 0.5], [0.5, 0.3, 0.1]]; this.cool = 70 + rand(50); this.tilt = 0; this.pf = 0; }
+  constructor(g, x, y, o) { super(g, x, y + 12, 36, 26, o); this.hp = this.maxHp = 20; this.dmg = 9; this.xp = 16; this.gravity = false; this.kbRes = 0.5; this.state = 'float'; this.st = 0; this.phase = rand(TAU); this.name = 'grimoire'; this.v = GRAND_BOOKS[Math.floor(rand(GRAND_BOOKS.length))]; this.deathFx = [[1, 0.85, 0.5], [0.5, 0.3, 0.1]]; this.cool = 70 + rand(50); this.tilt = 0; this.pf = 0; }
   ai(g) {
     const p = g.player; this.st++; this.face(); if (this.cool > 0) this.cool--;
     this.vx = approach(this.vx, Math.cos(this.t * 0.022 + this.phase) * 0.45 + (Math.abs(this.dx()) > 200 ? sign(p.x - this.x) * 0.35 : 0), 0.03); this.vy = approach(this.vy, Math.sin(this.t * 0.04 + this.phase) * 0.35, 0.03);
     g.fx.glow(this.x, this.cy, 40, [1, 0.8, 0.5], 0.1); g.fx.light(this.x, this.cy, 60, 0.4, [1, 0.8, 0.45]);
-    const a = this.t * 0.05 + this.phase; if (this.t % 4 === 0) bookSparkle(g, this.x + Math.cos(a) * 26, this.cy + Math.sin(a) * 14, BOOK_SPARK[0], 1, 2, { gy: 0 });          // sparks circle it
-    this.pf += this.state === 'cast' ? 0.5 : 0.07; this.tilt = approach(this.tilt, Math.max(-0.3, Math.min(0.3, this.vx * 0.3)), 0.04);
+    const a = this.t * 0.05 + this.phase; if (this.t % 4 === 0) bookSparkle(g, this.x + Math.cos(a) * 26, this.cy + Math.sin(a) * 14, BOOK_SPARK[this.v], 1, 2, { gy: 0 });          // sparks circle it
+    this.openK = this.state === 'cast' ? Math.min(1, (this.openK || 0) + 0.08) : Math.max(0, (this.openK || 0) - 0.05); this.pf += this.state === 'cast' ? 0.5 : 0.07; this.tilt = approach(this.tilt, Math.max(-0.3, Math.min(0.3, this.vx * 0.3)), 0.04);
     if (this.state === 'float') { if (this.cool === 0 && dist(this.x, this.cy, p.x, p.y - 16) < 230) { this.state = 'cast'; this.st = 0; A.sfx('tell'); } }
     else if (this.state === 'cast') { this.vx *= 0.5; this.vy *= 0.5; g.fx.glow(this.x, this.cy, 30 + this.st * 0.6, [1, 0.8, 0.3], 0.4 + this.st * 0.015); if (this.st % 2 === 0) bookSparkle(g, this.x, this.cy, [1, 0.85, 0.4], 2, 18);
       if (this.st === 30) { A.sfx('page'); const base = Math.atan2(p.y - 16 - this.cy, p.x - this.x); for (let i = -1; i <= 1; i++) { const a2 = base + i * 0.28; g.addProjectile(new Projectile(this.x, this.cy, Math.cos(a2) * 1.9, Math.sin(a2) * 1.9, 'page', { dmg: 8, life: 240 })); } }
       if (this.st > 44) { this.state = 'float'; this.st = 0; this.cool = 110 + rand(60); } }
   }
   physics() { Tome.prototype.physics.call(this); }
-  draw(ctx, cx, cy) { drawBook(ctx, this.x - cx, this.cy - cy, this.pf, { v: 0, s: 0.95, rot: this.tilt, flash: this.flashT > 0 }); }
+  draw(ctx, cx, cy) { drawBook(ctx, this.x - cx, this.cy - cy, this.pf, { v: this.v, s: 0.8, rot: this.tilt, flash: this.flashT > 0, open: this.openK || 0, page: spellOf(this.v).page }); }
 }
 // ------------------------------------------------------------------------------------------------ RIME SHADE (the Frozen Caverns)
 // A cold shadow lies flat on the ice like a dark puddle; when you come close it climbs out of the floor, then stalks you with an outstretched arm.

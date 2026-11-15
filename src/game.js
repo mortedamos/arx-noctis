@@ -7,7 +7,7 @@ import { loadFonts, drawText, textWidth } from './font.js';
 import { Audio_ as A } from './audio.js';
 import { ZONES, KEEP } from './rooms.js';
 import { buildWorld, randomSeed, GEN_VERSION, arrivalBesideStone } from './levelgen.js';
-import { Room, TILE, drawBackground, discoBeams, drawForeground } from './world.js';
+import { Room, TILE, drawBackground, discoBeams, drawForeground, drawGateTile } from './world.js';
 import { Player, SPELLS } from './player.js';
 import { ENEMY_TYPES } from './enemies.js';
 import { BEAST_TYPES } from './beasts.js';
@@ -22,12 +22,13 @@ import { Icicle } from './icicles.js';
 import { Shopkeeper, ShopScreen } from './shop.js';
 import { KEYS } from './itemdata.js';
 import { Projectile, Shockwave, FirePatch } from './projectiles.js';
-import { Statue, Barrel, Altar, Waystone, Tablet, Chest, Upgrade, Relic, Pickup, chestGift, ABILITIES, UPGRADES } from './props.js';
+import { Skull, SKULL_COUNT, Bell, LitCandle, Statue, Barrel, Altar, Waystone, Tablet, Chest, Lever, Upgrade, Relic, Pickup, chestGift, ABILITIES, UPGRADES } from './props.js';
 import { drawDeco, isBack, roomFlames, drawFlames2D, decoCoversHazard } from './decor.js';
 import { drawIce } from './enchant.js';
 import { drawSheet } from './assets.js';
 import { noteSeen, noteKill } from './bestiary.js';
 import { HUD, drawBanner, drawPopups, drawPrompt, drawExitArrow, Dialog, TitleScreen, PauseMenu, MapScreen, IntroCrawl, GameOver, Ending } from './ui.js';
+import { LetterReader, markPage, loadLetters } from './letters.js';
 
 const SAVE_KEY = 'shadowkeep.save.v1';
 const DOOR_CLEAR = 200;          // px: no enemy starts within this distance of a door you have just come through (about half a screen)
@@ -66,7 +67,7 @@ export class Game {
     // sprites are snapped to the logical grid so pixel art looks exactly as before.
     for (const c of [this.ctx, this.top]) { const di = c.drawImage; c.drawImage = function (img, ...a) { if (a.length === 2 || a.length === 4) { a[0] = Math.round(a[0]); a[1] = Math.round(a[1]); } else if (a.length === 8) { a[4] = Math.round(a[4]); a[5] = Math.round(a[5]); } return di.call(this, img, ...a); }; }
     this.fx = new FX(document.getElementById('fx')); this.fx.onThunder = p => A.sfx('thunder', { power: p }); this.fx.postEnabled = () => A.settings.glow !== false; this.fx.initPost(this.canvas);
-    Input.init(); Touch.init(this); await A.init(); if (new URLSearchParams(location.search).get('cloak') === '0') A.settings.cloak = false; await loadFonts(); this.resize(); addEventListener('resize', () => this.resize());
+    Input.init(); Touch.init(this); await A.init(); if (new URLSearchParams(location.search).get('cloak') === '0') A.settings.cloak = false; await loadFonts(); loadLetters(); this.resize(); addEventListener('resize', () => this.resize());
     // Losing focus (clicking another window, switching tabs/apps) mutes all sound and pauses a running game; sound returns when focus does.
     // (`?nopause` in the URL turns this off - handy for automated testing in a background tab.)
     const lose = () => { if (this.noAutoPause) return; A.focusLost(); if (this.state === 'play') this.pause(); };
@@ -125,6 +126,12 @@ export class Game {
     for (const d of r.decos) if (d.t === 'waterfall') out.push({ type: 1, x0: d.x - d.w / 2, y0: d.top, x1: d.x + d.w / 2, y1: d.y, v: 95 });
     return out;
   }
+  // a page of the story has been found: kept in the save and in the browser's own storage (the LETTERS book on the title screen), then read at once
+  // the six hidden skulls: how many are broken, and what the sixth does
+  skullsBroken() { let n = 0; for (let i = 1; i <= SKULL_COUNT; i++) if (this.save.flags['skull' + i]) n++; return n; }
+  skullsDone() { this.save.flags.skulls_done = true; this.after(50, () => { A.sfx('boom'); this.shake(5, 40); this.fx.flash([0.7, 0.6, 0.9], 0.3); this.banner('THE SIXTH SKULL', 'FAR AWAY, STONE GRINDS ON STONE', 220, { y: 52, color: '#cfc2a0' }); }); }
+  foundPage(n, delay = 80) { this.save.flags['page' + n] = true; markPage(n); this.after(delay, () => { if (this.state === 'play') this.openLetter(n); }); }
+  openLetter(n, done) { this.reader = new LetterReader(n, done); this.state = 'letter'; A.sfx('page'); }
   showDialog(text, o) { this.dialog = new Dialog(text, o); this.state = 'dialog'; }
   // a short exchange of words: lines = [[speaker, text], ...], each in a box of its own; done() runs when the last box is closed
   talk(lines, done) {
@@ -183,9 +190,11 @@ export class Game {
   loadRoom(id, pos, dir = 1) {
     const def = this.world.rooms[id], S = this.save, tiles = Uint8Array.from(def.tiles);
     for (let ty = 0; ty < def.h; ty++) for (let tx = 0; tx < def.w; tx++) { const v = tiles[ty * def.w + tx]; if ((v === 4 || v === 5 || v === 6 || v === 8) && S.flags[`b_${id}_${tx}_${ty}`]) tiles[ty * def.w + tx] = 0; }
+    for (const lv of def.levers || []) if (S.flags[lv.id]) for (const [gx, gy] of lv.gate) tiles[gy * def.w + gx] = 0;          // (a gate whose lever has been thrown stays raised)
     if (id === 'ib' && S.flags.boss_ib) for (let ty = def.h - 2; ty < def.h; ty++) for (let tx = 5; tx <= def.w - 6; tx++) tiles[ty * def.w + tx] = 0;          // (the Rimewyrm's floor stays shattered: a way down into the Frozen Well)
     const prevZone = this.zone; this.room = new Room({ ...def, tiles }); this.room.flags = S.flags; this.room.ignited = new Set(); this.room.fireOut = def.zone === 6 && !!S.flags.boss_vb; if (S.flags.boss_vb) S.flags.village_fire = true; S.visited[id] = true; this.zone = def.zone;          // (the room can see the save's flags: scenery such as the sigils over a locked door reads them)
     { const spk = []; for (let ty = 0; ty < def.h; ty++) for (let tx = 0; tx < def.w; tx++) if (tiles[ty * def.w + tx] === TILE.SPIKE) spk.push([tx, ty]); if (spk.length) this.room.decos = def.decos.filter(d => !decoCoversHazard(d, spk)); }          // nothing may stand in front of a hazard
+    if (this.gaze) { this.gaze = null; this.playerFrozen = false; } this.gateAnims = [];
     this.blackout = null; this.well = null; this.enemies = []; this.projectiles = []; this.pickups = []; this.props = []; this.popups = []; this.boss = null; this.delayed = []; this.fx.reset(); this.fx.setWisps(def.wisps || 0); this.flames = roomFlames(this.room); this.smokeSpots = this.room.fireOut ? this.room.decos.filter(d => d.t === 'blaze' && !d.small).map(d => ({ x: d.x, y: d.y })) : []; this.falls = this.room.decos.filter(d => d.t === 'waterfall'); this.fx.setWater(this.waterList()); this.mirrorView = def.mirror ? new MirrorView(def.mirror, !!S.flags['boss_' + id]) : null;          // (the Mirror Room: a great mirror - whole until you walk up to it)
     const dusk = def.zone === 6 && !S.flags.village_fire && !def.keepLook;          // Prague before the Cinder Warden's torches: a calm violet dusk, with golden dust in the air - the monsters are loose, but nothing burns yet
     this.fx.setShadowMask(this.room); this.fx.setAmbient(dusk ? Math.max(def.ambient, 0.42) : def.ambient, dusk ? [0.05, 0.03, 0.12] : this.room.fireOut ? [0.09, 0.05, 0.06] : def.tint, def.vig); if (def.dark) this.fx.setDark(); this.fx.setAmbientFx(dusk ? 'dust' : this.room.fireOut ? 'mist' : def.weather); A.setIndoor(def.indoor); this.fx.setStorm(def.storm, 0.0035);
@@ -202,10 +211,14 @@ export class Game {
       else if (s.type === 'waystone') this.props.push(new Waystone(x, y, { id: 'tp_' + id }));
       else if (s.type === 'itemspawn') { if (!S.flags[o.id]) { const pk = new Pickup('it_' + o.item, x, y - 6, 0, 0); pk.qty = o.qty || pk.qty; pk.flagId = o.id; pk.life = 1e9; this.pickups.push(pk); } }
       else if (s.type === 'tablet') this.props.push(new Tablet(x, y, o));
+      else if (s.type === 'bell') this.props.push(new Bell(x, y, o));
+      else if (s.type === 'litcandle') this.props.push(new LitCandle(x, y, { ...o, open: !!S.flags[o.id] }));
+      else if (s.type === 'skull') { if (!S.flags[o.id]) this.props.push(new Skull(x, y, o)); }
+      else if (s.type === 'lever') this.props.push(new Lever(x, y, { ...o, open: !!S.flags[o.id] }));
       else if (s.type === 'chest') { const c = new Chest(x, y, o); if (S.flags[o.id]) { c.open = true; if (!S.flags[o.id + '_u']) chestGift(this, x, y - 22, o.contents, o.id + '_u'); } this.props.push(c); }
       else if (s.type === 'upgrade') { if (!S.flags[o.id] && (o.kind !== 'silberzahn' || !S.flags.opening_seen || S.flags.sword_lost)) this.props.push(new Upgrade(x, y - 12 + 0, o)); }
       else if (s.type.startsWith('boss_')) {
-        if (bossDone) { if (UPGRADES[o.reward]) { if (!S.flags['bu_' + id]) this.props.push(new Upgrade(this.roomCenterX(def), this.groundBelow(this.roomCenterX(def), 6 * 16) - 12, { kind: o.reward, id: 'bu_' + id })); }
+        if (bossDone) { if (o.page && !S.flags['page' + o.page]) this.props.push(new Upgrade(this.roomCenterX(def) + 44, this.groundBelow(this.roomCenterX(def) + 44, 6 * 16) - 12, { kind: 'page', n: o.page, id: 'page' + o.page, secret: true })); if (UPGRADES[o.reward]) { if (!S.flags['bu_' + id]) this.props.push(new Upgrade(this.roomCenterX(def), this.groundBelow(this.roomCenterX(def), 6 * 16) - 12, { kind: o.reward, id: 'bu_' + id })); }
           else if (o.reward && o.reward !== 'dawn' && o.reward !== 'well' && !S.abilities[this.rewardKey(o.reward)]) this.props.push(new Relic(this.roomCenterX(def), this.groundBelow(this.roomCenterX(def), 6 * 16), o.reward === 'djump' ? 'djump' : o.reward)); }
         else { const b = this.spawnEnemy(s.type, s.x, s.y, o); b.reward = o.reward; this.pendingBoss = b; }
       } else {
@@ -269,6 +282,7 @@ export class Game {
     }
     if (n.d.lock) {                                          // a door sealed until bosses fall: one sigil for each
       const left = n.d.lock.filter(f => !this.save.flags[f]);
+      if (left.length && left[0] === 'skulls_done') { A.sfx('back'); this.showDialog('THE DOOR IS SHUT FAST. ' + this.skullsBroken() + ' OF ' + SKULL_COUNT + ' SKULLS ARE BROKEN. THEY LIE HIDDEN ABOUT THE CASTLE, OUT OF THE WAY.'); return true; }
       if (left.length) { A.sfx('back'); this.showDialog('THE DOOR WILL NOT OPEN. ' + (n.d.lock.length - left.length) + ' OF ' + n.d.lock.length + ' SIGILS BURN. ' + (left.map(f => LOCK_HINTS[f]).filter(Boolean).join(' ') || n.d.lockText || '')); return true; }          // (and it says where each master that still lives is to be found)
     }
     A.sfx('door'); this.changeRoom({ room: n.d.room, x: n.d.tx * 16 + 8, y: n.d.tgy * 16, door: true }, 1); return true;
@@ -312,6 +326,52 @@ export class Game {
     }
     if (hit && p.hitsThisSwing++ === 0) { this.hitstop = 3; this.shake(1.5, 5); }
   }
+  // A LEVER is thrown: its flag is kept, and the camera glides over to the gate it works (when that is out of sight), which rises; then the camera comes back.  (The hero stands still, and cannot be hurt, for the few seconds it takes.)
+  pullLever(lv) {
+    const r = this.room, p = this.player, def = (r.levers || []).find(q => q.id === lv.id); this.save.flags[lv.id] = true; A.sfx('door'); A.sfx('click'); this.shake(2, 8);
+    this.fx.sparks(lv.x, lv.y - 16, 10, [[1, 0.9, 0.6], [0.8, 0.8, 1]], 2.5, { gy: 0.1 }); this.fx.ring(lv.x, lv.y - 14, 26, [1, 0.8, 0.5], 14, 0.2);
+    if (!def) return;
+    const gx = def.gate.reduce((a, q) => a + q[0], 0) / def.gate.length * 16 + 8, gy = (Math.min(...def.gate.map(q => q[1])) + Math.max(...def.gate.map(q => q[1]))) / 2 * 16 + 8, seen = gx > this.camera.x + 70 && gx < this.camera.x + W - 70;
+    this.gaze = { x: gx, y: gy, def, t: 0, pan: seen ? 0 : 34, opened: false }; this.playerFrozen = true; p.vx = 0; p.invT = Math.max(p.invT, 220);
+  }
+  stepGaze() {
+    const gz = this.gaze; gz.t++;
+    if (!gz.opened && gz.t >= gz.pan + 10) { gz.opened = true; this.openGate(gz.def.gate); }
+    if (gz.t >= gz.pan + 10 + 72) { this.gaze = null; this.playerFrozen = false; this.player.invT = Math.max(this.player.invT, 30); }
+  }
+  // the gate rises: its bars slide up out of sight (drawn by drawGates), and once there is room to walk under, the tiles are cleared
+  openGate(tiles) {
+    const r = this.room; r.gateRising = r.gateRising || new Set(); for (const [tx, ty] of tiles) r.gateRising.add(tx + ',' + ty); r.dirty = true;
+    const cols = new Map(); for (const [tx, ty] of tiles) { const c = cols.get(tx) || []; c.push(ty); cols.set(tx, c); }
+    for (const [tx, ys] of cols) { const y0 = Math.min(...ys), y1 = Math.max(...ys) + 1; this.gateAnims.push({ tx, y0, y1, t: 0, dur: 72 }); const x = tx * 16 + 8; this.fx.burst(x, y1 * 16 - 4, 8, [[0.5, 0.45, 0.4], [0.3, 0.28, 0.26]], { speed: 1.4, s0: 9, gy: 0.02 }); }
+    A.sfx('seal'); A.sfx('gear'); this.shake(3, 40);
+    this.after(30, () => { const rr = this.room; if (rr !== r) return; for (const [tx, ty] of tiles) if (rr.get(tx, ty) === TILE.GATE) rr.set(tx, ty, TILE.EMPTY); });
+  }
+  // walking up to a gate that is still down: a few words, now and then, so it is clear what it is
+  gateHint() {
+    const p = this.player, S = this.save; if (p.dead || this.gaze || this.frame < (this.gateHintT || 0)) return;
+    for (const lv of this.room.levers) {
+      if (S.flags[lv.id]) continue; const x0 = lv.gate[0][0] * 16, ys = lv.gate.map(q => q[1]), y0 = Math.min(...ys) * 16, y1 = (Math.max(...ys) + 1) * 16;
+      if (p.x > x0 - 24 && p.x < x0 + 56 && p.y > y0 && p.y < y1 + 8) { this.popup(p.x, p.y - 48, 'BARRED - A LEVER MUST RAISE IT', '#e8dcc0'); this.gateHintT = this.frame + 300; A.sfx('back'); return; }
+    }
+  }
+  gateLift(a) { return (1 - Math.pow(1 - Math.min(1, a.t / a.dur), 2)) * (a.y1 - a.y0 + 0.5) * 16; }          // how far (px) a rising gate's bars have gone up
+  stepGates() {
+    for (let i = this.gateAnims.length - 1; i >= 0; i--) {
+      const a = this.gateAnims[i]; a.t++;
+      if (a.t % 5 === 0 && a.t < a.dur) { A.sfx('gear'); this.fx.emit({ x: a.tx * 16 + 8 + rand(-7, 7), y: a.y1 * 16 - this.gateLift(a) + 2, vx: rand(-0.2, 0.2), vy: rand(0.2, 0.7), life: 22, s0: 4, s1: 1, c0: [0.7, 0.62, 0.5], a0: 0.8, a1: 0, kind: 6, gy: 0.03 }); }
+      if (a.t >= a.dur) this.gateAnims.splice(i, 1);
+    }
+    if (!this.gateAnims.length && this.room.gateRising && this.room.gateRising.size) this.room.gateRising.clear();
+  }
+  drawGates(ctx, cx, cy) {
+    for (const a of this.gateAnims) {
+      const up = this.gateLift(a), X = a.tx * 16 - cx, Y0 = a.y0 * 16 - cy, H0 = (a.y1 - a.y0) * 16;
+      ctx.save(); ctx.beginPath(); ctx.rect(X - 1, Y0, 18, H0); ctx.clip();
+      for (let ty = a.y0; ty < a.y1; ty++) drawGateTile(ctx, X, ty * 16 - cy - up, this.room.theme, ty === a.y0, ty);
+      ctx.restore();
+    }
+  }
   // a block of the Librarian's wall of books: it takes three blows (one a swing), shaking and shedding pages, before it breaks.  Returns true if it was one of those.
   hitBookTile(tx, ty, id) {
     const w = this.room.bookWall, b = w && w.get(tx + ',' + ty); if (!b) return false;
@@ -321,6 +381,7 @@ export class Game {
   }
   breakTile(tx, ty) {
     const r = this.room, v = r.get(tx, ty); if (v !== TILE.CRACK && v !== TILE.BARRICADE && v !== TILE.CRYSTAL && v !== TILE.ICE) return;
+    if (v === TILE.CRACK && r.isHollow(tx, ty)) { A.sfx('block'); this.fx.ring(tx * 16 + 8, ty * 16 + 8, 22, [0.8, 0.85, 1], 14, 0.2); }          // (a hollow wall rings under the blow)
     const bk = r.bookWall && r.bookWall.has(tx + ',' + ty); r.set(tx, ty, TILE.EMPTY); if (bk) r.bookWall.delete(tx + ',' + ty); else this.save.flags[`b_${r.id}_${tx}_${ty}`] = true; const x = tx * 16 + 8, y = ty * 16 + 8;
     if (bk) { this.fx.burst(x, y, 10, [[0.95, 0.85, 0.6], [0.5, 0.3, 0.12]], { speed: 2, s0: 11, up: 0.4, gy: 0.05 }); this.fx.sparks(x, y, 7, [[1, 0.9, 0.6], [1, 0.7, 0.3]], 2.5, { gy: 0.1 }); A.sfx('break'); this.shake(1.5, 6); return; }
     if (v === TILE.CRACK) { this.fx.burst(x, y, 10, [[0.7, 0.65, 0.8], [0.3, 0.28, 0.4]], { speed: 2, s0: 12, up: -0.5, gy: 0.05 }); this.fx.sparks(x, y, 8, [[0.8, 0.8, 0.9], [0.4, 0.4, 0.5]], 2.5, { gy: 0.2 }); }
@@ -389,6 +450,7 @@ export class Game {
     if (b.reward === 'well') { this.startWell(); return; }          // (the Rimewyrm drops nothing: the ice of the floor gives way, and its treasure waits below)
     const gy = this.groundBelow(b.x, b.y - 8);
     if (UPGRADES[b.reward]) this.props.push(new Upgrade(b.x, gy - 12, { kind: b.reward, id: 'bu_' + r.id })); else this.props.push(new Relic(b.x, gy, b.reward));
+    if (b.o && b.o.page && !S.flags['page' + b.o.page]) this.props.push(new Upgrade(b.x + 44, gy - 12, { kind: 'page', n: b.o.page, id: 'page' + b.o.page, secret: true }));          // (Baelphegaz harvests misery: a letter he was carrying falls from him)
     for (const [kind, dx] of [['it_bandage', -26], ['it_' + randomItemId(), 26], ['it_dagger', 38]]) this.pickups.push(new Pickup(kind, b.x + dx, b.cy - 20));       // a boss leaves supplies behind
     { const tk = STORY.talk[b.bossName]; if (tk && tk.after) this.after(110, () => { if (this.state === "play") this.talk(tk.after); }); }          // and a few more as it dies
     this.after(420, () => { if (this.state === 'play' && !this.boss) A.play(ZONES[r.zone].music, { fade: 2 }); });
@@ -456,6 +518,7 @@ export class Game {
       case 'intro': this.intro.update(); this.fx.update(1); break;
       case 'play': this.stepPlay(); break;
       case 'dialog': this.dialog.update(); if (this.dialog.closed) { const dlg = this.dialog, cb = dlg.onClose; this.state = 'play'; this.dialog = null; if (cb) cb(dlg.choice); } this.fx.update(0.0); break;
+      case 'letter': this.reader.update(); if (this.reader.closed) { const cb = this.reader.onClose; this.reader = null; this.state = 'play'; if (cb) cb(); } this.fx.update(0.0); break;
       case 'pause': this.pauseMenu.update(); break;
       case 'shop': this.shop.update(); this.fx.update(0.0); break;
       case 'map': this.mapScreen.update(); break;
@@ -482,6 +545,7 @@ export class Game {
     if (this.smokeSpots && this.smokeSpots.length && this.frame % 5 === 0) for (const sp of this.smokeSpots) if (sp.x > this.camera.x - 40 && sp.x < this.camera.x + W + 40 && sp.y > this.camera.y - 60 && sp.y < this.camera.y + H + 40 && Math.random() < 0.3) fx.smoke(sp.x + rand(-6, 6), sp.y, 1, { c0: [0.5, 0.47, 0.46], c1: [0.28, 0.26, 0.27], s0: 7, s1: 26, l: 1.5, a: 0.4 });          // (the burnt city smoulders: the fires are out - no flames - but smoke still rises from the ruins)
     for (const d of this.vents || []) if (this.frame % 9 === 0 && d.x > this.camera.x - 20 && d.x < this.camera.x + W + 20) fx.smoke(d.x, d.y - 40, 1, { c0: [0.62, 0.6, 0.58], c1: [0.4, 0.38, 0.36], s0: 5, s1: 20, l: 0.8 });          // steam
     if (this.cutscene) this.updateCutscene();
+    if (this.gaze) this.stepGaze(); if (this.gateAnims.length) this.stepGates(); if (this.room.levers && this.frame % 10 === 0) this.gateHint();
     p.update();
     const cam = this.camera, ccx = cam.x + W / 2, ccy = cam.y + H / 2;
     const still = !!(this.cutscene && this.cutscene.scene);          // (during a scripted scene the monsters neither move nor attack)
@@ -499,6 +563,7 @@ export class Game {
         this.fx.emit({ x: x + rand(1, 15), y: y + rand(2, 15), vx: rand(-0.1, 0.1), vy: -rand(0.12, 0.38), life: rand(55, 100), s0: rand(6.5, 10), s1: 2, c0: k, c1: [1, 1, 0.92], a0: 1, a1: 0, kind: 6 });
       }
     }
+    if (this.frame % 40 === 0 && this.room && this.room.hollow) { const p = this.player; for (const k of this.room.hollow) { const [tx, ty] = k.split(',').map(Number); if (this.room.get(tx, ty) !== TILE.CRACK || Math.abs(p.x - tx * 16) > 120 || Math.abs(p.y - ty * 16) > 90) continue; this.fx.emit({ x: tx * 16 + rand(3, 13), y: ty * 16 + rand(0, 4), vx: rand(-0.04, 0.04), vy: rand(0.2, 0.5), life: rand(24, 40), s0: 1.6, s1: 0.6, c0: [0.75, 0.72, 0.68], c1: [0.4, 0.38, 0.36], a0: 0.6, a1: 0, kind: 1 }); } }          // (a thread of dust now and then, from a hollow wall)
     if (this.mirrorView) this.mirrorView.update(this);
     this.sealFlames();
     for (const o of this.popups) o.life--; this.popups = this.popups.filter(o => o.life > 0);
@@ -528,7 +593,9 @@ export class Game {
   camTargetX(p, r) { return r.pw <= W ? (r.pw - W) / 2 : clamp(p.x + p.dir * 18 - W / 2, 0, r.pw - W); }
   camTargetY(p, r) { return r.ph <= H ? (r.ph - H) / 2 : clamp(p.y + (r.rivers ? 24 : -30) - H / 2, 0, r.ph - H); }          // (over a river the picture looks further down, so the water shows)
   updateCamera() {
-    const p = this.player, r = this.room, c = this.camera; c.x += (this.camTargetX(p, r) - c.x) * 0.1; c.y += (this.camTargetY(p, r) - c.y) * 0.12;
+    const p = this.player, r = this.room, c = this.camera, gz = this.gaze;
+    if (gz && gz.t < gz.pan + 62) { const tx = r.pw <= W ? (r.pw - W) / 2 : clamp(gz.x - W / 2, 0, r.pw - W), ty = r.ph <= H ? (r.ph - H) / 2 : clamp(gz.y - H / 2, 0, r.ph - H); c.x += (tx - c.x) * 0.12; c.y += (ty - c.y) * 0.12; return; }          // (a lever thrown: the camera looks at the gate it opens)
+    c.x += (this.camTargetX(p, r) - c.x) * 0.1; c.y += (this.camTargetY(p, r) - c.y) * 0.12;
   }
 
   // -------------------------------------------------------------------------------- drawing
@@ -550,7 +617,7 @@ export class Game {
     if (r.movers) r.movers.draw(ctx, cx, cy);                                                    // the moving brass platforms and their tracks (they carry the hero)
     if (this.falls) for (const d of this.falls) drawDeco(ctx, d, cx, cy, t, r);                    // waterfalls: in front of the far trees, behind the ground and the hero
     if (this.mirrorView) this.mirrorView.draw(ctx, cx, cy);                                          // the mirror hangs on the back wall: frame and glass, behind the ground and the hero (the reflection is the boss's, drawn over the glass)
-    r.drawTiles(ctx, cx, cy, t);
+    r.drawTiles(ctx, cx, cy, t); if (this.gateAnims && this.gateAnims.length) this.drawGates(ctx, cx, cy);
     for (const d of r.decos) if (!isBack(d) && !d.fore) drawDeco(ctx, d, cx, cy, t, r);
     drawFlames2D(ctx, this.flames, cx, cy, t);                       // braziers, burning windows, candelabra flames: in the scene, behind the hero
     for (const o of this.props) o.draw(ctx, cx, cy);
@@ -568,7 +635,7 @@ export class Game {
     if (this.state === 'play' && !this.cutscene && this.fade < 0.05) {
       const n = this.nearInteractable();
       if (n) {
-        drawPrompt(top, n.x - cx, n.y - cy, t, n.kind === 'npc' ? 'TALK' : n.kind === 'door' ? 'UP' : (n.o.constructor.name === 'Altar' ? 'SAVE' : n.o.constructor.name === 'Waystone' ? 'TRAVEL' : 'UP'));
+        drawPrompt(top, n.x - cx, n.y - cy, t, n.kind === 'npc' ? 'TALK' : n.kind === 'door' ? 'UP' : (n.o.constructor.name === 'Altar' ? 'SAVE' : n.o.constructor.name === 'Waystone' ? 'TRAVEL' : n.o.constructor.name === 'Lever' ? 'PULL' : n.o.constructor.name === 'Bell' ? 'RING' : n.o.constructor.name === 'LitCandle' ? 'LIGHT' : 'UP'));
         if (n.kind === 'door') {
           this.areaLabel(top, this.areaName(n.d.room), n.x - cx, n.y - cy + 14);          // (outside a door: where it leads)
           const K = n.d.key && !this.save.flags['unlocked_' + n.d.key] ? KEYS.find(k => k.id === n.d.key) : null;          // (and, if it is locked, the key it needs - in the key's own colour, brighter once you carry it)
@@ -596,6 +663,7 @@ export class Game {
       if (b.wisp) { const i = this.fx.lights.indexOf(this._wl); if (i >= 0) this.fx.lights.splice(i, 1); this._wl = [p.x, p.y - 22, Math.max(8, b.r * 1.4), 1, [0.55, 0.78, 1]]; this.fx.lights.push(this._wl); }
     }
     if (this.state === 'dialog') this.dialog.draw(top);
+    if (this.state === 'letter') this.reader.draw(top);
     if (this.state === 'dead') this.gameOver.draw(top);
     if (this.state === 'pause') this.pauseMenu.draw(top);
     if (this.state === 'shop') this.shop.draw(top);

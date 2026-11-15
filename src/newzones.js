@@ -1,4 +1,4 @@
-// Art for the Library of Ink and the Frozen Caverns, drawn in code like the Cistern and the Clockwork Dungeon: tile themes (ground and thin platforms), the ice barrier tile, and the parallax
+// Art for the Library of Ages and the Frozen Caverns, drawn in code like the Cistern and the Clockwork Dungeon: tile themes (ground and thin platforms), the ice barrier tile, and the parallax
 // backgrounds.  The books and the ice are made of rectangles on purpose: it keeps them in step with the rest of the castle's pixel look, and every colour is one place to change.
 import { W, H, T, hash1 } from './util.js';
 

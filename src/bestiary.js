@@ -37,7 +37,7 @@ export const BEST = {
   archmage: ['ARCHMAGE', 'The last master of the bell gallery. It guards its silence with lightning.'],
   sorcerer: ['BRASS SORCERER', 'The engineer\'s pupils, rebuilt in brass and loyal to a machine.'],
   zealot: ['ZEALOT', 'It fights in the Lord\'s name, whatever the Lord has become.'],
-  boss_beast: ['THE GATEKEEPER', 'The beast that keeps the gate of the graveyard and the road beyond it.'],
+  boss_beast: ['BAELPHEGAZ', 'A demon in the service of the Shadow Lord, come up from below to harvest the misery of mankind. He keeps the gate of the graveyard and the road beyond it.'],
   boss_cinder: ['THE CINDER WARDEN', 'He called it mercy, to burn what he could not protect.'],
   boss_bramble: ['THE MIRE MOTHER', 'The swamp\'s heart and hunger, rooted deep beneath the boardwalks.'],
   boss_nightmare: ['THE PHANTOM STEED', 'A horse that died in its stall, and still gallops through the stable at night.'],

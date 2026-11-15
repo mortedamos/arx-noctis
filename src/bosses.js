@@ -334,11 +334,11 @@ function breathHits(i0, i1, x, y, D, r) {
   }
   return false;
 }
-// ============================================================================================== 1. THE GATEKEEPER (hell beast)
+// ============================================================================================== 1. BAELPHEGAZ (hell beast - a demon in the Shadow Lord's service)
 // Plenty of warning, generous openings:  CHARGE (stuns itself on the wall), FIRE BREATH (a crescent of flame - duck beneath it, right next to the boss),
 // LEAP SLAM (landing spot is marked), and in phase 2 FLAME PILLARS.
 export class BossBeast extends Boss {
-  constructor(g, x, y, o) { super(g, x, y, 46, 84, o); this.hp = this.maxHp = 210; this.dmg = 12; this.xp = 120; this.bossName = 'THE GATEKEEPER'; this.sub = 'WARDEN OF THE GRAVEYARD'; this.scale = 2; this.dir = -1; this.deathFx = COLORS.fire; this.stunDur = 100; this.tx = x; this.ice = { w: 94, h: 124 }; }
+  constructor(g, x, y, o) { super(g, x, y, 46, 84, o); this.hp = this.maxHp = 210; this.dmg = 12; this.xp = 120; this.bossName = 'BAELPHEGAZ'; this.sub = 'HARVESTER OF MISERY'; this.scale = 2; this.dir = -1; this.deathFx = COLORS.fire; this.stunDur = 100; this.tx = x; this.ice = { w: 94, h: 124 }; }
   get spd() { return this.phase === 2 ? 1.2 : 1; }
   tele(k) { return Math.round({ charge: 60, breath: 48, leap: 50 }[k] / this.spd); }
   dangerous() { return (this.state === 'charge' && this.st >= this.tele('charge')) || (this.state === 'leap' && this.st >= this.tele('leap')); }
@@ -771,7 +771,7 @@ export class BossShadow extends Boss {
           this.tell('breath', (this.st - 30) / 32, [{ type: 'poly', pts: [[mx, my], pt(a0), pt(a1)] }]);
         } else if (this.st < 142) {
           this.vx = this.vy = 0; this.faceP(); const s = (this.st - 62) / 80, a = 0.55 - 0.6 * s, mx = this.x + this.dir * 44, my = this.cy - 4, ang = this.dir > 0 ? a : Math.PI - a;
-          g.fx.jet(mx, my, ang, [[0.6, 1, 1], [0.1, 0.5, 1]], { n: 6, speed: 6, size: 28, spread: 0.08 }); g.fx.light(mx + Math.cos(ang) * 60, my + Math.sin(ang) * 60, 130, 1); if (this.st === 62 || this.st % 20 === 0) A.sfx('fire');
+          g.fx.blueBreath(mx, my, ang, Math.min(1, (this.st - 62) / 10, (142 - this.st) / 14)); g.fx.light(mx + Math.cos(ang) * 60, my + Math.sin(ang) * 60, 130, 1, [0.4, 0.7, 1]); if (this.st === 62 || this.st % 20 === 0) A.sfx('fire');
           if (this.st % 4 === 0) for (let k = 1; k <= 6; k++) { const hx = mx + Math.cos(ang) * k * 24, hy = my + Math.sin(ang) * k * 24; if (overlap({ x: hx - 13, y: hy - 13, w: 26, h: 26 }, p.hurtbox)) { p.hurt(Math.round(12 * (this.dmgK || 1)), this.x, { kb: 1.4 }); break; } }
         } else { this.state = 'idle'; this.st = -30; this.side = undefined; } break; }
       case 'slam':
@@ -790,9 +790,9 @@ export class BossShadow extends Boss {
   }
   draw(ctx, cx, cy) {
     let id = 'demon_idle', f = Math.floor(this.t / 9) % 6;
-    if (this.state === 'breath' && this.st >= 30) { id = 'demon_attack'; f = this.st < 62 ? clamp(Math.floor((this.st - 30) / 32 * 6), 0, 5) : 6 + Math.floor(this.t / 4) % 5; }
-    // the body sits ~18px above the bottom of the idle cell and ~27px above the bottom of the attack cell
-    drawSheet(ctx, id, f, this.x - cx, this.y - cy + Math.sin(this.t * 0.06) * 3, { dir: this.dir, flash: this.flashT > 0, ay: 1, dy: id === 'demon_attack' ? 27 : 18, alpha: this.alphaT < 1 ? this.alphaT : undefined });
+    if (this.state === 'breath' && this.st >= 30) { id = 'demon_attack_nb'; f = this.st < 62 ? clamp(Math.floor((this.st - 30) / 32 * 6), 0, 5) : 6 + Math.floor(this.t / 7) % 2; }          // (the 'no breath' sheet: the fire itself is the three.js jet in ai(), not painted in the sprite)
+    // the body sits ~18px above the bottom of the idle cell, ~27px above the bottom of the attack cell and ~11px above the bottom of the (shorter) no-breath cell
+    drawSheet(ctx, id, f, this.x - cx, this.y - cy + Math.sin(this.t * 0.06) * 3, { dir: this.dir, flash: this.flashT > 0, ay: 1, dy: id === 'demon_attack_nb' ? 11 : id === 'demon_attack' ? 27 : 18, alpha: this.alphaT < 1 ? this.alphaT : undefined });
   }
 }
 

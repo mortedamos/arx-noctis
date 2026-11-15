@@ -2,13 +2,14 @@
 import { KEYS } from './itemdata.js';
 import { STORY } from './story.js';
 import { Entity, moveX, moveY } from './entity.js';
-import { drawSheet, IMG } from './assets.js';
+import { drawSheet, IMG, SHEET } from './assets.js';
 import { ICON } from './procart.js';
 import { Audio_ as A } from './audio.js';
 import { COLORS } from './fx.js';
 import { T, rand, dist, overlap, TAU, choice } from './util.js';
 import { ENCH, ENCH_TYPES, ENCH_BIAS, TUNE } from './enchant.js';
 import { ITEMS, addItem, randomItemId } from './itemdata.js';
+import { letterTitle, markPage } from './letters.js';
 
 export const ABILITIES = {
   djump: { name: 'AETHER FEATHER', desc: 'PRESS JUMP AGAIN IN MIDAIR TO DOUBLE JUMP.', icon: 'feather', color: [0.6, 0.85, 1] },
@@ -29,7 +30,7 @@ export const UPGRADES = {
   tide: { name: 'AQUA REGIA', desc: 'A DASH CUTS WHATEVER IT PASSES THROUGH', icon: 'e_ice', color: [0.4, 0.8, 1] },
   astrolabe: { name: 'ASTROLABE', desc: "THE ORLOJ'S LITTLE SISTER. YOUR MAP NOW MARKS WHAT YOU HAVE LEFT BEHIND: TREASURE NOT TAKEN, AND THE ROOMS BESIDE THE ONES YOU KNOW.", icon: 'astrolabe', color: [1, 0.85, 0.45] },          // (its id is the flag 'got_astrolabe': the map reads it)
   goldkey: { name: 'KEY OF GOLD', desc: 'THE LAST KEY: IT OPENS THE DOOR OF THE SHADOW THRONE.', icon: 'key', color: [1, 0.85, 0.35] },          // (the Librarian's: its id is the flag 'has_key_gold')
-  frostkey: { name: 'KEY OF ANTIMONY', desc: 'IT OPENS THE LIBRARY OF INK, DEEP IN SHADOWKEEP.', icon: 'key', color: [0.6, 0.85, 1] },          // (the Rimewyrm's: its id is the flag 'has_key_frost')
+  frostkey: { name: 'KEY OF ANTIMONY', desc: 'IT OPENS THE LIBRARY OF AGES, DEEP IN SHADOWKEEP.', icon: 'key', color: [0.6, 0.85, 1] },          // (the Rimewyrm's: its id is the flag 'has_key_frost')
   crampons: { name: 'RIME CRAMPONS', desc: 'STEEL SPIKES FOR YOUR BOOTS: YOU NO LONGER SLIP ON ICE.', icon: 'crampons', color: [0.7, 0.9, 1] },          // (its id is the flag 'got_crampons': the Player reads it)
   hoard: { name: 'A HOARD', desc: 'SOMEONE HID THIS AWAY LONG AGO: GOLD, A GREAT DEAL OF IT.', icon: 'coin', color: [1, 0.85, 0.3] },
   letter: { name: "THE LADY'S LETTER", desc: '', icon: 'scroll', color: [0.95, 0.9, 0.75] },          // (its words come from LETTERS, chosen by its id)
@@ -46,6 +47,7 @@ export const LETTERS = [
   'THE ENGINEER BUILT A MACHINE TO HOLD THE SUN. HE NEVER ASKED IF THE SUN WISHED TO BE HELD.',
   'WHEN IT IS OVER, GO UP TO THE HILL ABOVE PRAGUE. I WILL BE THERE. I HAVE ALWAYS BEEN THERE.',
 ];
+const pageUpgrade = n => ({ name: 'A PAGE: ' + letterTitle(n), desc: 'A LETTER, FOLDED SMALL. IT IS KEPT IN THE LETTERS ON THE TITLE SCREEN.', icon: 'scroll', color: [0.95, 0.9, 0.75] });
 function letterUpgrade(id) { let h = 0; for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return { ...UPGRADES.letter, desc: LETTERS[h % LETTERS.length] }; }
 // a key picked up from a chest, a ledge or the top of a tower (its id, with or without the chest's '_u', names it - see KEYS)
 const keyBase = id => String(id).replace(/_u$/, '');
@@ -183,6 +185,77 @@ export class Barrel {
   }
 }
 
+// ------------------------------------------------------------------------------------------------ SKULLS (a secret: six of them are hidden about the castle)
+// A little skull - the head of the skeleton sprite - tucked into an out-of-the-way corner.  The sword breaks it, and nothing at all seems to happen... until the sixth: then a door that was shut opens somewhere (flag skulls_done).
+export const SKULL_COUNT = 6;
+export class Skull {
+  constructor(x, y, o = {}) { this.x = x; this.y = y; this.id = o.id; this.dead = false; this.t = 0; this.broken = 0; }
+  get box() { return { x: this.x - 8, y: this.y - 14, w: 16, h: 14 }; }
+  hit(g) {
+    if (this.dead || this.broken) return false; this.broken = 1; const bone = [[0.92, 0.88, 0.78], [0.5, 0.45, 0.4]]; A.sfx('bone'); g.shake(1, 3);
+    g.fx.burst(this.x, this.y - 6, 8, bone, { speed: 1.4, s0: 6 }); g.fx.sparks(this.x, this.y - 6, 7, bone, 2.2, { gy: 0.22 });
+    g.save.flags[this.id] = true; if (g.skullsBroken() >= SKULL_COUNT) g.skullsDone(); return true;
+  }
+  update(g) { this.t++; if (this.broken) { if (++this.broken > 50) this.dead = true; } else breakSparkle(g, this.t, this.box, [190, 215, 255]); }
+  draw(ctx, cx, cy) {
+    const s = SHEET.skeleton_walk; if (!s || !s.img) return; const x = Math.round(this.x - cx), y = Math.round(this.y - cy);
+    ctx.save(); if (this.broken) ctx.globalAlpha = Math.max(0, 1 - this.broken / 40);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(x, y - 1, 6, 2, 0, 0, Math.PI * 2); ctx.fill();          // its shadow on the floor
+    ctx.drawImage(s.img, 2 * s.w + 13, 6, 12, 13, x - 6, y - 14 + (this.broken ? this.broken * 0.2 : 0), 12, 13); ctx.restore();          // (just the head: frame 3 of the walking skeleton)
+  }
+}
+
+// ------------------------------------------------------------------------------------------------ THE THREE CANDLES (a secret: light them in the order a tablet gives)
+// Three candles of different heights stand together.  Light them in the right order and a portcullis somewhere in the room rises (it works exactly like a lever's); light them wrongly and all three gutter out.
+export class LitCandle {
+  constructor(x, y, o = {}) { this.x = x; this.y = y; this.id = o.id; this.i = o.i; this.order = o.order || [0, 1, 2]; this.hh = [14, 22, 30][o.h || 0]; this.open = !!o.open; this.lit = !!o.open; this.dead = false; this.t = 0; }
+  get box() { return { x: this.x - 8, y: this.y - this.hh - 10, w: 16, h: this.hh + 10 }; }
+  interact(g) {
+    if (this.lit) return false; const r = g.room, seq = r.candleSeq || (r.candleSeq = []), all = g.props.filter(p => p instanceof LitCandle && p.id === this.id);
+    this.lit = true; seq.push(this.i); A.sfx('fire'); g.fx.ring(this.x, this.y - this.hh, 22, [1, 0.8, 0.45], 16, 0.2);
+    if (seq[seq.length - 1] !== this.order[seq.length - 1]) { A.sfx('back'); for (const c of all) { c.lit = false; g.fx.smoke(c.x, c.y - c.hh - 4, 3); } r.candleSeq = []; g.popup(this.x, this.y - this.hh - 22, 'THE FLAMES GUTTER OUT', '#cfc2a0'); return true; }
+    if (seq.length >= 3) { for (const c of all) c.open = true; r.candleSeq = []; g.pullLever({ id: this.id, x: this.x, y: this.y - this.hh }); }
+    return true;
+  }
+  update(g) {
+    this.t++; if (this.lit) { g.fx.fire(this.x, this.y - this.hh - 3, { scale: 0.45, n: 1, sparks: false }); g.fx.light(this.x, this.y - this.hh, 46, 0.55); }
+    else if (this.t % 9 === 0) g.fx.emit({ x: this.x + rand(-6, 6), y: this.y - this.hh - rand(0, 10), vx: 0, vy: -rand(0.1, 0.4), life: 44, s0: 4.5, s1: 1, c0: [1, 0.86, 0.5], c1: [1, 1, 0.92], a0: 0.9, a1: 0, kind: 6 });
+  }
+  draw(ctx, cx, cy) {
+    const x = Math.round(this.x - cx), y = Math.round(this.y - cy), h = this.hh;
+    ctx.fillStyle = '#3a2a1a'; ctx.fillRect(x - 6, y - 3, 12, 3); ctx.fillStyle = '#6b5030'; ctx.fillRect(x - 5, y - 4, 10, 1);          // the dish it stands in
+    ctx.fillStyle = '#e8dcc0'; ctx.fillRect(x - 3, y - 4 - h, 6, h); ctx.fillStyle = '#b8a888'; ctx.fillRect(x + 1, y - 4 - h, 2, h); ctx.fillStyle = '#f6efd8'; ctx.fillRect(x - 3, y - 4 - h, 6, 1);          // the wax
+    ctx.fillStyle = '#1a1208'; ctx.fillRect(x, y - 7 - h, 1, 3);          // its wick
+  }
+}
+
+// ------------------------------------------------------------------------------------------------ THE BELL (a secret: the bell of the bell tower, still hanging)
+// Ring it and it tolls over the burning city.  The first time, she comes to the sound - and gives him the page she wrote on the road home.
+export class Bell {
+  constructor(x, y, o = {}) { this.x = x; this.y = y; this.id = o.id || 'page5'; this.dead = false; this.t = 0; this.swing = 0; this.sw = 0; }
+  get box() { return { x: this.x - 22, y: this.y - 54, w: 44, h: 54 }; }
+  interact(g) {
+    this.sw = 1; A.sfx('toll'); g.shake(1, 10); g.fx.ring(this.x, this.y - 30, 70, [0.9, 0.8, 0.5], 40, 0.1);
+    if (!g.save.flags[this.id]) {
+      g.save.flags[this.id] = true; markPage(5); g.after(150, () => {
+        if (g.state !== 'play') return; g.ghost.reveal(420); A.sfx('ghost'); g.fx.ring(this.x, this.y - 20, 50, [0.55, 0.78, 1], 30, 0.1);
+        g.showDialog(STORY.bell[0], { name: STORY.speaker, font: 'hand', onClose: () => g.showDialog(STORY.bell[1], { name: STORY.speaker, font: 'hand', onClose: () => { A.sfx('item'); A.sting('sting_item'); g.banner('A PAGE: ' + letterTitle(5), 'SHE WROTE IT ON THE ROAD HOME'); g.after(70, () => g.openLetter(5)); } }) });
+      });
+    }
+    return true;
+  }
+  update(g) { this.t++; this.sw *= 0.985; this.swing = Math.sin(this.t * 0.22) * 0.32 * this.sw; if (!g.save.flags[this.id] && this.t % 12 === 0) g.fx.emit({ x: this.x + rand(-8, 8), y: this.y - rand(20, 44), vx: 0, vy: -rand(0.1, 0.4), life: 50, s0: 5, s1: 1, c0: [1, 0.85, 0.5], a0: 0.8, a1: 0, kind: 6 }); }
+  draw(ctx, cx, cy) {
+    const x = Math.round(this.x - cx), y = Math.round(this.y - cy);
+    ctx.fillStyle = '#2a1c12'; ctx.fillRect(x - 22, y - 56, 4, 56); ctx.fillRect(x + 18, y - 56, 4, 56); ctx.fillStyle = '#3d2a1a'; ctx.fillRect(x - 24, y - 58, 48, 5); ctx.fillStyle = '#1a100a'; ctx.fillRect(x - 24, y - 53, 48, 1);          // the frame
+    ctx.save(); ctx.translate(x, y - 53); ctx.rotate(this.swing);
+    ctx.fillStyle = '#6b4a1e'; ctx.beginPath(); ctx.moveTo(-5, 1); ctx.lineTo(5, 1); ctx.lineTo(9, 10); ctx.quadraticCurveTo(14, 26, 17, 36); ctx.lineTo(-17, 36); ctx.quadraticCurveTo(-14, 26, -9, 10); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#a8742a'; ctx.beginPath(); ctx.moveTo(-3, 2); ctx.lineTo(1, 2); ctx.lineTo(3, 11); ctx.quadraticCurveTo(7, 26, 9, 35); ctx.lineTo(-10, 35); ctx.quadraticCurveTo(-8, 26, -5, 11); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#4a3010'; ctx.fillRect(-17, 34, 34, 3); ctx.fillStyle = '#d8a850'; ctx.fillRect(-14, 20, 28, 1); ctx.fillRect(-12, 25, 24, 1); ctx.fillStyle = '#2a1a08'; ctx.fillRect(-1, 37, 2, 5);          // the bell, its bands and clapper
+    ctx.restore();
+  }
+}
+
 // ------------------------------------------------------------------------------------------------ save altar
 export class Altar {
   constructor(x, y) { this.x = x; this.y = y; this.t = 0; this.used = 0; this.dead = false; }
@@ -237,12 +310,13 @@ export class Waystone {
 
 // ------------------------------------------------------------------------------------------------ lore tablet
 export class Tablet {
-  constructor(x, y, o) { this.x = x; this.y = y; this.text = STORY.tablets[o.id] || o.text; this.id = o.id; this.sign = /^sign_/.test(o.id || ''); this.t = 0; this.dead = false; }          // (a signpost is a sign; every gravestone and tablet is her: see story.js)
-  get box() { return { x: this.x - 12, y: this.y - 26, w: 24, h: 26 }; }
-  update(g) { this.t++; if (!this.sign) { const unread = !g.save.flags['read_' + this.id]; g.fx.glow(this.x, this.y - 13, 22 + 2 * Math.sin(this.t * 0.05), [0.6, 0.8, 1], (unread ? 0.3 : 0.14) + 0.04 * Math.sin(this.t * 0.04)); }          // (her stones glow faintly, softly: that is what tells them from the headstones that are only scenery, and from signs)
+  constructor(x, y, o) { this.x = x; this.y = y; this.text = STORY.tablets[o.id] || o.text; this.id = o.id; this.sign = /^sign_/.test(o.id || ''); this.narr = !!o.narr; this.t = 0; this.dead = false; }          // (a signpost is a sign; every gravestone and tablet is her: see story.js)
+  get box() { return this.narr ? { x: this.x - 20, y: this.y - 30, w: 40, h: 30 } : { x: this.x - 12, y: this.y - 26, w: 24, h: 26 }; }          // (a narr stone is only a place to read: the picture is the grave scenery already there, and the words are the game speaking, not her)
+  update(g) { this.t++; if (!this.sign && !this.narr) { const unread = !g.save.flags['read_' + this.id]; g.fx.glow(this.x, this.y - 13, 22 + 2 * Math.sin(this.t * 0.05), [0.6, 0.8, 1], (unread ? 0.3 : 0.14) + 0.04 * Math.sin(this.t * 0.04)); }          // (her stones glow faintly, softly: that is what tells them from the headstones that are only scenery, and from signs)
     if (this.t % 10 === 0 && !g.save.flags['read_' + this.id]) g.fx.emit({ x: this.x + rand(-5, 5), y: this.y - 18, vx: 0, vy: -rand(0.2, 0.5), life: 40, s0: 5, s1: 1, c0: [0.7, 0.85, 1], a0: 0.8, a1: 0, kind: 6 }); }
-  interact(g) { g.save.flags['read_' + this.id] = true; if (!this.sign) { if (g.save.flags.got_lantern) g.player.lanFlare = 260; else g.ghost.reveal(280); } g.showDialog(this.text, this.sign ? {} : { name: STORY.speaker, font: 'hand' });          A.sfx('select'); return true; }          // (her words are in her own handwriting)
+  interact(g) { g.save.flags['read_' + this.id] = true; if (this.narr) { g.showDialog(this.text, { font: 'mixed' }); A.sfx('select'); return true; } if (!this.sign) { if (g.save.flags.got_lantern) g.player.lanFlare = 260; else g.ghost.reveal(280); } g.showDialog(this.text, this.sign ? {} : { name: STORY.speaker, font: 'hand' });          A.sfx('select'); return true; }          // (her words are in her own handwriting)
   draw(ctx, cx, cy) {
+    if (this.narr) return;
     const x = this.x - cx, y = this.y - cy;
     if (this.sign && IMG.signpost) { const im = IMG.signpost; ctx.drawImage(im, Math.round(x - im.width / 2), Math.round(y - im.height + 1)); return; }          // (a signpost is a wooden post and board - FreeGameSprites, CC0 - never a stone; her words are on the headstones below)
     if (this.sign || !IMG.gy_stone) { drawSheet(ctx, 'tablet', 0, x, y); return; }          // (her stones are the Graveyard pack's headstone, with flowers at its foot)
@@ -270,9 +344,40 @@ export class Chest {
   draw(ctx, cx, cy) { drawSheet(ctx, 'chest', this.open ? 1 : 0, this.x - cx, this.y - cy); }
 }
 
+// ------------------------------------------------------------------------------------------------ lever
+// A great iron lever set in a plate in the floor.  UP throws it over (once, for good: the flag o.id is kept in the save), and the gate it works - a portcullis somewhere else in the room - rises (Game.pullLever).
+// Until it is thrown its knob glows red and it sends up a spark now and then, so it is seen; afterwards it stands over, with a dull green knob.
+const LEVER_S = 0.7;
+export class Lever {
+  constructor(x, y, o = {}) { this.x = x; this.y = y; this.id = o.id; this.open = !!o.open; this.k = this.open ? 1 : -1; this.t = 0; this.dead = false; }          // (k: where the handle is, -1 (back) .. 1 (over); `open` is what Game.nearInteractable reads to leave a thrown lever alone)
+  get box() { return { x: this.x - 16, y: this.y - 28, w: 32, h: 28 }; }
+  update(g) {
+    this.t++; const to = this.open ? 1 : -1; this.k += Math.max(-0.09, Math.min(0.09, to - this.k));
+    if (!this.open) {          // sparkles drift up from it, like those of the walls that can be broken: this is something to use
+      g.fx.glow(this.x, this.y - 12, 16 + Math.sin(this.t * 0.08) * 2, [1, 0.85, 0.6], 0.16 + 0.06 * Math.sin(this.t * 0.06));
+      if (this.t % 5 === 0) g.fx.emit({ x: this.x + rand(-11, 11), y: this.y - rand(2, 20), vx: rand(-0.1, 0.1), vy: -rand(0.12, 0.38), life: rand(55, 100), s0: rand(6.5, 10), s1: 2, c0: [1, 0.86, 0.5], c1: [1, 1, 0.92], a0: 1, a1: 0, kind: 6 });
+    }
+  }
+  interact(g) { if (this.open) return false; this.open = true; g.pullLever(this); return true; }
+  draw(ctx, cx, cy) {
+    const x = Math.round(this.x - cx), y = Math.round(this.y - cy), ang = this.k * 0.8;          // the handle swings from leaning back (-0.8 rad) to leaning forward (+0.8)
+    ctx.save(); ctx.translate(x, y); ctx.scale(LEVER_S, LEVER_S);          // (drawn at its own size, then scaled: LEVER_S)
+    ctx.fillStyle = '#17151c'; ctx.fillRect(-15, -3, 30, 3); ctx.fillStyle = '#34323e'; ctx.fillRect(-14, -6, 28, 3); ctx.fillStyle = '#5a5870'; ctx.fillRect(-14, -6, 28, 1);          // the floor plate
+    ctx.fillStyle = '#8a8aa0'; for (const bx of [-11, 10]) ctx.fillRect(bx, -5, 2, 2);                                                                                                  // its bolts
+    ctx.fillStyle = '#0d0c11'; ctx.fillRect(-8, -11, 16, 6); ctx.fillStyle = '#2a2833'; ctx.fillRect(-7, -10, 14, 4); ctx.fillStyle = '#48465a'; ctx.fillRect(-7, -10, 14, 1);          // the housing the handle comes out of
+    ctx.save(); ctx.translate(0, -9); ctx.rotate(ang);
+    ctx.fillStyle = '#0d0c11'; ctx.fillRect(-2.5, -21, 5, 22); ctx.fillStyle = '#b4b4c6'; ctx.fillRect(-1.5, -20, 3, 20); ctx.fillStyle = '#e4e4f0'; ctx.fillRect(-1.5, -20, 1, 20); ctx.fillStyle = '#6c6c80'; ctx.fillRect(1, -20, 1, 20);          // the iron shaft
+    ctx.fillStyle = '#0d0c11'; ctx.fillRect(-4.5, -25, 9, 5); ctx.fillStyle = '#8a8aa0'; ctx.fillRect(-3.5, -24, 7, 3); ctx.fillStyle = '#d4d4e4'; ctx.fillRect(-3.5, -24, 7, 1);          // a plain iron grip across the end of the shaft
+    ctx.restore();
+    ctx.fillStyle = this.open ? '#5fae6e' : '#d8463c'; ctx.fillRect(4, -9, 2, 2);          // a tiny lamp on the housing: red until the lever is thrown, then green
+    ctx.fillStyle = '#c8a24a'; ctx.beginPath(); ctx.arc(0, -9, 2.4, 0, 6.3); ctx.fill(); ctx.fillStyle = '#6a4e18'; ctx.beginPath(); ctx.arc(0, -9, 1, 0, 6.3); ctx.fill();          // the pivot pin
+    ctx.restore();
+  }
+}
+
 // ------------------------------------------------------------------------------------------------ permanent upgrade (floating item)
 export class Upgrade {
-  constructor(x, y, o) { this.x = x; this.y = y; this.kind = o.kind; this.id = o.id; this.t = 0; this.dead = false; this.U = o.kind === 'key' ? keyUpgrade(o.id) : o.kind === 'letter' ? letterUpgrade(o.id) : UPGRADES[o.kind]; }
+  constructor(x, y, o) { this.x = x; this.y = y; this.kind = o.kind; this.id = o.id; this.n = o.n; this.t = 0; this.dead = false; this.U = o.kind === 'page' ? pageUpgrade(o.n) : o.kind === 'key' ? keyUpgrade(o.id) : o.kind === 'letter' ? letterUpgrade(o.id) : UPGRADES[o.kind]; }
   get box() { return { x: this.x - 8, y: this.y - 16, w: 16, h: 16 }; }
   update(g) {
     this.t++; const bob = Math.sin(this.t * 0.07) * 2, p = g.player; this.by = bob;
@@ -286,6 +391,7 @@ export class Upgrade {
     if (this.kind === 'hpup') { S.maxHp += 20; S.hp = S.maxHp; } else if (this.kind === 'mpup') { S.maxMp += 10; S.mp = S.maxMp; } else if (this.kind === 'atkup') S.atk += 2; else if (this.kind === 'tide') S.flags.got_tide = true; else if (this.kind === 'mantle') S.flags.got_mantle = true; else if (this.kind === 'lantern') S.flags.got_lantern = true; else if (this.kind === 'shard') S.flags.got_shard = true; else if (this.kind === 'spring') S.flags.got_spring = true; else if (this.kind === 'astrolabe') S.flags.got_astrolabe = true; else if (this.kind === 'goldkey') S.flags.has_key_gold = true; else if (this.kind === 'frostkey') S.flags.has_key_frost = true; else if (this.kind === 'hoard') { S.gold += 400; g.popup(this.x, this.y - 30, '+400 GOLD', '#ffd860'); } else if (this.kind === 'crampons') S.flags.got_crampons = true; else if (this.kind === 'key') S.flags['has_' + keyBase(this.id)] = true;
     A.sfx('item'); A.sting('sting_item'); g.fx.ring(this.x, this.y - 8, 44, this.U.color, 30); g.fx.flash(this.U.color, 0.3); g.fx.sparks(this.x, this.y - 8, 18, [[1, 1, 0.8], this.U.color], 3);
     g.banner(this.U.name, this.kind === 'tide' && !S.abilities.dash ? 'ITS POWER WAKES ONCE YOU CAN DASH' : this.U.desc);
+    if (this.kind === 'page') g.foundPage(this.n);
   }
   draw(ctx, cx, cy) {
     if (this.kind === 'shoes') drawSheet(ctx, 'pedestal', 0, this.x - cx, this.y + 12 - cy);          // (the shoes stand on a little pedestal of their own)

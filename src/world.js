@@ -4,8 +4,18 @@ import { IMG, SHEET, drawSheet } from './assets.js';
 import { LIBRARY_THEME, ICE_THEME, bookTile, drawIceBlock, drawLibrary, drawIceCave, drawForeground } from './newzones.js';
 export { drawForeground };
 
-export const TILE = { EMPTY: 0, SOLID: 1, PLAT: 2, SPIKE: 3, CRACK: 4, BARRICADE: 5, CRYSTAL: 6, SEAL: 7, ICE: 8 };          // (ICE: a barrier of ice that the Ember spell melts)
-export const isSolid = v => v === 1 || v === 4 || v === 5 || v === 6 || v === 7 || v === 8;
+export const TILE = { EMPTY: 0, SOLID: 1, PLAT: 2, SPIKE: 3, CRACK: 4, BARRICADE: 5, CRYSTAL: 6, SEAL: 7, ICE: 8, GATE: 9 };          // (ICE: a barrier of ice that the Ember spell melts; GATE: a portcullis of iron bars that a LEVER, somewhere else in the room, raises - see props.js Lever)
+export const isSolid = v => v === 1 || v === 4 || v === 5 || v === 6 || v === 7 || v === 8 || v === 9;
+
+// A PORTCULLIS: iron bars (brass in the Clockwork Dungeon) with a crossbar every third course, hanging from a heavy housing in the ceiling.  One 16x16 cell at pixel (x, y); `top` is the first cell of its column
+// (it carries the housing).  Drawn into the room's prerendered picture, and again - sliding up - while the gate is rising (Game.openGate).
+export function drawGateTile(g, x, y, theme, top, row = 0) {
+  const brass = theme === 'clockwork', bar = brass ? '#7c5e26' : '#2e2d34', lit = brass ? '#d9b65c' : '#76748a', dark = brass ? '#2c1d08' : '#121116', rivet = brass ? '#f1d27a' : '#a6a4b8';
+  g.fillStyle = 'rgba(0,0,0,0.38)'; g.fillRect(x + 2, y, 12, T);                                         // (the dark behind the bars: the far side is dim)
+  for (const bx of [x + 2, x + 10]) { g.fillStyle = bar; g.fillRect(bx, y, 4, T); g.fillStyle = lit; g.fillRect(bx, y, 1, T); g.fillStyle = dark; g.fillRect(bx + 3, y, 1, T); }
+  if (row % 3 === 1) { g.fillStyle = bar; g.fillRect(x, y + 4, T, 3); g.fillStyle = lit; g.fillRect(x, y + 4, T, 1); g.fillStyle = dark; g.fillRect(x, y + 6, T, 1); g.fillStyle = rivet; g.fillRect(x + 3, y + 5, 1, 1); g.fillRect(x + 11, y + 5, 1, 1); }
+  if (top) { g.fillStyle = dark; g.fillRect(x - 1, y, T + 2, 5); g.fillStyle = bar; g.fillRect(x - 1, y, T + 2, 4); g.fillStyle = lit; g.fillRect(x - 1, y, T + 2, 1); g.fillStyle = rivet; g.fillRect(x + 1, y + 2, 1, 1); g.fillRect(x + 13, y + 2, 1, 1); }
+}
 
 // ------------------------------------------------------------------ image helpers
 const canvasOf = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
@@ -423,13 +433,14 @@ export class Room {
   set(tx, ty, v) { if (tx < 0 || ty < 0 || tx >= this.w || ty >= this.h) return; this.tiles[ty * this.w + tx] = v; this.dirty = true; this.maskDirty = true; }
   solid(tx, ty) { return isSolid(this.get(tx, ty)); }
 
+  isHollow(tx, ty) { if (!this.hollow) return false; if (!this.hollowSet) this.hollowSet = new Set(this.hollow); return this.hollowSet.has(tx + ',' + ty); }
   prerender() {
     this.canvas = this.canvas || canvasOf(this.pw, this.ph); const g = this.canvas.getContext('2d'); g.imageSmoothingEnabled = false; g.clearRect(0, 0, this.pw, this.ph);
     const th = THEME[this.theme]; this.anim.length = 0; this.spikes = []; this.brk = [];          // (spikes are also drawn again on the clear layer above fog and darkness: a hazard must always be seen)
     // depth: contiguous solid tiles above
     for (let ty = 0; ty < this.h; ty++) for (let tx = 0; tx < this.w; tx++) {
       const v = this.tiles[ty * this.w + tx]; if (!v) continue;
-      if (v === TILE.SOLID) {
+      if (v === TILE.SOLID || (v === TILE.CRACK && this.isHollow(tx, ty))) {          // (a hollow wall is drawn as plain wall: nothing shows that it will give)
         let depth = 0; while (depth < 3 && this.solid(tx, ty - 1 - depth) && ty - 1 - depth >= 0) depth++;
         // ceilings/overhangs: tile with air below and solid above shouldn't look like grass-top
         th.solid(g, tx, ty, { u: this.solid(tx, ty - 1), d: this.solid(tx, ty + 1), l: this.solid(tx - 1, ty), r: this.solid(tx + 1, ty) }, depth);
@@ -439,6 +450,7 @@ export class Room {
       else if (v === TILE.BARRICADE) { drawSheet(g, 't_barricade', 0, tx * T, ty * T, { ax: 0, ay: 0 }); this.brk.push([tx, ty, v]); }
       else if (v === TILE.ICE) { drawIceBlock(g, tx, ty); this.brk.push([tx, ty, v]); }
       else if (v === TILE.CRYSTAL || v === TILE.SEAL) this.anim.push([tx, ty, v]);
+      else if (v === TILE.GATE) { if (!(this.gateRising && this.gateRising.has(tx + ',' + ty))) drawGateTile(g, tx * T, ty * T, this.theme, this.tiles[(ty - 1) * this.w + tx] !== TILE.GATE, ty); }          // (a gate that is rising is drawn by Game.draw, sliding up)
     }
     this.dirty = false;
   }

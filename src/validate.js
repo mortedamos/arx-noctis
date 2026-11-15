@@ -16,6 +16,13 @@ import { T } from './util.js';
 
 const approach = (v, t, s) => (v < t ? Math.min(v + s, t) : Math.max(v - s, t));
 
+// A room's portcullises are raised by levers (props.js Lever), which are always reachable first: so every check below is made with the gates OPEN, and validateRoom adds the proof that each lever can be reached while the gates in
+// its way are still shut.  (def.meta.levers: [{ id, tx, gy, gate: [[tx, ty], ...] }])
+export function openGates(def) {
+  if (!def.tiles.includes(TILE.GATE)) return def;
+  const tiles = Uint8Array.from(def.tiles); for (let i = 0; i < tiles.length; i++) if (tiles[i] === TILE.GATE) tiles[i] = 0;
+  return { ...def, tiles };
+}
 export function roomOf(def, broken) {
   const tiles = Uint8Array.from(def.tiles);
   if (broken) for (const [x, y] of broken) tiles[y * def.w + x] = 0;
@@ -106,7 +113,7 @@ export function reach(room, S, starts, abilities) {
 }
 
 // ------------------------------------------------------------------------------------------------ whole-room validation
-const GROUND_SPAWN = new Set(['zombie', 'skeleton', 'hound', 'ghoul', 'wizard', 'sorcerer', 'acolyte', 'archmage', 'swampspider', 'swampthing', 'villager', 'candle', 'statue', 'itemspawn', 'altar', 'waystone', 'boss_cinder', 'boss_vampire', 'boss_mirror', 'barrel', 'zealot', 'tablet', 'chest', 'boss_beast', 'boss_nightmare', 'boss_colossus', 'upgrade', 'shade']);
+const GROUND_SPAWN = new Set(['skull', 'bell', 'litcandle', 'lever', 'zombie', 'skeleton', 'hound', 'ghoul', 'wizard', 'sorcerer', 'acolyte', 'archmage', 'swampspider', 'swampthing', 'villager', 'candle', 'statue', 'itemspawn', 'altar', 'waystone', 'boss_cinder', 'boss_vampire', 'boss_mirror', 'barrel', 'zealot', 'tablet', 'chest', 'boss_beast', 'boss_nightmare', 'boss_colossus', 'upgrade', 'shade']);
 // everything spawned in the room must stand on open ground (or float in open air) - never inside a wall
 export function checkSpawns(def) {
   const room = roomOf(def), errs = [];
@@ -116,8 +123,8 @@ export function checkSpawns(def) {
   }
   return errs;
 }
-export function validateRoom(def, opts = {}) {
-  const errs = [], meta = def.meta || {}, base = meta.abilities || [];
+export function validateRoom(def0, opts = {}) {
+  const def = openGates(def0), errs = [], meta = def.meta || {}, base = meta.abilities || [];
   const room = roomOf(def), S = surfaces(room), at = (tx, gy) => (tx >= 0 && tx < def.w && gy >= 0 && gy < def.h ? S.id[gy * def.w + tx] : -1);
   const node = (p, name) => { const id = at(p.tx, p.gy); if (id < 0) errs.push(`${name} at (${p.tx},${p.gy}) is not standable`); return id; };
 
@@ -158,6 +165,17 @@ export function validateRoom(def, opts = {}) {
     const rid = at(entries.R.tx, entries.R.gy);
     for (const a of [['djump'], ['dash'], []]) if (rid >= 0 && reach(room, S, [start], a).has(rid)) errs.push(`gulf crossable with only [${a}]`);
     if (rid >= 0 && !reach(room, S, [start], ['djump', 'dash']).has(rid)) errs.push('gulf not crossable even with Double Jump + Dash');
+  }
+  // ---- levers: each one must be reachable while the gates in the way are still shut (a lever may lie beyond another gate, once that one has been raised), and every gate must really shut something off
+  if ((meta.levers || []).length) {
+    const opened = new Set(); let grew = true;
+    while (grew) {
+      grew = false; const tiles = Uint8Array.from(def0.tiles); for (const lv of meta.levers) if (opened.has(lv.id)) for (const [x, y] of lv.gate) tiles[y * def.w + x] = 0;
+      const cl = roomOf({ ...def0, tiles }), Sc = surfaces(cl), st = Sc.id[startP.gy * def.w + startP.tx], sc = st >= 0 ? reach(cl, Sc, [st], [...new Set([...base, 'djump'])]) : new Set();
+      for (const lv of meta.levers) if (!opened.has(lv.id)) { const id = Sc.id[lv.gy * def.w + lv.tx]; if (id >= 0 && sc.has(id)) { opened.add(lv.id); grew = true; } }
+    }
+    for (const lv of meta.levers) if (!opened.has(lv.id)) errs.push('lever ' + lv.id + ' cannot be reached before its gate is raised');
+    { const cl = roomOf(def0), Sc = surfaces(cl), st = Sc.id[startP.gy * def.w + startP.tx], sc = st >= 0 ? reach(cl, Sc, [st], [...new Set([...base, 'djump', 'dash'])]) : new Set(); for (const lv of meta.levers) { const id = Sc.id[(lv.beyond || lv).gy * def.w + (lv.beyond || lv).tx]; if (lv.beyond && id >= 0 && sc.has(id)) errs.push('the gate of lever ' + lv.id + ' does not shut anything off'); } }
   }
   return { ok: errs.length === 0, errs, seen, S, room };
 }

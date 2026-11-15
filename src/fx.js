@@ -110,6 +110,28 @@ void main(){
 // A bank of fog that lies along the floor of a room: dense at and below the ground line, with a ragged, slowly rolling top.  Two layers of domain-warped noise drift past at different
 // speeds (the near one faster) and leave wispy gaps, so it is thick without being a flat curtain.  It is drawn in front of everything (hero included) and under the darkness overlay,
 // so a dark room's fog is dark too.  Gusts (the swish of the sword, a dash) shove the noise sideways and thin the fog where they pass.
+// RAIN: three layers of falling streaks drawn by the graphics card across the whole screen, at the screen's own resolution (far: many, thin, slow and faint; near: few, long, fast and bright), leaning with the wind.
+const RAINFRAG = /* glsl */`
+precision highp float; varying vec2 vUv;
+uniform float uTime; uniform float uAmt; uniform vec3 uColor;
+float hh(float n){ return fract(sin(n * 127.1) * 43758.5453); }
+float drops(vec2 uv, float cols, float rep, float speed, float len, float width, float slant, float seed){
+  vec2 p = vec2(uv.x * 1.7778 - (1.0 - uv.y) * slant, uv.y);            // (v grows DOWNWARD on screen here: the streaks lean down and to the left)
+  float cx = p.x * cols, col = floor(cx), fx = fract(cx) - 0.5;
+  float r = hh(col + seed), rr = hh(col * 1.37 + seed + 11.0);
+  float t = fract(-p.y * rep * (0.8 + 0.4 * rr) + uTime * speed * (0.85 + 0.3 * r) + r * 17.0);          // (the pattern slides toward larger v: down the screen; the head is the low end of each streak)
+  float line = smoothstep(width, 0.0, abs(fx - (r - 0.5) * 0.5));
+  float tail = smoothstep(len, 0.0, t), head = smoothstep(0.0, 0.02, t);       // (bright at the head, fading up the streak)
+  return line * tail * head * step(0.48, rr);          // (about 52% of the columns carry a drop; it was 65%)
+}
+void main(){
+  float a = drops(vUv, 90.0, 1.6, 1.1, 0.18, 0.28, 0.14, 1.0) * 0.30
+          + drops(vUv, 55.0, 1.2, 1.5, 0.22, 0.20, 0.17, 5.0) * 0.45
+          + drops(vUv, 28.0, 0.9, 2.0, 0.25, 0.10, 0.20, 9.0) * 0.62;
+  a = clamp(a, 0.0, 1.0) * uAmt;
+  gl_FragColor = vec4(uColor * a, a);
+}`;
+
 const FOGFRAG = /* glsl */`
 precision highp float; varying vec2 vUv;
 uniform vec2 uCam; uniform vec2 uRes; uniform float uTime; uniform float uBase; uniform float uHeight; uniform float uDensity; uniform vec3 uColor;
@@ -327,6 +349,9 @@ export class FX {
       uG: { value: Array.from({ length: 6 }, () => new THREE.Vector4()) }, uGP: { value: Array.from({ length: 6 }, () => new THREE.Vector2(1, 0)) }, uW: { value: Array.from({ length: 6 }, () => new THREE.Vector4(0, 0, 1, 0)) } };
     this.fogMesh = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.ShaderMaterial({ vertexShader: QVERT, fragmentShader: FOGFRAG, uniforms: this.fogU, transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide, ...NORMAL_PM }));
     this.fogMesh.renderOrder = -2; this.fogMesh.frustumCulled = false; this.fogMesh.visible = false; this.scene.add(this.fogMesh);
+    this.rainU = { uTime: { value: 0 }, uAmt: { value: 0 }, uColor: { value: new THREE.Vector3(0.62, 0.72, 0.95) } };
+    this.rainMesh = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.ShaderMaterial({ vertexShader: QVERT, fragmentShader: RAINFRAG, uniforms: this.rainU, transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide, ...NORMAL_PM }));
+    this.rainMesh.renderOrder = 2; this.rainMesh.frustumCulled = false; this.rainMesh.visible = false; this.scene.add(this.rainMesh);
     this.waterU = { uCam: { value: new THREE.Vector2() }, uRes: { value: new THREE.Vector2(W, H) }, uTime: { value: 0 }, uN: { value: 0 }, uR: { value: Array.from({ length: 10 }, () => new THREE.Vector4()) }, uQ: { value: Array.from({ length: 10 }, () => new THREE.Vector4()) } };
     this.waterMesh = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.ShaderMaterial({ vertexShader: QVERT, fragmentShader: WATERFRAG, uniforms: this.waterU, transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide, ...NORMAL_PM }));
     this.waterMesh.renderOrder = -3; this.waterMesh.frustumCulled = false; this.waterMesh.visible = false; this.scene.add(this.waterMesh);
@@ -357,7 +382,7 @@ export class FX {
     for (let i = 0; i < n; i++) { const o = list[i]; u.uR.value[i].set(o.x0, o.y0, o.x1, o.y1); u.uQ.value[i].set(o.type, o.v, (Math.abs(o.x0 * 0.137) % 6.28), 0); }
     this.waterMesh.visible = n > 0;
   }
-  setCamera(x, y) { this.camX = x; this.camY = y; this.cam.position.x = x + this.shakeX; this.cam.position.y = y + this.shakeY; this.darkMesh.position.set(x + W / 2 + this.shakeX, y + H / 2 + this.shakeY, -1); this.fogMesh.position.set(x + W / 2 + this.shakeX, y + H / 2 + this.shakeY, -1); this.waterMesh.position.set(x + W / 2 + this.shakeX, y + H / 2 + this.shakeY, -1); this.flashMesh.position.set(x + W / 2, y + H / 2, 0); }
+  setCamera(x, y) { this.camX = x; this.camY = y; this.cam.position.x = x + this.shakeX; this.cam.position.y = y + this.shakeY; this.darkMesh.position.set(x + W / 2 + this.shakeX, y + H / 2 + this.shakeY, -1); this.fogMesh.position.set(x + W / 2 + this.shakeX, y + H / 2 + this.shakeY, -1); this.waterMesh.position.set(x + W / 2 + this.shakeX, y + H / 2 + this.shakeY, -1); this.rainMesh.position.set(x + W / 2 + this.shakeX, y + H / 2 + this.shakeY, 1); this.flashMesh.position.set(x + W / 2, y + H / 2, 0); }
   setShake(sx, sy) { this.shakeX = sx; this.shakeY = sy; }
 
   // ------------------------------------------------------------ quads
@@ -424,6 +449,23 @@ export class FX {
     for (let i = 0; i < (o.n || 4); i++) { const a = ang + rand(-(o.spread || 0.18), o.spread || 0.18), v = rand(2.2, o.speed || 4.2);
       this.emit({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 0.05, drag: 0.975, life: rand(14, 26), s0: 6, s1: o.size || 22, c0: color[0], c1: color[1], a0: 0.9, a1: 0, kind: 2, rot: a - Math.PI / 2 }); }
   }
+  // The Shadow Lord's breath: a roaring cone of blue fire from his mouth (x,y) along angle ang.  Call every logic step; k (0..1) swells it up and lets it die away.
+  // A hot white-cyan core near the mouth, rolling billows that widen and cool to deep blue as they travel, licking tongues, a few sparks, and a flickering glow along the beam.
+  blueBreath(x, y, ang, k = 1) {
+    const cs = Math.cos(ang), sn = Math.sin(ang), fl = 0.85 + 0.15 * Math.sin(this.time * 47) + 0.08 * Math.sin(this.time * 83);
+    this.add.add({ x, y, life: 1, s0: 64 * k * fl, s1: 64 * k * fl, c0: [0.1, 0.35, 1], a0: 0.3 * k, a1: 0.3 * k, kind: 0 });                       // the halo at the mouth
+    this.add.add({ x, y, life: 1, s0: 18 * k * fl, s1: 18 * k * fl, c0: [0.5, 0.85, 1], a0: 0.6 * k, a1: 0.6 * k, kind: 0 });                    // its white-hot heart
+    for (let i = 1; i <= 4; i++) this.add.add({ x: x + cs * i * 40, y: y + sn * i * 40, life: 1, s0: (50 + i * 14) * k * fl, s1: (50 + i * 14) * k * fl, c0: [0.08, 0.3, 1], a0: (0.1 - i * 0.015) * k, a1: (0.1 - i * 0.015) * k, kind: 0 });   // a glow along the beam
+    for (let i = 0; i < 5; i++) {                                                                                                                      // the billows
+      const a = ang + rand(-0.24, 0.24), v = rand(2.4, 5.2) * (0.5 + 0.5 * k);
+      this.emit({ x: x + rand(-3, 3), y: y + rand(-3, 3), vx: Math.cos(a) * v, vy: Math.sin(a) * v - 0.06, drag: 0.972, life: rand(22, 38), s0: 12, s1: rand(40, 62) * k, c0: i < 1 ? [0.35, 0.75, 1] : [0.1, 0.45, 1], c1: [0.03, 0.1, 0.75], a0: 0.3, a1: 0, kind: 5 });
+    }
+    for (let i = 0; i < 2; i++) {                                                                                                                      // licking tongues that run ahead and flicker out
+      const a = ang + rand(-0.2, 0.2), v = rand(5, 8) * k;
+      this.emit({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, drag: 0.95, life: rand(12, 20), s0: 5, s1: rand(14, 24) * k, c0: [0.3, 0.75, 1], c1: [0.06, 0.25, 1], a0: 0.5, a1: 0, kind: 5 });
+    }
+    if (Math.random() < 0.7 * k) this.emit({ x: x + cs * rand(20, 120), y: y + sn * rand(20, 120), vx: cs * rand(0.5, 2) + rand(-0.5, 0.5), vy: sn * rand(0.5, 2) - rand(0.2, 1), life: rand(24, 50), s0: 2.4, s1: 0.5, c0: [0.8, 0.97, 1], c1: [0.2, 0.5, 1], a0: 1, a1: 0, kind: 1, gy: -0.01, drag: 0.98 });          // sparks
+  }
   souls(x, y, n = 6, color = COLORS.blue) { for (let i = 0; i < n; i++) this.emit({ x: x + rand(-8, 8), y: y + rand(-10, 4), vx: rand(-0.3, 0.3), vy: -rand(0.5, 1.4), gx: -0.004, drag: 0.99, life: rand(40, 80), s0: 7, s1: 1, c0: color[0], c1: color[1], a0: 0.95, a1: 0, kind: 6 }); }
 
   // ---- lightning --------------------------------------------------
@@ -488,7 +530,7 @@ export class FX {
   // the room's solid tiles as a texture for the shadows (stone blocks light; ice and crystal let some through); call again whenever a tile is broken
   setShadowMask(room) {
     const w = room.w, h = room.h, d = new Uint8Array(w * h);
-    for (let i = 0; i < d.length; i++) { const v = room.tiles[i]; d[i] = v === 1 || v === 4 || v === 5 || v === 7 ? 255 : (v === 6 || v === 8) ? 110 : 0; }
+    for (let i = 0; i < d.length; i++) { const v = room.tiles[i]; d[i] = v === 1 || v === 4 || v === 5 || v === 7 ? 255 : (v === 6 || v === 8) ? 110 : v === 9 ? 70 : 0; }
     const t = this.maskTex;
     if (!t || t.image.width !== w || t.image.height !== h) { const nt = new THREE.DataTexture(d, w, h, THREE.RedFormat, THREE.UnsignedByteType); nt.minFilter = nt.magFilter = THREE.NearestFilter; nt.unpackAlignment = 1; nt.needsUpdate = true; this.maskTex = nt; this.darkU.uMask.value = nt; }
     else { t.image.data.set(d); t.needsUpdate = true; }
@@ -502,8 +544,7 @@ export class FX {
   weather(dt) {
     const t = this.ambient; if (!t || !(dt > 0)) return;                          // (dt 0 = the world is held, e.g. behind a dialogue box: nothing may fall, or it would all come down at once afterwards)
     const cx = this.camX, cy = this.camY; let n = 0;
-    if (t === 'rain') { this.rainAcc = (this.rainAcc || 0) + 3 * dt; n = Math.floor(this.rainAcc); this.rainAcc -= n; }          // 3 drops per full step, scaled by the step length (slow-motion and hit-stop run at half steps)
-    if (t === 'rain') for (let i = 0; i < n; i++) this.emit({ x: cx + rand(-60, W + 100), y: cy - 10, vx: -1.6, vy: rand(7, 9.5), life: 40, s0: 9, s1: 9, c0: [0.55, 0.65, 0.9], a0: 0.45, a1: 0.35, kind: 4, rot: Math.atan2(9, -1.6) });
+    if (t === 'rain') { /* (the rain is the shader RAINFRAG, drawn in render(): no particles) */ }
     else if (t === 'mist') { if (Math.random() < 0.12 * dt) this.emit({ layer: 'alpha', x: cx + rand(-30, W + 30), y: cy + rand(H * 0.6, H), vx: rand(0.1, 0.35), vy: rand(-0.04, 0.02), life: 260, s0: 90, s1: 130, c0: [0.28, 0.32, 0.4], a0: 0.0, a1: 0.0, kind: 5 }); }
     else if (t === 'snow') { if (Math.random() < 0.5 * dt) this.emit({ x: cx + rand(-30, W + 30), y: cy - 6, vx: rand(-0.35, 0.1), vy: rand(0.35, 0.9), life: rand(160, 300), s0: rand(2, 3.6), s1: rand(1.5, 2.5), c0: [0.92, 0.97, 1], a0: 0.85, a1: 0.5, kind: 0 }); }
     else if (t === 'pages') {          // the Library: dust in the lamplight, and now and then a loose page turning over as it falls
@@ -556,6 +597,7 @@ export class FX {
         for (let i = 0; i < 6; i++) { const wf = this.wisps.fog(i); F.uW.value[i].set(wf[0], wf[1], wf[2], wf[3]); }
         if (this.lantern) F.uW.value[5].set(this.lantern.x, this.lantern.y, 150, 0.92);          // (the Marshlight Lantern's wisp)
         for (let i = 0; i < 6; i++) { const g = this.gusts[i]; if (g) { F.uG.value[i].set(g.x, g.y, g.vx, g.vy); F.uGP.value[i].set(g.r, g.k); } else { F.uG.value[i].set(0, 0, 0, 0); F.uGP.value[i].set(1, 0); } } } }
+    { const R = this.rainU; R.uAmt.value += ((this.ambient === 'rain' ? 1 : 0) - R.uAmt.value) * 0.06; this.rainMesh.visible = R.uAmt.value > 0.01; if (this.rainMesh.visible) R.uTime.value = this.time; }          // (rain: one full-screen shader, fading in and out)
     if (this.waterMesh.visible) { this.waterU.uCam.value.set(this.camX + this.shakeX, this.camY + this.shakeY); this.waterU.uTime.value = this.time; }
     this.add.mat.uniforms.uTime.value = this.time; this.alpha.mat.uniforms.uTime.value = this.time;
     this.add.upload(); this.alpha.upload();

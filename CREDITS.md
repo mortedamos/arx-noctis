@@ -60,7 +60,7 @@ Not used right now. The pack ships without a formal license file; see `assets/ar
 The packs as downloaded are kept in `assets/sprites/source/` for reference; the game only uses the pieces it cuts out of them into `assets/env/` and `assets/sprites/`.
 If you publish the game, ship the game's own files and **do not publish the `source/` folders** (several of these packs forbid redistributing them as packs).
 
-"Pixel Book (Animated)" by Gokhan Solak (hansolo), CC-BY 3.0 (https://creativecommons.org/licenses/by/3.0/), from https://opengameart.org/content/pixel-book-animated - the flying books of the Library of Ink (`assets/sprites/book_0..3.png`, recoloured in four tints with ffmpeg; the original is kept in `assets/source/book/`).
+"Magic Book" pack (32 grimoires) by CaptainSkolot, https://captainskolot.itch.io/magic-books-pixelart-pixel-art-sprite-grimoire-pack-for-rpg-fantasy - the flying books of the Library of Ages (`assets/sprites/magicbooks.png`, and the open pages they show as they cast, `assets/sprites/bookpages.png`, cut from the same author's "Magic Books interface" pack, the 32 covers laid in one strip; drawn translucent in code; the pack as downloaded is kept in `assets/sprites/source/`). **Licence needs confirming before a commercial release:** the page's licence field says CC BY-NC-SA 4.0 (non-commercial, share-alike), while its description says the pack may be used in free and commercial projects and that credit is appreciated but not required. The page also notes the art was AI-assisted (rough concepts from a generative tool, refined by hand). Ask the author to confirm in writing.
 
 Attribution: "Castlevania-esque Tilemap" by Chloe Wolfe, CC-BY 4.0 (https://creativecommons.org/licenses/by/4.0/); "Bosses and Monsters
 Spritesheets" by Balmer, with Redshrike, CC-BY 3.0 (https://creativecommons.org/licenses/by/3.0/); "Cyber-tooth" by Emcee Flesher, OGA-BY 3.0.
@@ -87,6 +87,7 @@ The font files are in `assets/fonts/`; the licenses are in `assets/credits/licen
 | Font | Used for | Licence |
 |---|---|---|
 | **Blackletter ExtraBold** (`Blackletter-ExtraBold.otf`, rebuilt from the original `BLACEB__.TTF` so browsers accept it, (c) 2001 Typographer Mediengestaltung) | the game title on the title screen | **no licence file came with it** - the font file says "All rights reserved"; confirm that it may be redistributed before a public release |
+| **Livingstone** (`livingstone/Livingst.ttf`, PrimaFont "American Collection"; the folder with its `LIVINGST.TXT` is shipped unchanged) | everyone else who speaks: villagers, the Keeper and the bosses (it only has one case, so the text shows in lowercase letterforms) | free PrimaFont font ("This is a free PrimaFont font from the American Collection"); the notice allows passing the folder on unchanged with no file missing; the project owner confirmed it is fine for commercial use |
 | **Eroded Motta** (`erodedmotta.regular.ttf`, (c) 2026 lirkiv AC; supplied by the project owner) | her words: every gravestone and tablet (in mixed case) | **no licence file came with it** - the font file names its author but no licence; confirm that it may be redistributed before a public release |
 
 ## Original art made for this project
