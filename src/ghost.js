@@ -8,11 +8,11 @@ import { W, H } from './util.js';
 const isBlue = c => !!c && c[2] >= 0.7 && c[2] > c[0] + 0.22;                    // a light's colour [r, g, b] (0..1): is it a cold, arcane one?
 
 export class Ghost {
-  constructor(g) { this.g = g; this.x = 0; this.y = 0; this.a = 0; this.t = 0; this.force = 0; this.snapped = false; }
+  constructor(g) { this.g = g; this.x = 0; this.y = 0; this.a = 0; this.t = 0; this.force = 0; this.scene = 0; this.snapped = false; }          // (scene: frames left of the moment she steps out of the lantern - the one time she can be seen once he carries it)
   snap() { this.snapped = false; }                                            // (on entering a room: she is simply beside him again)
   reveal(frames = 240) { this.force = Math.max(this.force, frames); }          // a gravestone speaks: for a while she can be seen
   update() {
-    const g = this.g, p = g.player; this.t++; if (this.force > 0) this.force--;
+    const g = this.g, p = g.player; this.t++; if (this.force > 0) this.force--; if (this.scene > 0) this.scene--;
     const tx = p.x - p.dir * 22 + Math.sin(this.t * 0.031) * 5, ty = p.y - 5 + Math.sin(this.t * 0.047) * 3;
     if (!this.snapped || Math.hypot(this.x - tx, this.y - ty) > 160) { this.x = tx; this.y = ty; this.snapped = true; }
     this.x += (tx - this.x) * 0.045; this.y += (ty - this.y) * 0.06;
@@ -25,7 +25,7 @@ export class Ghost {
     return Math.min(1, v);
   }
   draw(ctx, cx, cy) {
-    const g = this.g, p = g.player; if (!g.room || !g.save || p.dead || g.save.flags.got_lantern) return;          // (once he carries the wisp - which is her - the ghost is gone)
+    const g = this.g, p = g.player; if (!g.room || !g.save || p.dead || (g.save.flags.got_lantern && !(this.scene > 0))) return;          // (once he carries the wisp - which is her - the ghost is gone)
     const v = this.sense(); this.a += (v - this.a) * (v > this.a ? 0.07 : 0.045); if (this.a < 0.02) return;
     const x = this.x - cx, y = this.y - cy, flick = 0.9 + 0.1 * Math.sin(this.t * 0.21) + 0.05 * Math.sin(this.t * 0.53);
     ctx.save(); ctx.globalCompositeOperation = 'lighter';

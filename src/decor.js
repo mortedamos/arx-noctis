@@ -7,7 +7,7 @@ import { drawFramedPortrait, FH } from './portraitart.js';
 import { orlojTower, TOWER_W, TOWER_H } from './orlojtower.js';
 import { keepGate, KEEP_W, KEEP_H } from './keepgate.js';
 
-const BACK_KINDS = new Set(['column', 'waterfall', 'portrait', 'cog', 'pendulum', 'animgear', 'orlojtower', 'keepgate', 'icicles', 'crystals']);
+const BACK_KINDS = new Set(['column', 'waterfall', 'portrait', 'cog', 'pendulum', 'animgear', 'orlojtower', 'keepgate', 'icicles', 'crystals', 'voidpit']);
 // Is this piece of scenery drawn over a hazard (a spike tile)?  Nothing may stand in front of a hazard: the room drops such pieces when it loads.
 export function decoCoversHazard(d, spikes) {
   if (isBack(d)) return false; let x0, y0, w, h;
@@ -57,6 +57,9 @@ export function drawDeco(g, d, cx, cy, t, room) {
       g.restore(); break; }
     case 'img': { const im = IMG[d.img], sc = d.scale || 1, w = Math.round(im.width * sc), h = Math.round(im.height * sc); g.drawImage(im, Math.round(x - w / 2), y - h + (d.sink || 0), w, h); break; }
     case 'hang': { const im = IMG[d.img], sc = d.scale || 1, w = Math.round(im.width * sc), h = Math.round(im.height * sc); g.drawImage(im, Math.round(x - w / 2), y, w, h); break; }       // hangs from the top edge (banners, a caged skeleton)
+    case 'voidpit': {          // a pit with no bottom (the Pit of Despair): the scenery fades into black below the banks, behind the planks and the hero.  x = its middle, y = the floor's row, w = its width, in pixels
+      const w = d.w, top = y - 6, h = (room && room.ph ? room.ph - d.y : 128) + 40, gr = g.createLinearGradient(0, top, 0, top + Math.min(h, 90)); gr.addColorStop(0, 'rgba(2,0,6,0)'); gr.addColorStop(0.35, 'rgba(2,0,6,0.8)'); gr.addColorStop(1, 'rgba(1,0,3,1)');
+      g.fillStyle = gr; g.fillRect(Math.round(x - w / 2), top, w, Math.min(h, 90)); g.fillStyle = 'rgb(1,0,3)'; if (h > 90) g.fillRect(Math.round(x - w / 2), top + 90, w, h - 90); break; }
     case 'waterfall': break;          // (waterfalls and streams are water in the effects layer now: fx.setWater)
     case 'portrait': drawFramedPortrait(g, x, y, { ci: d.ci, a: d.emo, frame: d.frame }); break;          // a framed portrait on the wall: x = its centre, y = the bottom edge of the frame (see portraitart.js)
     case 'icicles': {          // a cluster of icicles hanging from the ceiling: x the middle, y the top

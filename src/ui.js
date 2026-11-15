@@ -4,7 +4,7 @@ import { drawText, textWidth, wrapText, handText, hasFace } from './font.js';
 import { Input } from './input.js';
 import { Touch } from './touch.js';
 import { Audio_ as A } from './audio.js';
-import { SHEET, IMG, drawSheet } from './assets.js';
+import { SHEET, IMG, drawSheet, drawKey } from './assets.js';
 import { ICON } from './procart.js';
 import { ZONES } from './rooms.js';
 import { SPELLS } from './player.js';
@@ -304,7 +304,7 @@ function foundPanel(ctx, g, pm) {
     else {
       if (ki === 0) drawText(ctx, 'KEYS', 14, L.y0 - 2, { color: DIM }); ki++;
       if (on) { ctx.fillStyle = 'rgba(232,184,74,0.25)'; ctx.fillRect(p.x - 8, p.y - 9, 17, 19); }
-      icon(ctx, 'key', p.x, p.y, 1.1); ctx.fillStyle = 'rgb(' + r.key.rgb.join(',') + ')'; ctx.fillRect(p.x - 5, p.y + 8, 10, 2);
+      drawKey(ctx, r.key.rgb, p.x, p.y, 1.1); ctx.fillStyle = 'rgb(' + r.key.rgb.join(',') + ')'; ctx.fillRect(p.x - 5, p.y + 8, 10, 2);
     }
   });
 }

@@ -89,7 +89,7 @@ function iconFrame(p, k) {
     case 'mana': p.rect(6, 2, 3, 3, hex('#8a6a3a')); p.poly([[6, 5], [9, 5], [12, 10], [11, 12], [4, 12], [3, 10]], hex('#c9d0e0')); p.poly([[4, 9], [11, 9], [12, 10], [11, 12], [4, 12], [3, 10]], BL); p.rect(5, 10, 2, 1, BL2); break;
     case 'coin': p.disc(6.5, 6.5, 4.6, GL); p.disc(6.5, 6.5, 3, hex('#c9962c')); p.rect(6, 4, 1, 5, GL2); p.rect(5, 4, 3, 1, GL2); break;
     case 'gem': p.poly([[7, 1], [11, 5], [7, 12], [3, 5]], hex('#40d8e8')); p.poly([[7, 1], [11, 5], [7, 6]], hex('#b6faff')); p.poly([[7, 6], [11, 5], [7, 12]], hex('#1e9db4')); break;
-    case 'key': p.disc(4.5, 4.5, 3, GL); p.disc(4.5, 4.5, 1.2, [0, 0, 0, 0]); p.rect(6, 6, 2, 7, GL); p.rect(8, 10, 2, 1, GL); p.rect(8, 12, 2, 1, GL); break;
+    case 'key': { const KW = hex('#f4f4f4'); p.disc(6.5, 4, 3.3, KW); p.disc(6.5, 4, 1.4, [0, 0, 0, 0]); p.rect(6, 7, 2, 6, KW); p.rect(8, 9, 3, 1, KW); p.rect(8, 11, 2, 1, KW); break; }          // (drawn pale and neutral: assets.js keySprite() tints it with each key's own colour)
     case 'feather': p.poly([[12, 1], [4, 5], [2, 11], [5, 9], [11, 6]], BL2); p.line(2, 12, 11, 2, WH, 1); p.line(4, 8, 8, 8, BL, 1); p.line(5, 6, 8, 5, BL, 1); break;
     case 'boot': p.poly([[4, 2], [8, 2], [8, 8], [12, 9], [12, 12], [3, 12], [3, 7]], hex('#6a3aa8')); p.rect(3, 10, 9, 2, hex('#2b1850')); p.rect(4, 3, 4, 1, hex('#b78cff')); p.line(1, 5, 3, 5, hex('#b78cff'), 1); p.line(0, 8, 3, 8, hex('#b78cff'), 1); break;
     case 'ember': p.poly([[7, 1], [10, 5], [11, 9], [9, 12], [5, 12], [3, 9], [4, 5], [6, 7]], hex('#ff6a1e')); p.poly([[7, 5], [9, 8], [8, 11], [6, 11], [5, 8]], hex('#ffd24a')); p.rect(7, 9, 1, 2, WH); break;

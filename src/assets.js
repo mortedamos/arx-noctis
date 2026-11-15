@@ -1,7 +1,7 @@
 // Loads sprite sheets / environment images, builds recolors, and draws frames.
 // Sheets are horizontal strips of `n` equal cells.  Anchor (ax, ay) is a fraction of the cell;
 // default is bottom-center (feet).  `face` = direction the original art faces (1 = right, -1 = left).
-import { drawProcedural } from './procart.js';
+import { drawProcedural, ICON } from './procart.js';
 import { ENCH } from './enchant.js';
 
 export const SHEET = {};   // id -> { img, n, w, h, face, ax, ay }
@@ -310,6 +310,19 @@ export function silhouette(id, color = '#ffffff') {
     flashCache.set(key, c);
   }
   return c;
+}
+
+// A KEY in the colour of its lock: the pale key icon, multiplied by rgb (0-255 each), cached per colour.  Draws with its centre at (x,y).
+const keyCache = new Map();
+export function drawKey(ctx, rgb, x, y, scale = 1, alpha = 1) {
+  const s = SHEET.icons; if (!s) return; const ki = ICON.indexOf('key'), id = rgb.join(','); let c = keyCache.get(id);
+  if (!c) {
+    c = canvasOf(s.w, s.h); const g = c.getContext('2d'); g.drawImage(s.img, ki * s.w, 0, s.w, s.h, 0, 0, s.w, s.h);
+    g.globalCompositeOperation = 'multiply'; g.fillStyle = 'rgb(' + id + ')'; g.fillRect(0, 0, s.w, s.h);
+    g.globalCompositeOperation = 'destination-in'; g.drawImage(s.img, ki * s.w, 0, s.w, s.h, 0, 0, s.w, s.h);
+    keyCache.set(id, c);
+  }
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.imageSmoothingEnabled = false; ctx.drawImage(c, Math.round(x - s.w * scale / 2), Math.round(y - s.h * scale / 2), s.w * scale, s.h * scale); ctx.restore();
 }
 
 // Draw frame `f` of sheet `id` so its anchor lands on (x,y).

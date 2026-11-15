@@ -148,17 +148,19 @@ export function validateRoom(def0, opts = {}) {
 
   // ---- items that need an ability: reachable with it, NOT without it
   for (const it of meta.items || []) {
-    if (it.needs) {
+    if (it.needs && !it.gate) {
       const id = node(it, it.id); if (id < 0) continue;
       const need = [].concat(it.needs), base0 = base.filter(a => !need.includes(a));          // (needs may be one ability or a list: all of them are required, and no smaller set may do)
       for (const a of need) if (reach(room, S, [start], [...base0, ...need.filter(b => b !== a)]).has(id)) errs.push(`${it.id} is reachable without ${a}`);
       if (!reach(room, S, [start], [...new Set([...base0, ...need])]).has(id)) errs.push(`${it.id} is unreachable even with ${need.join(' and ')}`);
     }
-    if (it.gate) {                                   // sealed cell: unreachable while closed, reachable once the gate is destroyed
-      const open = roomOf(def, it.gate), So = surfaces(open), id = So.id[it.gy * def.w + it.tx];
+    if (it.gate) {                                   // sealed cell: unreachable while closed, reachable once the gate is destroyed (and, if it also needs abilities - the door under Karluv Bridge - only with all of them)
+      const open = roomOf(def, it.gate), So = surfaces(open), id = So.id[it.gy * def.w + it.tx], need = [].concat(it.needs || []), base0 = base.filter(a => !need.includes(a));
       if (id < 0) { errs.push(`${it.id} cell interior not standable`); continue; }
       if (S.id[it.gy * def.w + it.tx] >= 0 && reach(room, S, [start], [...base, 'djump', 'dash']).has(S.id[it.gy * def.w + it.tx])) errs.push(`${it.id} cell is open without breaking its gate`);
-      const s2 = surfaceAt(open, So, startP.tx * T + 8, startP.gy * T); if (s2 < 0 || !reach(open, So, [s2], base).has(id)) errs.push(`${it.id} unreachable even with its gate destroyed`);
+      const s2 = surfaceAt(open, So, startP.tx * T + 8, startP.gy * T);
+      if (s2 < 0 || !reach(open, So, [s2], [...new Set([...base0, ...need])]).has(id)) errs.push(`${it.id} unreachable even with its gate destroyed`);
+      else for (const a of need) if (reach(open, So, [s2], [...base0, ...need.filter(b => b !== a)]).has(id)) errs.push(`${it.id} is reachable without ${a}`);
     }
   }
   // ---- the dash gulf: must need Double Jump AND Dash

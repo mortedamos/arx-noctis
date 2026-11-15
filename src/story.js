@@ -31,6 +31,21 @@ export const STORY = {
     'You rang it. After everything, I wanted to hear that bell once more. It rang the day we came home.',
     'I wrote a letter on the road back to Prague, and never had the chance to give it to anyone. It is only happiness. Please read it. Someone should.',
   ],
+  // the gravestone beside the door to the Reliquary (props.js Tablet): he confesses, and she answers.  [who, words] - 'H' is her (her own handwriting); the other is the Stranger, in his own book hand
+  convos: {
+    tabsix: [
+      ['The Stranger', 'In the war I killed six men. I never told you. I have carried them every day since.'],
+      ['H', 'I know. They are here with me. They have been here a long time.'],
+      ['The Stranger', 'Do they hate me?'],
+      ['H', 'Death grants a perspective that the living lack, my love. They do not hate you.'],
+    ],
+  },
+  // the lantern (props.js Upgrade, game.js lanternScene): she comes out of the wisp, once, to say she can go with him now
+  lantern: [
+    'That light. It was waiting for you all along... I can feel it from here.',
+    'Oh. It will hold me. A little of me, at least, the way a lantern holds a flame.',
+    'With this talisman I do not have to stay where I fell. I can travel with you now. I will be the light at your shoulder.',
+  ],
   tablets: {
     tabv0: `There was never a stone big enough for the two of us, was there? Go down to the city. I will follow where I can. Look for blue light: that is where I show.`,
     tab0: `The bells rang at dusk, and then the things came down from the hill. Prague has not walked its own streets without fear since. Do not stop to pray. No one is listening.`,
@@ -48,7 +63,7 @@ export const STORY = {
     tab5: `Here the faithful prayed, and here they were taken. I used to light candles in a church like this, and never asked for anything for myself. I should have.`,
     tab6: `The gulf is too wide for any leap. Only quicksilver crosses a gulf like this. Dash, and do not look down.`,
     tab7: `The lord laid his household to rest here and promised them sleep. Someone keeps waking them. I know what it is to be woken. They are not wicked. They are tired.`,
-    tab19: `Thirty saints stand watch on this bridge, and not one of them could stop the fire. The river takes what falls. Please do not fall.`,
+    tab19: `Thirty saints stand watch on this bridge, and not one of them could stop the fire. The river takes what falls. Not everything that falls is lost, though: the toll-keepers kept a cellar under these stones, and I have always wondered about its trapdoor.`,
     tab18: `The clock still keeps Prague's hour. The apostles still walk in their windows, and the sun is still on its dial. It is the only sun left.`,
     tab17: `It is very dark here. Do not be afraid of it. I will go ahead of you.`,
     tab16: `An engineer built a machine to hold the sun below the hills. Listen to the gears: the only clock in Prague that still keeps time - and it is keeping the wrong hour.`,

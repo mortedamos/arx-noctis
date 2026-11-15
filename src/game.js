@@ -135,7 +135,7 @@ export class Game {
   showDialog(text, o) { this.dialog = new Dialog(text, o); this.state = 'dialog'; }
   // a short exchange of words: lines = [[speaker, text], ...], each in a box of its own; done() runs when the last box is closed
   talk(lines, done) {
-    const next = i => { if (i >= lines.length) { if (done) done(); return; } const [who, text] = lines[i]; this.showDialog(text, { name: who, onClose: () => next(i + 1) }); };
+    const next = i => { if (i >= lines.length) { if (done) done(); return; } const [who, text, font] = lines[i]; this.showDialog(text, { name: who, font, onClose: () => next(i + 1) }); };
     next(0);
   }
   itemPercent() { const f = this.save.flags; return Math.round(ITEM_IDS.filter(k => f[k]).length / ITEM_IDS.length * 100); }
@@ -259,6 +259,7 @@ export class Game {
     if (p.x < 3) { const e = r.exitRows.L[row]; if (e && p.vx <= 0) this.changeRoom({ room: e.room, x: e.tx * 16 + 8, y: e.gy * 16 }, -1); }
     else if (p.x > r.pw - 3) { const e = r.exitRows.R[row]; if (e && p.vx >= 0) this.changeRoom({ room: e.room, x: e.tx * 16 + 8, y: e.gy * 16 }, 1); }
     if (r.id === 'ib' && this.save.flags.boss_ib && p.y > r.ph - 4 && !p.dead && !this.well) { this.enterWell(); return; }          // (the broken arena: a drop into the Frozen Well)
+    if (r.id === 'pd' && p.y > r.ph - 4 && !p.dead && !this.trans) { this.enterAbyss(); return; }          // (the Pit of Despair has no bottom, until you reach it)
     if (p.y > r.ph + 48 && !p.dead) { p.hurt(10, p.x, { kb: 0 }); this.respawnAtSafe(p); }
   }
   respawnAtSafe(p) { this.after(0, () => { p.x = p.lastSafe.x; p.y = p.lastSafe.y; p.vx = p.vy = 0; p.invT = 90; this.fx.flash([0.6, 0.4, 1], 0.3); this.fx.burst(p.x, p.y - 16, 10, COLORS.purple, { speed: 1.5 }); }); }
@@ -470,6 +471,19 @@ export class Game {
       }
     } else if (w.phase === 'fall' && p.y > r.ph - 4) { this.well = null; this.enterWell(); }
   }
+  enterAbyss() { if (this.trans) return; const p = this.player; p.invT = Math.max(p.invT, 600); p.vx = 0; this.changeRoom({ room: 'ls', x: 17 * 16 + 8, y: 3 * 16 }, 1); }          // (a long fall into Letosnik Abyss)
+  // the wisp is taken up: she steps out of it, once, and tells him she can go with him now
+  lanternScene() {
+    const go = () => {
+      if (this.state !== 'play') { this.after(30, go); return; }
+      const gh = this.ghost, p = this.player; this.bannerObj = null; gh.snapped = false; gh.scene = 900; gh.reveal(900); A.sfx('ghost'); this.fx.ring(p.x - p.dir * 22, p.y - 22, 60, [0.55, 0.78, 1], 40, 0.1); this.fx.flash([0.5, 0.75, 1], 0.25);
+      this.after(70, () => this.talk(STORY.lantern.map(t => [STORY.speaker, t, 'hand']), () => {
+        gh.scene = 40; A.sfx('item'); this.fx.ring(p.x, p.y - 30, 50, [0.55, 0.78, 1], 30, 0.1); this.fx.sparks(gh.x, gh.y - 22, 22, [[0.7, 0.85, 1], [1, 1, 1]], 3);
+        this.banner('SHE TRAVELS WITH YOU', 'THE WISP IS HER LIGHT', 200, { y: 52, color: '#bcd8ff' });
+      }));
+    };
+    this.after(90, go);
+  }
   enterWell() { if (this.trans) return; this.player.invT = Math.max(this.player.invT, 600); this.player.vx = 0; this.changeRoom({ room: 'ic', x: 15 * 16 + 8, y: 3 * 16 }, 1); }
   gainAbility(kind, x, y) {
     const S = this.save, a = ABILITIES[kind]; S.abilities[kind] = true; S.flags['got_' + kind] = true; this.cutscene = { t: 0, kind, x, y }; this.playerFrozen = true; this.player.invT = 999;
@@ -591,7 +605,7 @@ export class Game {
   }
   snapCamera() { const p = this.player, r = this.room; this.camera.x = this.camTargetX(p, r); this.camera.y = this.camTargetY(p, r); }
   camTargetX(p, r) { return r.pw <= W ? (r.pw - W) / 2 : clamp(p.x + p.dir * 18 - W / 2, 0, r.pw - W); }
-  camTargetY(p, r) { return r.ph <= H ? (r.ph - H) / 2 : clamp(p.y + (r.rivers ? 24 : -30) - H / 2, 0, r.ph - H); }          // (over a river the picture looks further down, so the water shows)
+  camTargetY(p, r) { return r.ph <= H ? (r.ph - H) / 2 : clamp(p.y - 30 - H / 2, 0, r.ph - H); }          // (the hero stands about two thirds of the way down the picture, as everywhere: on the bridge too, where the river still shows below him)
   updateCamera() {
     const p = this.player, r = this.room, c = this.camera, gz = this.gaze;
     if (gz && gz.t < gz.pan + 62) { const tx = r.pw <= W ? (r.pw - W) / 2 : clamp(gz.x - W / 2, 0, r.pw - W), ty = r.ph <= H ? (r.ph - H) / 2 : clamp(gz.y - H / 2, 0, r.ph - H); c.x += (tx - c.x) * 0.12; c.y += (ty - c.y) * 0.12; return; }          // (a lever thrown: the camera looks at the gate it opens)

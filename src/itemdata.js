@@ -16,12 +16,13 @@ export const randomItemId = () => { const t = ITEM_ORDER.reduce((s, k) => s + IT
 
 // the keys of the locked doors: id (the save flag 'has_<id>' says it is held, 'unlocked_<id>' that its door has been opened), what it is called, and the colour of its padlock
 export const KEYS = [
-  { id: 'key_grave', name: 'KEY OF LEAD', rgb: [150, 200, 120] },
-  { id: 'key_hall', name: 'KEY OF IRON', rgb: [230, 170, 90] },
-  { id: 'key_chapel', name: 'KEY OF SILVER', rgb: [170, 150, 240] },
-  { id: 'key_crypt', name: 'KEY OF TIN', rgb: [110, 205, 215] },
-  { id: 'key_mire', name: 'KEY OF COPPER', rgb: [90, 215, 150] },
-  { id: 'key_gear', name: 'KEY OF MERCURY', rgb: [205, 125, 75] },
-  { id: 'key_frost', name: 'KEY OF ANTIMONY', rgb: [150, 190, 235] },
-  { id: 'key_gold', name: 'KEY OF GOLD', rgb: [240, 200, 80] },
+  // (eight colours as far apart as they can be: red, orange, violet, cyan, green, pink, blue, yellow - the key, its padlock and its door's label all wear the same one)
+  { id: 'key_grave', name: 'KEY OF LEAD', rgb: [235, 70, 70] },
+  { id: 'key_hall', name: 'KEY OF IRON', rgb: [245, 150, 45] },
+  { id: 'key_chapel', name: 'KEY OF SILVER', rgb: [175, 110, 245] },
+  { id: 'key_crypt', name: 'KEY OF TIN', rgb: [60, 215, 235] },
+  { id: 'key_mire', name: 'KEY OF COPPER', rgb: [90, 225, 85] },
+  { id: 'key_gear', name: 'KEY OF MERCURY', rgb: [245, 100, 195] },
+  { id: 'key_frost', name: 'KEY OF ANTIMONY', rgb: [80, 125, 255] },
+  { id: 'key_gold', name: 'KEY OF GOLD', rgb: [250, 215, 60] },
 ];

@@ -2,7 +2,7 @@
 import { KEYS } from './itemdata.js';
 import { STORY } from './story.js';
 import { Entity, moveX, moveY } from './entity.js';
-import { drawSheet, IMG, SHEET } from './assets.js';
+import { drawSheet, drawKey, IMG, SHEET } from './assets.js';
 import { ICON } from './procart.js';
 import { Audio_ as A } from './audio.js';
 import { COLORS } from './fx.js';
@@ -29,8 +29,8 @@ export const UPGRADES = {
   spring: { name: 'PERPETUUM', desc: 'A SPRING THAT NEVER RUNS DOWN: YOUR DASH RECHARGES TWICE AS FAST', icon: 'spring', color: [1, 0.8, 0.4] },
   tide: { name: 'AQUA REGIA', desc: 'A DASH CUTS WHATEVER IT PASSES THROUGH', icon: 'e_ice', color: [0.4, 0.8, 1] },
   astrolabe: { name: 'ASTROLABE', desc: "THE ORLOJ'S LITTLE SISTER. YOUR MAP NOW MARKS WHAT YOU HAVE LEFT BEHIND: TREASURE NOT TAKEN, AND THE ROOMS BESIDE THE ONES YOU KNOW.", icon: 'astrolabe', color: [1, 0.85, 0.45] },          // (its id is the flag 'got_astrolabe': the map reads it)
-  goldkey: { name: 'KEY OF GOLD', desc: 'THE LAST KEY: IT OPENS THE DOOR OF THE SHADOW THRONE.', icon: 'key', color: [1, 0.85, 0.35] },          // (the Librarian's: its id is the flag 'has_key_gold')
-  frostkey: { name: 'KEY OF ANTIMONY', desc: 'IT OPENS THE LIBRARY OF AGES, DEEP IN SHADOWKEEP.', icon: 'key', color: [0.6, 0.85, 1] },          // (the Rimewyrm's: its id is the flag 'has_key_frost')
+  goldkey: { name: 'KEY OF GOLD', desc: 'THE LAST KEY: IT OPENS THE DOOR OF THE SHADOW THRONE.', icon: 'key', color: KEYS.find(k => k.id === 'key_gold').rgb.map(v => v / 255) },          // (the Librarian's: its id is the flag 'has_key_gold'; the colour is its lock's)
+  frostkey: { name: 'KEY OF ANTIMONY', desc: 'IT OPENS THE LIBRARY OF AGES, DEEP IN SHADOWKEEP.', icon: 'key', color: KEYS.find(k => k.id === 'key_frost').rgb.map(v => v / 255) },          // (the Rimewyrm's: its id is the flag 'has_key_frost')
   crampons: { name: 'RIME CRAMPONS', desc: 'STEEL SPIKES FOR YOUR BOOTS: YOU NO LONGER SLIP ON ICE.', icon: 'crampons', color: [0.7, 0.9, 1] },          // (its id is the flag 'got_crampons': the Player reads it)
   hoard: { name: 'A HOARD', desc: 'SOMEONE HID THIS AWAY LONG AGO: GOLD, A GREAT DEAL OF IT.', icon: 'coin', color: [1, 0.85, 0.3] },
   letter: { name: "THE LADY'S LETTER", desc: '', icon: 'scroll', color: [0.95, 0.9, 0.75] },          // (its words come from LETTERS, chosen by its id)
@@ -310,11 +310,12 @@ export class Waystone {
 
 // ------------------------------------------------------------------------------------------------ lore tablet
 export class Tablet {
-  constructor(x, y, o) { this.x = x; this.y = y; this.text = STORY.tablets[o.id] || o.text; this.id = o.id; this.sign = /^sign_/.test(o.id || ''); this.narr = !!o.narr; this.t = 0; this.dead = false; }          // (a signpost is a sign; every gravestone and tablet is her: see story.js)
+  constructor(x, y, o) { this.x = x; this.y = y; this.text = STORY.tablets[o.id] || o.text; this.id = o.id; this.sign = /^sign_/.test(o.id || ''); this.narr = !!o.narr; this.convo = STORY.convos && STORY.convos[o.id] || null; this.t = 0; this.dead = false; }          // (a signpost is a sign; every gravestone and tablet is her: see story.js)
   get box() { return this.narr ? { x: this.x - 20, y: this.y - 30, w: 40, h: 30 } : { x: this.x - 12, y: this.y - 26, w: 24, h: 26 }; }          // (a narr stone is only a place to read: the picture is the grave scenery already there, and the words are the game speaking, not her)
   update(g) { this.t++; if (!this.sign && !this.narr) { const unread = !g.save.flags['read_' + this.id]; g.fx.glow(this.x, this.y - 13, 22 + 2 * Math.sin(this.t * 0.05), [0.6, 0.8, 1], (unread ? 0.3 : 0.14) + 0.04 * Math.sin(this.t * 0.04)); }          // (her stones glow faintly, softly: that is what tells them from the headstones that are only scenery, and from signs)
     if (this.t % 10 === 0 && !g.save.flags['read_' + this.id]) g.fx.emit({ x: this.x + rand(-5, 5), y: this.y - 18, vx: 0, vy: -rand(0.2, 0.5), life: 40, s0: 5, s1: 1, c0: [0.7, 0.85, 1], a0: 0.8, a1: 0, kind: 6 }); }
-  interact(g) { g.save.flags['read_' + this.id] = true; if (this.narr) { g.showDialog(this.text, { font: 'mixed' }); A.sfx('select'); return true; } if (!this.sign) { if (g.save.flags.got_lantern) g.player.lanFlare = 260; else g.ghost.reveal(280); } g.showDialog(this.text, this.sign ? {} : { name: STORY.speaker, font: 'hand' });          A.sfx('select'); return true; }          // (her words are in her own handwriting)
+  interact(g) { g.save.flags['read_' + this.id] = true; if (this.convo) { if (g.save.flags.got_lantern) g.player.lanFlare = 260; else g.ghost.reveal(900); const c = this.convo, run = i => { if (i >= c.length) return; const her = c[i][0] === 'H'; g.showDialog(c[i][1], her ? { name: STORY.speaker, font: 'hand', onClose: () => run(i + 1) } : { name: c[i][0], onClose: () => run(i + 1) }); }; run(0); A.sfx('select'); return true; }          // (a talking gravestone: two voices)
+    if (this.narr) { g.showDialog(this.text, { font: 'mixed' }); A.sfx('select'); return true; } if (!this.sign) { if (g.save.flags.got_lantern) g.player.lanFlare = 260; else g.ghost.reveal(280); } g.showDialog(this.text, this.sign ? {} : { name: STORY.speaker, font: 'hand' });          A.sfx('select'); return true; }          // (her words are in her own handwriting)
   draw(ctx, cx, cy) {
     if (this.narr) return;
     const x = this.x - cx, y = this.y - cy;
@@ -381,7 +382,8 @@ export class Upgrade {
   get box() { return { x: this.x - 8, y: this.y - 16, w: 16, h: 16 }; }
   update(g) {
     this.t++; const bob = Math.sin(this.t * 0.07) * 2, p = g.player; this.by = bob;
-    g.fx.glow(this.x, this.y - 8 + bob, 26, this.U.color, 0.5); g.fx.light(this.x, this.y - 8, 50, 0.7);
+    const isKey = this.U.icon === 'key';          // (a key's glow is kept soft so the colour of the key itself - the colour of its lock - still reads)
+    g.fx.glow(this.x, this.y - 8 + bob, isKey ? 20 : 26, this.U.color, isKey ? 0.22 : 0.5); g.fx.light(this.x, this.y - 8, 50, isKey ? 0.45 : 0.7);
     if (this.t % 5 === 0) g.fx.emit({ x: this.x + rand(-9, 9), y: this.y - 8 + rand(-6, 6), vx: 0, vy: -rand(0.1, 0.5), life: 36, s0: 5, s1: 1, c0: this.U.color, a0: 0.9, a1: 0, kind: 6 });
     if (this.id && this.id.startsWith('bu_') && this.t > 150 && !p.dead) { const dx = p.x - this.x, dy = p.y - 16 - (this.y - 8), dd = Math.hypot(dx, dy) || 1, sp = Math.min(dd, 1.6); this.x += dx / dd * sp; this.y += dy / dd * sp; }          // (a boss's gift drifts to the hero if left lying: it can never be walked past - the dark rooms ahead need the lantern)
     if (!p.dead && dist(p.x, p.y - 16, this.x, this.y - 8) < 14) this.collect(g);
@@ -392,9 +394,11 @@ export class Upgrade {
     A.sfx('item'); A.sting('sting_item'); g.fx.ring(this.x, this.y - 8, 44, this.U.color, 30); g.fx.flash(this.U.color, 0.3); g.fx.sparks(this.x, this.y - 8, 18, [[1, 1, 0.8], this.U.color], 3);
     g.banner(this.U.name, this.kind === 'tide' && !S.abilities.dash ? 'ITS POWER WAKES ONCE YOU CAN DASH' : this.U.desc);
     if (this.kind === 'page') g.foundPage(this.n);
+    if (this.kind === 'lantern') g.lanternScene();
   }
   draw(ctx, cx, cy) {
     if (this.kind === 'shoes') drawSheet(ctx, 'pedestal', 0, this.x - cx, this.y + 12 - cy);          // (the shoes stand on a little pedestal of their own)
+    if (this.U.icon === 'key') { drawKey(ctx, this.U.color.map(v => Math.round(v * 255)), this.x - cx, this.y - 8 - cy + (this.by || 0), 1.4); return; }          // (a key wears the colour of its lock)
     drawSheet(ctx, 'icons', iconFrame(this.U.icon), this.x - cx, this.y - 8 - cy + (this.by || 0), { ay: 0.5, scale: 1.4 });
   }
 }
