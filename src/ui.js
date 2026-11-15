@@ -175,15 +175,17 @@ class Menu {
 }
 
 // credits.txt -> a list of lines to scroll.   # heading   ## subheading   --- rule   blank = gap   ; comment (not shown)   anything else = text (wrapped)
+// a single word wider than the page (a web address) is broken into pieces that fit
+function breakLong(l) { const out = []; let cur = ''; if (textWidth(l, 1, 'hand') <= 262) return [l]; for (const ch of l) { if (textWidth(cur + ch, 1, 'hand') > 262) { out.push(cur); cur = ''; } cur += ch; } if (cur) out.push(cur); return out; }
 function layoutCredits(text) {
   const items = []; let y = 0;
   for (const raw of String(text).split(/\r?\n/)) {
     const line = raw.replace(/\s+$/, ''); if (line.startsWith(';')) continue;
     if (line === '') { y += 7; continue; }
     if (line.startsWith('---')) { items.push({ k: 'rule', y: y + 3 }); y += 11; continue; }
-    if (line.startsWith('## ')) { items.push({ k: 'h2', text: line.slice(3), y }); y += 14; continue; }
-    if (line.startsWith('# ')) { y += 4; items.push({ k: 'h1', text: line.slice(2), y }); y += 20; continue; }
-    for (const l of wrapText(line, 262)) { items.push({ k: 'p', text: l, y }); y += 11; }
+    if (line.startsWith('## ')) { items.push({ k: 'h2', text: handText(line.slice(3)), y }); y += 14; continue; }
+    if (line.startsWith('# ')) { y += 4; items.push({ k: 'h1', text: handText(line.slice(2)), y }); y += 20; continue; }
+    for (const l0 of wrapText(handText(line), 262, 1, 'hand')) for (const l of breakLong(l0)) { items.push({ k: 'p', text: l, y }); y += 11; }          // (the credits are lettered in Eroded Motta, like the gravestones)
   }
   return { items, height: y };
 }
@@ -230,15 +232,15 @@ export class TitleScreen {
     if (this.mode === 'main' && this.g.clean) { /* (the trailer's last card: the logo and the weather, no menu) */ }
     else if (this.mode === 'main') { this.main.draw(ctx, W / 2, 110); drawText(ctx, Input.touchOn ? 'TAP AN ITEM' : 'ENTER / Z TO SELECT', W / 2, H - 14, { align: 'center', color: DIM }); }
     else if (this.mode === 'credits') {
-      const c = this.cr; ctx.fillStyle = 'rgba(6,4,14,0.95)'; ctx.fillRect(0, 0, W, H); drawText(ctx, 'CREDITS', W / 2, 12, { align: 'center', scale: 1.8, color: GOLD, outline: '#000' });
+      const c = this.cr; ctx.fillStyle = 'rgba(6,4,14,0.95)'; ctx.fillRect(0, 0, W, H); drawText(ctx, 'CREDITS', W / 2, 12, { align: 'center', scale: 1.8, color: GOLD, outline: '#000', font: 'hand' });
       const top = 38, view = H - top - 30; ctx.save(); ctx.beginPath(); ctx.rect(0, top, W, view); ctx.clip();
       if (!c.lines) drawText(ctx, 'LOADING...', W / 2, top + 20, { align: 'center', color: DIM });
       else for (const it of c.lines.items) {
         const y = Math.round(top + 4 + it.y - c.scroll); if (y < top - 22 || y > top + view) continue;
         if (it.k === 'rule') { ctx.fillStyle = '#4a3a2a'; ctx.fillRect(W / 2 - 60, y, 120, 1); }
-        else if (it.k === 'h1') drawText(ctx, it.text, W / 2, y, { align: 'center', scale: 1.5, color: GOLD, outline: '#000' });
-        else if (it.k === 'h2') drawText(ctx, it.text, W / 2, y, { align: 'center', color: '#e6c27a', outline: '#000' });
-        else drawText(ctx, it.text, W / 2, y, { align: 'center', color: PALE, outline: '#000' });
+        else if (it.k === 'h1') drawText(ctx, it.text, W / 2, y, { align: 'center', scale: 1.5, color: GOLD, outline: '#000', font: 'hand' });
+        else if (it.k === 'h2') drawText(ctx, it.text, W / 2, y, { align: 'center', color: '#e6c27a', outline: '#000', font: 'hand' });
+        else drawText(ctx, it.text, W / 2, y, { align: 'center', color: PALE, outline: '#000', font: 'hand' });
       }
       ctx.restore(); ctx.fillStyle = 'rgba(10,10,28,0.9)'; ctx.fillRect(0, top - 6, W, 6);
       drawText(ctx, Input.touchOn ? 'UP / DOWN SCROLL     TAP TO GO BACK' : 'UP / DOWN SCROLL     ESC BACK', W / 2, H - 14, { align: 'center', color: DIM });
