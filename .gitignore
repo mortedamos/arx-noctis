@@ -32,3 +32,7 @@ src/package.json
 
 # screenshots made for sharing (not part of the game)
 snapshots/
+
+# trailer frames and renders (large, made by tools/trailer)
+tools/trailer/frames/
+tools/trailer/out/

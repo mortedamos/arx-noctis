@@ -694,7 +694,7 @@ function genTower(id, spec, r) {
   const b = new B(id, spec.name, spec.zone, W, H, { ...spec.opts, horizon: floor }); b.def.interior = true;                  // (a tower is a building: brickwork and narrow windows behind you, never open sky)
   b.floor(0, W, floor).ceil(0, W, 2);
   const plats = []; let prev = { x: r.i(3, 6), len: r.i(5, 6), row: floor - r.i(2, 3) }; plats.push(prev); let dir = 1, guard = 0;
-  const add = (nx, len, row) => { prev = { x: Math.max(1, Math.min(W - 2 - len, nx)), len, row }; plats.push(prev); };
+  const add = (nx, len, row) => { const xmin = spec.bell && row < top + 9 ? W - 14 : 1; prev = { x: Math.max(xmin, Math.min(W - 2 - len, nx)), len, row }; plats.push(prev); };          // (the bell tower: above nine rows over the top landing's height the climb keeps to the right, under the landing - the bell's ledge on the left has nothing to jump from)
   while (prev.row - top > 3 && guard++ < 60) {
     let rise = r.i(2, DJ ? 4 : 3); if (prev.row - rise < top + 2) rise = Math.max(1, prev.row - (top + 2));
     const len = r.i(5, 6), gap = DASH ? r.i(2, 5) : r.i(0, DJ ? 3 : 2); let nx;
@@ -721,7 +721,7 @@ function genTower(id, spec, r) {
   const meta = { abilities: [...new Set([...(spec.abilities || []), ...(DJ ? ['djump'] : [])])], back: BACK[spec.zone], entry: { L: { tx: 1, gy: floor }, R: { tx: W - 2, gy: top } }, must: [], items: [] };
   if (spec.doorL) { b.door(W - 9, floor, spec.doorL.to, 0, 0, spec.doorL.kind); patchDoor(b, spec.doorL); }                       // the door from the previous area
   if (spec.doorR) { b.door(W - 11, top, spec.doorR.to, 3, 12, spec.doorR.kind || 'crypt'); patchDoor(b, spec.doorR); meta.entry.R = null; }          // a door on the top landing: the way back to a crossroads
-  if (spec.bell) { b.e('bell', W - 11, top, { id: 'page5', secret: true }); meta.must.push({ tx: W - 11, gy: top, name: 'bell' }); }          // (the bell of the bell tower: ring it)
+  if (spec.bell) { const LEN = 5, LX = Math.max(1, W - 28), bx = LX + 2; b.plat(LX, LEN, top); b.e('bell', bx, top, { id: 'page5', secret: true }); meta.items.push({ id: 'page5', tx: bx, gy: top, needs: ['djump', 'dash'] }); }          // (the BELL of the bell tower: hidden on a ledge at the far side of the top from the way out, across a gulf nine tiles wide that only the double jump and the dash together can cross)
   if (spec.topItem) { b.e('upgrade', W - 7, top, { kind: spec.topItem.kind, id: spec.topItem.id }); meta.must.push({ tx: W - 7, gy: top, name: 'top item' }); }
   b.def.meta = meta; b.def.entries = { L: meta.entry.L, R: meta.entry.R };
   for (const t of (spec.mods || []).filter(m => m.t === 'tablet')) { b.tablet(W - 4, top, t.text, t.id); meta.must.push({ tx: W - 4, gy: top, name: 'tablet' }); }

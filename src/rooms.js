@@ -5,6 +5,7 @@
 // rising 3 tiles you can bridge ~2-3 tiles of gap.  Double jump adds ~2.8 tiles of height / ~5 tiles of distance.
 // Exits are always 3 tiles tall (rows gy-3 .. gy-1) so barricades/crystals/seals can block them completely.
 import { TILE, isSolid } from './world.js';
+import { IMG } from './assets.js';
 
 // the zones inside the Lord's keep itself: crossing into one of them from outside is the moment the hero enters SHADOWKEEP (the gate, the title card, the map's label)
 export const KEEP = new Set([2, 3, 4, 5, 10]);
@@ -144,10 +145,34 @@ export function groundScenery(def) {
 // The vertical span a decoration covers (a rough guess by kind), and whether it overlaps a door's doorway.
 const DECO_SPAN = { img: d => [d.y - 120, d.y], bookcase: d => [d.y - 46, d.y], column: d => [d.y - 112, d.y], cdl: d => [d.y - 44, d.y], brazier: d => [d.y - 40, d.y], crystals: d => [d.y - 36, d.y], hang: d => [d.y, d.y + 64], banner: d => [d.y, d.y + (d.len || 5) * 16], portrait: d => [d.y - 46, d.y] };
 export const decoHidesDoor = (d, o) => { const f = DECO_SPAN[d.t]; if (!f || (d.t === 'img' && /orloj|gate|door|town_house|town_sign/.test(d.img || ''))) return false; const [y0, y1] = f(d); return Math.abs(d.x - (o.x * 16 + 8)) < 38 && y1 > o.gy * 16 - 56 && y0 < o.gy * 16 + 2; };
+// SCENERY THAT STANDS ON THE GROUND MUST HAVE GROUND UNDER IT.  The generators scatter houses, trees and stones along "flat" columns, but never asked how wide the picture is, so a house or a great tree could
+// end up with half of itself hanging out over a pit or past the end of a ledge.  Every standing picture is checked against the floor tiles under it (a house, wall or stone: its whole width; a tree or
+// a clump of props, which has a trunk and a canopy: the middle of it, since branches may hang over a drop): if too much of it is unsupported it is slid along to the nearest spot that is supported, or
+// taken away.  (A house with a door in it stays - the door belongs to it - and so does anything that is not resting on a floor at all: backdrops, signs, the Orloj.)
+const SOLID_FLOOR = new Set([TILE.SOLID, TILE.PLAT, TILE.CRACK, TILE.BARRICADE, TILE.CRYSTAL, TILE.ICE, TILE.GATE]);
+const NOT_STANDING = /orloj|gate|door|sign|moon|sun|window|banner|sky|mount|cloud|horizon|lamp|chain|hang/;
+const FULL_WIDTH = /house|town_|cottage|well|cart|crate|barrel|pillar|stone|tomb|crypt|mausoleum|statue|ruin|shed|fence|bench|gy_/;
+export function fitScenery(def) {
+  if (def.fitted || !IMG) return; def.fitted = true; const W = def.w, H = def.h;
+  const floor = (tx, row) => tx >= 0 && tx < W && row >= 0 && row < H && SOLID_FLOOR.has(def.tiles[row * W + tx]);
+  const cover = (x0, x1, row) => { let on = 0, n = 0; for (let px = x0; px < x1; px += 2) { n++; if (floor(Math.floor(px / 16), row)) on++; } return n ? on / n : 1; };
+  const gone = new Set();
+  for (const d of def.decos) {
+    if (d.t !== 'img' || !d.img || NOT_STANDING.test(d.img)) continue; const im = IMG[d.img]; if (!im || !im.width) continue;
+    const w = im.width * (d.scale || 1), row = Math.round(d.y / 16), full = FULL_WIDTH.test(d.img), span = full ? w * 0.9 : w * 0.4;
+    const test = dx => cover(d.x + dx - span / 2, d.x + dx + span / 2, row), here = test(0);
+    if (here >= 0.9 || here < 0.15) continue;                           // (well supported, or not meant to rest on this floor at all)
+    const isHouse = /^town_house/.test(d.img), hasDoor = isHouse && (def.doors || []).some(o => Math.abs(o.x * 16 + 8 - d.x) < w / 2);
+    if (hasDoor) continue;                                              // (its door belongs to it: it stays as it is)
+    let best = null; if (!isHouse) for (let k = 4; k <= w * 0.6 && best === null; k += 4) for (const dx of [k, -k]) if (test(dx) >= 0.98) { best = dx; break; }
+    if (best !== null) d.x += best; else { gone.add(d); if (isHouse) for (const q of def.decos) if (q.burn !== undefined && Math.abs(q.burn * 16 + 8 - d.x) < 1) gone.add(q); else if (q.t === 'img' && /town_sign/.test(q.img || '') && Math.abs(q.x - d.x) < w / 2 + 8) gone.add(q); }
+  }
+  if (gone.size) def.decos = def.decos.filter(d => !gone.has(d));
+}
 export function tidyRoom(def) {
   if (def.tidied) return; def.tidied = true;
   if (def.theme === 'ice' && !def.save) def.decos = def.decos.filter(d => d.t !== 'torch' && d.t !== 'dgtorch' && d.t !== 'brazier' && d.t !== 'cdl');          // the Frozen Caverns are wilderness: no torches, braziers or candles - ghostly blue wisps (fx.js) light the way
-  groundScenery(def);
+  groundScenery(def); fitScenery(def);
   // no scenery in front of a door (carts, wells, lamps, signs, braziers...): a door must always be seen
   def.decos = def.decos.filter(d => { if (!(d.t === 'img' || d.t === 'brazier') || (d.t === 'img' && d.back)) return true; return !(def.doors || []).some(o => Math.abs(d.x - (o.x * 16 + 8)) < 30 && d.y > o.gy * 16 - 74 && d.y < o.gy * 16 + 8); });
   { const gone = def.decos.filter(d => (def.doors || []).some(o => decoHidesDoor(d, o))), pillars = gone.filter(d => d.t === 'img' && /pillar/.test(d.img || ''));          // (no background picture, pillar, shelf, banner or portrait behind a doorway either; what hung on a pillar that goes goes with it)

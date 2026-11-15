@@ -227,7 +227,8 @@ export class TitleScreen {
     const gx = -((t * 0.4) % 384); for (let x = gx; x < W; x += 384) ctx.drawImage(IMG.cemetery_graveyard, Math.round(x), H - 123 + 20);
     ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(0, 0, W, H);
     const lg = logo(); const bob = Math.sin(t * 0.03) * 1.5; ctx.drawImage(lg, Math.round(W / 2 - lg.lw / 2), Math.round(14 + bob), lg.lw, lg.lh);
-    if (this.mode === 'main') { this.main.draw(ctx, W / 2, 110); drawText(ctx, Input.touchOn ? 'TAP AN ITEM' : 'ENTER / Z TO SELECT', W / 2, H - 14, { align: 'center', color: DIM }); }
+    if (this.mode === 'main' && this.g.clean) { /* (the trailer's last card: the logo and the weather, no menu) */ }
+    else if (this.mode === 'main') { this.main.draw(ctx, W / 2, 110); drawText(ctx, Input.touchOn ? 'TAP AN ITEM' : 'ENTER / Z TO SELECT', W / 2, H - 14, { align: 'center', color: DIM }); }
     else if (this.mode === 'credits') {
       const c = this.cr; ctx.fillStyle = 'rgba(6,4,14,0.95)'; ctx.fillRect(0, 0, W, H); drawText(ctx, 'CREDITS', W / 2, 12, { align: 'center', scale: 1.8, color: GOLD, outline: '#000' });
       const top = 38, view = H - top - 30; ctx.save(); ctx.beginPath(); ctx.rect(0, top, W, view); ctx.clip();
@@ -252,7 +253,7 @@ export class TitleScreen {
       drawText(ctx, 'ENTER = BEGIN     ESC = BACK', W / 2, 176, { align: 'center', color: PALE });
     }
     else controlsScreen(ctx);
-    drawText(ctx, 'BUILD ' + BUILD.n + '  ' + BUILD.when, W - 3, H - 8, { align: 'right', color: '#6a6280', alpha: 0.8, scale: 0.7 });          // (which build this is: small, bottom right)
+    if (!this.g.clean) drawText(ctx, 'BUILD ' + BUILD.n + '  ' + BUILD.when, W - 3, H - 8, { align: 'right', color: '#6a6280', alpha: 0.8, scale: 0.7 });          // (which build this is: small, bottom right)
   }
 }
 

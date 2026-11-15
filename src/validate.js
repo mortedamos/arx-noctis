@@ -150,8 +150,9 @@ export function validateRoom(def0, opts = {}) {
   for (const it of meta.items || []) {
     if (it.needs) {
       const id = node(it, it.id); if (id < 0) continue;
-      if (reach(room, S, [start], base.filter(a => a !== it.needs)).has(id)) errs.push(`${it.id} is reachable without ${it.needs}`);
-      if (!reach(room, S, [start], [...new Set([...base, it.needs])]).has(id)) errs.push(`${it.id} is unreachable even with ${it.needs}`);
+      const need = [].concat(it.needs), base0 = base.filter(a => !need.includes(a));          // (needs may be one ability or a list: all of them are required, and no smaller set may do)
+      for (const a of need) if (reach(room, S, [start], [...base0, ...need.filter(b => b !== a)]).has(id)) errs.push(`${it.id} is reachable without ${a}`);
+      if (!reach(room, S, [start], [...new Set([...base0, ...need])]).has(id)) errs.push(`${it.id} is unreachable even with ${need.join(' and ')}`);
     }
     if (it.gate) {                                   // sealed cell: unreachable while closed, reachable once the gate is destroyed
       const open = roomOf(def, it.gate), So = surfaces(open), id = So.id[it.gy * def.w + it.tx];

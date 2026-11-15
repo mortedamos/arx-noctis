@@ -632,7 +632,7 @@ export class Game {
     for (const d of r.decos) if (d.fore) drawDeco(ctx, d, cx, cy, t, r);                              // the foreground: things the hero walks BEHIND (fences)
     for (const e of this.enemies) if (e.isBoss) e.drawIntent(ctx, cx, cy);                              // attack icon + name over its head
     for (const o of this.projectiles) o.draw(ctx, cx, cy);
-    if (this.state === 'play' && !this.cutscene && this.fade < 0.05) {
+    if (this.state === 'play' && !this.cutscene && this.fade < 0.05 && !this.clean) {          // (this.clean: the trailer recorder hides the interface)
       const n = this.nearInteractable();
       if (n) {
         drawPrompt(top, n.x - cx, n.y - cy, t, n.kind === 'npc' ? 'TALK' : n.kind === 'door' ? 'UP' : (n.o.constructor.name === 'Altar' ? 'SAVE' : n.o.constructor.name === 'Waystone' ? 'TRAVEL' : n.o.constructor.name === 'Lever' ? 'PULL' : n.o.constructor.name === 'Bell' ? 'RING' : n.o.constructor.name === 'LitCandle' ? 'LIGHT' : 'UP'));
@@ -653,7 +653,7 @@ export class Game {
     if (r.spikes && r.spikes.length) { top.globalAlpha = 0.95; for (const [tx, ty] of r.spikes) { const sx = tx * T - cx, sy = ty * T - cy; if (sx < -16 || sx > W || sy < -16 || sy > H) continue; drawSheet(top, 'spikes', 0, sx, sy, { ax: 0, ay: 0 }); } top.globalAlpha = 1; }          // hazards are drawn again above the fog and the dark: they must always be seen
     // everything the player READS - messages, the HUD, banners, dialogue, the pause and game-over screens - is drawn on the clear layer above the effects (fog, darkness), never under them
     drawPopups(top, this.popups, cx, cy);
-    if (this.cutscene && this.cutscene.scene) this.cutscene.scene.drawTop(top); else HUD.draw(top, this);
+    if (this.cutscene && this.cutscene.scene) this.cutscene.scene.drawTop(top); else if (!this.clean) HUD.draw(top, this);
     if (!(this.cutscene && this.cutscene.scene)) drawBanner(top, this.bannerObj);
     if (this.blackout && (this.blackout.a > 0.004 || this.blackout.wisp)) {               // (the Shadow Lord's second life: the screen goes black; the Lady's wisp opens a pool of light round the hero)
       const b = this.blackout, p = this.player, hx = p.x - cx, hy = p.y - 22 - cy; top.save(); top.fillStyle = `rgba(0,0,0,${b.a.toFixed(3)})`; top.fillRect(0, 0, W, H);
