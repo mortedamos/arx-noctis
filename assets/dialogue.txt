@@ -471,6 +471,10 @@ THE DOOR IS LOCKED. IT NEEDS THE {KEY}.
 [door sigils]
 THE DOOR WILL NOT OPEN. {LIT} OF {TOTAL} SIGILS BURN. {HINTS}
 
+[sigil unlocked]
+; shown under the sigil, in the middle of the screen, the moment a boss falls whose death lights a sigil on a sealed door
+A SIGIL HAS BEEN UNLOCKED UPON A SEALED DOOR.
+
 [lockhint boss_h4]
 THE PHANTOM STEED STILL RIDES THE GREAT HALL, THROUGH THE WOODEN DOOR AT THE GATE OF SHADOWKEEP.
 

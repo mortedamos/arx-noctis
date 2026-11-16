@@ -23,7 +23,7 @@ import { Shopkeeper, ShopScreen } from './shop.js';
 import { KEYS } from './itemdata.js';
 import { Projectile, Shockwave, FirePatch } from './projectiles.js';
 import { Skull, SKULL_COUNT, Bell, LitCandle, Statue, Barrel, Altar, Waystone, Tablet, Chest, Lever, Upgrade, Relic, Pickup, chestGift, ABILITIES, UPGRADES } from './props.js';
-import { drawDeco, isBack, roomFlames, drawFlames2D, decoCoversHazard } from './decor.js';
+import { drawDeco, isBack, roomFlames, drawFlames2D, decoCoversHazard, sigilOf, drawSigilCard } from './decor.js';
 import { drawIce } from './enchant.js';
 import { drawSheet, IMG } from './assets.js';
 import { noteSeen, noteKill } from './bestiary.js';
@@ -491,6 +491,12 @@ export class Game {
     const S = this.save, r = this.room; S.flags['boss_' + r.id] = true; this.slow = 0; this.player.invT = 90; this.boss = null;
     for (let ty = 0; ty < r.h; ty++) for (let tx = 0; tx < r.w; tx++) if (r.get(tx, ty) === TILE.SEAL) r.set(tx, ty, TILE.EMPTY);
     A.sfx('unseal'); A.sting('sting_victory'); this.shake(5, 30);
+    const sg = sigilOf('boss_' + r.id);          // a boss whose death lights a sigil on a sealed door: the sigil is shown first, before anything else (his dying words, the reward, the ending)
+    if (sg) { const p = this.player; p.invT = 99999; p.vx = 0; this.playerFrozen = true; this.sigilCard = { name: sg, t: 0, dur: 240 }; A.sfx('item'); this.fx.flash([1, 0.8, 0.45], 0.25); this.after(240, () => { this.sigilCard = null; this.playerFrozen = false; p.invT = 90; this.bossAftermath(b); }); return; }
+    this.bossAftermath(b);
+  }
+  bossAftermath(b) {
+    const S = this.save, r = this.room;
     if (b.reward === 'dawn') { const toEnding = () => { this.state = 'ending'; this.ending = new Ending(this); A.play('ending', { fade: 2 }); this.fx.setAmbient(0, [0, 0, 0], 0); this.fx.setStorm(false); this.fx.setAmbientFx('dust'); S.kills = (S.kills || 0) + this.kills; }; const tk = STORY.talk[b.bossName]; this.after(120, () => { if (tk && tk.after) this.talk(tk.after, toEnding); else toEnding(); }); return; }          // (his dying words, then the sun)
     if (b.reward === 'well') { this.startWell(); return; }          // (the Rimewyrm drops nothing: the ice of the floor gives way, and its treasure waits below)
     const gy = this.groundBelow(b.x, b.y - 8);
@@ -586,8 +592,7 @@ export class Game {
     this.updateTrans(); if (this.fadeDir && !this.trans) { this.fade = clamp(this.fade + this.fadeDir * 0.04, 0, 1); if (this.fade <= 0 || this.fade >= 1) this.fadeDir = 0; }
   }
   titleFx() {
-    const fx = this.fx; fx.setCamera(0, 0);
-    for (const x of [46, W - 46]) { fx.fire(x, H - 30, { scale: 1.5, n: 2 }); fx.light(x, H - 40, 90, 1); }
+    this.fx.setCamera(0, 0);          // (no flames in the corners any more: only the rain)
   }
   stepPlay() {
     const S = this.save, p = this.player, fx = this.fx;
@@ -644,6 +649,7 @@ export class Game {
     // camera
     this.updateCamera();
     if (this.bannerObj && ++this.bannerObj.t > this.bannerObj.dur) this.bannerObj = null;
+    if (this.sigilCard) this.sigilCard.t++;
     if (this.shakeT > 0) { this.shakeT--; if (this.shakeT === 0) this.shakeA = 0; }
     fx.update(1);
   }
@@ -760,6 +766,11 @@ export class Game {
     drawPopups(top, this.popups, cx, cy);
     if (this.cutscene && this.cutscene.scene) this.cutscene.scene.drawTop(top); else if (!this.clean) HUD.draw(top, this);
     if (!(this.cutscene && this.cutscene.scene)) drawBanner(top, this.bannerObj);
+    if (this.sigilCard) {          // the sigil that has just been lit: in the middle of the screen, with the news under it
+      const c = this.sigilCard, a = c.t < 25 ? c.t / 25 : c.t > c.dur - 30 ? Math.max(0, (c.dur - c.t) / 30) : 1, msg = dtext('sigil unlocked') || 'A SIGIL HAS BEEN UNLOCKED UPON A SEALED DOOR.';
+      top.save(); top.globalAlpha = a * 0.45; top.fillStyle = '#000'; top.fillRect(0, 0, W, H); top.restore();
+      drawSigilCard(top, c.name, W / 2, H / 2 - 4, c.t, a); top.save(); top.globalAlpha = a; drawText(top, msg, W / 2, H / 2 + 44, { align: 'center', color: '#e9d8a6', outline: '#000', scale: 1.1, font: 'body' }); top.restore();
+    }
     if (this.blackout && (this.blackout.a > 0.004 || this.blackout.wisp)) {               // (the Shadow Lord's second life: the screen goes black; the Lady's wisp opens a pool of light round the hero)
       const b = this.blackout, p = this.player, hx = p.x - cx, hy = p.y - 22 - cy; top.save(); top.fillStyle = `rgba(0,0,0,${b.a.toFixed(3)})`; top.fillRect(0, 0, W, H);
       if (b.r > 2) { top.globalCompositeOperation = 'destination-out'; const gr = top.createRadialGradient(hx, hy, 2, hx, hy, b.r); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.55, 'rgba(0,0,0,0.75)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); top.fillStyle = gr; top.fillRect(0, 0, W, H); top.globalCompositeOperation = 'source-over';
@@ -791,6 +802,8 @@ export async function start() {
     seed: n => { g.world = buildWorld(n); g.save = newSave(g.world); g.save.flags.opening_seen = true; g.player = new Player(g, 0, 0); g.state = 'play'; g.fade = 0; g.loadRoom(g.world.start.room, { x: g.world.start.x * 16 + 8, y: g.world.start.gy * 16 }, 1); return g.world.report; },
     tp: (room, tx, gy) => { if (!g.save) { g.world = g.world || buildWorld(1); g.save = newSave(g.world); g.save.flags.opening_seen = true; g.player = new Player(g, 0, 0); } g.state = 'play'; g.fade = 0; g.loadRoom(room, { x: tx * 16 + 8, y: gy * 16 }, 1); },
     give: k => { g.save.abilities[k] = true; }, giveAll: () => { for (const k of Object.keys(g.save.abilities)) g.save.abilities[k] = true; },
+    defeat: () => { const p = g.player; g.bossDefeated({ reward: 'thunder', bossName: '', x: p.x, y: p.y, cy: p.y - 20 }); },          // (as if the room's boss had just died)
+    state: () => ({ card: g.sigilCard && g.sigilCard.t, frozen: g.playerFrozen, flag: g.save && g.save.flags['boss_' + g.room.id], pickups: g.pickups.length }),
     god: () => { g.player.invT = 1e9; }, heal: () => { g.save.hp = g.save.maxHp; g.save.mp = g.save.maxMp; },
     // run n logic steps synchronously (the preview pane throttles requestAnimationFrame), then draw once
     stepN: (n = 1) => { for (let i = 0; i < n; i++) g.step(); g.draw(); },

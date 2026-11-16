@@ -54,6 +54,20 @@ function glyph(g, name, x, y) {
   g.stroke();
 }
 
+// the sigil a fallen boss lights on its sealed door (null if it lights none): the name of its alchemical symbol
+export const sigilOf = flag => SIGIL_OF[flag] || null;
+// A BIG sigil, burning, in the middle of the screen (shown the moment its boss falls): x, y = its centre, a = opacity, size = how many times bigger than on the door
+export function drawSigilCard(g, name, x, y, t, a, size = 4) {
+  const fk = 0.8 + 0.2 * Math.sin(t * 0.17) + 0.08 * Math.sin(t * 0.41);
+  g.save(); g.globalAlpha = a; g.translate(x, y);
+  g.fillStyle = 'rgba(6,3,12,0.72)'; g.beginPath(); g.arc(0, 0, size * 9.5, 0, Math.PI * 2); g.fill();
+  g.globalCompositeOperation = 'lighter'; const gr = g.createRadialGradient(0, 0, 2, 0, 0, size * 15); gr.addColorStop(0, 'rgba(255,170,70,' + (0.36 * fk).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(255,120,30,0)'); g.fillStyle = gr; g.fillRect(-size * 15, -size * 15, size * 30, size * 30); g.globalCompositeOperation = 'source-over';
+  g.scale(size, size); g.lineCap = 'round'; g.lineJoin = 'round';
+  g.strokeStyle = '#050208'; g.lineWidth = 2.2; glyph(g, name, 0, 0);
+  g.strokeStyle = 'rgba(255,214,130,' + (0.85 + 0.15 * fk).toFixed(3) + ')'; g.lineWidth = 0.95; glyph(g, name, 0, 0);
+  g.restore();          // (no flame over it: the glow alone)
+}
+
 export function drawDeco(g, d, cx, cy, t, room) {
   const x = Math.round(d.x - cx), y = Math.round(d.y - cy);
   if (x < -150 || x > 540) return;
