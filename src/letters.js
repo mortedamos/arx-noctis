@@ -12,6 +12,8 @@ const STORE = 'shadowkeep.pages.v1';
 const GOLD = '#e8b84a', PALE = '#e8dcc0', DIM = '#8a7d9a';
 
 export function foundPages() { try { return new Set(JSON.parse(localStorage.getItem(STORE) || '[]')); } catch { return new Set(); } }
+// the pages of THIS game: the ones its save holds (a new game starts with none, whatever an earlier game - or a secret code - found; foundPages() above is the browser-wide record, which the book no longer reads)
+export function savePages(S) { const s = new Set(); if (S && S.flags) for (let n = 1; n <= PAGE_COUNT; n++) if (S.flags['page' + n]) s.add(n); return s; }
 export function markPage(n) { const s = foundPages(); s.add(n); try { localStorage.setItem(STORE, JSON.stringify([...s])); } catch { /* private mode: the save still has it */ } }
 
 const cache = {};
@@ -71,7 +73,7 @@ export class LetterReader {
 
 // ---------------------------------------------------------------------------------------------------------------------------------- the book on the title screen
 export class LetterBook {
-  constructor(onBack) { this.onBack = onBack; this.i = 0; this.reader = null; this.t = 0; this.found = foundPages(); loadLetters(); }
+  constructor(onBack, found = foundPages()) { this.onBack = onBack; this.i = 0; this.reader = null; this.t = 0; this.found = found; loadLetters(); }
   update() {
     this.t++;
     if (this.reader) { this.reader.update(); if (this.reader.closed) this.reader = null; return; }

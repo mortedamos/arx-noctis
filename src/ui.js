@@ -15,7 +15,7 @@ import { lines as dlines } from './dialogue.js';
 import { BUILD } from './build.js';
 import { secretStats } from './secrets.js';
 import { BestiaryScreen } from './bestiary.js';
-import { LetterBook, foundPages, PAGE_COUNT } from './letters.js';
+import { LetterBook, savePages, PAGE_COUNT } from './letters.js';
 
 const GOLD = '#e8b84a', PALE = '#e8dcc0', DIM = '#8a7d9a', RED = '#c23b2a';
 const icon = (ctx, name, x, y, sc = 1, a) => drawSheet(ctx, 'icons', ICON.indexOf(name), x, y, { ay: 0.5, scale: sc, alpha: a });
@@ -338,7 +338,7 @@ function foundPanel(ctx, g, pm) {
 export class PauseMenu {
   constructor(g) {
     this.g = g; this.mode = 'main'; this.foc = 'menu'; this.sel = 0; this.opts = optionsMenu(() => { this.mode = 'main'; });
-    this.main = new Menu([{ label: 'RESUME', action: () => g.resume() }, { label: 'MAP', action: () => g.openMap() }, { label: 'BESTIARY', action: () => { this.mode = 'bestiary'; this.best = new BestiaryScreen(g, () => { this.mode = 'main'; }); } }, { label: () => 'LETTERS  ' + foundPages().size + '/' + PAGE_COUNT, action: () => { this.mode = 'letters'; this.book = new LetterBook(() => { this.mode = 'main'; }); } }, { label: 'OPTIONS', action: () => { this.mode = 'options'; this.opts.i = 0; } }, { label: 'CONTROLS', action: () => { this.mode = 'controls'; } }, { label: 'QUIT TO TITLE', action: () => g.toTitle() }]);
+    this.main = new Menu([{ label: 'RESUME', action: () => g.resume() }, { label: 'MAP', action: () => g.openMap() }, { label: 'BESTIARY', action: () => { this.mode = 'bestiary'; this.best = new BestiaryScreen(g, () => { this.mode = 'main'; }); } }, { label: () => 'LETTERS  ' + savePages(g.save).size + '/' + PAGE_COUNT, action: () => { this.mode = 'letters'; this.book = new LetterBook(() => { this.mode = 'main'; }, savePages(g.save)); } }, { label: 'OPTIONS', action: () => { this.mode = 'options'; this.opts.i = 0; } }, { label: 'CONTROLS', action: () => { this.mode = 'controls'; } }, { label: 'QUIT TO TITLE', action: () => g.toTitle() }]);
   }
   // LEFT moves the cursor over to the list of found things: UP / DOWN read each one out (what it is, what it does); RIGHT, BACK or OK returns to the menu.  A tap on a thing reads it out too.
   update() { if (this.mode === 'main') {
