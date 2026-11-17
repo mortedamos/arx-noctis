@@ -26,7 +26,7 @@ export const UPGRADES = {
   atkup: { name: 'SAL MARTIS', desc: 'SWORD POWER UP', icon: 'atkup', color: [1, 0.85, 0.4] },
   mantle: { name: 'SALAMANDER MANTLE', desc: 'FIRE HURTS HALF AS MUCH, AND SOOT NEVER STAINS YOUR CLOAK', icon: 'mantle', color: [1, 0.55, 0.25] },
   lantern: { name: 'IGNIS VAPOUR LANTERN', desc: 'A PALE BLUE WISP, WARM AS A VOICE YOU KNEW. IT FOLLOWS YOU, LIGHTS THE DARK, CLEARS THE FOG AND DRAWS LOOT TO YOU', icon: 'lantern', color: [0.5, 0.72, 1] },
-  shard: { name: 'SPECULUM SHARD', desc: 'YOUR SWORD KNOCKS ARROWS, BONES AND ORBS ASIDE, HARMLESSLY', icon: 'shard', color: [0.8, 0.88, 1] },
+  shard: { name: 'LACUNA SHARD', desc: 'YOUR SWORD KNOCKS ARROWS, BONES AND ORBS ASIDE, HARMLESSLY', icon: 'shard', color: [0.8, 0.88, 1] },
   spring: { name: 'PERPETUUM', desc: 'A SPRING THAT NEVER RUNS DOWN: YOUR DASH RECHARGES TWICE AS FAST', icon: 'spring', color: [1, 0.8, 0.4] },
   tide: { name: 'AQUA REGIA', desc: 'A DASH CUTS WHATEVER IT PASSES THROUGH', icon: 'e_ice', color: [0.4, 0.8, 1] },
   astrolabe: { name: 'ASTROLABE', desc: "THE ORLOJ'S LITTLE SISTER. YOUR MAP NOW MARKS WHAT YOU HAVE LEFT BEHIND: TREASURE NOT TAKEN, AND THE ROOMS BESIDE THE ONES YOU KNOW.", icon: 'astrolabe', color: [1, 0.85, 0.45] },          // (its id is the flag 'got_astrolabe': the map reads it)
