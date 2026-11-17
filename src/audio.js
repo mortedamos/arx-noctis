@@ -24,7 +24,9 @@ export const Audio_ = {
     try { const q = new URLSearchParams(location.search); this.forceMute = (q.has('nopause') || q.has('mute')) && !q.has('music'); } catch {}
     try { Object.assign(this.settings, JSON.parse(localStorage.getItem('shadowkeep.audio') || '{}')); } catch {}
     try {
-      const txt = await (await fetch('music/TRACKLIST.txt', { cache: 'no-cache' })).text();
+      // the list of tracks is music/TRACKLIST.txt (the author's own file, with the Suno prompts: it is NOT published); a published copy of it holds just the lines the game needs, music/tracks.txt (made by tools/music-manifest.mjs)
+      let res = await fetch('music/TRACKLIST.txt', { cache: 'no-cache' }).catch(() => null); if (!res || !res.ok) res = await fetch('music/tracks.txt', { cache: 'no-cache' });
+      const txt = await res.text();
       for (const raw of txt.split(/\r?\n/)) {
         const line = raw.trim(); if (!line || line.startsWith('#') || !line.includes('|')) continue;
         const parts = line.split('|').map(s => s.trim()); if (parts.length < 3 || parts[0].toUpperCase() === 'ID' || !/\.\w+$/.test(parts[1])) continue;

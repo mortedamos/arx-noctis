@@ -168,7 +168,7 @@ the layout of the climbing towers, arena platforms, where the enemies stand and 
 
 Put your tracks in **`music/`** and list them in **`music/TRACKLIST.txt`**.
 That file is both your to-do list (each track has a mood description *and a Suno prompt*, all sharing five recurring
-leitmotifs) and the config the game reads: each line maps an ID to a file name. Missing tracks are skipped silently,
+leitmotifs) and the config the game reads: each line maps an ID to a file name. (TRACKLIST.txt is **not published**: it is in `.gitignore`. Run `node tools/music-manifest.mjs` before a publish and it copies the track lines into `music/tracks.txt`, which is what the published game reads.) Missing tracks are skipped silently,
 so you can add them one at a time and just refresh - except that a **level** (or boss) with no track of its own plays one of **`general_track_1` ... `general_track_4`** instead, picked at random (the final boss and the second boss theme try the ordinary boss track first; stings, the title, intro and ending never borrow one). `.mp3`, `.ogg` and `.wav` all work. Edit the FILE NAME column to
 point a track at any file (spaces and brackets are fine).
 
@@ -203,7 +203,7 @@ src/
 assets/             sprites + environment art (+ sprites.json frame manifest, original licenses), fonts/ (the two gothic TTFs)
                     (assets/sprites/source/ holds the art packs as downloaded - keep that folder out of anything you publish, see CREDITS.md)
 lib/three/          three.js r187 (MIT)
-music/              your tracks + TRACKLIST.txt
+music/              your tracks, tracks.txt (the list the game reads online) - TRACKLIST.txt stays on your computer
 ```
 
 ### Testing the generator

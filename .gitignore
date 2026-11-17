@@ -1,5 +1,5 @@
 # What is published (GitHub Pages) is only what the game needs to RUN:
-#   index.html, credits.txt, .nojekyll, src/, lib/, assets/ (the art the game loads + licence texts), music/ (tracks, TRACKLIST.txt, files.json)
+#   index.html, credits.txt, .nojekyll, src/, lib/, assets/ (the art the game loads + licence texts), music/ (tracks, tracks.txt, files.json)
 # Everything below stays on the author's computer.
 
 # --- the art packs exactly as downloaded, and art that is not used ---------------------------------------------------------------
@@ -10,6 +10,9 @@ assets/sprites/source/
 assets/portraits/*.jpg
 assets/source/
 assets/archive/
+
+# --- the music list with the Suno prompts: the author's working file.  The game on a static host reads music/tracks.txt instead (the same list without the prompts, made by tools/music-manifest.mjs)
+music/TRACKLIST.txt
 
 # --- local play and development tools (not needed to play online) ------------------------------------------------------------
 server.js
