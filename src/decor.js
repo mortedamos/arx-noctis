@@ -73,7 +73,7 @@ export function drawDeco(g, d, cx, cy, t, room) {
   if (x < -150 || x > 540) return;
   switch (d.t) {
     case 'orlojtower': { const tw = orlojTower(); if (tw) g.drawImage(tw, x - TOWER_W / 2, y - TOWER_H); break; }          // (the tower stands on the ground: y is its foot)
-    case 'keepgate': { const kg = keepGate(); if (kg) g.drawImage(kg, Math.round(x - kg.width / 2), y - kg.height); break; }          // (the great gate of Shadowkeep, standing on the ground behind a door into the keep)
+    case 'keepgate': { const kg = keepGate(); if (kg) g.drawImage(kg, Math.round(x - kg.width / 2), y - kg.height); break; }          // (the great gate of Arx Noctis, standing on the ground behind a door into the keep)
     case 'animgear': {          // an accent: a cluster of meshing gears from the Animated Gears pack (a strip of 128x128 frames), turning slowly among the generated ones
       const im = IMG[d.img]; if (!im) break; const n = Math.max(1, Math.round(im.width / 128)), f = (((Math.floor((d.phase || 0) + t * (d.rate || 0.4)) % n) + n) % n), s = Math.round((d.scale || 1) * 128);
       g.save(); g.globalAlpha = d.a === undefined ? 0.8 : d.a; g.drawImage(im, f * 128, 0, 128, 128, Math.round(x - s / 2), Math.round(y - s / 2), s, s); g.restore(); break; }

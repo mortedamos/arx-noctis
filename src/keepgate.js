@@ -1,4 +1,4 @@
-// The GATE OF SHADOWKEEP: the great pointed doorway that marks the moment the hero goes from the lands outside (Prague, the graveyard, the mire) into the Lord's keep.  It is drawn behind the
+// The GATE OF ARX NOCTIS: the great pointed doorway that marks the moment the hero goes from the lands outside (Prague, the graveyard, the mire) into the Lord's keep.  It is drawn behind the
 // crossroads' doors that lead into the keep (the Great Hall and the Moonlit Chapel): two buttress towers with narrow windows, a deep arch (the door stands in it), a carved lintel, the Lord's crest (a black sun) above it, and crimson banners down both sides.  Painted once on an off-screen canvas, KEEP_W x KEEP_H, whose bottom edge is the ground.
 import { IMG } from './assets.js';
 

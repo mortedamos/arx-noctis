@@ -1,4 +1,4 @@
-; SHADOWKEEP - the credits shown by CREDITS on the title screen.
+; ARX NOCTIS - the credits shown by CREDITS on the title screen.
 ;
 ; This is a plain text file: edit it freely, save, and reload the game.
 ;   # TITLE         a gold heading
@@ -10,7 +10,7 @@
 ; (The game draws everything in capital letters.)
 ; Longer licence texts and links are in CREDITS.md and in assets/credits/.
 
-# SHADOWKEEP
+# ARX NOCTIS
 A gothic adventure
 
 ---

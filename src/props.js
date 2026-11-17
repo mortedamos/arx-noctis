@@ -31,7 +31,7 @@ export const UPGRADES = {
   tide: { name: 'AQUA REGIA', desc: 'A DASH CUTS WHATEVER IT PASSES THROUGH', icon: 'e_ice', color: [0.4, 0.8, 1] },
   astrolabe: { name: 'ASTROLABE', desc: "THE ORLOJ'S LITTLE SISTER. YOUR MAP NOW MARKS WHAT YOU HAVE LEFT BEHIND: TREASURE NOT TAKEN, AND THE ROOMS BESIDE THE ONES YOU KNOW.", icon: 'astrolabe', color: [1, 0.85, 0.45] },          // (its id is the flag 'got_astrolabe': the map reads it)
   goldkey: { name: 'KEY OF GOLD', desc: 'THE LAST KEY: IT OPENS THE DOOR OF THE SHADOW THRONE.', icon: 'key', color: KEYS.find(k => k.id === 'key_gold').rgb.map(v => v / 255) },          // (the Librarian's: its id is the flag 'has_key_gold'; the colour is its lock's)
-  frostkey: { name: 'KEY OF ANTIMONY', desc: 'IT OPENS THE LIBRARY OF AGES, DEEP IN SHADOWKEEP.', icon: 'key', color: KEYS.find(k => k.id === 'key_frost').rgb.map(v => v / 255) },          // (the Rimewyrm's: its id is the flag 'has_key_frost')
+  frostkey: { name: 'KEY OF ANTIMONY', desc: 'IT OPENS THE LIBRARY OF AGES, DEEP IN ARX NOCTIS.', icon: 'key', color: KEYS.find(k => k.id === 'key_frost').rgb.map(v => v / 255) },          // (the Rimewyrm's: its id is the flag 'has_key_frost')
   crampons: { name: 'RIME CRAMPONS', desc: 'STEEL SPIKES FOR YOUR BOOTS: YOU NO LONGER SLIP ON ICE.', icon: 'crampons', color: [0.7, 0.9, 1] },          // (its id is the flag 'got_crampons': the Player reads it)
   hoard: { name: 'A HOARD', desc: 'SOMEONE HID THIS AWAY LONG AGO: GOLD, A GREAT DEAL OF IT.', icon: 'coin', color: [1, 0.85, 0.3] },
   letter: { name: "THE LADY'S LETTER", desc: '', icon: 'scroll', color: [0.95, 0.9, 0.75] },          // (its words come from LETTERS, chosen by its id)

@@ -1,4 +1,4 @@
-# SHADOWKEEP
+# ARX NOCTIS
 
 A gothic-fantasy, side-scrolling action-adventure for the browser, in the spirit of *Castlevania* and *Bloodstained*.
 You are a nameless cloaked stranger with a sword, exploring a haunted castle: platforming, secrets, power-ups,
@@ -51,8 +51,8 @@ A gamepad also works (A jump, X attack, B dash, Y use selected, bumpers move the
 
 ## The story
 
-*Prague, Bohemia, 1541* - the year of the great fire of Prague. The Stranger - we never learn his name - is found kneeling at a grave on a hill above the city, in the rain: the grave of a woman who was his wife, his sister, his lover (the game never says). She died to the
-**Shadowkeep**, the castle that rose out of the countryside, took the **sun** and let the things of the shadow-realm walk the earth. As he kneels the city far below begins to burn. He rises, draws the sword **Silberzahn**
+*Prague, Bohemia, 1541* - the year of the great fire of Prague. The Stranger - we never learn his name - is found kneeling at a grave on a hill above the city, in the rain: the grave of a woman who was his wife, his sister, his lover (the game never says). She died to
+**Arx Noctis**, the castle that rose out of the countryside, took the **sun** and let the things of the shadow-realm walk the earth. As he kneels the city far below begins to burn. He rises, draws the sword **Silberzahn**
 ("the silver tooth") and goes down to it. Under his white cloak there is armour: a soldier's, or a monster-hunter's.
 
 * **An opening scene** (once, at the start of a new game; any key skips it): rain, a tolling bell, the grave with a blue candle on it, the title card, the glow of fire rising over the roofs. It is a real room - **the Hill Above Prague**, west of Market Street - with a tablet of its own.

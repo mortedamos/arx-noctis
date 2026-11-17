@@ -1,4 +1,4 @@
-// SHADOWKEEP level data.  Rooms are authored with a small builder; all coordinates are in TILES (16px).
+// ARX NOCTIS level data.  Rooms are authored with a small builder; all coordinates are in TILES (16px).
 // For spawns, `gy` is the ground-surface row the thing stands on.  Flying things use the centre row.
 //
 // Movement budget (for designing gaps):  a normal jump rises ~3.7 tiles and clears ~4 tiles of gap on level ground;
@@ -7,7 +7,7 @@
 import { TILE, isSolid } from './world.js';
 import { IMG } from './assets.js';
 
-// the zones inside the Lord's keep itself: crossing into one of them from outside is the moment the hero enters SHADOWKEEP (the gate, the title card, the map's label)
+// the zones inside the Lord's keep itself: crossing into one of them from outside is the moment the hero enters ARX NOCTIS (the gate, the title card, the map's label)
 export const KEEP = new Set([2, 3, 4, 5, 10]);
 export const ZONES = {
   1: { name: 'The Graveyard Approach', theme: 'graveyard', music: 'zone1' },
@@ -282,7 +282,7 @@ export function arrangeCandelabras(def) {
   b.d('img', 3, 12, { img: 'cemetery_statue' }).d('img', 9, 12, { img: 'cemetery_stone-1' }).d('img', 21, 12, { img: 'cemetery_stone-3' }).d('img', 26, 12, { img: 'cemetery_bush-large', back: true })
     .d('img', 44, 12, { img: 'cemetery_stone-2' }).d('img', 52, 12, { img: 'cemetery_stone-4' }).d('img', 57, 12, { img: 'cemetery_bush-small' })
     .d('img', 12, 12, { img: 'cemetery_tree-1', back: true }).d('img', 33, 12, { img: 'cemetery_tree-2', back: true }).d('img', 50, 12, { img: 'cemetery_tree-3', back: true });
-  b.tablet(7, 12, 'THE SHADOWKEEP SWALLOWED THE SUN LONG AGO. ONLY A STRANGER FOOLISH ENOUGH TO ENTER WILL SEE IT RISE AGAIN.', 'tab1');
+  b.tablet(7, 12, 'ARX NOCTIS SWALLOWED THE SUN LONG AGO. ONLY A STRANGER FOOLISH ENOUGH TO ENTER WILL SEE IT RISE AGAIN.', 'tab1');
   b.candle(12, 12, 'heart').e('statue', 24, 12, { drop: 'coin' }).candle(41, 12, 'mana').candle(55, 12, 'heart');
   b.many('zombie', [18, 28, 42], 12).e('bat', 38, 5).e('skeleton', 50, 12);
   b.exit('L', 9, 11, 'v1', 88, 12).exit('R', 9, 11, 'g2', 1, 12);

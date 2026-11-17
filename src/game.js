@@ -55,7 +55,7 @@ const BOSS_K = { 6: [2.0, 1.25], 1: [2.3, 1.3], 7: [2.6, 1.4], 9: [2.9, 1.5], 2:
 
 // the boss flags a sealed door asks for -> where that master is to be found (the door's dialogue lists the ones that still live)
 const LOCK_HINTS = {
-  boss_h4: 'THE PHANTOM STEED STILL RIDES THE GREAT HALL, THROUGH THE WOODEN DOOR AT THE GATE OF SHADOWKEEP.',
+  boss_h4: 'THE PHANTOM STEED STILL RIDES THE GREAT HALL, THROUGH THE WOODEN DOOR AT THE GATE OF ARX NOCTIS.',
   boss_qb: 'THE DROWNED WARDEN STILL KEEPS THE FLOODED GATE. IT LIES DEEP IN THE CISTERN, BEYOND THE WEEPING MIRE AND ITS MOTHER: TAKE THE HIGH DOOR ON THE MIRE ROAD.',
   boss_u3: 'THE CRIMSON COUNT STILL WAITS IN THE CRYPTS: BURN THE BARRICADE IN THE BARRICADED GALLERY.',
   boss_kb: 'THE BRAZEN HIEROPHANT STILL WORKS THE CLOCKWORK DUNGEON. ITS ENTRANCE IS IN PRAGUE: A LOCKED DOOR HIGH IN SMOULDERING LANE LEADS UP THE ORLOJ TOWER. YOU NEED THE KEY OF TIN.',
@@ -115,7 +115,7 @@ export class Game {
   addProjectile(p) { const b = this.boss; if (b && b.active && b.dmgK && p.owner === 'enemy' && !p.kScaled && typeof p.dmg === 'number') { p.dmg = Math.max(1, Math.round(p.dmg * b.dmgK)); p.kScaled = true; } this.projectiles.push(p); return p; }          // (a boss's shots hurt as much more as the boss does)
   after(frames, fn) { this.delayed.push({ t: frames, fn }); }
   // the name of the area a door or an open edge leads to: the zone's name when it is another zone (THE GREAT HALL), else the room's own (WEAVER'S COTTAGE)
-  areaName(id) { const t = this.world.rooms[id]; if (!t) return ''; if (t.areaLabel) return t.areaLabel.toUpperCase(); if (KEEP.has(t.zone) && !KEEP.has(this.room.zone)) return 'SHADOWKEEP'; return (t.zone !== this.room.zone ? ZONES[t.zone].name : t.name).toUpperCase(); }
+  areaName(id) { const t = this.world.rooms[id]; if (!t) return ''; if (t.areaLabel) return t.areaLabel.toUpperCase(); if (KEEP.has(t.zone) && !KEEP.has(this.room.zone)) return 'ARX NOCTIS'; return (t.zone !== this.room.zone ? ZONES[t.zone].name : t.name).toUpperCase(); }
   areaLabel(top, name, x, y, align = 'center', color = '#ffe9a0', alpha = 1) {
     if (!name) return; const w = textWidth(name, 0.9, { outline: true }), lx = align === 'center' ? clamp(x, w / 2 + 4, W - w / 2 - 4) : x;
     drawText(top, name, Math.round(lx), Math.round(y), { align, color, outline: '#000', scale: 0.9, alpha });
@@ -277,11 +277,11 @@ export class Game {
     const zm = ZONES[def.zone].music, mus = def.boss ? zm : def.music;
     if (def.disco && S.flags.disco_done) A.stop(0.4); else A.play(mus, { fade: 1.2 });          // (the empty disco is silent)
     const inKeep = KEEP.has(def.zone);
-    if (inKeep && prevZone !== undefined && !KEEP.has(prevZone) && !def.save) {          // crossing the threshold: the hero enters SHADOWKEEP (the long card, with a boom, the first time)
+    if (inKeep && prevZone !== undefined && !KEEP.has(prevZone) && !def.save) {          // crossing the threshold: the hero enters ARX NOCTIS (the long card, with a boom, the first time)
       const first = !S.flags.entered_keep; S.flags.entered_keep = true;
-      this.banner('SHADOWKEEP', first ? "THE LORD'S KEEP. THE SUN DOES NOT COME HERE." : ZONES[def.zone].name.toUpperCase(), first ? 330 : 230, { y: 52, color: '#ff9a7a' });
+      this.banner('ARX NOCTIS', first ? "THE LORD'S KEEP. THE SUN DOES NOT COME HERE." : ZONES[def.zone].name.toUpperCase(), first ? 330 : 230, { y: 52, color: '#ff9a7a' });
       if (first) this.after(36, () => { if (this.state === 'play') { A.sfx('boom'); this.shake(6, 26); this.fx.flash([0.35, 0.2, 0.4], 0.5); } });
-    } else if (def.zone !== prevZone && !def.save) this.banner(ZONES[def.zone].name.toUpperCase(), (inKeep ? 'SHADOWKEEP - ' : '') + def.name.toUpperCase(), 200, { y: 52 });
+    } else if (def.zone !== prevZone && !def.save) this.banner(ZONES[def.zone].name.toUpperCase(), (inKeep ? 'ARX NOCTIS - ' : '') + def.name.toUpperCase(), 200, { y: 52 });
     else this.banner(def.name.toUpperCase(), '', 130, { y: 52, color: '#cfc2a0' });
     if (bossDone && def.seals.length) { /* arena stays open */ }
   }

@@ -138,7 +138,7 @@ export class Dialog {
 // ---------------------------------------------------------------------------------------------- logo
 let LOGO = null;
 function logo() {
-  if (LOGO) return LOGO; const sc = 6.5, text = 'Shadowkeep', w = Math.ceil(textWidth(text, sc, 'title')) + 20, h = 7 * sc + 24, K = (window.game && window.game.K) || 3;
+  if (LOGO) return LOGO; const sc = 6.5, text = 'Arx Noctis', w = Math.ceil(textWidth(text, sc, 'title')) + 20, h = 7 * sc + 24, K = (window.game && window.game.K) || 3;
   const mk = () => { const c = document.createElement('canvas'); c.width = w * K; c.height = h * K; c.lw = w; c.lh = h; const g = c.getContext('2d'); g.setTransform(K, 0, 0, K, 0, 0); return [c, g]; };
   const [c, g] = mk(), [t, tg] = mk(), [o, og] = mk();
   drawText(tg, text, w / 2, 10, { align: 'center', scale: sc, color: '#fff', font: 'title' });                  // letter shapes
@@ -502,7 +502,7 @@ export class MapScreen {
 const introText = () => dlines('intro') || INTRO;          // (read from assets/dialogue.txt; the list below is only used if it is missing there)
 const INTRO = [
   'FOR A HUNDRED YEARS THE SUN HAS NOT RISEN OVER BOHEMIA.',
-  'IT WAS TAKEN BY THE LORD OF THE SHADOWKEEP, WHO WALLED THE DAWN BEHIND HIS THRONE.',
+  'IT WAS TAKEN BY THE LORD OF ARX NOCTIS, WHO WALLED THE DAWN BEHIND HIS THRONE.',
   'THOSE WHO ENTERED NEVER RETURNED. THEIR PORTRAITS STILL WATCH THE HALLS.',
   'YOU HAVE NO NAME. ONLY A CLOAK, A BLADE, AND A DEBT THE DARKNESS OWES.',
   'TONIGHT THE DEAD WALK THE STREETS OF PRAGUE. THE GATE OF THE KEEP STANDS OPEN.',
