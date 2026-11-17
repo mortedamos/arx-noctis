@@ -11,6 +11,7 @@ export const ITEM_ORDER = ['dagger', 'marrow', 'torch', 'holy', 'bandage'];
 
 export const itemCount = (S, id) => (S.items && S.items[id]) || 0;
 // add n of an item (capped at its maximum); returns how many were actually added
+export const itemFull = (S, id) => ((S.items && S.items[id]) || 0) >= ITEMS[id].max;          // (is the hero already carrying as many of this as they can?)
 export function addItem(S, id, n) { const it = ITEMS[id]; S.items ||= {}; const have = S.items[id] || 0, add = Math.max(0, Math.min(n, it.max - have)); S.items[id] = have + add; return add; }
 export const randomItemId = () => { const t = ITEM_ORDER.reduce((s, k) => s + ITEMS[k].weight, 0); let x = Math.random() * t; for (const k of ITEM_ORDER) if ((x -= ITEMS[k].weight) < 0) return k; return 'dagger'; };
 

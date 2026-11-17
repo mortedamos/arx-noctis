@@ -1,5 +1,6 @@
 // The cloaked stranger (sprites: the "Gothic Hero" by Ansimuz, CC0).
 import { Entity, moveX, moveY, touchesSpikes } from './entity.js';
+import { itemFull } from './itemdata.js';
 import { Input } from './input.js';
 import { drawSheet, SHEET, sheetExtents } from './assets.js';
 import { Audio_ as A } from './audio.js';
@@ -277,8 +278,8 @@ export class Player extends Entity {
     if (!this.lan || Math.hypot(this.lan.x - tx, this.lan.y - ty) > 150) this.lan = { x: tx, y: ty, trail: [] };
     const L = this.lan; let k = dart > 0 ? 3 : 1;
     // LOOT: she flies out to the nearest thing lying within reach, touches it (a little burst of light), and only then does it drift to him; she lingers a moment, then comes back
-    let pk = this.lanTarget; if (pk && (pk.dead || pk.magnet || this.dead)) pk = this.lanTarget = null;
-    if (!pk && !this.dead && !(this.lanHold > 0) && this.t % 4 === 0) { let best = 1e9; for (const q of g.pickups) { if (q.dead || q.magnet || q.touched || q.t <= 24 || q.blocked) continue; const dd = Math.hypot(q.x - this.x, q.y - 5 - (this.y - 16)); if (dd < 112 && dd < best) { best = dd; pk = q; } } if (pk) { this.lanTarget = pk; this.lanChase = 0; } }
+    let pk = this.lanTarget; if (pk && (pk.dead || pk.magnet || this.dead || (pk.item && itemFull(this.S, pk.item)))) pk = this.lanTarget = null;
+    if (!pk && !this.dead && !(this.lanHold > 0) && this.t % 4 === 0) { let best = 1e9; for (const q of g.pickups) { if (q.dead || q.magnet || q.touched || q.t <= 24 || q.blocked || (q.item && itemFull(this.S, q.item))) continue; const dd = Math.hypot(q.x - this.x, q.y - 5 - (this.y - 16)); if (dd < 112 && dd < best) { best = dd; pk = q; } } if (pk) { this.lanTarget = pk; this.lanChase = 0; } }
     if (this.lanHold > 0) this.lanHold--;
     if (pk) {
       tx = pk.x; ty = pk.y - 8; k = 3.2; this.lanChase = (this.lanChase || 0) + 1;

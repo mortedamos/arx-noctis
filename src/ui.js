@@ -363,7 +363,7 @@ export class PauseMenu {
       } else {
       drawText(ctx, 'PAUSED', cx, 46, { align: 'center', scale: 2, color: GOLD });
       this.main.draw(ctx, cx, 64, 11);
-      drawText(ctx, `LV ${S.level}   HP ${S.hp}/${S.maxHp}   MP ${S.mp}/${S.maxMp}`, cx, 150, { align: 'center', color: PALE }); drawText(ctx, `POWER ${g.player.atkPower}   GOLD ${S.gold}   TIME ${fmtTime(S.time)}`, cx, 161, { align: 'center', color: '#b5a47a' }); drawText(ctx, 'CASTLE SEED ' + S.seed, cx, 172, { align: 'center', color: DIM });
+      drawText(ctx, `LV ${S.level}   HP ${Math.round(S.hp)}/${Math.round(S.maxHp)}   MP ${Math.round(S.mp)}/${Math.round(S.maxMp)}`, cx, 150, { align: 'center', color: PALE }); drawText(ctx, `POWER ${g.player.atkPower}   GOLD ${S.gold}   TIME ${fmtTime(S.time)}`, cx, 161, { align: 'center', color: '#b5a47a' }); drawText(ctx, 'CASTLE SEED ' + S.seed, cx, 172, { align: 'center', color: DIM });
       if (foundItems(g).length) drawText(ctx, 'LEFT: LOOK AT WHAT YOU HAVE FOUND', cx, 190, { align: 'center', color: '#6a6078' });
       }
     } else if (this.mode === 'options') { panel(ctx, 70, 40, W - 140, 150); drawText(ctx, 'OPTIONS', W / 2, 47, { align: 'center', scale: 1.5, color: GOLD, outline: '#000' }); this.opts.draw(ctx, 94, 68, 14, 'left'); }

@@ -9,7 +9,7 @@ import { Audio_ as A } from './audio.js';
 import { COLORS } from './fx.js';
 import { T, rand, dist, overlap, TAU, choice } from './util.js';
 import { ENCH, ENCH_TYPES, ENCH_BIAS, TUNE } from './enchant.js';
-import { ITEMS, addItem, randomItemId } from './itemdata.js';
+import { ITEMS, addItem, itemFull, randomItemId } from './itemdata.js';
 import { letterTitle, markPage } from './letters.js';
 
 export const ABILITIES = {
@@ -67,8 +67,9 @@ export class Pickup extends Entity {
     const pc = { x: p.x, y: p.y - 16 }, d = dist(this.x, this.y - 5, pc.x, pc.y);
     const reach = g.save && g.save.flags.got_lantern ? 96 : 44;          // (the Marshlight Lantern's wisp draws loot from much further)
     const lamp = !!(g.save && g.save.flags.got_lantern);
+    if (this.item && g.save && itemFull(g.save, this.item)) { this.magnet = false; this.touched = false; }          // (an item you are already full of is not drawn to you, by the wisp or otherwise: it waits until you have room)
     if (this.blocked && d > 64) { this.blocked = false; this.touched = false; }          // (a pickup you are already full of is left alone until you walk away from it and come back)
-    if (this.t > 24 && !p.dead && !this.blocked && (lamp ? (this.touched || d < 20) : d < reach)) this.magnet = true;          // (with the lantern, the wisp must first fly out and TOUCH the loot - see Player.stepLantern; then it comes)
+    if (this.t > 24 && !p.dead && !this.blocked && !(this.item && g.save && itemFull(g.save, this.item)) && (lamp ? (this.touched || d < 20) : d < reach)) this.magnet = true;          // (with the lantern, the wisp must first fly out and TOUCH the loot - see Player.stepLantern; then it comes)
     if (this.touchT > 0) { this.touchT--; g.fx.glow(this.x, this.y - 6, 18 + this.touchT, [0.55, 0.78, 1], 0.5 * this.touchT / 14); }
     if (this.magnet) { const a = Math.atan2(pc.y - (this.y - 5), pc.x - this.x), sp = Math.min(4.5, 2 + this.t * 0.01 + (reach - Math.min(d, reach)) * 0.05); this.vx = Math.cos(a) * sp; this.vy = Math.sin(a) * sp; this.x += this.vx; this.y += this.vy; }
     else { this.vy = Math.min(this.vy + 0.14, 4); this.vx *= 0.97; moveX(this, room); const vy0 = this.vy; moveY(this, room); if (this.onGround && Math.abs(vy0) > 1) { this.vy = -vy0 * 0.35; this.onGround = false; } }

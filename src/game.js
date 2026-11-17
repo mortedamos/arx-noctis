@@ -190,7 +190,8 @@ export class Game {
     this.ensureWorld(seed).then(() => { this.loadingWorld = null; if (this.state === 'title') fn(); }).catch(e => { this.loadingWorld = null; console.error(e); });
   }
   // SECRET CODES, typed on the seed screen (CHOOSE SEED) instead of a seed: the castle is a random one, and ...
-  //   02151979  everything is yours from the start: every power, every relic, every page, a full satchel, every waystone attuned (the bosses are all still there to be fought)
+  //   02151979  everything is yours from the start: every power, every relic, every page, every key, a full satchel, every waystone attuned, the whole map charted, and your life, mana and sword as strong as if every upgrade lying in the castle had been taken
+  //             (the bosses are all still there to be fought, and what they leave behind is still theirs to give)
   codeFor(text) { return { '02151979': 'all' }[text] || null; }
   applyCode(code) {
     if (code !== 'all') return; const S = this.save;
@@ -199,6 +200,11 @@ export class Game {
     for (let n = 1; n <= PAGE_COUNT; n++) { S.flags['page' + n] = true; markPage(n); }
     for (const id of Object.keys(ITEMS)) addItem(S, id, ITEMS[id].max);
     for (const id of this.world.stones || []) S.flags['tp_' + id] = true;
+    for (const K of KEYS) S.flags['has_' + K.id] = true;          // (every key is in the pocket: the doors still have to be opened, and the keys that lie in the castle are marked as taken, below)
+    for (const id of this.world.order) S.visited[id] = true;          // (the whole map: every room is charted)
+    const got = { hpup: 0, mpup: 0, atkup: 0, key: 0 }, take = (kind, ...flags) => { if (!(kind in got)) return; got[kind]++; for (const f of flags) S.flags[f] = true; };          // every upgrade lying about the castle - in the open, in a sealed cell or in a chest - as if it had been taken (a boss's own gift is not counted: the boss is still there)
+    for (const id of this.world.order) for (const sp of this.world.rooms[id].spawns) { const o = sp.o || {}; if (sp.type === 'upgrade') take(o.kind, o.id); else if (sp.type === 'chest') take(o.contents, o.id, o.id + '_u'); }
+    S.maxHp += 20 * got.hpup; S.maxMp += 10 * got.mpup; S.atk += 2 * got.atkup;          // (what each one gives: see Upgrade.collect)
     S.hp = S.maxHp; S.mp = S.maxMp; A.sfx('ability');
   }
   newGame(seed, code) {
