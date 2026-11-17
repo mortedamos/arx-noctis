@@ -26,13 +26,13 @@ export const UPGRADES = {
   atkup: { name: 'SAL MARTIS', desc: 'SWORD POWER UP', icon: 'atkup', color: [1, 0.85, 0.4] },
   mantle: { name: 'SALAMANDER MANTLE', desc: 'FIRE HURTS HALF AS MUCH, AND SOOT NEVER STAINS YOUR CLOAK', icon: 'mantle', color: [1, 0.55, 0.25] },
   lantern: { name: 'IGNIS VAPOUR LANTERN', desc: 'A PALE BLUE WISP, WARM AS A VOICE YOU KNEW. IT FOLLOWS YOU, LIGHTS THE DARK, CLEARS THE FOG AND DRAWS LOOT TO YOU', icon: 'lantern', color: [0.5, 0.72, 1] },
-  shard: { name: 'SPECULUM SHARD', desc: 'YOUR SWORD KNOCKS ARROWS, BONES AND ORBS ASIDE, HARMLESSLY', icon: 'shard', color: [0.8, 0.88, 1] },
+  shard: { name: 'LACUNA SHARD', desc: 'YOUR SWORD KNOCKS ARROWS, BONES AND ORBS ASIDE, HARMLESSLY', icon: 'shard', color: [0.8, 0.88, 1] },
   athanor: { name: 'ATHANOR', desc: "THE ALCHEMIST'S SLOW FURNACE, WHICH NEVER GOES OUT. VERY SLOWLY, YOUR MANA RETURNS OF ITSELF.", icon: 'athanor', color: [0.45, 0.72, 1] },          // (its id is the flag 'got_athanor': the game loop reads it)
   spring: { name: 'PERPETUUM', desc: 'A SPRING THAT NEVER RUNS DOWN: YOUR DASH RECHARGES TWICE AS FAST', icon: 'spring', color: [1, 0.8, 0.4] },
   tide: { name: 'AQUA REGIA', desc: 'A DASH CUTS WHATEVER IT PASSES THROUGH', icon: 'e_ice', color: [0.4, 0.8, 1] },
   astrolabe: { name: 'ASTROLABE', desc: "THE ORLOJ'S LITTLE SISTER. YOUR MAP NOW MARKS WHAT YOU HAVE LEFT BEHIND: TREASURE NOT TAKEN, AND THE ROOMS BESIDE THE ONES YOU KNOW.", icon: 'astrolabe', color: [1, 0.85, 0.45] },          // (its id is the flag 'got_astrolabe': the map reads it)
   goldkey: { name: 'KEY OF GOLD', desc: 'THE LAST KEY: IT OPENS THE DOOR OF THE SHADOW THRONE.', icon: 'key', color: KEYS.find(k => k.id === 'key_gold').rgb.map(v => v / 255) },          // (the Librarian's: its id is the flag 'has_key_gold'; the colour is its lock's)
-  frostkey: { name: 'KEY OF ANTIMONY', desc: 'IT OPENS THE LIBRARY OF AGES, DEEP IN SHADOWKEEP.', icon: 'key', color: KEYS.find(k => k.id === 'key_frost').rgb.map(v => v / 255) },          // (the Rimewyrm's: its id is the flag 'has_key_frost')
+  frostkey: { name: 'KEY OF ANTIMONY', desc: 'IT OPENS THE LIBRARY OF AGES, DEEP IN ARX NOCTIS.', icon: 'key', color: KEYS.find(k => k.id === 'key_frost').rgb.map(v => v / 255) },          // (the Rimewyrm's: its id is the flag 'has_key_frost')
   crampons: { name: 'RIME CRAMPONS', desc: 'STEEL SPIKES FOR YOUR BOOTS: YOU NO LONGER SLIP ON ICE.', icon: 'crampons', color: [0.7, 0.9, 1] },          // (its id is the flag 'got_crampons': the Player reads it)
   hoard: { name: 'A HOARD', desc: 'SOMEONE HID THIS AWAY LONG AGO: GOLD, A GREAT DEAL OF IT.', icon: 'coin', color: [1, 0.85, 0.3] },
   letter: { name: "THE LADY'S LETTER", desc: '', icon: 'scroll', color: [0.95, 0.9, 0.75] },          // (its words come from LETTERS, chosen by its id)

@@ -2,4 +2,4 @@ Old Golem - by Eddie's Workshop (https://eddies-workshop.itch.io/old-golem), dow
 
 Terms on the download page: "This package can be used freely and commercially... Credits are not required but I would appreciate it."
 
-Changes made for SHADOWKEEP: the sheets were cut into horizontal strips (assets/sprites/golem_*.png); the grey steam drawn at the golem's mouth in the spit animation, and the whole explosion (flash, fire, smoke) in the death animation, were removed; the hit flash and the bullet sheet are not used. Steam, fire and smoke are drawn by the game's three.js effects layer instead.
+Changes made for ARX NOCTIS: the sheets were cut into horizontal strips (assets/sprites/golem_*.png); the grey steam drawn at the golem's mouth in the spit animation, and the whole explosion (flash, fire, smoke) in the death animation, were removed; the hit flash and the bullet sheet are not used. Steam, fire and smoke are drawn by the game's three.js effects layer instead.

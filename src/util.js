@@ -32,7 +32,7 @@ export const fmtTime = s => { s = Math.floor(s); const h = Math.floor(s / 3600),
 
 // Speech is written in capitals in the source files (the game's font); characters (NPCs and bosses) are SPOKEN in sentence case: lower-case, a capital to begin each sentence, "I", and the proper names below.
 // (An ellipsis does not end a sentence: "NO... ONE... PASSES." reads "No... one... passes.")
-const NAMES = ['Prague', 'Bohemia', 'God', 'Stranger', 'Shadowkeep', 'Silberzahn', 'Vltava', 'Nigredo', 'Albedo', 'Citrinitas', 'Rubedo', 'Athanor', 'Azoth', 'Great Work'];
+const NAMES = ['Prague', 'Bohemia', 'God', 'Stranger', 'Arx Noctis', 'Silberzahn', 'Vltava', 'Nigredo', 'Albedo', 'Citrinitas', 'Rubedo', 'Athanor', 'Azoth', 'Great Work'];
 export function sentenceCase(str) {
   let o = String(str).toLowerCase();
   o = o.replace(/(^|[?!]\s+|(?<!\.)\.\s+)([a-z])/g, (m, a, b) => a + b.toUpperCase());

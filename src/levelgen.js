@@ -31,9 +31,9 @@ function makeRng(seed, id, attempt) {
 // (ids, zones, secrets and the order of everything are fixed; sizes and layouts are randomised)
 //
 // The castle has seven zones, each with ONE look (so a level never mixes tilesets):
-//   6 Prague  ->  1 Graveyard  ->  (the Waystone Glade, the Mire Road, the Gate of Shadowkeep, the Quiet Corner) [7 Weeping Swamp -> 9 Cistern | 2 Great Hall | 3 Moonlit Chapel]  ->  (the Crossing Waystone, the Barricaded Gallery, the Archive Passage, the Throne Approach) [4 Crypts | 8 Clockwork Dungeon | 5 Shadow Throne]   (see CHAINS / PAIRS below)
+//   6 Prague  ->  1 Graveyard  ->  (the Waystone Glade, the Mire Road, the Gate of Arx Noctis, the Quiet Corner) [7 Weeping Swamp -> 9 Cistern | 2 Great Hall | 3 Moonlit Chapel]  ->  (the Crossing Waystone, the Barricaded Gallery, the Archive Passage, the Throne Approach) [4 Crypts | 8 Clockwork Dungeon | 5 Shadow Throne]   (see CHAINS / PAIRS below)
 // Every zone opens with a WAYSTONE chamber (the teleport room), has a boss at its far end, and a sanctuary (save room) off one of its corridors.
-const T1 = 'THE SHADOWKEEP SWALLOWED THE SUN LONG AGO. ONLY A STRANGER FOOLISH ENOUGH TO ENTER WILL SEE IT RISE AGAIN.';
+const T1 = 'ARX NOCTIS SWALLOWED THE SUN LONG AGO. ONLY A STRANGER FOOLISH ENOUGH TO ENTER WILL SEE IT RISE AGAIN.';
 // how each zone's weather / light looks (shared by all its rooms, including the waystone chamber)
 const LOOK = {
   6: { weather: 'embers', ambient: 0.34, horizon: 12, tint: [0.16, 0.05, 0.0], vig: 0.55 },
@@ -179,7 +179,7 @@ const SPEC = {
     opts: { ...LOOK[8], ambient: 0.32, boss: 'colossus', music: 'boss' } },
   sk: { kind: 'sanctuary', zone: 8, name: 'Brass Sanctuary', parent: 'k1' },
   vk: { kind: 'interior', zone: 8, name: "The Engineer's Vault", parent: 'k1', look: 'vault', theme: 'hall', ambient: 0.42, tint: [0.07, 0.04, 0.0], npcs: [0, 0], chest: { kind: 'hpup', id: 'vk_chest' } },
-  // ======== ZONE 10 - THE LIBRARY OF AGES (inside Shadowkeep, off the Crossing Hall behind a locked door: the Lord's archive, where haunted books fly and the Librarian keeps the KEY OF GOLD that opens the Shadow Throne)
+  // ======== ZONE 10 - THE LIBRARY OF AGES (inside Arx Noctis, off the Crossing Hall behind a locked door: the Lord's archive, where haunted books fly and the Librarian keeps the KEY OF GOLD that opens the Shadow Throne)
   tl: { kind: 'teleport', zone: 10, name: 'Waystone Reading Room', opts: LOOK[10], abilities: ['djump', 'dash', 'ember'] },
   l1: { kind: 'corridor', zone: 10, name: 'The Stacks', w: [84, 98], deck: true, opts: { ...LOOK[10], ambient: 0.32 }, abilities: ['djump', 'dash', 'ember'],
     mods: [{ t: 'door', to: 'sl', kind: 'wood' }, { t: 'cell', gate: 'crack', kind: 'hpup', id: 'l1_hp' }, { t: 'tablet', id: 'tab20', near: 'start', text: 'THE LORD READ EVERY BOOK IN THE WORLD AND FOUND THE ENDING WRONG. HE HAS BEEN REWRITING IT EVER SINCE, AND THE BOOKS HAVE LEARNED TO FIGHT BACK.' }],
@@ -215,7 +215,7 @@ const SPEC = {
   // THE THREE ROADS used to be one busy stretch with a waystone, a high door, two gates into the keep and the Reliquary's door.  Now each has a place of its own, in the order they are met:
   hw: { kind: 'teleport', zone: 1, name: 'The Waystone Glade', outdoor: true, abilities: ['djump'], opts: { ...LOOK[1], ambient: 0.14 } },          // the waystone, alone
   hub1: { kind: 'corridor', zone: 1, name: 'The Mire Road', w: [32, 38], outdoor: true, calm: true, abilities: ['djump'], opts: { ...LOOK[1], ambient: 0.14 }, mods: [], candles: [2, 3], mix: {} },          // only the high door to the Mire
-  hk: { kind: 'corridor', zone: 1, name: 'The Gate of Shadowkeep', w: [46, 52], outdoor: true, calm: true, abilities: ['djump'], opts: { ...LOOK[1], ambient: 0.12 }, mods: [], candles: [2, 3], mix: {} },          // the two gates into the keep, the Great Hall and the Chapel
+  hk: { kind: 'corridor', zone: 1, name: 'The Gate of Arx Noctis', w: [46, 52], outdoor: true, calm: true, abilities: ['djump'], opts: { ...LOOK[1], ambient: 0.12 }, mods: [], candles: [2, 3], mix: {} },          // the two gates into the keep, the Great Hall and the Chapel
   hr: { kind: 'corridor', zone: 1, name: 'The Quiet Corner', w: [30, 36], outdoor: true, calm: true, closedRight: true, abilities: ['djump'], opts: { ...LOOK[1], ambient: 0.1 }, mods: [{ t: 'door', to: 'sr', kind: 'crypt', lock: ['skulls_done'] }, { t: 'tablet', id: 'tabsix', near: 'door', to: 'sr', text: 'IN THE WAR I KILLED SIX MEN.' }], candles: [1, 2], mix: {} },          // beyond the gates, out of the way: the Reliquary's door, and a gravestone
   // THE CROSSING HALL, likewise, is four short places: the waystone, the barricaded way to the Crypts (and the hidden page), the Library's door, and last the Throne's door.
   hx: { kind: 'teleport', zone: 3, name: 'The Crossing Waystone', abilities: ['djump', 'dash', 'ember'], opts: { ...LOOK[3], ambient: 0.34 } },          // the waystone, alone
@@ -268,9 +268,9 @@ const CHAINS = [
 const LINKS = CHAINS.flatMap(c => c.slice(1).map((id, i) => [c[i], 'R', id, 'L']));
 // the crossroads' doors (two-way): hub a, its door tag ta, the first room of the branch b, the tag of that room's door tb; mod = how the door is built (see genCorridor), lock = boss flags it needs
 const PAIRS = [
-  { a: 'hk', ta: 'hall', b: 'th', tb: 'in', kind: 'wood', mod: 'door', label: 'SHADOWKEEP: THE GREAT HALL', hint: 'THE GATE OF THE KEEP. EVERYTHING BEYOND IT BELONGS TO THE LORD.' },
+  { a: 'hk', ta: 'hall', b: 'th', tb: 'in', kind: 'wood', mod: 'door', label: 'ARX NOCTIS: THE GREAT HALL', hint: 'THE GATE OF THE KEEP. EVERYTHING BEYOND IT BELONGS TO THE LORD.' },
   { a: 'hub1', ta: 'mire', b: 'tw', tb: 'in', kind: 'crypt', mod: 'djDoor', label: 'THE WEEPING MIRE', hint: 'THE DOOR IS HIGH. ONLY A WINGED LEAP WILL REACH IT. THE MIRE LEADS ON TO THE CISTERN, WHERE THE FLOODED GATE IS.' },
-  { a: 'hk', ta: 'chapel', b: 'tc', tb: 'in', kind: 'crypt', mod: 'door', label: 'SHADOWKEEP: THE MOONLIT CHAPEL', hint: 'A SECOND GATE INTO THE KEEP. IT OPENS ONLY WHEN THE MASTERS OF THE GREAT HALL AND OF THE FLOODED GATE ARE DEAD. THE FLOODED GATE IS IN THE CISTERN, BEYOND THE MIRE.', lock: ['boss_h4', 'boss_qb'] },
+  { a: 'hk', ta: 'chapel', b: 'tc', tb: 'in', kind: 'crypt', mod: 'door', label: 'ARX NOCTIS: THE MOONLIT CHAPEL', hint: 'A SECOND GATE INTO THE KEEP. IT OPENS ONLY WHEN THE MASTERS OF THE GREAT HALL AND OF THE FLOODED GATE ARE DEAD. THE FLOODED GATE IS IN THE CISTERN, BEYOND THE MIRE.', lock: ['boss_h4', 'boss_qb'] },
   { a: 'hub2', ta: 'crypts', b: 'tu', tb: 'in', kind: 'crypt', mod: 'cellDoor', gate: 'barricade', label: 'THE CRYPTS', hint: 'THE WAY IS BARRICADED. FIRE WILL CLEAR IT.' },
   // the Clockwork Dungeon is entered through the Orloj Tower, in PRAGUE: a locked door high on a ledge (a double jump) in Smouldering Lane...
   { a: 'v2', ta: 'orloj', b: 'ot', tb: 'in', kind: 'crypt', mod: 'djDoor', key: 'key_crypt', wide: true, label: 'THE ORLOJ TOWER', hint: 'THE DOOR IS HIGH, AND LOCKED. IT NEEDS THE KEY OF TIN.' },
@@ -280,7 +280,7 @@ const PAIRS = [
   { a: 'og', ta: 'forge', b: 'tk', tb: 'in', kind: 'crypt', side: 'R', lock: ['boss_og'], hint: 'THE BOILER GOLEM STILL BARS THE WAY ON.' },
   // the Frozen Caverns: a door in a cell of ice (fire melts it); the Library: a locked door, its key (the KEY OF ANTIMONY) is held by the Rimewyrm at the far end of the Frozen Caverns
   { a: 'br', ta: 'ice', b: 'ti', tb: 'in', kind: 'crypt', mod: 'vaultDoor', gate: 'ice' },
-  { a: 'hl', ta: 'library', b: 'tl', tb: 'in', kind: 'crypt', mod: 'door', key: 'key_frost', label: 'SHADOWKEEP: THE LIBRARY OF AGES', hint: 'LOCKED. THE KEY LIES IN THE FROZEN CAVERNS. THE LIBRARIAN KEEPS THE KEY TO THE THRONE.' },
+  { a: 'hl', ta: 'library', b: 'tl', tb: 'in', kind: 'crypt', mod: 'door', key: 'key_frost', label: 'ARX NOCTIS: THE LIBRARY OF AGES', hint: 'LOCKED. THE KEY LIES IN THE FROZEN CAVERNS. THE LIBRARIAN KEEPS THE KEY TO THE THRONE.' },
   { a: 'ht', ta: 'throne', b: 'tt', tb: 'in', kind: 'crypt', mod: 'cellDoor', gate: 'crystal', key: 'key_gold', label: 'THE SHADOW THRONE', hint: 'CRYSTAL SEALS THE WAY, TWO SIGILS MUST BURN (THE COUNT OF THE CRYPTS AND THE LORD OF THE CLOCKWORK DUNGEON), AND THE DOOR IS LOCKED: THE LIBRARIAN KEEPS THE KEY.', lock: ['boss_u3', 'boss_kb'] },
 ];
 // one-way doors: the far end of a branch drops you at its crossroads' door  [room, its door tag, hub, the hub door it arrives at]
@@ -649,7 +649,7 @@ function genCorridor(id, spec, r) {
   const meta = { abilities: [...new Set([...(spec.abilities || []), ...(DJ ? ['djump'] : [])])], back: spec.bridge ? ['djump'] : BACK[spec.zone], entry: { L: { tx: 1, gy: BASE }, R: { tx: W - 2, gy: BASE } }, must: [], items: [], start: { tx: 4, gy: BASE } };
   if (spec.closedLeft) { meta.entry.L = null; b.d('gate', 0, BASE); }
   for (const d of doors) {
-    if (d.tag === 'hall' || d.tag === 'chapel') b.d('keepgate', d.x, BASE, {});          // the gate of Shadowkeep: the doors from the crossroads into the keep stand in it (see keepgate.js)
+    if (d.tag === 'hall' || d.tag === 'chapel') b.d('keepgate', d.x, BASE, {});          // the gate of Arx Noctis: the doors from the crossroads into the keep stand in it (see keepgate.js)
     if (d.tag === 'orloj') b.d('orlojtower', d.x, BASE, {});          // the Orloj Tower itself: it rises from the ground behind the door's ledge (the ledge is its balcony); see orlojtower.js
     b.door(d.x, d.gy, d.to, 3, 12, d.kind); patchDoor(b, d); if (d.deck) meta.must.push({ tx: d.x, gy: d.gy, name: 'upper door' });
     if (d.needs) meta.items.push({ id: 'door_' + d.tag, tx: d.x, gy: d.gy, needs: d.needs });                    // (the validator proves the door is out of reach without it)

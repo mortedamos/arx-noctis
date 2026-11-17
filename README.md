@@ -1,4 +1,4 @@
-# SHADOWKEEP
+# ARX NOCTIS
 
 A gothic-fantasy, side-scrolling action-adventure for the browser, in the spirit of *Castlevania* and *Bloodstained*.
 You are a nameless cloaked stranger with a sword, exploring a haunted castle: platforming, secrets, power-ups,
@@ -51,8 +51,8 @@ A gamepad also works (A jump, X attack, B dash, Y use selected, bumpers move the
 
 ## The story
 
-*Prague, Bohemia, 1541* - the year of the great fire of Prague. The Stranger - we never learn his name - is found kneeling at a grave on a hill above the city, in the rain: the grave of a woman who was his wife, his sister, his lover (the game never says). She died to the
-**Shadowkeep**, the castle that rose out of the countryside, took the **sun** and let the things of the shadow-realm walk the earth. As he kneels the city far below begins to burn. He rises, draws the sword **Silberzahn**
+*Prague, Bohemia, 1541* - the year of the great fire of Prague. The Stranger - we never learn his name - is found kneeling at a grave on a hill above the city, in the rain: the grave of a woman who was his wife, his sister, his lover (the game never says). She died to
+**Arx Noctis**, the castle that rose out of the countryside, took the **sun** and let the things of the shadow-realm walk the earth. As he kneels the city far below begins to burn. He rises, draws the sword **Silberzahn**
 ("the silver tooth") and goes down to it. Under his white cloak there is armour: a soldier's, or a monster-hunter's.
 
 * **An opening scene** (once, at the start of a new game; any key skips it): rain, a tolling bell, the grave with a blue candle on it, the title card, the glow of fire rising over the roofs. It is a real room - **the Hill Above Prague**, west of Market Street - with a tablet of its own.
@@ -61,7 +61,7 @@ A gamepad also works (A jump, X attack, B dash, Y use selected, bumpers move the
   lantern - which is HER: the pale blue wisp you carry once the Mire Mother falls follows where the ghost used to float, and from then on the ghost is no longer seen. **Every tablet and gravestone is her voice** (the stones are a headstone from the Graveyard 400 Assets pack, with flowers at their feet), lettered in the Eroded Motta font, in mixed case (it has no colon, so colons become dashes): advice about the road ahead, and what it is to be a ghost. She shows for a while whenever one speaks. (Signposts are only signs.)
 * **Every boss speaks to the Stranger before the fight** (once), and some say a last word as they fall; the Shadow Lord's come just before the sun rises. The ending returns to the grave.
 * **Alchemy, as Prague loved it.** The sun is the **Azoth**, the light that wakes it. The spells are **Sulphur** and **Vitriol**; the feather is **Aether**, the dash **Quicksilver**; the containers are the **Elixir Vitae** and the **Quintessence**;
-  the whetstone is **Sal Martis**; the boss rewards are the **Salamander Mantle**, the **Ignis Vapour Lantern**, the **Speculum Shard**, the **Perpetuum**, the **Aqua Regia** and the **Shoes of Hermes**; holy water is **Aqua Vitae**, the bandage **Panacea**.
+  the whetstone is **Sal Martis**; the boss rewards are the **Salamander Mantle**, the **Ignis Vapour Lantern**, the **Lacuna Shard**, the **Perpetuum**, the **Aqua Regia** and the **Shoes of Hermes**; holy water is **Aqua Vitae**, the bandage **Panacea**.
   The six keys are the **Keys of Lead, Iron, Silver, Tin, Copper and Mercury** (the metals of the old planets; gold, the Sun, is what was stolen). The four stages of the Great Work - Nigredo, Albedo, Citrinitas, Rubedo - are the frame the text hangs on.
 * **All the words are in one file, `src/story.js`:** the opening, her tablets, each boss's exchange and the ending. Edit it freely - it is plain text in capitals, nothing else needs to change.
 
@@ -87,7 +87,7 @@ A gamepad also works (A jump, X attack, B dash, Y use selected, bumpers move the
 * **The Disco.** A joke room off the Nave's upper floor: skeletons dance in the background, at three depths, under sweeping coloured spotlights and a mirror ball, to a track of its own. The **Shoes of Hermes** (+10% movement speed) wait at the far
   end. When you reach the middle of the floor the music dies with a record scratch, every skeleton stops and turns to look at you, and the lights swing round to find you. Come back later and the room is dark and empty.
 * **Every boss leaves a power-up.** The four bosses that used to leave a heart or mana container now leave something that changes how you play: the **Cinder Warden** the **Salamander Mantle** (fire hurts half as much and soot never
-  stains the cloak), the **Mire Mother** the **Ignis Vapour Lantern** (a wisp follows you - it lights the dark, clears the fog around you and draws loot from much further off), the optional **Reflection** the **Speculum Shard** (your sword
+  stains the cloak), the **Mire Mother** the **Ignis Vapour Lantern** (a wisp follows you - it lights the dark, clears the fog around you and draws loot from much further off), the optional **Reflection** the **Lacuna Shard** (your sword
   knocks arrows, bones, orbs and thrown items aside so they harm no one) and the **Hierophant** the **Perpetuum** (your dash recharges twice as fast). The other bosses already give a power (double jump, dash, Ember,
   Thunder, the Aqua Regia, the Azoth). The containers they used to carry are now on a high ledge in Prague, in a hidden cell in the Portrait Gallery and in two new locked vaults (below).
 * **Keys and locked doors.** Six doors are **locked** - a padlock and chains are drawn over them, in the colour of their key - and lead to optional **vaults** (the Gravekeeper's, the Steward's, the Verger's, the
