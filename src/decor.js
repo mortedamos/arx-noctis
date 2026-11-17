@@ -41,7 +41,7 @@ function drawCog(g, x, y, r, n, ang, a) {
 }
 
 // ALCHEMICAL SYMBOLS for the sigils on a sealed door (each boss that must fall has its own): sulphur, mercury, salt, iron, and for the Reliquary the skull.  Strokes only, about 12 px tall, centred on (x, y).
-const SIGIL_OF = { boss_h4: 'sulphur', boss_qb: 'mercury', boss_u3: 'salt', boss_kb: 'iron', skulls_done: 'skull' };
+const SIGIL_OF = { boss_h4: 'sulphur', boss_qb: 'mercury', boss_u3: 'salt', boss_kb: 'iron', skulls_done: 'skull', boss_og: 'earth' };
 const SIGILS_BY_ORDER = ['sulphur', 'mercury', 'salt', 'iron'];
 function glyph(g, name, x, y) {
   g.beginPath();
@@ -49,6 +49,7 @@ function glyph(g, name, x, y) {
   else if (name === 'mercury') { g.arc(x, y - 0.5, 2.8, 0, Math.PI * 2); g.moveTo(x - 3, y - 5.6); g.arc(x, y - 4.6, 3, Math.PI * 0.8, Math.PI * 0.2, true); g.moveTo(x - 2.2, y - 6.4); g.arc(x, y - 4.2, 3, Math.PI * 1.15, Math.PI * 1.85); g.moveTo(x, y + 2.3); g.lineTo(x, y + 6.6); g.moveTo(x - 2.2, y + 4.6); g.lineTo(x + 2.2, y + 4.6); }          // a circle with horns above and a cross below
   else if (name === 'salt') { g.arc(x, y, 4.6, 0, Math.PI * 2); g.moveTo(x - 6, y); g.lineTo(x + 6, y); }          // a circle cut by a bar
   else if (name === 'iron') { g.arc(x - 1.6, y + 1.8, 3.4, 0, Math.PI * 2); g.moveTo(x + 0.9, y - 0.7); g.lineTo(x + 5.4, y - 5.2); g.moveTo(x + 1.6, y - 5.4); g.lineTo(x + 5.6, y - 5.4); g.lineTo(x + 5.6, y - 1.4); }          // a circle with an arrow
+  else if (name === 'earth') { g.moveTo(x - 5.2, y - 4.4); g.lineTo(x + 5.2, y - 4.4); g.lineTo(x, y + 5.4); g.closePath(); g.moveTo(x - 3, y - 0.6); g.lineTo(x + 3, y - 0.6); }          // a triangle pointing down with a bar across it: earth (the golem)
   else if (name === 'skull') { g.arc(x, y - 1, 4.4, Math.PI * 0.82, Math.PI * 0.18, false); g.lineTo(x + 2.2, y + 4.8); g.lineTo(x - 2.2, y + 4.8); g.closePath(); g.moveTo(x - 2, y - 1); g.lineTo(x - 0.8, y - 1); g.moveTo(x + 0.8, y - 1); g.lineTo(x + 2, y - 1); g.moveTo(x - 1, y + 4.8); g.lineTo(x - 1, y + 3); g.moveTo(x + 1, y + 4.8); g.lineTo(x + 1, y + 3); }          // the death's-head, for the door the six skulls open
   else { g.arc(x, y, 4.2, 0, Math.PI * 2); g.moveTo(x, y); g.lineTo(x + 0.01, y); }
   g.stroke();
@@ -227,6 +228,30 @@ function drawBlaze(g, x, y, S, seed, t, dx = 0) {
   flameLayer(g, x, y, W, H, t, seed, lean, [[0, 'rgba(230,60,15,0)'], [0.14, 'rgba(235,75,20,0.6)'], [0.55, 'rgba(255,110,25,0.55)'], [1, 'rgba(190,35,10,0)']]);
   flameLayer(g, x, y, W * 0.68, H * 0.72, t * 1.1, seed + 5, lean * 0.7, [[0, 'rgba(255,160,40,0)'], [0.16, 'rgba(255,170,55,0.65)'], [0.6, 'rgba(255,195,80,0.55)'], [1, 'rgba(255,140,40,0)']]);
   flameLayer(g, x, y, W * 0.36, H * 0.42, t * 1.25, seed + 9, lean * 0.4, [[0, 'rgba(255,240,170,0)'], [0.2, 'rgba(255,245,190,0.75)'], [1, 'rgba(255,225,130,0)']]);
+}
+
+// THE FIRE IN THE BELL TOWER.  The very same blazes that burn the houses of Prague (see drawBlaze above - three nested flames, red, orange and a pale core, each licking at its own pace), but packed close, in four ranks
+// that stand one behind the other and all swell and die back at their own pace, on a bed of dark red coals that fades to black below.  `y` is the front line of the fire on the screen, `cx` the camera's x (the blazes stand
+// still in the world while the camera slides past them).
+export function drawFireWall(g, cx, y, t, width = 384) {
+  g.save();
+  const bed = g.createLinearGradient(0, y, 0, y + 80); bed.addColorStop(0, 'rgba(120,24,6,0)'); bed.addColorStop(0.12, 'rgba(150,34,8,0.92)'); bed.addColorStop(0.5, 'rgba(78,14,6,0.97)'); bed.addColorStop(1, 'rgba(28,6,4,1)');
+  g.fillStyle = bed; g.fillRect(0, y, width, 520);
+  for (let i = 0; i < 18; i++) { const ex = ((i * 71 + 17 - cx * 0.9) % (width + 60) + width + 60) % (width + 60) - 30, ey = y + 10 + ((hash(i, 3) * 40) | 0), fl = 0.5 + 0.5 * Math.sin(t * 0.07 + i * 2.3); g.fillStyle = 'rgba(255,' + (110 + ((hash(i, 5) * 80) | 0)) + ',40,' + (0.12 + 0.2 * fl).toFixed(3) + ')'; g.fillRect(ex, ey, 6 + ((hash(i, 8) * 8) | 0), 2); }          // the coals glowing in the bed
+  const ranks = [{ step: 15, dy: 34, S: 1.5, a: 0.8 }, { step: 12, dy: 26, S: 1.3, a: 0.9 }, { step: 10, dy: 20, S: 1.05, a: 1 }, { step: 9, dy: 16, S: 0.85, a: 1 }];          // (deepest first; each rank a little smaller, a little brighter and a little lower on the screen than the one behind it)
+  ranks.forEach((rk, ri) => {
+    g.globalAlpha = rk.a;
+    for (let k = Math.floor((cx - 40) / rk.step); k * rk.step < cx + width + 40; k++) {
+      const h1 = hash(k, ri * 7 + 3), h2 = hash(k, ri * 7 + 5), h3 = hash(k, ri * 7 + 9), h4 = hash(k, ri * 7 + 13);
+      if (h4 < 0.13) continue;                                                                                // (a gap now and then, where a rank thins out and the one behind shows through)
+      const wx = k * rk.step + (h1 - 0.5) * rk.step * 1.5, sx = wx - cx;                                      // (neighbours bunch together and drift apart: nothing is evenly spaced)
+      const swell = Math.sin(wx * 0.035 + ri * 2.1 + t * 0.011) * 9 + Math.sin(wx * 0.011 - t * 0.006 + ri) * 7;          // (the whole front rises and sags in long slow waves, a different one in each rank)
+      const S = rk.S * (0.5 + 1.0 * h2 * h2 + 0.25 * h3) * (1 + 0.24 * Math.sin(t * 0.045 + h1 * 11) + 0.1 * Math.sin(t * 0.14 + h3 * 7));          // each stands much taller or shorter than its neighbours, and swells and sinks
+      drawBlaze(g, sx, y + rk.dy + swell + (h3 - 0.5) * 14, S, k * 13 + ri * 101, t, 0);
+      if (h4 > 0.9) drawBlaze(g, sx + (h1 - 0.5) * 9, y + rk.dy + swell + (h2 - 0.5) * 10, S * 0.7, k * 17 + ri * 61, t * 1.07, 0);          // (and a few stand in pairs)
+    }
+  });
+  g.restore();
 }
 
 // A flame drawn into the 2D scene (additive tongues + a soft glow), so sprites drawn after it - the hero, enemies - stand in FRONT of it.

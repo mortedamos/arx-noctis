@@ -54,6 +54,7 @@ Not used right now. The pack ships without a formal license file; see `assets/ar
 | [Sign Post](https://freegamesprites.com/en/assets/sign-post) (FreeGameSprites.com, 256x256) | CC0 (per its page) | the wooden signposts at the crossroads and the doors, `assets/env/signpost.png` (trimmed and shrunk by `tools/pixelate-sprite.ps1`; original in `assets/source/freegamesprites/`) |
 | Metroidvania Kit (in `assets/sprites/source/`) | CC0 (per its page) | not used yet |
 | xxg_4_free (vampire character sheet) | xxg | **no licence file came with the download - confirm the terms with the author before a public release** | the Crimson Count (the boss of the Crypts's crypt); the painted sheet is cut into strips and scaled down by the build step |
+| [Old Golem](https://eddies-workshop.itch.io/old-golem) | Eddie's Workshop | free for commercial and non-commercial use, credit appreciated (see `assets/credits/license-old-golem.txt`) | the **Boiler Golem** (the steam it drew at the mouth and its explosion were cut out and are three.js effects now) |
 | Pixel Platformer Set 1 | Szadi art | public domain - may be edited, but the pack may not be sold | the sickle-fighter **zealot** and the sparkling diamond |
 | The Sidescroller's Dungeon - Tileset [32x32] | (see the itch.io page of the same name) | **no license file came with the download - check the author's page before any public / commercial release** | the teal pillars, banners, urns, crates, stone arch and wooden door, and the animated torches |
 

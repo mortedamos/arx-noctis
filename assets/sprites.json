@@ -544,5 +544,47 @@
   "n": 8,
   "w": 100,
   "h": 100
+ },
+ "golem_idle": {
+  "file": "sprites/golem_idle.png",
+  "n": 6,
+  "w": 160,
+  "h": 104
+ },
+ "golem_walk": {
+  "file": "sprites/golem_walk.png",
+  "n": 8,
+  "w": 160,
+  "h": 104
+ },
+ "golem_attack": {
+  "file": "sprites/golem_attack.png",
+  "n": 8,
+  "w": 160,
+  "h": 104
+ },
+ "golem_attack2": {
+  "file": "sprites/golem_attack2.png",
+  "n": 8,
+  "w": 160,
+  "h": 104
+ },
+ "golem_spit": {
+  "file": "sprites/golem_spit.png",
+  "n": 7,
+  "w": 160,
+  "h": 104
+ },
+ "golem_hit": {
+  "file": "sprites/golem_hit.png",
+  "n": 3,
+  "w": 160,
+  "h": 104
+ },
+ "golem_death": {
+  "file": "sprites/golem_death.png",
+  "n": 10,
+  "w": 160,
+  "h": 104
  }
 }

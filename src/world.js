@@ -130,6 +130,23 @@ const THEME = {
     },
     plat(g, tx, ty) { const x = tx * T, y = ty * T; g.fillStyle = '#35575a'; g.fillRect(x, y, T, 5); g.fillStyle = '#7fb5ae'; g.fillRect(x, y, T, 1); g.fillStyle = '#12201f'; for (let i = 2; i < T; i += 5) g.fillRect(x + i, y + 2, 2, 2); g.fillStyle = 'rgba(0,0,0,0.5)'; g.fillRect(x, y + 5, T, 2); },
   },
+  // A natural CAVE (Letosnik Abyss): rough brown-grey rock, uneven and wet, no mortar and no courses.  The walking surface is a crust of paler rubble with a few pebbles; a mineral glints here and there in the dark rock.
+  cave: {
+    solid(g, tx, ty, nb, depth) {
+      const x = tx * T, y = ty * T, h = hash1(tx * 6.1 + ty * 3.7), h2 = hash1(tx * 2.9 + ty * 8.3), h3 = hash1(tx * 11.3 + ty * 1.7);
+      g.fillStyle = depth === 0 ? '#4b4137' : (h < 0.33 ? '#2f2822' : h < 0.66 ? '#362e27' : '#2a2420'); g.fillRect(x, y, T, T);
+      g.fillStyle = 'rgba(0,0,0,0.26)'; g.beginPath(); g.ellipse(x + 4 + h * 8, y + 4 + h2 * 8, 3 + h3 * 4, 2 + h * 3, h2 * 3, 0, 6.3); g.fill();                      // darker hollows in the rock
+      g.fillStyle = 'rgba(205,180,145,0.08)'; g.beginPath(); g.ellipse(x + 4 + h3 * 8, y + 5 + h * 6, 2 + h2 * 4, 1.5 + h3 * 2.5, h * 3, 0, 6.3); g.fill();              // paler outcrops
+      if (h3 < 0.36) { g.fillStyle = 'rgba(0,0,0,0.42)'; const x0 = (h * 7) | 0; for (let i = 0; i < 7; i++) g.fillRect(x + x0 + ((i * 0.9) | 0) + (i % 2), y + 2 + i * 2, 1, 2); }          // a crack running down
+      if (depth === 0) {                                                                                                                        // the crust: pale rubble along the top, ragged underneath
+        g.fillStyle = '#7b6b55'; g.fillRect(x, y, T, 2); g.fillStyle = '#a89679'; g.fillRect(x, y, T, 1);
+        g.fillStyle = '#5d5041'; for (let i = 0; i < T; i += 3) g.fillRect(x + i, y + 2, 2 + (i % 2), 1 + ((hash1(tx * 3.1 + i) * 2) | 0));
+        if (h > 0.55) { g.fillStyle = '#8f7f66'; g.fillRect(x + 2 + ((h * 9) | 0), y, 2, 1); }
+      }
+      if (h2 > 0.9) { g.fillStyle = '#5fc4b4'; g.fillRect(x + 2 + ((h * 11) | 0), y + 4 + ((h3 * 8) | 0), 1, 1); g.fillStyle = 'rgba(95,196,180,0.25)'; g.fillRect(x + 1 + ((h * 11) | 0), y + 4 + ((h3 * 8) | 0), 3, 1); }          // a glint of mineral
+    },
+    plat(g, tx, ty) { const x = tx * T, y = ty * T; g.fillStyle = '#5b4228'; g.fillRect(x, y, T, 5); g.fillStyle = '#8c6b3f'; g.fillRect(x, y, T, 1); g.fillStyle = '#3a2916'; g.fillRect(x + 7, y + 1, 1, 4); g.fillStyle = '#b9a07a'; g.fillRect(x + 2, y + 2, 1, 1); g.fillRect(x + 12, y + 2, 1, 1); g.fillStyle = 'rgba(0,0,0,0.5)'; g.fillRect(x, y + 5, T, 2); },          // (a plank laid across the rocks)
+  },
   // the Clockwork Dungeon: iron plates riveted together, with a brass lip on the walking surface
   clockwork: {
     solid(g, tx, ty, nb, depth) {
@@ -300,6 +317,35 @@ function drawCistern(g, room, camX, camY, t) {
   g.fillStyle = 'rgba(0,6,8,0.3)'; g.fillRect(0, 0, W, H);
 }
 
+// A CAVE (Letosnik Abyss): dark rock walls in layers of wavy strata, stalactites hanging from the ledges and stalagmites rising from them, a few flecks of mineral glittering far off, a drip now and then, and a low haze
+// over the floor.  Everything is laid out in world coordinates and scrolls at its own pace, so the shaft keeps going whichever way the hero falls.
+function drawCave(g, room, camX, camY, t) {
+  const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#100c09'); bg.addColorStop(0.5, '#1a130d'); bg.addColorStop(1, '#271b11'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  const seed = room.w * 3 + 11, floorY = room.horizon - camY * 0.5;
+  for (let layer = 0; layer < 3; layer++) {
+    const par = 0.14 + layer * 0.14, step = 58 + layer * 26, col = ['#17120e', '#211a13', '#2d231a'][layer], lip = ['rgba(170,140,105,0.07)', 'rgba(170,140,105,0.11)', 'rgba(190,155,115,0.16)'][layer];
+    const i0 = Math.floor((camY * par - step) / step), i1 = Math.ceil((camY * par + H + step) / step);
+    for (let i = i0; i <= i1; i++) {                                                                                  // a band of strata: a wavy edge on top, and the rock below it
+      const wy = i * step + hash1(seed + i * 3.7 + layer) * 20 - camY * par, thick = 16 + hash1(seed + i * 1.9 + layer * 7) * 26;
+      if (wy > H + 40 || wy + thick < -40) continue;
+      g.fillStyle = col; g.beginPath(); g.moveTo(0, wy + thick); for (let x = 0; x <= W + 24; x += 24) g.lineTo(x, wy + Math.sin((x + camX * par) * 0.021 + i * 1.7 + layer) * 6 + Math.sin((x + camX * par) * 0.057 + i) * 2.5); g.lineTo(W, wy + thick); g.closePath(); g.fill();
+      g.fillStyle = lip; for (let x = 0; x < W; x += 24) g.fillRect(x, (wy + Math.sin((x + camX * par) * 0.021 + i * 1.7 + layer) * 6) | 0, 24, 1);
+      for (let k = 0; k < 9; k++) {                                                                                   // stalactites hang from the underside of the band, stalagmites stand on the next one
+        const wx = ((hash1(seed + i * 5.3 + k * 2.1 + layer * 9) * (W + 200) - camX * par) % (W + 200) + (W + 200)) % (W + 200) - 100, len = 8 + hash1(seed + k * 4.4 + i) * 26 * (1 + layer * 0.35), w = 3 + hash1(seed + k * 1.3 + i * 2.2) * 5;
+        if (hash1(seed + i * 7.7 + k * 3.3) < 0.45) { g.fillStyle = col; g.beginPath(); g.moveTo(wx - w, wy + thick - 1); g.lineTo(wx + w, wy + thick - 1); g.lineTo(wx + 0.5, wy + thick + len); g.closePath(); g.fill(); }
+        else if (hash1(seed + i * 2.2 + k * 8.8) < 0.35) { g.fillStyle = col; g.beginPath(); g.moveTo(wx - w, wy + 1); g.lineTo(wx + w, wy + 1); g.lineTo(wx + 0.5, wy - len * 0.8); g.closePath(); g.fill(); }
+      }
+    }
+  }
+  g.save(); g.globalCompositeOperation = 'lighter';                                                                    // minerals glittering in the far rock
+  for (let i = 0; i < 46; i++) { const sx = ((hash1(seed + i * 6.1) * 1100 - camX * 0.3) % 1100 + 1100) % 1100 - 350, sy = (hash1(seed + i * 3.3 + 40) * 1700 - camY * 0.3) % 1700, y = sy < 0 ? sy + 1700 : sy, tw = 0.25 + 0.75 * Math.abs(Math.sin(t * 0.025 + i * 2.3));
+    if (sx < -2 || sx > W + 2 || y < -2 || y > H + 2) continue; g.fillStyle = (i % 3 ? 'rgba(110,210,190,' : 'rgba(235,185,110,') + (0.10 + 0.32 * tw).toFixed(3) + ')'; g.fillRect(sx | 0, y | 0, 1 + (i % 4 === 0), 1); }
+  g.restore();
+  g.fillStyle = 'rgba(210,200,185,0.20)'; for (let i = 0; i < 6; i++) { const dx = ((hash1(seed + i * 8.2) * 700 - camX * 0.45) % 700 + 700) % 700 - 100, dy = (t * (1.2 + (i % 3) * 0.5) + hash1(seed + i * 2.2) * 600) % 700 - 100; if (dx > 0 && dx < W) g.fillRect(dx | 0, dy | 0, 1, 3); }          // a drip falls
+  const hy = Math.min(H - 4, floorY + 2), hg = g.createLinearGradient(0, hy - 38, 0, hy + 6); hg.addColorStop(0, 'rgba(120,100,80,0)'); hg.addColorStop(1, 'rgba(120,100,80,0.18)'); g.fillStyle = hg; g.fillRect(0, hy - 38, W, 44);          // the haze at the foot of the walls
+  g.fillStyle = 'rgba(0,0,0,0.22)'; g.fillRect(0, 0, W, H);
+}
+
 // ---------------------------------------------------------------- the disco room
 // Skeletons dance in the background on a floor that runs back into the dark: three rows, small and dim far away, big and bright up close.  Coloured beams sweep from the ceiling.  When the
 // hero reaches the middle of the floor (see Game.discoStop) the music dies, every skeleton stops and turns to look at them, and all the beams swing round to find them.  Once the party is
@@ -372,6 +418,7 @@ export function drawBackground(g, room, camX, camY, t) {
   if (th === 'library') { drawLibrary(g, room, camX, camY, t); return; }          // (towers too: the shelves run up the shaft)
   if (th === 'ice') { drawIceCave(g, room, camX, camY, t); return; }
   if (th === 'clockwork') { drawGears(g, room, camX, camY, t); return; }
+  if (th === 'cave') { drawCave(g, room, camX, camY, t); return; }
   if (th === 'cistern') { drawCistern(g, room, camX, camY, t); return; }          // (a gear shaft too: the tower's brickwork gives way to the wheels)
   if (room.house) { drawHouse(g, room, camX, camY, t); return; }          // (the inside of a cottage: wooden walls)
   if (room.interior) { drawInterior(g, room, camX, camY, t); return; }

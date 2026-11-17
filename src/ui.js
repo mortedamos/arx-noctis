@@ -214,9 +214,7 @@ export class TitleScreen {
     this.g = g; this.t = 0; this.mode = 'main'; const has = g.hasSave();
     this.main = new Menu([
       { label: 'NEW GAME', action: () => g.newGame() }, { label: 'CONTINUE', disabled: !has, action: () => g.continueGame() },
-      { label: 'CHOOSE SEED', action: () => {
-        if (Input.touchOn) { const v = window.prompt('Choose a seed: numbers only (empty = a random castle)', ''); if (v !== null) { const d = v.replace(/\D/g, '').slice(0, 9), code = g.codeFor(d); if (code) g.newGame(undefined, code); else g.newGame(d === '' ? undefined : +d); } }          // (a phone has no keys to type the number with: its own keyboard asks)
-        else { this.mode = 'seed'; this.seed = ''; Input.typed.length = 0; } } },
+      { label: 'CHOOSE SEED', action: () => { this.mode = 'seed'; this.seed = ''; Input.typed.length = 0; } },          // (on a phone, a keypad of numbers is drawn in the game itself: the game never opens a pop-up window)
       { label: 'CONTROLS', action: () => { this.mode = 'controls'; } }, { label: 'OPTIONS', action: () => { this.mode = 'options'; this.opts.i = 0; } }, { label: 'CREDITS', action: () => this.openCredits() },
     ]); if (has) this.main.i = 1;
     this.opts = optionsMenu(() => { this.mode = 'main'; });
@@ -224,6 +222,13 @@ export class TitleScreen {
   // the credits are read from credits.txt (a plain text file the game's owner can edit) each time they are opened
   openCredits() {
     this.mode = 'credits'; loadCredits(this.cr = { lines: null, scroll: 0, t: 0 });
+  }
+  // the keypad of the seed screen on a phone (drawn in the game, never a pop-up window): ten numbers in two rows, then DEL, BEGIN and BACK.  Each is { k, label, x, y, w, h } in game pixels
+  seedPad() {
+    const B = [], num = (i, r, c) => B.push({ k: String(i), x: 90 + c * 42, y: 86 + r * 28, w: 36, h: 23 });
+    [1, 2, 3, 4, 5].forEach((n, c) => num(n, 0, c)); [6, 7, 8, 9, 0].forEach((n, c) => num(n, 1, c));
+    ['DEL', 'BEGIN', 'BACK'].forEach((k, c) => B.push({ k, x: 91 + c * 70, y: 146, w: 62, h: 23 }));
+    return B;
   }
   update() {
     this.t++; const g = this.g;
@@ -235,7 +240,9 @@ export class TitleScreen {
     }
     else if (this.mode === 'seed') {
       for (const k of Input.typed.splice(0)) { if (k === '<') this.seed = this.seed.slice(0, -1); else if (this.seed.length < 9) this.seed += k; }
-      if (Input.pressed.esc) { this.mode = 'main'; A.sfx('back'); } else if (Input.pressed.confirm) { const code = g.codeFor(this.seed); if (code) g.newGame(undefined, code); else g.newGame(this.seed === '' ? undefined : +this.seed); }
+      let go = Input.pressed.confirm;
+      if (Input.touchOn) for (const tp of Input.taps) { const b = this.seedPad().find(b => tp.x >= b.x && tp.x < b.x + b.w && tp.y >= b.y && tp.y < b.y + b.h); if (!b) continue; A.sfx('click'); if (b.k === 'DEL') this.seed = this.seed.slice(0, -1); else if (b.k === 'BEGIN') go = true; else if (b.k === 'BACK') { this.mode = 'main'; A.sfx('back'); return; } else if (this.seed.length < 9) this.seed += b.k; }
+      if (Input.pressed.esc) { this.mode = 'main'; A.sfx('back'); } else if (go) { const code = g.codeFor(this.seed); if (code) g.newGame(undefined, code); else g.newGame(this.seed === '' ? undefined : +this.seed); }
     } else if (this.mode === 'options') { this.opts.update(g); if (Input.pressed.back) { this.mode = 'main'; A.sfx('back'); } }
     else if (Input.pressed.back || Input.pressed.confirm || Input.taps.length) { this.mode = 'main'; A.sfx('back'); }
   }
@@ -254,6 +261,14 @@ export class TitleScreen {
       drawText(ctx, Input.touchOn ? 'UP / DOWN SCROLL     TAP TO GO BACK' : 'UP / DOWN SCROLL     ESC BACK', W / 2, H - 14, { align: 'center', color: DIM });
     }
     else if (this.mode === 'options') { panel(ctx, 60, 66, W - 120, 148); drawText(ctx, 'OPTIONS', W / 2, 73, { align: 'center', scale: 1.5, color: GOLD, outline: '#000' }); this.opts.draw(ctx, 84, 92, 14, 'left'); }
+    else if (this.mode === 'seed' && Input.touchOn) {
+      panel(ctx, 40, 10, W - 80, 168); drawText(ctx, 'CHOOSE A SEED', W / 2, 17, { align: 'center', scale: 1.5, color: GOLD, outline: '#000' });
+      const tw = textWidth(this.seed, 2); drawText(ctx, this.seed || 'RANDOM', W / 2 - (this.seed ? 3 : 0), 40, { align: 'center', scale: 2, color: this.seed ? PALE : DIM });
+      if (this.seed && Math.floor(t / 24) % 2) { ctx.fillStyle = PALE; ctx.fillRect(Math.round(W / 2 - 3 + tw / 2 + 2), 40, 8, 12); }
+      drawText(ctx, 'THE SAME SEED ALWAYS BUILDS THE SAME CASTLE.', W / 2, 62, { align: 'center', color: '#b5a47a' });
+      drawText(ctx, 'TAP NUMBERS.   NONE = A RANDOM CASTLE.', W / 2, 73, { align: 'center', color: DIM });
+      for (const b of this.seedPad()) { ctx.fillStyle = 'rgba(20,16,36,0.95)'; ctx.fillRect(b.x, b.y, b.w, b.h); ctx.strokeStyle = b.k === 'BEGIN' ? GOLD : '#5d5772'; ctx.lineWidth = 1; ctx.strokeRect(b.x + 0.5, b.y + 0.5, b.w - 1, b.h - 1); drawText(ctx, b.k, b.x + b.w / 2, b.y + b.h / 2 - 4, { align: 'center', scale: b.k.length > 1 ? 1 : 1.6, color: b.k === 'BEGIN' ? GOLD : PALE }); }
+    }
     else if (this.mode === 'seed') {
       panel(ctx, 50, 84, W - 100, 112); drawText(ctx, 'CHOOSE A SEED', W / 2, 91, { align: 'center', scale: 1.5, color: GOLD, outline: '#000' });
       const tw = textWidth(this.seed, 2); drawText(ctx, this.seed || 'RANDOM', W / 2 - (this.seed ? 3 : 0), 112, { align: 'center', scale: 2, color: this.seed ? PALE : DIM });
@@ -289,7 +304,7 @@ export function controlsScreen(ctx) {
 // what the hero has found, for the pause screen: the four powers (dim and unnamed until found), the Magic Shoes and the Tide Blade once found, and the keys he carries
 const POWERS = [['djump', 'feather', 'AETHER FEATHER'], ['dash', 'boot', 'QUICKSILVER'], ['ember', 'ember', 'SULPHUR'], ['thunder', 'thunder', 'VITRIOL']];
 // what the pause screen lists as FOUND: the four powers, the relics the bosses leave, and the keys you carry (each with what it is and what it does, for the cursor to read out)
-const RELICS = [['got_mantle', 'mantle', 'SALAMANDER', 'mantle'], ['got_lantern', 'lantern', 'IGNIS VAPOUR', 'lantern'], ['got_shard', 'shard', 'SPECULUM', 'shard'], ['got_spring', 'spring', 'PERPETUUM', 'spring'], ['got_shoes', 'shoes', 'HERMES SHOES', 'shoes'], ['got_tide', 'e_ice', 'AQUA REGIA', 'tide'], ['got_astrolabe', 'astrolabe', 'ASTROLABE', 'astrolabe'], ['got_crampons', 'crampons', 'CRAMPONS', 'crampons']];
+const RELICS = [['got_mantle', 'mantle', 'SALAMANDER', 'mantle'], ['got_lantern', 'lantern', 'IGNIS VAPOUR', 'lantern'], ['got_shard', 'shard', 'SPECULUM', 'shard'], ['got_spring', 'spring', 'PERPETUUM', 'spring'], ['got_shoes', 'shoes', 'HERMES SHOES', 'shoes'], ['got_tide', 'e_ice', 'AQUA REGIA', 'tide'], ['got_astrolabe', 'astrolabe', 'ASTROLABE', 'astrolabe'], ['got_crampons', 'crampons', 'CRAMPONS', 'crampons'], ['got_athanor', 'athanor', 'ATHANOR', 'athanor']];
 const KEY_USE = { key_grave: "THE GRAVEKEEPER'S VAULT, OFF THE MOURNING FIELDS.", key_hall: "THE STEWARD'S VAULT, OFF THE PORTRAIT GALLERY.", key_chapel: "THE VERGER'S VAULT, OFF THE BELL GALLERY.", key_crypt: 'THE DOOR OF THE ORLOJ TOWER, HIGH ABOVE SMOULDERING LANE IN PRAGUE.', key_mire: "THE FERRYMAN'S VAULT, OFF THE WEEPING HOLLOW.", key_gear: "THE ENGINEER'S VAULT, OFF THE ESCAPEMENT.", key_frost: 'THE DOOR OF THE LIBRARY OF AGES, AT THE CROSSING HALL.', key_gold: 'THE DOOR OF THE SHADOW THRONE, AT THE CROSSING HALL.' };
 export function foundItems(g) {
   const S = g.save, F = S.flags, AB = (g.info && g.info.ABILITIES) || {}, UP = (g.info && g.info.UPGRADES) || {}, rows = [];

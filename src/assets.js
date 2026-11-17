@@ -43,6 +43,8 @@ const META = {
 };
 // the Crimson Count (xxg_4_free): his feet are on row 130 of each 144px cell
 Object.assign(META, { vampire_idle: { ay: 0.9 }, vampire_run: { ay: 0.9 }, vampire_atk: { ay: 0.9 }, vampire_jump: { ay: 0.9 }, vampire_hurt: { ay: 0.9 }, vampire_dead: { ay: 0.9 } });
+// the Boiler Golem (Old Golem, Eddie's Workshop): 160x104 cells, faces LEFT, its feet are on row 101
+Object.assign(META, Object.fromEntries(['idle', 'walk', 'attack', 'attack2', 'spit', 'hit', 'death'].map(n => ['golem_' + n, { face: -1, ay: 101 / 104 }])));
 // Some Ars Notoria cells leave empty rows under the feet (the gnu 7-9, the archmage 7); `dy` pushes them down (those rows + 2: enemies are drawn 1px high, and the feet should dip 1px into the floor) so the creature stands ON the ground instead of hovering over it.
 // (an entry here replaces the "Ars sheets face left" default, so each says face: -1 itself)
 Object.assign(META, { ars_gnu_r0: { face: 1, dy: 11 }, ars_gnu_r1: { face: 1, dy: 11 }, ars_gnu_r2: { face: -1, dy: 10 }, ars_gnu_r3: { face: -1, dy: 9 }, ars_mage2_r0: { face: -1, dy: 9 }, ars_mage2_r1: { face: -1, dy: 9 } });

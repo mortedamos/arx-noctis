@@ -248,7 +248,7 @@ export const Audio_ = {
   },
 };
 // each boss's own cry and death (boss_<id>, boss_<id>_die): until a recording is added to assets/sfx/, the shared roar or shriek stands in for it
-for (const [id, base] of Object.entries({ beast: 'roar', nightmare: 'shriek', angel: 'shriek', librarian: 'ghost', rimewyrm: 'roar', colossus: 'roar', shadow: 'roar', cinder: 'roar', bramble: 'ghost', vampire: 'shriek', mirror: 'shriek', drowned: 'ghost' })) {
+for (const [id, base] of Object.entries({ beast: 'roar', nightmare: 'shriek', angel: 'shriek', librarian: 'ghost', rimewyrm: 'roar', colossus: 'roar', shadow: 'roar', cinder: 'roar', bramble: 'ghost', vampire: 'shriek', mirror: 'shriek', drowned: 'ghost', golem: 'roar' })) {
   Audio_.S['boss_' + id] = function (o) { this.S[base].call(this, o); };
   Audio_.S['boss_' + id + '_die'] = function (o) { this.S[base].call(this, o); };
 }

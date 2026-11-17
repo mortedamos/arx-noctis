@@ -36,6 +36,9 @@ const ATTACKS = {
   summon: { label: 'SUMMONS', rgb: [180, 110, 255], icon: 'skull' },
   dive: { label: 'DIVE', rgb: [255, 255, 255], glyph: 'diag' },
   embers: { label: 'EMBER VOLLEY', rgb: [255, 130, 50], icon: 'ember' },
+  punch: { label: 'IRON FIST', rgb: [255, 208, 74], glyph: 'chevrons' },          // (the Boiler Golem: a blow at chest height - duck under it)
+  scoop: { label: 'UPPERCUT', rgb: [255, 150, 70], glyph: 'diag' },          // (a low scooping blow - jump it)
+  fireball: { label: 'FIREBALL', rgb: [255, 130, 50], icon: 'ember' },
   tentacles: { label: 'TENTACLES', rgb: [150, 110, 220], glyph: 'bars' },
   spores: { label: 'SPORE BURST', rgb: [140, 255, 120], icon: 'orb' },
   lunge: { label: 'BLOOD LUNGE', rgb: [255, 70, 90], glyph: 'chevrons' },
@@ -193,9 +196,9 @@ export class Column {
 
 // -------------------------------------------------------------------------------------------- Boss base
 // how bosses read the player (see Boss.choose): which of their attacks are for when you are close, far off, or in the air
-const CLOSE_ATK = new Set(['slam', 'stomp', 'lunge', 'strikes', 'tentacles', 'leap', 'dive', 'vents', 'shelves', 'spikes']);
-const FAR_ATK = new Set(['embers', 'breath', 'bolts', 'tideorbs', 'spores', 'skulls', 'feathers', 'gears', 'geysers', 'pillars', 'mist', 'summon', 'charge', 'gallop', 'pages', 'tomes', 'ink']);
-const AIR_ATK = new Set(['feathers', 'bolts', 'skulls', 'pillars', 'spores', 'embers', 'breath', 'tideorbs', 'pages', 'ink']);
+const CLOSE_ATK = new Set(['punch', 'scoop', 'slam', 'stomp', 'lunge', 'strikes', 'tentacles', 'leap', 'dive', 'vents', 'shelves', 'spikes']);
+const FAR_ATK = new Set(['fireball', 'embers', 'breath', 'bolts', 'tideorbs', 'spores', 'skulls', 'feathers', 'gears', 'geysers', 'pillars', 'mist', 'summon', 'charge', 'gallop', 'pages', 'tomes', 'ink']);
+const AIR_ATK = new Set(['fireball', 'feathers', 'bolts', 'skulls', 'pillars', 'spores', 'embers', 'breath', 'tideorbs', 'pages', 'ink']);
 const combo_min = w => Math.max(58, Math.round(w * 0.5));
 export class Boss extends Enemy {
   constructor(g, x, y, w, h, o) {
@@ -207,7 +210,7 @@ export class Boss extends Enemy {
   hurt(dmg, dir, opts = {}) { opts.noKb = true; return super.hurt(dmg, dir, opts); }
   onHurt() { if (this.phase === 1 && this.hp < this.maxHp * 0.5) { this.phase = 2; this.onPhase2(); } }
   onPhase2() {
-    const g = this.g; g.fx.flash([1, 0.4, 0.3], 0.5); g.shake(5, 24); this.cry(); g.fx.ring(this.x, this.cy, 90, [1, 0.4, 0.3], 34, 0.14);
+    const g = this.g; for (const j of g.jets || []) j.quicken(); g.fx.flash([1, 0.4, 0.3], 0.5); g.shake(5, 24); this.cry(); g.fx.ring(this.x, this.cy, 90, [1, 0.4, 0.3], 34, 0.14);
     dropItem(g, 'heart', this.x - 36, this.cy - 20); dropItem(g, 'heart', this.x + 36, this.cy - 20); dropItem(g, 'mana', this.x, this.cy - 30);     // a breather when the fight escalates
     this.state = this.state === 'dormant' ? this.state : 'idle'; this.st = -40; this.plan = null;
   }
@@ -972,6 +975,96 @@ export class BossVampire extends Boss {
   }
 }
 
+// ============================================================================================== THE BOILER GOLEM
+// A hulking brass-and-iron golem with a red boiler on its back (sprites: Old Golem by Eddie's Workshop).  The vapour that the art drew at its mouth and the explosion it died in were taken OUT of the sheets: steam, fire and smoke are all
+// three.js effects now (fx.smoke / fx.fire / fx.fireOrb ...).  IRON FIST: a blow at chest height (DUCK under it).  UPPERCUT: a low scooping blow (JUMP it).  FIREBALL: it spits a lobbed fireball.  STEAM VENTS: columns of scalding steam burst
+// from the floor where the boiler overflows.  In the second half the boiler runs hot: it moves and strikes quicker, spits three fireballs and the vents burst in greater number.  When it falls the boiler goes up.
+export class BossGolem extends Boss {
+  constructor(g, x, y, o) {
+    super(g, x, y, 44, 84, o); this.hp = this.maxHp = 320; this.dmg = 14; this.xp = 200; this.bossName = 'THE BOILER GOLEM'; this.voice = 'golem'; this.sub = 'WHO STILL KEEPS THE FIRES'; this.dir = -1; this.deathFx = COLORS.fire; this.ice = { w: 70, h: 96 };
+    this.hitDone = false; this.heat = 0;
+  }
+  get spd() { return this.phase === 2 ? 1.2 : 1; }
+  tele(k) { return Math.round({ punch: 56, scoop: 60, fireball: 58, vents: 30 }[k] / this.spd); }
+  dangerous() { return (this.state === 'punch' || this.state === 'scoop') && this.st >= this.tele(this.state) && this.st < this.tele(this.state) + 14; }
+  // where things are on the sprite, from its feet (the art faces left; `dir` turns it round)
+  vent(i) { return { x: this.x + this.dir * (i ? 1 : 10), y: this.y - 84 }; }          // the two stacks of the boiler
+  mouth() { return { x: this.x + this.dir * 20, y: this.y - 52 }; }
+  steam(x, y, n = 1, big = 1) { this.g.fx.smoke(x, y, n, { s0: 5 * big, s1: 15 * big, c0: [0.92, 0.94, 0.98], c1: [0.55, 0.58, 0.64], a: 0.34, l: 0.9, drift: -this.dir * 0.05 }); }
+  update() {
+    super.update(); const g = this.g;
+    if (this.dying || this.dead) return;
+    const rate = this.state === 'dormant' ? 14 : this.phase === 2 ? 3 : 6;          // the boiler breathes: a thin wisp now and then asleep, steady once awake, a roar in the second half
+    if (this.t % rate === 0) for (const i of [0, 1]) { const v = this.vent(i); this.steam(v.x, v.y, 1, this.phase === 2 ? 1.3 : 1); }
+    if (this.phase === 2 && this.state !== 'dormant') { const v = this.vent(0); g.fx.glow(v.x, v.y + 12, 26, [1, 0.3, 0.1], 0.18 + 0.06 * Math.sin(this.t * 0.2)); }          // (red hot)
+  }
+  intro(g) {
+    if (this.st === 8) { this.cry(); A.sfx('steam'); g.shake(5, 44); g.fx.flash([1, 0.85, 0.6], 0.3); g.fx.ring(this.x, this.cy, 120, [0.9, 0.95, 1], 40, 0.1); for (const i of [0, 1]) { const v = this.vent(i); this.steam(v.x, v.y, 14, 2.2); } }
+    if (this.st % 3 === 0) for (const i of [0, 1]) { const v = this.vent(i); this.steam(v.x, v.y, 1, 1.8); }
+    this.faceP();
+  }
+  ai(g) {
+    const p = g.player, spd = this.spd, d = Math.abs(this.dx());
+    g.fx.light(this.x, this.y - 50, 70, 0.35, [1, 0.5, 0.2]);
+    switch (this.state) {
+      case 'idle':
+        this.faceP(); this.vx = approach(this.vx, d > 70 ? this.dir * 0.55 * spd : 0, 0.05);
+        this.planNext(this.phase === 2 ? ['punch', 'scoop', 'fireball', 'vents', 'punch', 'scoop'] : ['punch', 'scoop', 'fireball', 'vents'], Math.round(88 / spd)); break;
+      case 'punch': case 'scoop': {
+        const k = this.state, T0 = this.tele(k); this.vx = 0; if (this.st === 1) { this.faceP(); this.hitDone = false; A.sfx('steam'); }
+        const hb = k === 'punch' ? { x: this.dir > 0 ? this.x + 4 : this.x - 4 - 84, y: this.y - 56, w: 84, h: 32 } : { x: this.dir > 0 ? this.x + 4 : this.x - 4 - 84, y: this.y - 34, w: 84, h: 34 };
+        if (this.st < T0) { this.tell(k, this.st / T0, [{ type: 'rect', ...hb }]); if (this.st % 5 === 0) { const v = this.vent(1); this.steam(v.x, v.y, 2, 1.6); } }          // (the boiler blows off steam as the arm draws back)
+        else if (this.st === T0 + 1) {
+          A.sfx(k === 'punch' ? 'slash' : 'boom'); g.shake(k === 'punch' ? 4 : 6, 14); g.fx.sparks(this.x + this.dir * 56, this.y - (k === 'punch' ? 40 : 14), 12, COLORS.gold, 4, { gy: 0.15 });
+          if (!this.hitDone && overlap(hb, p.hurtbox)) { this.hitDone = true; p.hurt(this.dmg + (k === 'scoop' ? 2 : 0), this.x); }
+          if (k === 'scoop' && this.phase === 2) for (const sd of [-1, 1]) g.addProjectile(new Shockwave(this.x + sd * 36, this.y, sd, { dmg: 8, speed: 2.0, life: 56, big: true }));
+        } else if (this.st > T0 + 40) { this.state = 'idle'; this.st = -10; } break; }
+      case 'fireball': {
+        const T0 = this.tele('fireball'), m = this.mouth(); this.vx = 0; this.faceP();
+        if (this.st < T0) { this.tell('fireball', this.st / T0, [{ type: 'line', x0: m.x, y0: m.y, x1: p.x, y1: p.y - 20 }]); g.fx.glow(m.x, m.y, 6 + this.st * 0.4, [1, 0.45, 0.12], 0.5); if (this.st % 4 === 0) this.steam(m.x, m.y - 6, 1, 1.2); }
+        else if (this.st === T0 || (this.phase === 2 && (this.st === T0 + 16 || this.st === T0 + 32))) {
+          A.sfx('fire'); const dx = p.x - m.x, t = clamp(Math.abs(dx) / 2.6, 36, 90), vx = dx / t, vy = (p.y - 20 - m.y) / t - 0.045 * t / 2;          // (lobbed: it lands about where you stand)
+          g.addProjectile(new Projectile(m.x, m.y, vx, vy, 'ember', { dmg: 9, scale: 1.7, grav: 0.045, life: 240 })); g.fx.ring(m.x, m.y, 30, [1, 0.5, 0.2], 14); g.fx.burst(m.x, m.y, 8, [[1, 0.7, 0.3], [0.6, 0.1, 0.02]], { speed: 2, s0: 10 });
+        } else if (this.st > T0 + (this.phase === 2 ? 56 : 36)) { this.state = 'idle'; this.st = -14; } break; }
+      case 'vents':
+        this.vx = 0; this.faceP(); if (this.st < 30) { this.tell('vents', this.st / 30); for (const i of [0, 1]) { const v = this.vent(i); this.steam(v.x, v.y, 1, 2); } }
+        if (this.st === 30) { A.sfx('steam'); const n = this.phase === 2 ? 4 : 3; for (let i = 0; i < n; i++) { const x = clamp(i === 0 ? p.x : p.x + rand(-130, 130), 30, g.room.pw - 30); g.addProjectile(new Column(x, this.y, 'steam', { warn: 62 + i * 14, active: 44, dmg: 12, w: 30, h: 150 })); } }
+        if (this.st > 170) { this.state = 'idle'; this.st = -10; } break;
+    }
+  }
+  // THE BOILER GOES UP.  It shudders and vents, the core in its chest lights, then it blows: a flash, a fireball, smoke rolling up, and what is left of the golem (the arms and legs) falls and burns.
+  dyingSeq() {
+    const g = this.g, d = ++this.dying; this.vx = 0; this.flashT = d < 70 && d % 6 < 3 ? 4 : 0;
+    const cx = this.x, cy = this.y - 52;
+    if (d < 70) {
+      for (const i of [0, 1]) { const v = this.vent(i); this.steam(v.x, v.y, d % 2 + 1, 1.5 + d / 40); }          // (more and more steam)
+      if (d === 1 || d === 30) A.sfx('steam'); if (d % 9 === 0) g.shake(2, 6);
+      if (d >= 40) { const k = (d - 40) / 30; g.fx.glow(cx, cy, 14 + 26 * k, [1, 0.45 + 0.4 * k, 0.15 + 0.5 * k], 0.4 + 0.5 * k); if (d % 3 === 0) g.fx.fire(cx, cy + 6, { scale: 0.5 + k * 0.6, n: 1 }); g.fx.sparks(cx, cy, 2, COLORS.fire, 3); }
+    } else if (d === 70) {
+      A.sfx('boom'); A.sfx('thunder'); g.shake(11, 46); g.fx.flash([1, 0.9, 0.7], 1.0); g.fx.ring(cx, cy, 170, [1, 0.8, 0.5], 40, 0.12); g.fx.ring(cx, cy, 100, [1, 0.5, 0.2], 28, 0.2);
+      g.fx.burst(cx, cy, 46, COLORS.fire, { speed: 5.5, s0: 26, l0: 20, l1: 44 }); g.fx.burst(cx, cy, 24, [[1, 0.95, 0.7], [1, 0.5, 0.15]], { speed: 3, s0: 20 }); g.fx.sparks(cx, cy, 44, COLORS.gold, 7, { gy: 0.12 });
+      for (let i = 0; i < 7; i++) g.fx.fire(cx + rand(-26, 26), cy + rand(-20, 24), { scale: 1.7, n: 3 });
+      g.fx.smoke(cx, cy, 24, { s0: 16, s1: 52, c0: [0.34, 0.32, 0.33], c1: [0.09, 0.08, 0.09], a: 0.62, l: 1.8 });
+    } else if (d > 70) {
+      const k = Math.max(0, 1 - (d - 70) / 80);
+      g.fx.light(this.x, this.y - 30, 150, 1.4 * k + 0.2, [1, 0.5, 0.15]); g.fx.glow(cx, cy, 50 * k + 10, [1, 0.45, 0.12], 0.45 * k);
+      if (d % 3 === 0) g.fx.fire(this.x + rand(-34, 34), this.y - rand(2, 16), { scale: 0.5 + 0.9 * k, n: 1 });          // what is left of it burns
+      if (d % 4 === 0) g.fx.smoke(this.x + rand(-30, 30), this.y - rand(8, 40), 1, { s0: 12, s1: 38, c0: [0.3, 0.28, 0.29], c1: [0.08, 0.07, 0.08], a: 0.5, l: 1.5 });
+      if (d === 82 || d === 96 || d === 112) { A.sfx('boom'); g.shake(4, 12); g.fx.burst(this.x + rand(-30, 30), this.y - rand(10, 40), 16, COLORS.fire, { speed: 3, s0: 18 }); g.fx.sparks(this.x, this.y - 20, 14, COLORS.gold, 5, { gy: 0.12 }); }
+    }
+    if (d === 150) { g.fx.flash([1, 0.8, 0.5], 0.4); g.fx.ring(this.x, this.cy, 120, [1, 0.8, 0.5], 36, 0.1); g.fx.smoke(this.x, this.y - 16, 14, { s0: 14, s1: 44, c0: [0.3, 0.28, 0.29], c1: [0.08, 0.07, 0.08], a: 0.5, l: 1.6 }); g.fx.souls(this.x, this.cy, 24, COLORS.blue); A.sfx('thunder'); this.dead = true; g.player.gainXp(this.xp); if (!this.noDrop) rollEnchantDrop(g, this, true); g.bossDefeated(this); }
+  }
+  draw(ctx, cx, cy) {
+    const T = this.tele(this.state === 'punch' || this.state === 'scoop' ? this.state : this.state === 'fireball' ? 'fireball' : 'punch'); let id = 'golem_idle', f = Math.floor(this.t / 9) % 6;
+    if (this.dying) { id = 'golem_death'; const d = this.dying; f = d < 40 ? 0 : d < 70 ? 1 : Math.min(9, 2 + Math.floor((d - 70) / 8)); }
+    else if (this.state === 'punch' || this.state === 'scoop') { id = this.state === 'punch' ? 'golem_attack' : 'golem_attack2'; f = this.st < T ? Math.min(4, Math.floor(this.st / T * 5)) : Math.min(7, 5 + Math.floor((this.st - T) / 5)); }
+    else if (this.state === 'fireball') { id = 'golem_spit'; f = this.st < T * 0.5 ? Math.floor(this.st / (T * 0.5) * 3) : this.st < T ? 3 : Math.min(6, 4 + Math.floor((this.st - T) / 5)); }
+    else if (this.state === 'vents') { id = 'golem_hit'; f = this.st < 30 ? 0 : 1; }
+    else if (Math.abs(this.vx) > 0.15) { id = 'golem_walk'; f = Math.floor(this.t / 7) % 8; }
+    this.spr(ctx, id, f, cx, cy + 1, { flash: this.flashT > 0 });
+  }
+}
+
 // ============================================================================================== THE REFLECTION (the Mirror Room's optional boss)
 // The mirror on the back wall shows you, mirrored across its middle.  Walk in front of it and meet your reflection in the middle: the glass cracks, the reflection turns silver and violet and crashes out to fight you: with a SWORD (a two-blow combo, three in the
 // second half), a SHADOW DASH that cuts as it ends, a LEAP (second half), and the very same things you can carry - DAGGERS (flat: duck under them), an AXE and a TORCH and HOLY WATER (lobbed at where you
@@ -1199,4 +1292,4 @@ export class BossDrowned extends Boss {
   }
 }
 
-export const BOSS_TYPES = { boss_librarian: BossLibrarian, boss_rimewyrm: BossRimewyrm, boss_drowned: BossDrowned, boss_vampire: BossVampire, boss_beast: BossBeast, boss_nightmare: BossNightmare, boss_angel: BossAngel, boss_colossus: BossColossus, boss_shadow: BossShadow, boss_cinder: BossCinder, boss_bramble: BossBramble, boss_mirror: BossMirror };
+export const BOSS_TYPES = { boss_librarian: BossLibrarian, boss_rimewyrm: BossRimewyrm, boss_drowned: BossDrowned, boss_vampire: BossVampire, boss_beast: BossBeast, boss_nightmare: BossNightmare, boss_angel: BossAngel, boss_colossus: BossColossus, boss_shadow: BossShadow, boss_cinder: BossCinder, boss_bramble: BossBramble, boss_mirror: BossMirror, boss_golem: BossGolem };

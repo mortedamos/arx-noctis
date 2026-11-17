@@ -37,7 +37,7 @@ export function surfaces(room) {
     let cur = null;
     for (let tx = 0; tx < w; tx++) {
       const v = room.get(tx, ty), stand = (isSolid(v) || v === TILE.PLAT) && free(tx, ty - 1) && free(tx, ty - 2) && free(tx, ty - 3);
-      if (stand) { if (!cur) { cur = { id: list.length, ty, x0: tx, x1: tx, allPlat: true }; list.push(cur); } cur.x1 = tx; if (v !== TILE.PLAT) cur.allPlat = false; id[ty * w + tx] = cur.id; }
+      if (stand) { if (!cur) { cur = { id: list.length, ty, x0: tx, x1: tx, allPlat: true, planks: [] }; list.push(cur); } cur.x1 = tx; if (v !== TILE.PLAT) cur.allPlat = false; else { const lp = cur.planks[cur.planks.length - 1]; if (lp && lp[1] === tx - 1) lp[1] = tx; else cur.planks.push([tx, tx]); } id[ty * w + tx] = cur.id; }
       else cur = null;
     }
   }
@@ -87,6 +87,16 @@ function variants(abil, runUp) {
   }
   return out;
 }
+const deepBelow = (room, tx, ty) => { for (let k = 1; k <= 8; k++) { const v = room.get(tx, ty + k); if (isSolid(v) || v === TILE.PLAT) return false; } return true; };
+// the moments, counted from the start of a fall, at which the double jump and the dash may be used (every 6 frames: the hero may choose any of them)
+function dropVariants(abil) {
+  const dj = abil.has('djump'), dash = abil.has('dash'), out = [{ sc: 0 }, { sc: 0.4 }, { sc: 1 }], J = [], D = []; if (!dj && !dash) return out;
+  for (let s = 6; s <= 60; s += 6) J.push(s); for (let s = 6; s <= 66; s += 6) D.push(s);
+  for (const sc of [0.4, 1]) { if (dj) for (const j of J) out.push({ sc, dj: j }); if (dash) for (const d of D) out.push({ sc, dash: d }); if (dj && dash) for (const j of J) for (const d of D) out.push({ sc, dj: j, dash: d }); }
+  return out;
+}
+// the planks of a surface (the stone beside them is not a place to drop from): the middle of each tile of a run of planks, at most six to a run
+function plankPoints(sf) { const out = []; for (const [a, b] of sf.planks) { const n = b - a + 1, step = Math.max(1, Math.ceil(n / 6)); for (let tx = a; tx <= b; tx += step) out.push(tx * T + 8); if ((b - a) % step) out.push(b * T + 8); } return out; }
 function samplePoints(sf) {
   const L = sf.x0 * T, R = (sf.x1 + 1) * T, pts = [L + 8, L + 14, R - 14, R - 8];
   for (let tx = sf.x0 + 2; tx < sf.x1 - 1; tx += 3) pts.push(tx * T + 8);
@@ -100,6 +110,8 @@ function expand(room, S, sf, abil, akey) {
   for (const dir of [-1, 1]) { const x = dir < 0 ? L - 7.5 : R + 7.5; for (const s of [0, 0.4, 1]) land(simulate(room, { x, y, dir, vx0: dir * s * RUN, scale: s, jump: false })); }     // walk off an end
   const pts = samplePoints(sf);
   if (sf.allPlat) for (const px of pts) for (const [dir, s] of [[0, 0], [-1, 0.4], [1, 0.4]]) land(simulate(room, { x: px, y: y + 2, dir, vx0: dir * s * RUN, scale: s, jump: false, drop: true }));   // drop through
+  // ...and a LONG drop (open air for eight rows or more under the planks, like the trapdoor in Karluv Bridge) can be broken by a double jump and a dash at any moment of the fall
+  if (sf.planks.length && !sf.allPlat) for (const px of plankPoints(sf)) if (deepBelow(room, Math.floor(px / T), sf.ty)) for (const v of dropVariants(abil)) for (const dir of [-1, 1]) land(simulate(room, { x: px, y: y + 2, dir, vx0: dir * v.sc * RUN, scale: v.sc, jump: false, drop: true, dj: v.dj, dash: v.dash }));
   for (const px of pts) for (const dir of [-1, 1]) {
     const runUp = dir > 0 ? px - L : R - px;
     for (const v of variants(abil, runUp)) land(simulate(room, { x: px, y, dir, jump: true, ...v, vx0: dir * v.vx0 }));
@@ -113,7 +125,7 @@ export function reach(room, S, starts, abilities) {
 }
 
 // ------------------------------------------------------------------------------------------------ whole-room validation
-const GROUND_SPAWN = new Set(['skull', 'bell', 'litcandle', 'lever', 'zombie', 'skeleton', 'hound', 'ghoul', 'wizard', 'sorcerer', 'acolyte', 'archmage', 'swampspider', 'swampthing', 'villager', 'candle', 'statue', 'itemspawn', 'altar', 'waystone', 'boss_cinder', 'boss_vampire', 'boss_mirror', 'barrel', 'zealot', 'tablet', 'chest', 'boss_beast', 'boss_nightmare', 'boss_colossus', 'upgrade', 'shade']);
+const GROUND_SPAWN = new Set(['skull', 'bell', 'litcandle', 'lever', 'zombie', 'skeleton', 'hound', 'ghoul', 'wizard', 'sorcerer', 'acolyte', 'archmage', 'swampspider', 'swampthing', 'villager', 'candle', 'statue', 'itemspawn', 'altar', 'waystone', 'boss_cinder', 'boss_vampire', 'boss_mirror', 'boss_golem', 'barrel', 'zealot', 'tablet', 'chest', 'boss_beast', 'boss_nightmare', 'boss_colossus', 'upgrade', 'shade']);
 // everything spawned in the room must stand on open ground (or float in open air) - never inside a wall
 export function checkSpawns(def) {
   const room = roomOf(def), errs = [];

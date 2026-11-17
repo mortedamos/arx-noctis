@@ -265,7 +265,7 @@ The clock still keeps Prague's hour. The apostles still walk in their windows, a
 
 ; in room br
 [tablet tab19]
-Thirty saints stand watch on this bridge, and not one of them could stop the fire. The river takes what falls. Not everything that falls is lost, though: the toll-keepers kept a cellar under these stones, and I have always wondered about its trapdoor.
+Thirty saints stand watch on this bridge, and not one of them could stop the fire. The river takes what falls. Not everything that falls is lost, though: the toll-keepers kept a cellar under these stones, and I have always wondered about the planks in the deck.
 
 ; in room l1
 [tablet tab20]
@@ -483,6 +483,9 @@ THE DROWNED WARDEN STILL KEEPS THE FLOODED GATE. IT LIES DEEP IN THE CISTERN, BE
 
 [lockhint boss_u3]
 THE CRIMSON COUNT STILL WAITS IN THE CRYPTS: BURN THE BARRICADE IN THE BARRICADED GALLERY.
+
+[lockhint boss_og]
+THE BOILER GOLEM STILL KEEPS THE FIRES, IN THE LOFT AT THE TOP OF THE ORLOJ TOWER.
 
 [lockhint boss_kb]
 THE BRAZEN HIEROPHANT STILL WORKS THE CLOCKWORK DUNGEON. ITS ENTRANCE IS IN PRAGUE: A LOCKED DOOR HIGH IN SMOULDERING LANE LEADS UP THE ORLOJ TOWER. YOU NEED THE KEY OF TIN.
