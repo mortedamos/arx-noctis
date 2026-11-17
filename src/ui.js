@@ -297,7 +297,8 @@ function optionsMenu(onBack) {
 export function controlsScreen(ctx) {
   panel(ctx, 36, 14, W - 72, H - 28, 0.96); drawText(ctx, 'CONTROLS', W / 2, 22, { align: 'center', color: GOLD, scale: 2 });
   const rows = Input.touchOn ? [['MOVE', 'SLIDE A THUMB ROUND THE PAD'], ['JUMP', 'JUMP  (AGAIN IN THE AIR = DOUBLE)'], ['ATTACK', 'HIT  (TAP AGAIN TO CHAIN A COMBO)'], ['DUCK', 'HOLD THE PAD DOWN  (HIT WHILE DUCKING)'], ['DROP DOWN', 'PAD DOWN + JUMP (THIN PLATFORMS)'], ['DASH', 'DASH'], ['USE SELECTED', 'ITEM  (SPELL OR ITEM)'], ['SELECT', 'ARROWS BESIDE ITEM / TOP BOX'], ['USE / DOOR', 'PAD UP'], ['MAP', 'MAP'], ['PAUSE', 'II'], ['FULL SCREEN', 'THE SQUARE AT THE TOP']] : [['MOVE', 'ARROWS / WASD'], ['JUMP', 'SPACE / Z / K (AGAIN = DOUBLE)'], ['ATTACK', 'X / J  (TAP AGAIN TO CHAIN A COMBO)'], ['DUCK', 'HOLD DOWN / S  (ATTACK WHILE DUCKING)'], ['DROP DOWN', 'DOWN / S + JUMP (THIN PLATFORMS)'], ['DASH', 'SHIFT / L'], ['USE SELECTED', 'C / I  (SPELL OR ITEM)'], ['SELECT', 'Q / V  (THE BOX AT THE TOP)'], ['USE / DOOR', 'UP / W / E'], ['MAP', 'M / TAB'], ['PAUSE', 'ESC / P / ENTER'], ['MUTE', 'N']];
-  rows.forEach(([a, b], i) => { drawText(ctx, a, 50, 46 + i * 11, { color: PALE }); drawText(ctx, b, 148, 46 + i * 11, { color: '#b5a47a' }); });
+  const fit = Math.min(1, ...rows.map(([, t]) => (W - 44 - 148) / textWidth(t, 1)));          // (the words on the right are all set a little smaller if the longest of them would run out of the box)
+  rows.forEach(([a, b], i) => { drawText(ctx, a, 50, 46 + i * 11, { color: PALE }); drawText(ctx, b, 148, 46 + i * 11 + (1 - fit) * 1.5, { color: '#b5a47a', scale: fit }); });
   drawText(ctx, Input.touchOn ? 'TAP ANYWHERE TO RETURN' : 'GAMEPAD WORKS TOO.   ANY KEY TO RETURN', W / 2, H - 28, { align: 'center', color: DIM });
 }
 
