@@ -1,115 +1,308 @@
 # Credits
 
-## Art - Luis Zuno ("Ansimuz"), CC0 / public domain
+Everything in ARX NOCTIS that was not made for it: who made it, the licence it came under, and where the game uses it.
 
-Downloaded from OpenGameArt.org. All three packs are released under CC0 ("public domain and free to use for personal or
-commercial projects; credit appreciated"). The original license texts are in `assets/credits/`.
+* **In the game.** The title screen's CREDITS option shows [`credits.txt`](credits.txt), the short version. This file is the full record.
+* **Licence texts** as supplied by the authors are in [`assets/credits/`](assets/credits/).
+* **Source packs.** The art packs as downloaded are kept in `assets/sprites/source/`, `assets/source/` and `assets/archive/`. They are **not published** (several licences forbid passing a pack on); the game ships only the pieces cut out of them into `assets/env/` and `assets/sprites/`.
+* **Links** were last checked on 2026-11-17. All were reachable except the Pixabay pages, which refuse automated requests.
+* Licences are given as the authors' own pages and files state them. Where a page and a file disagree, or nothing is stated, the item is listed under [Open items before publishing](#open-items-before-publishing).
 
-| Pack | Used for | Link |
+## Contents
+
+[Licences at a glance](#licences-at-a-glance) · [Open items before publishing](#open-items-before-publishing) · [Attribution required](#attribution-required) · [Art](#art) · [Fonts](#fonts) · [Sound effects](#sound-effects) · [Music](#music) · [Code and libraries](#code-and-libraries)
+
+## Licences at a glance
+
+| Licence | Used for | What it asks of the game |
 |---|---|---|
-| Gothicvania Patreon's Collection | ghost, fire skull, hell hound, wolf, Hell Beast, Nightmare, Demon, the Gothic Castle and Old Dark Castle tilesets/backgrounds | https://opengameart.org/content/gothicvania-patreons-collection |
-| GothicVania Church Pack | burning ghoul, dark wizard, fireball, angel, enemy-death effect, chapel tileset/backgrounds/column | https://opengameart.org/content/gothicvania-church-pack |
-| GothicVania Cemetery Pack | skeleton, shambling ghoul (zombie), lantern wraith, graveyard tileset, sky, mountains, trees and gravestones | https://opengameart.org/node/85024 |
+| CC0 / public domain | most of the art (Ansimuz, ETTiNGRiNDER, FreeGameSprites, Szadi art) and most sound effects | nothing; credit is given anyway |
+| CC BY 4.0, CC BY 3.0, OGA-BY 3.0 | three art packs and six sounds | credit the creator, link the licence, say what was changed (see [Attribution required](#attribution-required)) |
+| Free for commercial use, on the author's own terms | Anokolisa, Eddie's Workshop, gamecrafterik, Worlds Without End, heosphorus; the Pixabay sounds | follow each author's note (see [Free for commercial use](#free-for-commercial-use)) |
+| SIL Open Font License 1.1 | Pirata One, Almendra, Elementary Gothic Bookhand | keep the licence text with the font (done) |
+| MIT | three.js | keep the licence notice (`lib/three/LICENSE`, done) |
+| **Not confirmed** | some art, two fonts, one sound, the music | see [Open items before publishing](#open-items-before-publishing) |
 
-More free art by the author: https://www.patreon.com/ansimuz  and  http://www.pixelgameart.org
+## Open items before publishing
 
-Some sprites are recolored at load time (bone-white skeleton, green zombie, frost hound, etc.).
+These are the things to settle before the game goes on a store or is sold. Each is also marked where it appears below.
 
-## The hero - Gothic Hero by Ansimuz
+| # | Item | The problem | Used for | What to do |
+|---|---|---|---|---|
+| 1 | **Magic Books**, CaptainSkolot | The page's licence field says CC BY-NC-SA 4.0 (non-commercial, share-alike), but its description says free and commercial projects are welcome and credit is appreciated. The page also says the art was AI-assisted. | the flying books of the Library of Ages, and the pages they show as they cast | Get the author's confirmation in writing, or replace the pack. |
+| 2 | **The Sidescroller's Dungeon** tileset, Icko | The itch.io page lists CC BY-ND 4.0: credit required, **no derivatives**. The game cuts tiles out of the sheet and draws some at half size. | teal pillars, banners, urns, crates, stone arch, wooden door, animated torches | Ask Icko whether use in a game, cut and scaled, is allowed, or replace the tiles. Credit is given meanwhile. |
+| 3 | **xxg_4_free** vampire sheet, xxg | No licence file came with the download, and the author's page was not recorded. | the Crimson Count | Find the author's page and terms, or replace the sheet. |
+| 4 | **Blackletter ExtraBold** font | The font says "All rights reserved" (c) 2001 Typographer Mediengestaltung; no licence came with it. | the game title | Get permission to ship it, or replace it with an OFL face. |
+| 5 | **Eroded Motta** font, lirkiv AC | The font names its author but carries no licence. | gravestones and tablets | Get permission to ship it, or replace it. |
+| 6 | **The fifteen painted portraits** | Their origin, and the right to publish them, are not recorded. | the framed pictures on the castle walls and the haunted portraits | Record where they came from and on what terms. |
+| 7 | **Prague Orloj clock picture** | The photographer is unknown and there is no licence file. The project owner says it is free to use. | the Orloj Tower dial | Find the photographer, or use your own photograph. |
+| 8 | **Graveyard 400 Assets**, Worlds Without End | The licence forbids passing on the original files or re-packaging them. Ten PNGs cut from the set ship in this public repository. | two headstones, four flowers, a wreath, three iron fences, eight statues | Ask the author that shipping those ten pieces inside a game is fine. |
+| 9 | **`record_scratch.mp3`** | Where it came from was not recorded. | the record scratch in the disco room | Record the source, or replace it. |
+| 10 | **The music** | Made with Suno. Whether the tracks may be used commercially depends on the plan they were generated on. | all the music | Keep the plan and Suno's terms at the time on file. |
 
-The cloaked stranger is the "Gothic Hero" from the Gothicvania Patreon's Collection above (CC0). The sword-enchantment arcs are recolors of its slash frames made at load time, and so is the Reflection (the boss in the Mirror Room): the same sheets with all 19 colours swapped for silver and violet.
+## Attribution required
 
-An alternative hero, *Dark Hooded Warrior* by oliveiramiro2, is archived in `assets/archive/hooded-warrior/` and is not loaded.
+CC BY and OGA-BY ask for the creator's name, the title, a link to the source and the licence, and a note of any changes. These appear on the game's credits screen and here.
 
-### Archived: Dark Hooded Warrior - oliveiramiro2
-
-"Dark Hooded Warrior - pixel art player character" (free to use), https://oliveiramiro2.itch.io/dark-hooded-warrior-pixel-art-player-character-free-2d-sprite
-Not used right now. The pack ships without a formal license file; see `assets/archive/hooded-warrior/license-dark-hooded-warrior.txt`
-(check the author's page again before any commercial release if you ever put it back).
-
-## More art added later
-
-| Pack | Author | License | Used for |
+| Work | Creator | Licence | What was changed |
 |---|---|---|---|
-| [Gothicvania Town](https://opengameart.org/content/gothicvania-town) | Luis Zuno (Ansimuz) | CC0 | the Burning Village: houses, props, dusk sky and skyline, and the four villagers |
-| [Gotthicvania Swamp](https://opengameart.org/content/gotthicvania-swamp) | Luis Zuno (Ansimuz) | CC0 | the Weeping Swamp zone: ground, backdrop layers, giant trees, ferns; swamp spider and swamp thing |
-| [Mountain at Dusk Background](https://opengameart.org/content/mountain-at-dusk-background) | Luis Zuno (Ansimuz) | CC0 | the mountain ranges behind the burning village |
-| [Haunted Forest Trees](https://opengameart.org/content/haunted-forest-trees) | ETTiNGRiNDER | CC0 | the gnarled dead trees in the graveyard rooms |
-| [Castlevania-esque Tilemap (Stone and Bricks)](https://opengameart.org/content/castlevania-esque-tilemap-stone-and-bricks) | Chloe Wolfe | **CC-BY 4.0** (attribution required) | the village's cobbled street and brickwork |
-| [Bosses and Monsters Spritesheets (Ars Notoria)](https://opengameart.org/content/bosses-and-monsters-spritesheets-ars-notoria) | Balmer, with Redshrike | **CC-BY 3.0** (attribution required) | the acolyte (disciple), archmage (mage-2), brass sorcerer (mage-1), and the three bosses: the Cinder Warden (gnu), the Brazen Hierophant (mage-1, drawn larger) and the Mire Mother (Andromalius + tentacles) |
-| [Super Dead Gunner: Cyber-tooth (enemy)](https://opengameart.org/content/super-dead-gunner-cyber-tooth-enemy) | Emcee Flesher | **OGA-BY 3.0** (or CC0; attribution required under OGA-BY) | the bone / frost / ember wyrms (the sheet is sliced and re-assembled in code) |
+| [Castlevania-esque Tilemap (Stone and Bricks)](https://opengameart.org/content/castlevania-esque-tilemap-stone-and-bricks) | Chloe Wolfe | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | cropped and rearranged |
+| [Bosses and Monsters Spritesheets (Ars Notoria)](https://opengameart.org/content/bosses-and-monsters-spritesheets-ars-notoria) | Balmer, with Redshrike | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) | cropped and rearranged; recoloured while loading |
+| [Super Dead Gunner: Cyber-tooth (enemy)](https://opengameart.org/content/super-dead-gunner-cyber-tooth-enemy) | Emcee Flesher | [OGA-BY 3.0](https://opengameart.org/content/oga-by-30-faq) | sliced and re-assembled in code |
+| [The Sidescroller's Dungeon Tileset \[32x32\]](https://inr-1ko.itch.io/the-sidescrollers-dungeon) | Icko | [CC BY-ND 4.0](https://creativecommons.org/licenses/by-nd/4.0/) | cut out of the sheet, some drawn at half size (see open item 2) |
+| [Animated Gears - Pixel Art Steampunk Machinery](https://heosphorus.itch.io/animated-gears) | heosphorus | free to use with credit (confirmed by the project owner) | five of the ten animations packed into strips |
 
-### The newest packs
+Six sound effects are by Free Sounds Library ([freesoundslibrary.com](https://www.freesoundslibrary.com/)), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Each was trimmed, level-matched and re-encoded as a mono mp3.
 
-| Pack | Author | License | Used for |
+| File | Title |
+|---|---|
+| `shatter_2.mp3` | [Glass Shattering Sound Effect](https://www.freesoundslibrary.com/glass-shattering-sound-effect/) |
+| `levelup.mp3` | [Ding Level Up](https://www.freesoundslibrary.com/ding-level-up-sound-effect/) |
+| `gameover.mp3` | [Game Over Piano Sound Effect](https://www.freesoundslibrary.com/game-over-piano-sound-effect/) |
+| `kill_rot_4.mp3` | [Zombie Noise](https://www.freesoundslibrary.com/zombie-noise/) |
+| `boss_nightmare.mp3` | [Horse Whinny Sound Effect](https://www.freesoundslibrary.com/horse-whinny-sound-effect/) |
+| `boss_nightmare_2.mp3` | [Horse Neighing Sound Effect](https://www.freesoundslibrary.com/horse-neighing-sound-effect/) |
+
+## Art
+
+Some sprites are recoloured while the game loads (the bone-white skeleton, the green zombie, the frost hound and others).
+
+### Luis Zuno (Ansimuz), CC0
+
+Downloaded from OpenGameArt.org. Each page lists the pack as CC0; the authors' own wording is "public domain and free to use on whatever you want, personal or commercial. Credit is not required but appreciated." The licence texts are in `assets/credits/`. (The Church and Cemetery licence texts also mention demo music by Pascal Belisle; that music is not used in the game.)
+
+| Pack | Used for |
+|---|---|
+| [Gothicvania Patreon's Collection](https://opengameart.org/content/gothicvania-patreons-collection) | the hero (the "Gothic Hero"); the ghost, fire skull, hell hound, wolf, Hell Beast, Nightmare and Demon; the Gothic Castle and Old Dark Castle tilesets and backgrounds |
+| [GothicVania Church Pack](https://opengameart.org/content/gothicvania-church-pack) | burning ghoul, dark wizard, fireball, angel, enemy-death effect; the chapel tileset, backgrounds and column |
+| [GothicVania Cemetery Pack](https://opengameart.org/content/gothicvania-cemetery-pack) | skeleton, shambling ghoul (zombie), lantern wraith; the graveyard tileset, sky, mountains, trees and gravestones |
+| [Gothicvania Town](https://opengameart.org/content/gothicvania-town) | the Burning Village: houses, props, dusk sky and skyline, and the four villagers |
+| [Gotthicvania Swamp](https://opengameart.org/content/gotthicvania-swamp) (spelled so on the page) | the Weeping Swamp: ground, backdrop layers, giant trees, ferns; the swamp spider and swamp thing |
+| [Mountain at Dusk Background](https://opengameart.org/content/mountain-at-dusk-background) | the mountain ranges behind the burning village |
+| [Gothicvania Bridge Expansion Pack 1](https://opengameart.org/content/gothicvania-bridge-expansion-pack-1) | only `Props/castle.png`: the gate of Arx Noctis (dark wall, glowing slit windows, round window, crimson banner), assembled at load time by `src/keepgate.js` |
+
+The cloaked Stranger is the Gothic Hero from the Patreon's Collection. The sword-enchantment arcs are recolours of its slash frames made at load time. So is the Reflection (the boss in the Mirror Room): the same sheets with all 19 colours swapped for silver and violet.
+
+More free art by the author: [Patreon](https://www.patreon.com/cw/ansimuz) and [pixelgameart.org](https://www.pixelgameart.org/).
+
+### Other CC0
+
+| Pack | Author | Used for |
+|---|---|---|
+| [Haunted Forest Trees](https://opengameart.org/content/haunted-forest-trees) | ETTiNGRiNDER | the gnarled dead trees in the graveyard rooms |
+| [Candelabra](https://freegamesprites.com/en/assets/candelabra) and [Candelabra Stand](https://freegamesprites.com/en/assets/candelabra-stand) | FreeGameSprites.com | the room candelabras (`assets/env/cdl_a.png`, `cdl_b.png`), trimmed and shrunk, with the painted flames removed (the flames are drawn by three.js) |
+| [Sign Post](https://freegamesprites.com/en/assets/sign-post) | FreeGameSprites.com | the signposts at the crossroads and the doors (`assets/env/signpost.png`), trimmed and shrunk |
+
+FreeGameSprites lists CC0 on each page.
+
+### Free for commercial use
+
+On the authors' own terms, as stated on their pages or in their downloads.
+
+| Pack | Author | Terms | Used for |
 |---|---|---|---|
-| ["Final" graveyard set](https://anokolisa.itch.io/) | Anokolisa | free for commercial use, credit optional (shapes / colours changed = no credit owed) | the moonlit graveyard backdrop: moon and clouds, the mausoleum + chapel silhouette, ivy and headstone foliage (drawn at half size) |
-| Steampunk Pixel Art Mega Pack v2.1.1 (gamecrafterik, itch.io) - seven 32x32 props: boiler, steam vent, valve, clock, lamp post, furnace, tesla tower | gamecrafterik | its README says "royalty-free commercial licence" and the pack is described as AI-assisted - fine to ship, but keep the note; only the props in `assets/env/sp_*.png` are used (the rest sits in `assets/sprites/source/`, which is not published) |
-| [Graveyard 400 Assets](https://worldswithoutend.itch.io/graveyard-2d-game-assets) (worldswithoutend, itch.io) - ten pieces: two headstones, four flowers, a wreath, three iron fences and eight statues (`assets/env/gy_*.png`, cut from the 128x128 set; the stones your lady speaks through, the flowers at their feet and among the graves) | worldswithoutend | its licence PDF: personal and commercial use in games; **the original files may not be redistributed or re-packaged**, individually or in another asset pack - so the zip stays in `assets/sprites/source/` (gitignored) and only these ten pieces ship. Because this repository is public, confirm with the author that shipping those ten PNGs inside a game's source is fine |
-| the Prague astronomical clock picture (`assets/sprites/source/orloj.png`, supplied by the project owner; pixelated into `assets/env/orloj.png` by `tools/pixelate-orloj.ps1`) | unknown (a photograph of the Prague Orloj) | **free to use** - confirmed by the project owner (no licence file; the original author is not recorded) |
-| the Prague Orloj tower photograph (`assets/sprites/source/orloj_tower.png`, supplied by the project owner; only the calendar dial is cut out of it, pixelated into `assets/env/orloj_calendar.png` by `tools/pixelate-orloj-calendar.ps1`; the rest of the street tower is drawn in code, `src/orlojtower.js`) | the project owner | **the owner's own photograph** - free to use |
-| [Animated Gears - Pixel Art Steampunk Machinery](https://heosphorus.itch.io/animated-gears) (heosphorus, itch.io; free) - five of its ten gear animations, packed into strips `assets/env/gear_*.png` by `tools/pack-gears.ps1`: faded, slowly turning accents behind the generated gears of the Orloj Tower and the Clockwork Dungeon | heosphorus | free to use **with attribution** (confirmed by the project owner); the original zip stays in `assets/sprites/source/` |
-| [Gothicvania Bridge Expansion Pack 1](https://opengameart.org/content/gothicvania-bridge-expansion-pack-1) (Luis Zuno / ansimuz, OpenGameArt; only `Props/castle.png`) | CC0 / public domain (credit optional, given here) | the gate of Arx Noctis: the dark castle wall, glowing slit windows, round window and crimson banner, assembled at load time by `src/keepgate.js` (`assets/env/ba_castle.png`; the whole pack is kept in `assets/source/bridge-expansion-1/`) |
-| [Candelabra](https://freegamesprites.com/en/assets/candelabra) and [Candelabra Stand](https://freegamesprites.com/en/assets/candelabra-stand) (FreeGameSprites.com, 256x256) | CC0 (per their pages) | the room candelabras `assets/env/cdl_a.png` / `cdl_b.png`: trimmed, shrunk and with their painted flames removed by `tools/pixelate-candelabra.ps1` (the flames are drawn by three.js); originals in `assets/source/freegamesprites/` |
-| [Sign Post](https://freegamesprites.com/en/assets/sign-post) (FreeGameSprites.com, 256x256) | CC0 (per its page) | the wooden signposts at the crossroads and the doors, `assets/env/signpost.png` (trimmed and shrunk by `tools/pixelate-sprite.ps1`; original in `assets/source/freegamesprites/`) |
-| Metroidvania Kit (in `assets/sprites/source/`) | CC0 (per its page) | not used yet |
-| xxg_4_free (vampire character sheet) | xxg | **no licence file came with the download - confirm the terms with the author before a public release** | the Crimson Count (the boss of the Crypts's crypt); the painted sheet is cut into strips and scaled down by the build step |
-| [Old Golem](https://eddies-workshop.itch.io/old-golem) | Eddie's Workshop | free for commercial and non-commercial use, credit appreciated (see `assets/credits/license-old-golem.txt`) | the **Boiler Golem** (the steam it drew at the mouth and its explosion were cut out and are three.js effects now) |
-| Pixel Platformer Set 1 | Szadi art | public domain - may be edited, but the pack may not be sold | the sickle-fighter **zealot** and the sparkling diamond |
-| The Sidescroller's Dungeon - Tileset [32x32] | (see the itch.io page of the same name) | **no license file came with the download - check the author's page before any public / commercial release** | the teal pillars, banners, urns, crates, stone arch and wooden door, and the animated torches |
+| [Hero's Journey: Moon Graveyard](https://anokolisa.itch.io/moon-graveyard) (the "Final" set) | Anokolisa | "completely free for commercial use"; credit optional, and none owed when shapes or colours are changed (`assets/credits/license-anokolisa-final-note.txt`) | the moonlit graveyard backdrop: moon and clouds, the mausoleum and chapel silhouette, ivy and headstone foliage (drawn at half size) |
+| [Old Golem](https://eddies-workshop.itch.io/old-golem) | Eddie's Workshop | "can be used freely and commercially... credits are not required but I would appreciate it" (`assets/credits/license-old-golem.txt`) | the **Boiler Golem**; the steam at its mouth and its explosion were cut out and are three.js effects now |
+| Steampunk Pixel Art Mega Pack v2.1.1 (itch.io; link not recorded) | gamecrafterik | its README says "royalty-free commercial licence"; the pack is described as AI-assisted | seven 32x32 props (boiler, steam vent, valve, clock, lamp post, furnace, tesla tower) in `assets/env/sp_*.png` |
+| [Pixel Platformer Set 1](https://szadiart.itch.io/pixel-platformer-castle) (titled "Pixel Platformer Castle" on itch.io) | Szadi art | public domain, personal or commercial; may be edited, but the pack may not be sold (`assets/credits/license-szadi-pixel-platformer.txt`) | the sickle-fighting **zealot** and the sparkling diamond |
+| [Graveyard 400 Assets](https://worldswithoutend.itch.io/graveyard-2d-game-assets) | Worlds Without End | personal and commercial use in games; **the original files may not be redistributed or re-packaged** (see open item 8) | ten pieces cut from the 128x128 set (`assets/env/gy_*.png`): two headstones, four flowers, a wreath, three iron fences and eight statues, which are the stones the Lady speaks through |
+| [Animated Gears](https://heosphorus.itch.io/animated-gears) | heosphorus | free to use **with credit** (see [Attribution required](#attribution-required)) | five of its ten gear animations (`assets/env/gear_*.png`), faded and slowly turning behind the generated gears of the Orloj Tower and the Clockwork Dungeon |
 
-The packs as downloaded are kept in `assets/sprites/source/` for reference; the game only uses the pieces it cuts out of them into `assets/env/` and `assets/sprites/`.
-If you publish the game, ship the game's own files and **do not publish the `source/` folders** (several of these packs forbid redistributing them as packs).
+### Not confirmed
 
-"Magic Book" pack (32 grimoires) by CaptainSkolot, https://captainskolot.itch.io/magic-books-pixelart-pixel-art-sprite-grimoire-pack-for-rpg-fantasy - the flying books of the Library of Ages (`assets/sprites/magicbooks.png`, and the open pages they show as they cast, `assets/sprites/bookpages.png`, cut from the same author's "Magic Books interface" pack, the 32 covers laid in one strip; drawn translucent in code; the pack as downloaded is kept in `assets/sprites/source/`). **Licence needs confirming before a commercial release:** the page's licence field says CC BY-NC-SA 4.0 (non-commercial, share-alike), while its description says the pack may be used in free and commercial projects and that credit is appreciated but not required. The page also notes the art was AI-assisted (rough concepts from a generative tool, refined by hand). Ask the author to confirm in writing.
+See [Open items before publishing](#open-items-before-publishing).
 
-Attribution: "Castlevania-esque Tilemap" by Chloe Wolfe, CC-BY 4.0 (https://creativecommons.org/licenses/by/4.0/); "Bosses and Monsters
-Spritesheets" by Balmer, with Redshrike, CC-BY 3.0 (https://creativecommons.org/licenses/by/3.0/); "Cyber-tooth" by Emcee Flesher, OGA-BY 3.0.
-The wyrm sheet, the Ars Notoria sheets and the tilemap were cropped / rearranged for use in the game; the only other change is load-time color shifts.
+| Pack | Author | Licence | Used for |
+|---|---|---|---|
+| [The Sidescroller's Dungeon Tileset \[32x32\]](https://inr-1ko.itch.io/the-sidescrollers-dungeon) | Icko | CC BY-ND 4.0 on the page (item 2) | pillars, banners, urns, crates, the stone arch, the wooden door and the animated torches |
+| [Magic Book pack](https://captainskolot.itch.io/magic-books-pixelart-pixel-art-sprite-grimoire-pack-for-rpg-fantasy) (32 grimoires) | CaptainSkolot | CC BY-NC-SA 4.0 in the licence field, "free and commercial projects" in the text (item 1) | the flying books of the Library of Ages (`assets/sprites/magicbooks.png`), and the open pages they show as they cast (`assets/sprites/bookpages.png`, cut from the same author's "Magic Books interface" pack and drawn translucent) |
+| xxg_4_free (vampire sheet; link not recorded) | xxg | none came with the download (item 3) | the Crimson Count, the boss of the Crimson Crypt; the painted sheet is cut into strips and scaled down by the build step |
+| Prague astronomical clock picture (`assets/sprites/source/orloj.png`) | unknown (a photograph) | "free to use" per the project owner; no licence file (item 7) | the Orloj Tower dial, pixelated into `assets/env/orloj.png` by `tools/pixelate-orloj.ps1` |
+| The fifteen painted portraits (five expressions each) | supplied by the game's author | origin not recorded (item 6) | framed pictures on the castle walls and the haunted portraits |
 
-## Portraits
+The full-size portraits are not shipped. `tools/pixelate-portraits.ps1` shrinks them to 26x33 pixels, gives each person one 32-colour palette and packs them into `assets/portraits/pixel/portraits.png`.
 
-| What | Source | Licence |
-|---|---|---|
-| The fifteen painted portraits (five expressions each) in `assets/portraits/` | supplied by the game's author | **not recorded here - confirm the origin and that they may be published before a public release** |
+### Made for this project
 
-The game does not ship the full-size pictures: `tools/pixelate-portraits.ps1` shrinks them to 26x33 pixels, gives each person one 32-colour palette, and packs them into `assets/portraits/pixel/portraits.png`.
+* **The Orloj tower photograph** (`assets/sprites/source/orloj_tower.png`) is the project owner's own photograph. Only the calendar dial is cut out of it (pixelated into `assets/env/orloj_calendar.png` by `tools/pixelate-orloj-calendar.ps1`); the rest of the street tower is drawn in code (`src/orlojtower.js`).
+* **Drawn in code**, in `src/procart.js`: the bat, the item icons, the props (candelabra, torch, bookcase, barred window, brazier, altar, tablet, chest, pedestal, spikes, breakable, burnable, crystal and seal tiles), the projectiles, and some creatures.
 
-## Fonts - SIL Open Font License 1.1
+### Kept but not used
 
-| Font | Used for | Source |
-|---|---|---|
-| **Pirata One** (Rodrigo Fuenzalida, Nicolas Massi) | the logo, banners, menus, HUD and floating text | https://fonts.google.com/specimen/Pirata+One |
-| **Elementary Gothic Bookhand** (`Elementary_Gothic_Bookhand.ttf`, (c) 2012 Bill Roach, SIL OFL 1.1; licence in `assets/credits/`) | the Stranger's own voice in dialogue and boss exchanges (in mixed case) | supplied by the project owner |
-| **Almendra Bold** (Ana Sanfelippo) | dialogue, boss exchanges and descriptive text | https://fonts.google.com/specimen/Almendra |
+Neither is shipped (`assets/archive/` and `assets/sprites/source/` are not published).
 
-The font files are in `assets/fonts/`; the licenses are in `assets/credits/license-pirata-one-OFL.txt` and `license-almendra-OFL.txt`.
+* **Dark Hooded Warrior**, oliveiramiro2: [itch.io page](https://oliveiramiro2.itch.io/dark-hooded-warrior-pixel-art-player-character-free-2d-sprite). Described as free to use, but the pack came without a formal licence (`assets/archive/hooded-warrior/license-dark-hooded-warrior.txt`). Check the author's page again before any commercial release if it is ever put back.
+* **Metroidvania Kit**, CC0 per its page, in `assets/sprites/source/`.
 
-| Font | Used for | Licence |
-|---|---|---|
-| **Blackletter ExtraBold** (`Blackletter-ExtraBold.otf`, rebuilt from the original `BLACEB__.TTF` so browsers accept it, (c) 2001 Typographer Mediengestaltung) | the game title on the title screen | **no licence file came with it** - the font file says "All rights reserved"; confirm that it may be redistributed before a public release |
-| **Livingstone** (`livingstone/Livingst.ttf`, PrimaFont "American Collection"; the folder with its `LIVINGST.TXT` is shipped unchanged) | everyone else who speaks: villagers, the Keeper and the bosses (it only has one case, so the text shows in lowercase letterforms) | free PrimaFont font ("This is a free PrimaFont font from the American Collection"); the notice allows passing the folder on unchanged with no file missing; the project owner confirmed it is fine for commercial use |
-| **Eroded Motta** (`erodedmotta.regular.ttf`, (c) 2026 lirkiv AC; supplied by the project owner) | her words: every gravestone and tablet (in mixed case) | **no licence file came with it** - the font file names its author but no licence; confirm that it may be redistributed before a public release |
+## Fonts
 
-## Original art made for this project
+The font files are in `assets/fonts/`.
 
-The bat, item icons, props (candelabra, torch, bookcase, barred window,
-brazier, altar, tablet, chest, pedestal, spikes, breakable/burnable/crystal/seal tiles) and projectiles are drawn
-in code - see `src/procart.js`.
+| Font | Author | Licence | Used for |
+|---|---|---|---|
+| [Pirata One](https://fonts.google.com/specimen/Pirata+One) | Rodrigo Fuenzalida, Nicolas Massi | [SIL OFL 1.1](https://openfontlicense.org/) (`assets/credits/license-pirata-one-OFL.txt`) | the logo, banners, menus, HUD and floating text |
+| [Almendra Bold](https://fonts.google.com/specimen/Almendra) | Ana Sanfelippo | SIL OFL 1.1 (`assets/credits/license-almendra-OFL.txt`) | dialogue, boss exchanges and descriptive text |
+| Elementary Gothic Bookhand (link not recorded) | Bill Roach, (c) 2012 | SIL OFL 1.1 (`assets/credits/license-elementary-gothic-bookhand-OFL.txt`) | the Stranger's own voice in dialogue and boss exchanges |
+| Livingstone | PrimaFont, "American Collection" | free font; the folder may be passed on as often as wanted if nothing in it is changed and no file is missing, which is how it ships (`assets/fonts/livingstone/LIVINGST.TXT`); the project owner confirmed it is fine for commercial use | everyone else who speaks: villagers, the Keeper and the bosses |
+| **Blackletter ExtraBold** | Typographer Mediengestaltung, (c) 2001 | **all rights reserved, no licence file** (open item 4) | the game title |
+| **Eroded Motta** | lirkiv AC, (c) 2026 | **no licence file** (open item 5) | the Lady's words: every gravestone and tablet |
 
-## Code and libraries
+Blackletter ExtraBold was rebuilt from the original `BLACEB__.TTF` so that browsers accept it.
 
-* **three.js** r187 - MIT license, https://threejs.org (`lib/three/`)
-* Game code, shaders and level data: written for this project. Most sound effects are synthesized in code; the recorded ones are listed under Sound effects.
-* Pixel font: a 5x7 bitmap font defined in `src/font.js`.
+## Sound effects
 
-## Sound effects (recorded)
+Only the recorded sounds are listed here; every other sound is synthesized in code. Each recording was trimmed, level-matched and re-encoded as a mono 96 kbps mp3. Pixabay sounds are under the [Pixabay Content License](https://pixabay.com/service/license-summary/): free for commercial use, no credit required, not to be resold or passed on as a sound pack. The table is sorted by file name.
 
-* `assets/sfx/click.mp3`, `click_2.mp3` - "51 UI sound effects (buttons, switches and clicks)" (click4, click5) by gopherapps - CC0, https://opengameart.org/content/51-ui-sound-effects-buttons-switches-and-clicks
-* `assets/sfx/select.mp3` - "Game UI Confirm Selection Sound #2" by Vadim_Makes_Sound - Pixabay Content License (free for commercial use, no attribution required), https://pixabay.com/sound-effects/technology-game-ui-confirm-selection-sound-2-547852/
+<!-- sfx-table:start -->
+127 recordings: 103 CC0, 18 Pixabay Content License, 6 CC BY 4.0.
 
-(Each is trimmed, level-matched and re-encoded as a mono 96 kbps mp3.)
+| File | Sound | By | Source | Licence |
+|---|---|---|---|---|
+| `ability.mp3` | 36 Bar Chimes Sweep Ascend 01 | loganzsound | [Freesound](https://freesound.org/people/loganzsound/sounds/874685/) | CC0 |
+| `back.mp3` | Cancel or No Button Sound | el_boss | [Freesound](https://freesound.org/people/el_boss/sounds/788602/) | CC0 |
+| `block.mp3` | Sword_Clash (7).wav | JohnBuhr | [Freesound](https://freesound.org/people/JohnBuhr/sounds/326868/) | CC0 |
+| `bone.mp3` | Bones Crack 2.wav | Kane53126 | [Freesound](https://freesound.org/people/Kane53126/sounds/257927/) | CC0 |
+| `bone_2.mp3` | Bone Cracking.wav | bewareofkites20 | [Freesound](https://freesound.org/people/bewareofkites20/sounds/147993/) | CC0 |
+| `bone_3.mp3` | Bone Crack | cb9382 | [Freesound](https://freesound.org/people/cb9382/sounds/872378/) | CC0 |
+| `boom.mp3` | Boom Explosion | BennettFilmTeacher | [Freesound](https://freesound.org/people/BennettFilmTeacher/sounds/523783/) | CC0 |
+| `boss_angel.mp3` | Cello harmonics glissando | NikoletB | [Freesound](https://freesound.org/people/NikoletB/sounds/846669/) | CC0 |
+| `boss_angel_die.mp3` | angels02.ogg | pennyhatemachine | [Freesound](https://freesound.org/people/pennyhatemachine/sounds/107009/) | CC0 |
+| `boss_beast.mp3` | Deep Monster Growl | uagadugu | [Freesound](https://freesound.org/people/uagadugu/sounds/222523/) | CC0 |
+| `boss_beast_2.mp3` | Demon_Ghost Growling 1.wav | Osiruswaltz | [Freesound](https://freesound.org/people/Osiruswaltz/sounds/362672/) | CC0 |
+| `boss_beast_die.mp3` | Dragons Dying Breath | MickBoere | [Freesound](https://freesound.org/people/MickBoere/sounds/276577/) | CC0 |
+| `boss_librarian.mp3` | Creepy Whispering | RaspberryTickle | [Freesound](https://freesound.org/people/RaspberryTickle/sounds/234044/) | CC0 |
+| `boss_librarian_2.mp3` | LongWhisper | EvaMusik | [Freesound](https://freesound.org/people/EvaMusik/sounds/832739/) | CC0 |
+| `boss_librarian_die.mp3` | Release me - Whispering ROUGH Latin | JoelMcDaniel | [Freesound](https://freesound.org/people/JoelMcDaniel/sounds/851763/) | CC0 |
+| `boss_nightmare.mp3` | Horse Whinny Sound Effect | Free Sounds Library | [freesoundslibrary.com](https://www.freesoundslibrary.com/horse-whinny-sound-effect/) | CC BY 4.0 |
+| `boss_nightmare_2.mp3` | Horse Neighing Sound Effect | Free Sounds Library | [freesoundslibrary.com](https://www.freesoundslibrary.com/horse-neighing-sound-effect/) | CC BY 4.0 |
+| `boss_nightmare_3.mp3` | Horse steps on grass | Luisa_Sanchez | [Freesound](https://freesound.org/people/Luisa_Sanchez/sounds/813383/) | CC0 |
+| `boss_nightmare_die.mp3` | Horse_neighing.wav | Lydmakeren | [Freesound](https://freesound.org/people/Lydmakeren/sounds/510903/) | CC0 |
+| `boss_rimewyrm.mp3` | Dragon roar 1.wav | AMWD_Mortsel-Edegem-Kontich | [Freesound](https://freesound.org/people/AMWD_Mortsel-Edegem-Kontich/sounds/651817/) | CC0 |
+| `boss_rimewyrm_2.mp3` | DRAGON_ROAR.wav | JoelAudio | [Freesound](https://freesound.org/people/JoelAudio/sounds/85568/) | CC0 |
+| `boss_rimewyrm_die.mp3` | Dragons Dying Breath | MickBoere | [Freesound](https://freesound.org/people/MickBoere/sounds/276577/) | CC0 |
+| `boss_shadow.mp3` | Evil Presence 01.wav | LilMati | [Freesound](https://freesound.org/people/LilMati/sounds/445719/) | CC0 |
+| `boss_shadow_2.mp3` | Deep Evil Laugh | DRFX | [Freesound](https://freesound.org/people/DRFX/sounds/350679/) | CC0 |
+| `boss_shadow_3.mp3` | demon voice / dl_demon_fight_grunt_3.wav | Will Papeteiro | [OpenGameArt](https://opengameart.org/content/demon-voice) | CC0 |
+| `boss_shadow_die.mp3` | Cthulhu | qubodup | [Freesound](https://freesound.org/people/qubodup/sounds/827668/) | CC0 |
+| `break.mp3` | Barrel Break 4.wav | kevinkace | [Freesound](https://freesound.org/people/kevinkace/sounds/66772/) | CC0 |
+| `break_2.mp3` | Smash.ogg | egomassive | [Freesound](https://freesound.org/people/egomassive/sounds/536777/) | CC0 |
+| `break_3.mp3` | snd_box_smash.wav | gristi | [Freesound](https://freesound.org/people/gristi/sounds/562189/) | CC0 |
+| `cast.mp3` | Magic Spell | qubodup | [Freesound](https://freesound.org/people/qubodup/sounds/442774/) | CC0 |
+| `click.mp3` | 51 UI sound effects (buttons, switches and clicks) / click4.wav | gopherapps | [OpenGameArt](https://opengameart.org/content/51-ui-sound-effects-buttons-switches-and-clicks) | CC0 |
+| `click_2.mp3` | 51 UI sound effects (buttons, switches and clicks) / click5.wav | gopherapps | [OpenGameArt](https://opengameart.org/content/51-ui-sound-effects-buttons-switches-and-clicks) | CC0 |
+| `coin.mp3` | Coin Dropped | kermite607 | [Freesound](https://freesound.org/people/kermite607/sounds/368203/) | CC0 |
+| `coin_2.mp3` | 50 RPG sound effects / handleCoins.ogg | LunaVR | [OpenGameArt](https://opengameart.org/content/50-rpg-sound-effects) | CC0 |
+| `coin_3.mp3` | Coin Collect (3) | Yodguard | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-coin-collect-3-540190/) | Pixabay Content License |
+| `crack.mp3` | Hard Glass Impact | deleted_user_3656686 | [Freesound](https://freesound.org/people/deleted_user_3656686/sounds/418194/) | CC0 |
+| `crumble.mp3` | Crumble #2 | freesound_community | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-crumble-2-82156/) | Pixabay Content License |
+| `dash.mp3` | swoosh.wav | vacuumfan7072 | [Freesound](https://freesound.org/people/vacuumfan7072/sounds/264591/) | CC0 |
+| `dash_2.mp3` | Woosh - Plastic perforated steak spatula 7 | Sadiquecat | [Freesound](https://freesound.org/people/Sadiquecat/sounds/742906/) | CC0 |
+| `djump.mp3` | Wing Flap (Flag Flapping) 5a | ani_music | [Freesound](https://freesound.org/people/ani_music/sounds/244982/) | CC0 |
+| `djump_2.mp3` | Bird Flap B 05.wav | deleted_user_2104797 | [Freesound](https://freesound.org/people/deleted_user_2104797/sounds/330967/) | CC0 |
+| `door.mp3` | RPG Audio / doorOpen_1.ogg | Kenney | [Kenney](https://kenney.nl/assets/rpg-audio) | CC0 |
+| `door_2.mp3` | RPG Audio / doorOpen_2.ogg | Kenney | [Kenney](https://kenney.nl/assets/rpg-audio) | CC0 |
+| `enchant.mp3` | Magic Twinkle | Universfield | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-magic-twinkle-244951/) | Pixabay Content License |
+| `fire.mp3` | Combust.wav | GrimGrum | [Freesound](https://freesound.org/people/GrimGrum/sounds/412558/) | CC0 |
+| `fireball.mp3` | Fire.wav | danielpodlovics | [Freesound](https://freesound.org/people/danielpodlovics/sounds/530355/) | CC0 |
+| `flap.mp3` | Wing Flap (Flag Flapping) 5a | ani_music | [Freesound](https://freesound.org/people/ani_music/sounds/244982/) | CC0 |
+| `flap_2.mp3` | Wing Flap 2.wav | _stubb | [Freesound](https://freesound.org/people/_stubb/sounds/389633/) | CC0 |
+| `flap_3.mp3` | Bird Flap B 05.wav | deleted_user_2104797 | [Freesound](https://freesound.org/people/deleted_user_2104797/sounds/330967/) | CC0 |
+| `flap_4.mp3` | bat swoosh | MrGungus | [Freesound](https://freesound.org/people/MrGungus/sounds/766542/) | CC0 |
+| `freeze.mp3` | iceSpell.wav | Relenzo2 | [Freesound](https://freesound.org/people/Relenzo2/sounds/160420/) | CC0 |
+| `gameover.mp3` | Game Over Piano Sound Effect | Free Sounds Library | [freesoundslibrary.com](https://www.freesoundslibrary.com/game-over-piano-sound-effect/) | CC BY 4.0 |
+| `gear.mp3` | LightClunk1.wav | BMacZero | [Freesound](https://freesound.org/people/BMacZero/sounds/94129/) | CC0 |
+| `gear_2.mp3` | SqueakyClick1.wav | BMacZero | [Freesound](https://freesound.org/people/BMacZero/sounds/94133/) | CC0 |
+| `gear_3.mp3` | Mechanical1.wav | BMacZero | [Freesound](https://freesound.org/people/BMacZero/sounds/94120/) | CC0 |
+| `ghost.mp3` | Spectral Ghost Whisper Breeze Whoosh | brktkrgll | [Freesound](https://freesound.org/people/brktkrgll/sounds/856169/) | CC0 |
+| `heal.mp3` | Sound Effect: Twinkle/Sparkle | ShidenBeatsMusic | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-sound-effect-twinklesparkle-115095/) | Pixabay Content License |
+| `hit.mp3` | 75 CC0 breaking / falling / hit sfx / bfh1_hit_01.ogg | frances | [OpenGameArt](https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx) | CC0 |
+| `hit_2.mp3` | Impact Sounds / impactPunch_heavy_000.ogg | Kenney | [Kenney](https://kenney.nl/assets/impact-sounds) | CC0 |
+| `hit_3.mp3` | 3 Melee sounds / animal melee sound.wav | Dream2Reality | [OpenGameArt](https://opengameart.org/content/3-melee-sounds) | CC0 |
+| `hit_4.mp3` | 3 Melee sounds / melee sound.wav | Dream2Reality | [OpenGameArt](https://opengameart.org/content/3-melee-sounds) | CC0 |
+| `hit_5.mp3` | 3 Melee sounds / sword sound.wav | Dream2Reality | [OpenGameArt](https://opengameart.org/content/3-melee-sounds) | CC0 |
+| `hurt.mp3` | 80 CC0 creature SFX / hurt_01.ogg | Chasersgaming | [OpenGameArt](https://opengameart.org/content/80-cc0-creature-sfx) | CC0 |
+| `hurt_2.mp3` | male_hurt9.ogg | micahlg | [Freesound](https://freesound.org/people/micahlg/sounds/413186/) | CC0 |
+| `ink.mp3` | Wet Splat 2.mp3 | nebulasnails | [Freesound](https://freesound.org/people/nebulasnails/sounds/495117/) | CC0 |
+| `ink_2.mp3` | Wet Splat 1.mp3 | nebulasnails | [Freesound](https://freesound.org/people/nebulasnails/sounds/495118/) | CC0 |
+| `ink_3.mp3` | Splat 3 | sebastientate | [Freesound](https://freesound.org/people/sebastientate/sounds/719131/) | CC0 |
+| `item.mp3` | Item Get | Qvantor | [Freesound](https://freesound.org/people/Qvantor/sounds/878616/) | CC0 |
+| `jump.mp3` | RPG Audio / cloth2.ogg | Kenney | [Kenney](https://kenney.nl/assets/rpg-audio) | CC0 |
+| `jump_2.mp3` | RPG Audio / cloth3.ogg | Kenney | [Kenney](https://kenney.nl/assets/rpg-audio) | CC0 |
+| `jump_3.mp3` | Jacket/Cloth Rustle 9 | brandondelehoy | [Freesound](https://freesound.org/people/brandondelehoy/sounds/494797/) | CC0 |
+| `kill_beast.mp3` | 16_Ratón_chillando.wav | JoseAgudelo | [Freesound](https://freesound.org/people/JoseAgudelo/sounds/472399/) | CC0 |
+| `kill_beast_2.mp3` | Rat.ogg | egomassive | [Freesound](https://freesound.org/people/egomassive/sounds/536753/) | CC0 |
+| `kill_beast_3.mp3` | mouse squek.mp3 | FairCashew | [Freesound](https://freesound.org/people/FairCashew/sounds/684866/) | CC0 |
+| `kill_bone.mp3` | Necksnap_build.wav | danielrutterfilms | [Freesound](https://freesound.org/people/danielrutterfilms/sounds/134025/) | CC0 |
+| `kill_bone_2.mp3` | Bone Breaking Effect | DRAGON-STUDIO | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-bone-breaking-effect-393836/) | Pixabay Content License |
+| `kill_bone_3.mp3` | Skeleton bones (game).wav | cribbler | [Freesound](https://freesound.org/people/cribbler/sounds/381859/) | CC0 |
+| `kill_book.mp3` | RPG Audio / cloth3.ogg | Kenney | [Kenney](https://kenney.nl/assets/rpg-audio) | CC0 |
+| `kill_book_2.mp3` | RPG Audio / cloth2.ogg | Kenney | [Kenney](https://kenney.nl/assets/rpg-audio) | CC0 |
+| `kill_book_3.mp3` | RPG Audio / bookFlip1.ogg | Kenney | [Kenney](https://kenney.nl/assets/rpg-audio) | CC0 |
+| `kill_fire.mp3` | Fire Burst Flash | Za-Games | [Freesound](https://freesound.org/people/Za-Games/sounds/539972/) | CC0 |
+| `kill_ghost.mp3` | Ghostly Whoosh - Horror Game UI | TommasoMotteran | [Freesound](https://freesound.org/people/TommasoMotteran/sounds/850767/) | CC0 |
+| `kill_ice.mp3` | Glass Break | unfa | [Freesound](https://freesound.org/people/unfa/sounds/221528/) | CC0 |
+| `kill_ice_2.mp3` | Glass Shatter  4.wav | Greg_Surr | [Freesound](https://freesound.org/people/Greg_Surr/sounds/554566/) | CC0 |
+| `kill_ice_3.mp3` | Break the glass | spinopel | [Pixabay](https://pixabay.com/sound-effects/break-the-glass-456388/) | Pixabay Content License |
+| `kill_mage.mp3` | Ice Magic Arrow_type 01 | lotteria001 | [Freesound](https://freesound.org/people/lotteria001/sounds/709888/) | CC0 |
+| `kill_rot.mp3` | zombie death | dreggsome | [Freesound](https://freesound.org/people/dreggsome/sounds/744096/) | CC0 |
+| `kill_rot_2.mp3` | Wet Squelch | Universfield | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-wet-squelch-276679/) | Pixabay Content License |
+| `kill_rot_3.mp3` | Monster Growl | DRAGON-STUDIO | [Pixabay](https://pixabay.com/sound-effects/horror-monster-growl-390285/) | Pixabay Content License |
+| `kill_rot_4.mp3` | Zombie Noise | Free Sounds Library | [freesoundslibrary.com](https://www.freesoundslibrary.com/zombie-noise/) | CC BY 4.0 |
+| `land.mp3` | Impact Sounds / impactSoft_medium_000.ogg | Kenney | [Kenney](https://kenney.nl/assets/impact-sounds) | CC0 |
+| `land_2.mp3` | Impact Sounds / impactSoft_medium_002.ogg | Kenney | [Kenney](https://kenney.nl/assets/impact-sounds) | CC0 |
+| `land_3.mp3` | Impact Sounds / impactSoft_medium_001.ogg | Kenney | [Kenney](https://kenney.nl/assets/impact-sounds) | CC0 |
+| `levelup.mp3` | Ding Level Up | Free Sounds Library | [freesoundslibrary.com](https://www.freesoundslibrary.com/ding-level-up-sound-effect/) | CC BY 4.0 |
+| `mana.mp3` | Magic charge mana 2 | FxProSound | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-magic-charge-mana-2-186628/) | Pixabay Content License |
+| `page.mp3` | Fast Page Turn - 5 | SpaceJoe | [Freesound](https://freesound.org/people/SpaceJoe/sounds/484911/) | CC0 |
+| `page_2.mp3` | One page book flip | freesound_community | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-one-page-book-flip-101928/) | Pixabay Content License |
+| `page_3.mp3` | Page flip 1 | OxidVideos | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-page-flip-1-178322/) | Pixabay Content License |
+| `page_4.mp3` | Page flip2 | OxidVideos | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-page-flip2-178323/) | Pixabay Content License |
+| `page_5.mp3` | Quiet Page Turn - 8 | SpaceJoe | [Freesound](https://freesound.org/people/SpaceJoe/sounds/484968/) | CC0 |
+| `pickup.mp3` | Item Pickup (1) | Yodguard | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-item-pickup-1-540174/) | Pixabay Content License |
+| `pickup_2.mp3` | Item Pickup (3) | Yodguard | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-item-pickup-3-540193/) | Pixabay Content License |
+| `roar.mp3` | Yeti Roar - Skiing Game - Roar SFX Remix (2 of 2) | el_boss | [Freesound](https://freesound.org/people/el_boss/sounds/751713/) | CC0 |
+| `save.mp3` | Holy Spell Cast | DRAGON-STUDIO | [Pixabay](https://pixabay.com/sound-effects/musical-holy-spell-cast-450460/) | Pixabay Content License |
+| `seal.mp3` | Gates of Hell 2 (Gate Slam 2) | magnuswaker | [Freesound](https://freesound.org/people/magnuswaker/sounds/530061/) | CC0 |
+| `select.mp3` | Game UI Confirm Selection Sound #2 | Vadim_Makes_Sound | [Pixabay](https://pixabay.com/sound-effects/technology-game-ui-confirm-selection-sound-2-547852/) | Pixabay Content License |
+| `shatter.mp3` | ICEBrk_Break04_InMotionAudio_FREESampleSunday | InMotionAudio | [Freesound](https://freesound.org/people/InMotionAudio/sounds/719973/) | CC0 |
+| `shatter_2.mp3` | Glass Shattering Sound Effect | Free Sounds Library | [freesoundslibrary.com](https://www.freesoundslibrary.com/glass-shattering-sound-effect/) | CC BY 4.0 |
+| `slash.mp3` | Swishes Sound Pack / swish-11.wav | qubodup | [OpenGameArt](https://opengameart.org/content/swishes-sound-pack) | CC0 |
+| `slash_2.mp3` | Swishes Sound Pack / swish-10.wav | qubodup | [OpenGameArt](https://opengameart.org/content/swishes-sound-pack) | CC0 |
+| `slash_3.mp3` | Swishes Sound Pack / swish-1.wav | qubodup | [OpenGameArt](https://opengameart.org/content/swishes-sound-pack) | CC0 |
+| `slash_4.mp3` | Metallic Whoosh.wav | MissCellany | [Freesound](https://freesound.org/people/MissCellany/sounds/240640/) | CC0 |
+| `slash_5.mp3` | Sword Movement Single 1 | deleted_user_6479820 | [Freesound](https://freesound.org/people/deleted_user_6479820/sounds/395266/) | CC0 |
+| `slash_6.mp3` | Sword Movement Single 2 | deleted_user_6479820 | [Freesound](https://freesound.org/people/deleted_user_6479820/sounds/395265/) | CC0 |
+| `slash_7.mp3` | Sword Movement Single 4 | deleted_user_6479820 | [Freesound](https://freesound.org/people/deleted_user_6479820/sounds/395263/) | CC0 |
+| `steam.mp3` | steam_burst.wav | pengo_au | [Freesound](https://freesound.org/people/pengo_au/sounds/90143/) | CC0 |
+| `steam_2.mp3` | Steam release sounds / steam hisses - Marker #1.wav | XilliX | [OpenGameArt](https://opengameart.org/content/steam-release-sounds) | CC0 |
+| `steam_3.mp3` | Steam release sounds / steam hisses - Marker #3.wav | XilliX | [OpenGameArt](https://opengameart.org/content/steam-release-sounds) | CC0 |
+| `steam_4.mp3` | Steam release sounds / steam hisses - Marker #4.wav | XilliX | [OpenGameArt](https://opengameart.org/content/steam-release-sounds) | CC0 |
+| `steam_5.mp3` | Steam release sounds / steam hisses - Marker #5.wav | XilliX | [OpenGameArt](https://opengameart.org/content/steam-release-sounds) | CC0 |
+| `steam_6.mp3` | Steam Hissing | DRAGON-STUDIO | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-steam-hissing-386157/) | Pixabay Content License |
+| `step.mp3` | Impact Sounds / footstep_concrete_000.ogg | Kenney | [Kenney](https://kenney.nl/assets/impact-sounds) | CC0 |
+| `thunder.mp3` | thunder1.wav | nednednerb | [Freesound](https://freesound.org/people/nednednerb/sounds/38244/) | CC0 |
+| `thunder_2.mp3` | Thunder (Kraków, Poland, 20.05.2013) | vonz | [Freesound](https://freesound.org/people/vonz/sounds/188767/) | CC0 |
+| `thunder_3.mp3` | strike 3 sec.wav | Littlebrojay | [Freesound](https://freesound.org/people/Littlebrojay/sounds/195439/) | CC0 |
+| `toll.mp3` | Church Bell.wav | MVMTech | [Freesound](https://freesound.org/people/MVMTech/sounds/569356/) | CC0 |
+| `unseal.mp3` | Unlock stinger | Sunovia | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-unlock-stinger-289722/) | Pixabay Content License |
+<!-- sfx-table:end -->
+
+`record_scratch.mp3` (the record scratch in the disco room) is in `assets/sfx/` too, but its source was not recorded (open item 9).
 
 ## Music
 
-Created by the project owner - see `music/TRACKLIST.txt`.
+Made for this game by the project owner; see `music/TRACKLIST.txt` (a working file that is not published; the game reads `music/tracks.txt`). See open item 10 about the terms.
+
+## Code and libraries
+
+* **three.js** r187, MIT licence, (c) 2010-2026 Three.js authors: [threejs.org](https://threejs.org). The licence text is `lib/three/LICENSE`.
+* The game code, shaders and level data were written for this project.
+* The pixel font is a 5x7 bitmap font defined in `src/font.js`.
+
+## Adding something new
+
+1. Read the licence on the source page and save its text (or a note of it) in `assets/credits/`.
+2. Add a row to the right table above, with the author's name, the licence, a link and where it is used.
+3. Add a few lines to `credits.txt`, which is what players see.
+4. Keep the pack as downloaded out of git, in one of the `source/` folders listed at the top.
+5. For recorded sound effects, `node tools/sfx-browser/install.mjs` writes the credit lines and `node tools/credits-sfx.mjs` puts them into the table above.

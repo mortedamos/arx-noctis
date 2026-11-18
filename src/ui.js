@@ -151,20 +151,32 @@ function logo() {
 }
 
 // ---------------------------------------------------------------------------------------------- menus
+// A menu is one column of items, or - with `rows` - a list of rows, each a list of item indices.  A row of one item is centred; a row of two or more is a table of cells
+// (COL_W px apart, centred under the menu's x).  An item marked `small` is drawn smaller (the table of the title screen).  Up and down keep the column; left and right move along a row.
+const COL_W = 104;
 class Menu {
-  constructor(items) { this.items = items; this.i = 0; this.hit = []; }
+  constructor(items, rows = null) { this.items = items; this.i = 0; this.hit = []; this.rows = rows; }
+  moveInRows() {
+    const R = this.rows, r = R.findIndex(row => row.includes(this.i)); if (r < 0) { this.i = R[0][0]; return; }
+    const row = R[r], k = row.indexOf(this.i); let nr = r, nk = k;
+    if (Input.pressed.up || Input.pressed.down) { nr = Input.pressed.up ? (r + R.length - 1) % R.length : (r + 1) % R.length; nk = Math.min(k, R[nr].length - 1); }
+    else if (row.length > 1 && (Input.pressed.left || Input.pressed.right)) nk = (k + (Input.pressed.right ? 1 : row.length - 1)) % row.length;
+    if (nr !== r || nk !== k) { this.i = R[nr][nk]; A.sfx('click'); }
+  }
   update(g) {
     for (const t of Input.taps) for (let k = 0; k < this.hit.length; k++) {                  // a finger on an item (the rows are measured when the menu is drawn)
       const r = this.hit[k]; if (!r || t.x < r.x0 || t.x > r.x1 || t.y < r.y0 || t.y > r.y1) continue;
       this.i = k; const it = this.items[k]; if (it.adjust) { it.adjust(t.x < (r.x0 + r.x1) / 2 ? -1 : 1); A.sfx('click'); } else if (it.action && !it.disabled) { A.sfx('select'); it.action(); } return;
     }
-    const n = this.items.length; if (Input.pressed.up) { this.i = (this.i + n - 1) % n; A.sfx('click'); } if (Input.pressed.down) { this.i = (this.i + 1) % n; A.sfx('click'); }
+    if (this.rows) this.moveInRows();
+    else { const n = this.items.length; if (Input.pressed.up) { this.i = (this.i + n - 1) % n; A.sfx('click'); } if (Input.pressed.down) { this.i = (this.i + 1) % n; A.sfx('click'); } }
     const it = this.items[this.i];
     if (Input.pressed.left && it.adjust) { it.adjust(-1); A.sfx('click'); } if (Input.pressed.right && it.adjust) { it.adjust(1); A.sfx('click'); }
     if ((Input.pressed.confirm) && it.action && !it.disabled) { A.sfx('select'); it.action(); }
   }
   draw(ctx, x, y, gap = 14, align = 'center') {
     this.hit = [];
+    if (this.rows) { this.drawRows(ctx, x, y, gap); return; }
     this.items.forEach((it, i) => {
       const sel = i === this.i, label = typeof it.label === 'function' ? it.label() : it.label, yy = y + i * gap, col = it.disabled ? '#4a4258' : sel ? GOLD : PALE;
       const sc = 1.25, w = textWidth(label, sc, { outline: true }), lx = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x, o = { color: col, outline: '#000', scale: sc };
@@ -174,6 +186,23 @@ class Menu {
       if (it.val) drawText(ctx, it.val(), lx + 84, yy, o);
       if (sel) { drawText(ctx, '>', lx - 11, yy, o); if (!it.bar && !it.val) drawText(ctx, '<', lx + w + 5, yy, o); }
     });
+  }
+  // the rows layout (see the note above Menu): big rows, then the small table, each row's cells centred on x
+  drawRows(ctx, x, y, gap) {
+    let yy = y, prevSmall = false;
+    for (const row of this.rows) {
+      const small = !!this.items[row[0]].small, sc = small ? 1 : 1.25, rowGap = small ? 12 : gap;
+      if (small && !prevSmall) yy += 6;          // (a little air between the big items and the table)
+      row.forEach((idx, k) => {
+        const it = this.items[idx], sel = idx === this.i, label = typeof it.label === 'function' ? it.label() : it.label, col = it.disabled ? '#4a4258' : sel ? GOLD : PALE;
+        const cx = x + (k - (row.length - 1) / 2) * COL_W, w = textWidth(label, sc, { outline: true }), lx = cx - w / 2, o = { color: col, outline: '#000', scale: sc };
+        drawText(ctx, label, lx, yy, o);
+        const half = Math.max(w / 2 + 12, 50);
+        this.hit[idx] = { x0: cx - half, x1: cx + half, y0: yy - 2, y1: yy + rowGap - 3 };
+        if (sel) { drawText(ctx, '>', lx - 11, yy, o); drawText(ctx, '<', lx + w + 5, yy, o); }
+      });
+      yy += rowGap; prevSmall = small;
+    }
   }
 }
 
@@ -214,12 +243,13 @@ function loadCredits(cr) {
 export class TitleScreen {
   constructor(g) {
     this.g = g; this.t = 0; this.mode = 'main'; const has = g.hasSave();
+    // NEW GAME and CONTINUE stand centred; the rest is a two-column table of smaller items (the rows below)
     this.main = new Menu([
       { label: 'NEW GAME', action: () => g.newGame() }, { label: 'CONTINUE', disabled: !has, action: () => g.continueGame() },
-      { label: 'CHOOSE SEED', action: () => { this.mode = 'seed'; this.seed = ''; Input.typed.length = 0; } },          // (on a phone, a keypad of numbers is drawn in the game itself: the game never opens a pop-up window)
-      { label: 'SAVE CODE', action: () => { this.mode = 'savecode'; openSavePanel(g, restored => { if (restored) g.title = new TitleScreen(g); else this.mode = 'main'; }); } },          // (the save as a code to keep, or a code to bring a game back: an HTML panel, see savecode.js)
-      { label: 'CONTROLS', action: () => { this.mode = 'controls'; } }, { label: 'OPTIONS', action: () => { this.mode = 'options'; this.opts.i = 0; } }, { label: 'CREDITS', action: () => this.openCredits() },
-    ]); if (has) this.main.i = 1;
+      { label: 'CHOOSE SEED', small: true, action: () => { this.mode = 'seed'; this.seed = ''; Input.typed.length = 0; } },          // (on a phone, a keypad of numbers is drawn in the game itself: the game never opens a pop-up window)
+      { label: 'SAVE CODE', small: true, action: () => { this.mode = 'savecode'; openSavePanel(g, restored => { if (restored) g.title = new TitleScreen(g); else this.mode = 'main'; }); } },          // (the save as a code to keep, or a code to bring a game back: an HTML panel, see savecode.js)
+      { label: 'CONTROLS', small: true, action: () => { this.mode = 'controls'; } }, { label: 'OPTIONS', small: true, action: () => { this.mode = 'options'; this.opts.i = 0; } }, { label: 'CREDITS', small: true, action: () => this.openCredits() },
+    ], [[0], [1], [2, 3], [4, 5], [6]]); if (has) this.main.i = 1;
     this.homeHint = isIOS() && !isStandalone();          // (an iPhone in Safari: the save is not safe there for long - see pwa.js)
     this.opts = optionsMenu(() => { this.mode = 'main'; });
   }

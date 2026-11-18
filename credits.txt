@@ -90,9 +90,10 @@ The Boiler Golem.
 Pixel Platformer Set 1
 The sickle-fighting zealot and the sparkling gem.
 
-## The Sidescroller's Dungeon - Tileset
+## Icko - CC BY-ND 4.0
+The Sidescroller's Dungeon - Tileset [32x32]
 Pillars, banners, urns, crates, doors and torches.
-; (no licence file came with this pack: check its itch.io page before a public release, and credit its author here)
+; (its itch.io page lists CC BY-ND 4.0, which allows no derivatives: ask the author whether cutting and scaling the tiles is allowed before a public release - see CREDITS.md)
 
 Some sprites are recoloured while the game loads.
 
@@ -120,12 +121,18 @@ Eroded Motta (lirkiv AC) - the gravestones and tablets
 # CODE
 three.js - MIT licence (threejs.org)
 Game code, shaders and level generation were written for this project.
-Most sound effects are made in code; the recorded ones are credited under SOUND EFFECTS.
+Some sound effects are made in code; the recorded ones are credited under SOUND EFFECTS.
 Some creatures, props and projectiles are drawn in code.
 
 ---
 
 # SOUND EFFECTS
+Recorded sounds by Freesound, OpenGameArt, Kenney and Pixabay creators. Every one is named in CREDITS.md.
+
+## CC BY 4.0 - Free Sounds Library
+freesoundslibrary.com - trimmed, level-matched and re-encoded
+Glass Shattering, Ding Level Up, Game Over Piano, Zombie Noise, Horse Whinny, Horse Neighing
+
 ## CC0 (public domain)
 click, click 2 - 51 UI sound effects - gopherapps (OpenGameArt)
 
