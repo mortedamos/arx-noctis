@@ -156,6 +156,8 @@ export const Audio_ = {
     this.duckTarget = 0.1; const done = () => { if (this.stingEl === el) { this.duckTarget = 1; this.stingEl = null; } };
     el.addEventListener('ended', done); el.addEventListener('error', done); el.play().catch(done);
   },
+  // let a sting that is still ringing die away (the YOU DIED sting, when the player moves on before it ends): it joins the tracks fading out, and the music it was ducking comes back
+  stopSting(fade = 0.5) { const el = this.stingEl; if (!el) return; this.stingEl = null; this.duckTarget = 1; this.outgoing.push({ el, vol: 1, fadeTime: fade }); },
   update(dt) {
     const mv = this.silent ? 0 : this.settings.music; this.duck += (this.duckTarget - this.duck) * Math.min(1, dt * 0.08); this.indoor += (this.indoorTarget - this.indoor) * Math.min(1, dt * 0.05);
     const step = dt / 60;
