@@ -56,7 +56,8 @@ Object.assign(META, { hero_idle: { ax: 0.5 }, hero_run: { ax: 0.5 }, hero_attack
 // the swamp creature and the Ars Notoria battle sprites are drawn facing LEFT (the townsfolk face RIGHT - the Gothicvania Town demo flips them with scale.x = -1 to go left)
 const FACES_LEFT = /^(ars_|swamp_thing)/;
 
-const loadImg = src => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('failed to load ' + src)); i.src = src; });
+// (one failed request - a server that is restarting, a network blip, a busy host - must not end a new game before it starts: each picture gets three tries, the later ones under a slightly different address so a cached failure is not served again)
+const loadImg = (src, tries = 3) => new Promise((res, rej) => { const go = n => { const i = new Image(); i.onload = () => res(i); i.onerror = () => { if (n + 1 < tries) setTimeout(() => go(n + 1), 400 * (n + 1)); else rej(new Error('failed to load ' + src)); }; i.src = n ? src + (src.includes('?') ? '&' : '?') + 'retry=' + n : src; }; go(0); });
 
 function canvasOf(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
 

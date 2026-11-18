@@ -244,7 +244,7 @@ const SPEC = {
     candles: [3, 3], barrels: [2, 3], mix: { skeleton: [1, 1], wraith: [2, 2], archmage: [1, 1], bat: [4, 4], ghost: [2, 2], sorcerer: [1, 1], fireskull: [2, 2], wyrm: [1, 2], zealot: [4, 4] } },
   // THE LAST DARK: the room before the Shadow Lord's.  A plain platform, and a pit too wide for anything but the Ouroboros: jump, double jump, dash, jump, double jump, dash, without ever coming down.  As you cross, the music dies away and the light goes out
   // (def.pitFade: see Game.stepPlay), until only the wisp shows anything.  A door at the far side leads on into the Throne.
-  tp: { kind: 'chasm', zone: 5, name: 'The Last Dark', pit: [56, 64], opts: { ...LOOK[5], ambient: 0.3, weather: null } },
+  tp: { kind: 'chasm', zone: 5, name: 'The Last Dark', pit: [84, 96], opts: { ...LOOK[5], ambient: 0.3, weather: null } },
   t2: { kind: 'arena', zone: 5, name: 'Throne of Shadows', w: [44, 50], h: 16, boss: 'shadow', reward: 'dawn', plats: 3, rise: 3, seal: 'left', abilities: ['djump'], decor: 'banner', flyRow: 5,
     opts: { ...LOOK[5], ambient: 0.5, weather: 'embers', vig: 0.75, boss: 'shadow', music: 'boss_final' } },
   s4: { kind: 'sanctuary', zone: 5, name: 'Last Sanctuary', parent: 't1' },

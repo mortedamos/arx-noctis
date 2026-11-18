@@ -611,7 +611,7 @@ export class Game {
     if (Input.pressed.pause && !this.cutscene && !p.dead) { this.pause(); return; }
     if (Input.pressed.map && !this.cutscene && !p.dead) { this.openMap(); return; }
     if (this.room.pitFade && this.room.pitFade.on) this.stepPitFade();          // (the Last Dark: the music and the light go out as the hero crosses the pit)
-    S.time += 1 / 60; if (S.flags.got_athanor && S.mp < S.maxMp) { S.mpAcc = (S.mpAcc || 0) + 1 / 540; if (S.mpAcc >= 1) { S.mpAcc -= 1; p.gainMp(1); } }          // (the Athanor: one point of mana every nine seconds, for ever)
+    S.time += 1 / 60; if (S.flags.got_athanor && S.mp < S.maxMp) { S.mpAcc = (S.mpAcc || 0) + 1.75 / 540; if (S.mpAcc >= 1) { S.mpAcc -= 1; p.gainMp(1); } }          // (the Athanor: one point of mana every 5.1 seconds, for ever - 75% quicker than its first nine)
     fx.clearLights(); if (this.room && this.room.maskDirty) { this.room.maskDirty = false; fx.setShadowMask(this.room); }
     this.checkVillageScene(); this.checkOpening(); this.discoStep(); this.stepChase();
     if (this.room.movers) { this.room.movers.step(false, this); for (const m of this.room.movers.list) fx.light(m.x, m.y + 6, 70, 0.5, [1, 0.8, 0.45]); }          // the brass platforms glide, and glow a little
