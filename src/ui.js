@@ -305,7 +305,7 @@ export function controlsScreen(ctx) {
 // what the hero has found, for the pause screen: the four powers (dim and unnamed until found), the Magic Shoes and the Tide Blade once found, and the keys he carries
 const POWERS = [['djump', 'feather', 'AETHER FEATHER'], ['dash', 'boot', 'QUICKSILVER'], ['ember', 'ember', 'SULPHUR'], ['thunder', 'thunder', 'VITRIOL']];
 // what the pause screen lists as FOUND: the four powers, the relics the bosses leave, and the keys you carry (each with what it is and what it does, for the cursor to read out)
-const RELICS = [['got_mantle', 'mantle', 'SALAMANDER', 'mantle'], ['got_lantern', 'lantern', 'IGNIS VAPOUR', 'lantern'], ['got_shard', 'shard', 'LACUNA', 'shard'], ['got_spring', 'spring', 'PERPETUUM', 'spring'], ['got_shoes', 'shoes', 'HERMES SHOES', 'shoes'], ['got_tide', 'e_ice', 'AQUA REGIA', 'tide'], ['got_astrolabe', 'astrolabe', 'ASTROLABE', 'astrolabe'], ['got_crampons', 'crampons', 'CRAMPONS', 'crampons'], ['got_athanor', 'athanor', 'ATHANOR', 'athanor']];
+const RELICS = [['got_mantle', 'mantle', 'SALAMANDER', 'mantle'], ['got_lantern', 'lantern', 'IGNIS VAPOUR', 'lantern'], ['got_shard', 'shard', 'LACUNA', 'shard'], ['got_spring', 'spring', 'PERPETUUM', 'spring'], ['got_shoes', 'shoes', 'HERMES SHOES', 'shoes'], ['got_tide', 'e_ice', 'AQUA REGIA', 'tide'], ['got_astrolabe', 'astrolabe', 'ASTROLABE', 'astrolabe'], ['got_ouroboros', 'ouroboros', 'OUROBOROS', 'ouroboros'], ['got_athanor', 'athanor', 'ATHANOR', 'athanor']];
 const KEY_USE = { key_grave: "THE GRAVEKEEPER'S VAULT, OFF THE MOURNING FIELDS.", key_hall: "THE STEWARD'S VAULT, OFF THE PORTRAIT GALLERY.", key_chapel: "THE VERGER'S VAULT, OFF THE BELL GALLERY.", key_crypt: 'THE DOOR OF THE ORLOJ TOWER, HIGH ABOVE SMOULDERING LANE IN PRAGUE.', key_mire: "THE FERRYMAN'S VAULT, OFF THE WEEPING HOLLOW.", key_gear: "THE ENGINEER'S VAULT, OFF THE ESCAPEMENT.", key_frost: 'THE DOOR OF THE LIBRARY OF AGES, AT THE CROSSING HALL.', key_gold: 'THE DOOR OF THE SHADOW THRONE, AT THE CROSSING HALL.' };
 export function foundItems(g) {
   const S = g.save, F = S.flags, AB = (g.info && g.info.ABILITIES) || {}, UP = (g.info && g.info.UPGRADES) || {}, rows = [];
@@ -402,16 +402,17 @@ export class MapScreen {
     this.g = g; this.t = 0; this.here = o.teleport || null; this.tele = !!o.teleport; this.whole = false; this.sc = 1; this.rep = 0; this.left = 0;
     const S = g.save; this.stones = (g.world.stones || []).filter(id => S.flags['tp_' + id]);
     if (this.tele) { const i = this.stones.indexOf(this.here); this.sel = i > 0 ? i - 1 : Math.min(1, this.stones.length - 1); if (this.sel < 0) this.sel = 0; }
-    this.lay = mapLayout(g.world.rooms); this.selId = g.world.rooms[g.room.id] ? g.room.id : Object.keys(S.visited)[0];
+    this.R = Object.fromEntries(Object.entries(g.world.rooms).filter(([, r]) => !r.hidden));          // (the map knows nothing of the secret rooms)
+    this.lay = mapLayout(this.R); this.selId = this.R[g.room.id] ? g.room.id : (g.room.exits.map(e => e.room).find(id => this.R[id]) || 'v0');
     const c = this.centre(this.focusRoom()); this.cam = { x: c.x, y: c.y };
   }
   rectOf(r) { const L = this.lay, cw = cellsOf(r.w, CELLS_W, 7), ch = cellsOf(r.h, CELLS_H, 4), w = cw * CELL_W, h = ch * CELL_H; return { x: L.colX[r.map.x], y: L.rowBot[r.map.y] - h, w, h, cw, ch }; }
   centre(r) { const q = this.rectOf(r); return { x: q.x + q.w / 2, y: q.y + q.h / 2 }; }
-  focusRoom() { const g = this.g; return this.tele ? g.world.rooms[this.stones[this.sel]] : g.world.rooms[this.selId] || g.world.rooms[g.room.id]; }
+  focusRoom() { const g = this.g; return this.tele ? this.R[this.stones[this.sel]] : this.R[this.selId] || this.R.v0; }
   targetScale() { if (!this.whole) return 1; const L = this.lay; return Math.min(1, 0.97 * W / L.w, (VIEW_Y1 - VIEW_Y0 - 4) / L.h); }
   // the visited room nearest to the cursor in a direction (a room straight ahead beats one off to the side)
   hop(dx, dy) {
-    const S = this.g.save, R = this.g.world.rooms, cur = this.centre(R[this.selId]); let best = null, bs = 1e9;
+    const S = this.g.save, R = this.R, cur = this.centre(R[this.selId]); let best = null, bs = 1e9;
     for (const r of Object.values(R)) {
       if (!S.visited[r.id] || r.id === this.selId) continue; const c = this.centre(r), ax = (c.x - cur.x) * dx + (c.y - cur.y) * dy, off = Math.abs((c.x - cur.x) * dy) + Math.abs((c.y - cur.y) * dx);
       if (ax < 3) continue; const s = ax + 2.4 * off; if (s < bs) { bs = s; best = r; }
@@ -435,7 +436,7 @@ export class MapScreen {
     const wantX = this.whole && !this.tele ? L.w / 2 : fc.x, wantY = this.whole && !this.tele ? L.h / 2 : fc.y; this.cam.x += (wantX - this.cam.x) * 0.25; this.cam.y += (wantY - this.cam.y) * 0.25;
   }
   draw(ctx) {
-    const g = this.g, S = g.save, ROOMS = g.world.rooms, sc = this.sc, rect = r => this.rectOf(r), flash = Math.floor(this.t / 14) % 2;
+    const g = this.g, S = g.save, ROOMS = this.R, sc = this.sc, rect = r => this.rectOf(r), flash = Math.floor(this.t / 14) % 2;
     ctx.fillStyle = 'rgba(4,2,10,0.96)'; ctx.fillRect(0, 0, W, H);
     drawText(ctx, this.tele ? 'WAYSTONE' : this.whole ? 'THE WHOLE CASTLE' : 'CASTLE MAP', W / 2, 2, { align: 'center', scale: 1.5, color: this.tele ? '#9fe8ff' : GOLD });
     const rooms = Object.values(ROOMS).filter(r => S.visited[r.id]), sel = this.focusRoom(), astro = !!S.flags.got_astrolabe;
@@ -508,7 +509,7 @@ export class MapScreen {
     }
     const sec = secretStats(g);
     if (astro) drawText(ctx, left ? `ASTROLABE: ${left} TREASURE${left === 1 ? '' : 'S'} LEFT (GOLD DIAMONDS)` : 'ASTROLABE: NO TREASURE LEFT IN ROOMS YOU HAVE SEEN', W / 2, 15, { align: 'center', color: '#e8c872' });
-    drawText(ctx, `ROOMS ${Object.keys(S.visited).length}/${Object.keys(ROOMS).length}   SECRETS ${sec.found}/${sec.total}`, W - 8, VIEW_Y1 + 5, { align: 'right', color: PALE });
+    drawText(ctx, `ROOMS ${Object.keys(S.visited).filter(id => ROOMS[id]).length}/${Object.keys(ROOMS).length}   SECRETS ${sec.found}/${sec.total}`, W - 8, VIEW_Y1 + 5, { align: 'right', color: PALE });
     drawText(ctx, 'GOLD DOOR   BLUE ONE-WAY   VIOLET KEEPER   RED SAVE   CYAN WAYSTONE', W / 2, H - 20, { align: 'center', color: '#6a6078' });
     drawText(ctx, Input.touchOn ? 'PAD MOVES THE CURSOR     JUMP: WHOLE CASTLE / DETAIL     MAP CLOSES' : 'ARROWS MOVE THE CURSOR     X: WHOLE CASTLE / DETAIL     M OR ESC CLOSES', W / 2, H - 10, { align: 'center', color: DIM });
   }

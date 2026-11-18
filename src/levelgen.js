@@ -11,10 +11,10 @@ import { ITEMS, ITEM_ORDER } from './itemdata.js';
 const offerOf = (item, o = {}) => ({ item, qty: o.qty || ITEMS[item].pack, price: o.price || ITEMS[item].price, stock: o.stock || 3 });          // what a merchant sells: one pack, for its price, three times at most
 import { TILE } from './world.js';
 import { moverAt } from './movers.js';
-import { validateRoom, checkSpawns, roomOf, surfaces, reach } from './validate.js';
+import { validateRoom, checkSpawns, roomOf, surfaces, reach, simulateChain } from './validate.js';
 import { mulberry32 } from './util.js';
 
-export const GEN_VERSION = 15;
+export const GEN_VERSION = 16;
 const MAX_TRY = 60;
 
 // ------------------------------------------------------------------------------------------------ seeded random helpers
@@ -51,13 +51,14 @@ const LOOK = {
 const SPEC = {
   // ======== ZONE 6 - PRAGUE (Gothicvania Town): calm at dusk until the Cinder Warden's torches (VillageScene), then it burns
   v0: { kind: 'authored', zone: 6, name: 'The Hill Above Prague' },
+  vq: { kind: 'authored', zone: 6, name: 'Under the Yew', parent: 'v0', hidden: true },          // (a secret: a hollow to the left of the hill with the last page in it - no arrow, no label, not on the map)
   v1: { kind: 'authored', zone: 6, name: 'Market Street' },
   tv: { kind: 'teleport', zone: 6, name: 'Waystone Square', outdoor: true, opts: LOOK[6] },
   // The ORLOJ TOWER: a locked door high on a ledge in Smouldering Lane (it needs the Key of Tin and the double jump) leads in.  The great astronomical clock hangs in the middle of the shaft; the door to the Clockwork Dungeon is on the landing beside it.
   ot: { kind: 'tower', zone: 8, name: 'The Orloj Tower', areaLabel: 'The Orloj Tower', parent: 'v2', orloj: true, w: [30, 34], h: [40, 46], top: [11, 13], opts: { ...LOOK[8], ambient: 0.36 }, abilities: ['djump'], topItem: { kind: 'astrolabe', id: 'got_astrolabe' },
     mods: [{ t: 'tablet', id: 'tab18', text: 'THE CLOCK STILL KEEPS PRAGUE\'S HOUR. THE APOSTLES STILL WALK IN THEIR WINDOWS, AND THE SUN IS STILL ON ITS DIAL. IT IS THE ONLY SUN LEFT.' }], candles: [3, 3], barrels: [1, 1], mix: { skeleton: [1, 2], ghost: [1, 1], fireskull: [2, 2], bat: [2, 2], sorcerer: [1, 1] } },
   // THE BOILER LOFT: a loft of brass and steam above the Orloj's clock, where the Boiler Golem keeps the fires.  Its door is the one on the tower's top landing; the door on its far side (to the Clockwork Dungeon) is sealed by a sigil until the golem is dead.
-  og: { kind: 'arena', zone: 8, name: 'The Boiler Loft', areaLabel: 'The Orloj Tower', parent: 'ot', loft: true, w: [44, 50], h: 14, boss: 'golem', reward: 'athanor', plats: 2, rise: 3, abilities: ['djump'], decor: 'brazier', candles: [2, 2], jets: 3,
+  og: { kind: 'arena', zone: 8, name: 'The Boiler Loft', areaLabel: 'The Orloj Tower', parent: 'ot', loft: true, w: [44, 50], h: 14, boss: 'golem', reward: 'athanor', plats: 2, rise: 3, abilities: ['djump'], decor: 'brazier', candles: [2, 2], jets: 5, jetGap: 6,
     opts: { ...LOOK[8], ambient: 0.32, boss: 'golem', music: 'boss' } },
   v2: { kind: 'corridor', zone: 6, name: 'Smouldering Lane', tall: 26, w: [90, 104], outdoor: true, opts: LOOK[6],
     mods: [{ t: 'door', to: 'sv', kind: 'wood' }, { t: 'door', to: 'hv4', kind: 'house' }, { t: 'djLedge', kind: 'atkup', id: 'v2_atk' }, { t: 'djLedge', kind: 'hpup', id: 'v2_hp' }, { t: 'tablet', id: 'tab9', near: 'start', text: 'THE BELLS WERE THE FIRST TO FALL SILENT. THE PRIEST BARRED THE CHAPEL DOOR AND PRAYED. IT DID NOT HELP.' }],
@@ -97,7 +98,7 @@ const SPEC = {
   ls: { kind: 'abyss', zone: 1, name: 'Letosnik Abyss', parent: 'pd', theme: 'cave', opts: { ...LOOK[9], tint: [0.045, 0.03, 0.012], ambient: 0.5, wisps: 8, music: 'zone9' } },          // (a natural cave: its own rock tiles and backdrop - see THEME.cave and drawCave in world.js)
   s1: { kind: 'sanctuary', zone: 1, name: "Gravekeeper's Crypt", parent: 'g2' },
   // the vaults: a locked door (its padlock is drawn over it), a key found earlier in the same zone, a chest behind it.  They are optional treasure rooms, so no castle can be locked out by one.
-  sr: { kind: 'interior', zone: 1, name: 'The Reliquary', parent: 'hr', look: 'crypt', theme: 'chapel', ambient: 0.36, tint: [0.02, 0.03, 0.08], npcs: [0, 0], page: 6 },          // (behind the door the six skulls open: the last page)
+  sr: { kind: 'interior', zone: 1, name: 'The Reliquary', parent: 'hr', look: 'crypt', theme: 'chapel', ambient: 0.36, tint: [0.02, 0.03, 0.08], npcs: [0, 0], page: 3 },          // (behind the door the six skulls open: a page of the story)
   vg: { kind: 'interior', zone: 1, name: "The Gravekeeper's Vault", parent: 'g4', look: 'vault', theme: 'chapel', ambient: 0.42, tint: [0.02, 0.05, 0.01], npcs: [0, 0], chest: { kind: 'hpup', id: 'vg_chest' } },
   ga: { kind: 'interior', zone: 1, name: "Gravedigger's Shed", parent: 'g1', look: 'crypt', theme: 'chapel', npc: { kind: 'bearded', title: 'GRAVEDIGGER', text: 'THEY WALK AGAIN, AND I HAVE RUN OUT OF GROUND TO PUT THEM IN. THE HOLLOW BEYOND IS WORSE THAN THE GATE. TAKE THIS - IT HAS CLEARED MORE GRAVES THAN I CAN COUNT.', again: 'DIG DEEP. NEVER LOOK DOWN THE HOLE.', gifts: ['it_torch', 'it_torch'], sells: { item: 'torch', price: 40 } } },
 
@@ -192,7 +193,7 @@ const SPEC = {
   lb: { kind: 'arena', zone: 10, name: "The Librarian's Study", w: [44, 50], h: 16, boss: 'librarian', reward: 'goldkey', plats: 3, rise: 3, seal: 'left', flyRow: 6, abilities: ['djump'], decor: 'column', candles: [2, 2],
     opts: { ...LOOK[10], ambient: 0.3, boss: 'librarian', music: 'boss' } },
   sl: { kind: 'sanctuary', zone: 10, name: 'Reading Nook', parent: 'l1' },
-  // ======== ZONE 11 - THE FROZEN CAVERNS (off the Crossing Hall behind a wall of ice that only fire melts; the ice floors are slippery; walls of ice bar the way and hide treasure; at the far end the RIMEWYRM guards the KEY OF ANTIMONY, which opens the Library; the Glacier Road hides the RIME CRAMPONS)
+  // ======== ZONE 11 - THE FROZEN CAVERNS (off the Crossing Hall behind a wall of ice that only fire melts; the ice floors are slippery; walls of ice bar the way and hide treasure; at the far end the RIMEWYRM guards the KEY OF ANTIMONY, which opens the Library; the Glacier Road hides the OUROBOROS)
   ti: { kind: 'teleport', zone: 11, name: 'Waystone Rime Hollow', opts: LOOK[11], abilities: ['djump', 'dash', 'ember'] },
   i1: { kind: 'corridor', zone: 11, name: 'The Frozen Gallery', w: [102, 116], leverCell: true, opts: { ...LOOK[11], fog: 0.15 }, abilities: ['djump', 'dash', 'ember'],
     mods: [{ t: 'iceWall' }, { t: 'door', to: 'si', kind: 'wood' }, { t: 'cell', gate: 'ice', kind: 'hpup', id: 'i1_hp' }, { t: 'tablet', id: 'tab22', near: 'start', text: 'THE COLD CAME UP FROM THE FOUNDATIONS THE DAY THE SUN WAS TAKEN. NOTHING THAT FELL IN HAS THAWED. NOTHING THAT WALKS HERE FEELS IT.' }],
@@ -200,7 +201,7 @@ const SPEC = {
   i2: { kind: 'tower', zone: 11, name: 'The Icefall', w: [28, 32], h: [36, 42], top: [9, 11], opts: { ...LOOK[11], ambient: 0.45 }, abilities: ['djump', 'dash', 'ember'],
     topItem: { kind: 'mpup', id: 'i2_mp' }, candles: [1, 2], barrels: [1, 1], mix: { frostwyrm: [1, 2], ghost: [1, 2], wraith: [1, 1], bat: [2, 3] } },
   i3: { kind: 'corridor', zone: 11, name: 'The Glacier Road', w: [100, 114], opts: { ...LOOK[11], fog: 0.15, dark: true, wisps: 12 }, abilities: ['djump', 'dash', 'ember'],          // (DARK: only the hero's wisp, the ghostly blue wisps that drift here and the glare of the ice show the way - the ice throws every light back)
-    mods: [{ t: 'skull', id: 'skull6' }, { t: 'iceWall' }, { t: 'iceWall' }, { t: 'cell', gate: 'ice', kind: 'crampons', id: 'i3_crampons' }, { t: 'cell', gate: 'crack', kind: 'atkup', id: 'i3_atk' }],
+    mods: [{ t: 'skull', id: 'skull6' }, { t: 'iceWall' }, { t: 'iceWall' }, { t: 'cell', gate: 'ice', kind: 'ouroboros', id: 'i3_ouroboros' }, { t: 'cell', gate: 'crack', kind: 'atkup', id: 'i3_atk' }],
     candles: [3, 4], barrels: [1, 2], mix: { frostwyrm: [1, 2], hound: [2, 2], wraith: [1, 2], ghost: [1, 1], bat: [1, 2] } },
   ib: { kind: 'arena', zone: 11, name: "The Rimewyrm's Heart", w: [46, 52], h: 16, boss: 'rimewyrm', reward: 'well', plats: 3, rise: 3, seal: 'left', flyRow: 8, abilities: ['djump', 'dash', 'ember'], decor: 'ice',          // (the end of the Frozen Caverns: when the Rimewyrm falls the floor shatters and the hero drops into the FROZEN WELL, where its treasure waits in chests)
     opts: { ...LOOK[11], ambient: 0.4, wisps: 9, fog: 0.08, boss: 'rimewyrm', music: 'boss' } },
@@ -219,7 +220,7 @@ const SPEC = {
   hr: { kind: 'corridor', zone: 1, name: 'The Quiet Corner', w: [30, 36], outdoor: true, calm: true, closedRight: true, abilities: ['djump'], opts: { ...LOOK[1], ambient: 0.1 }, mods: [{ t: 'door', to: 'sr', kind: 'crypt', lock: ['skulls_done'] }, { t: 'tablet', id: 'tabsix', near: 'door', to: 'sr', text: 'IN THE WAR I KILLED SIX MEN.' }], candles: [1, 2], mix: {} },          // beyond the gates, out of the way: the Reliquary's door, and a gravestone
   // THE CROSSING HALL, likewise, is four short places: the waystone, the barricaded way to the Crypts (and the hidden page), the Library's door, and last the Throne's door.
   hx: { kind: 'teleport', zone: 3, name: 'The Crossing Waystone', abilities: ['djump', 'dash', 'ember'], opts: { ...LOOK[3], ambient: 0.34 } },          // the waystone, alone
-  hub2: { kind: 'corridor', zone: 3, name: 'The Barricaded Gallery', w: [48, 56], calm: true, abilities: ['djump', 'dash', 'ember'], opts: { ...LOOK[3], ambient: 0.34, fog: 0.4 }, mods: [{ t: 'cell', gate: 'crack', hollow: true, page: 3, secret: true, id: 'page3' }], candles: [2, 3], mix: {} },          // only the barricaded door to the Crypts
+  hub2: { kind: 'corridor', zone: 3, name: 'The Barricaded Gallery', w: [48, 56], calm: true, abilities: ['djump', 'dash', 'ember'], opts: { ...LOOK[3], ambient: 0.34, fog: 0.4 }, mods: [{ t: 'cell', gate: 'crack', hollow: true, kind: 'hpup', secret: true, id: 'hub2_hp' }], candles: [2, 3], mix: {} },          // only the barricaded door to the Crypts
   hl: { kind: 'corridor', zone: 3, name: 'The Archive Passage', w: [42, 50], calm: true, abilities: ['djump', 'dash', 'ember'], opts: { ...LOOK[3], ambient: 0.32, fog: 0.4 }, mods: [], candles: [2, 3], mix: {} },          // only the Library's locked door
   ht: { kind: 'corridor', zone: 3, name: 'The Throne Approach', w: [44, 52], calm: true, closedRight: true, abilities: ['djump', 'dash', 'ember'], opts: { ...LOOK[3], ambient: 0.28, fog: 0.4 }, mods: [], candles: [2, 3], mix: {} },          // the last door: the Shadow Throne
 
@@ -241,12 +242,15 @@ const SPEC = {
   t1: { kind: 'corridor', zone: 5, name: 'Hall of Shadows', w: [80, 92], deck: true, opts: { ...LOOK[5], fog: 0.55 },
     mods: [{ t: 'door', to: 's4', kind: 'wood' }, { t: 'door', to: 'sht', kind: 'wood', label: 'THE KEEPER', hint: 'SOMETHING IN THE DARK SELLS WHAT THE DEAD NO LONGER NEED.' }, { t: 'deckDoor', to: 'ta', kind: 'wood' }, { t: 'cell', gate: 'crystal', kind: 'mpup', id: 't1_mp' }, { t: 'tablet', id: 'tab8', near: 'start', text: 'HE WAITS ABOVE. THE ONE WHO TOOK THE SUN. TURN BACK, STRANGER - OR BRING THE DAWN.' }],
     candles: [3, 3], barrels: [2, 3], mix: { skeleton: [1, 1], wraith: [2, 2], archmage: [1, 1], bat: [4, 4], ghost: [2, 2], sorcerer: [1, 1], fireskull: [2, 2], wyrm: [1, 2], zealot: [4, 4] } },
+  // THE LAST DARK: the room before the Shadow Lord's.  A plain platform, and a pit too wide for anything but the Ouroboros: jump, double jump, dash, jump, double jump, dash, without ever coming down.  As you cross, the music dies away and the light goes out
+  // (def.pitFade: see Game.stepPlay), until only the wisp shows anything.  A door at the far side leads on into the Throne.
+  tp: { kind: 'chasm', zone: 5, name: 'The Last Dark', pit: [56, 64], opts: { ...LOOK[5], ambient: 0.3, weather: null } },
   t2: { kind: 'arena', zone: 5, name: 'Throne of Shadows', w: [44, 50], h: 16, boss: 'shadow', reward: 'dawn', plats: 3, rise: 3, seal: 'left', abilities: ['djump'], decor: 'banner', flyRow: 5,
     opts: { ...LOOK[5], ambient: 0.5, weather: 'embers', vig: 0.75, boss: 'shadow', music: 'boss_final' } },
   s4: { kind: 'sanctuary', zone: 5, name: 'Last Sanctuary', parent: 't1' },
   ta: { kind: 'interior', zone: 5, name: 'The Hidden Study', parent: 't1', look: 'study', theme: 'hall', ambient: 0.5, tint: [0.03, 0.0, 0.05], npc: { kind: 'oldman', title: 'THE LORD\'S SCRIBE', text: 'I WROTE DOWN EVERYTHING HE DID, AND NEVER ONCE LOOKED UP. NOW I CANNOT STOP LOOKING. HE IS ABOVE US. TAKE THIS, STRANGER - AND WHEN YOU MEET HIM, DO NOT LET HIM SPEAK.', again: 'I HAVE NO MORE PAGES. ONLY THE ONES I CANNOT BURN.', gifts: ['it_holy', 'it_holy', 'heart'], sells: { item: 'holy', price: 50 } } },
 };
-const ORDER = ['v0', 'v1', 'tv', 'v2', 'v3', 'vb', 'br', 'ot', 'og', 'sv', 'tg', 'g1', 'g2', 'g4', 'vg', 'g3', 'pd', 'ls', 's1', 'hw', 'hub1', 'hk', 'hr', 'sr', 'tw', 'w1', 'w2', 'vw', 'w3', 'wb', 'sw', 'tq', 'q1', 'q2', 'q3', 'qb', 'sq', 'th', 'h1', 'h2', 'vh', 'h4', 'h3', 's2', 'tc', 'c1', 'c2', 'vc', 'c3', 's3', 'dc', 'hx', 'hub2', 'hl', 'ht', 'tu', 'u1', 'vu', 'u2', 'u3', 's5', 'tk', 'k1', 'vk', 'k2', 'k3', 'kb', 'sk', 'tl', 'l1', 'l2', 'l3', 'lb', 'sl', 'ti', 'i1', 'i2', 'i3', 'ib', 'ic', 'si', 'shc', 'shu', 'shl', 'sht', 'tt', 't1', 't2', 's4', 'hv1', 'hv2', 'hv3', 'hv4', 'ga', 'wa', 'ha', 'ta', 'mr'];
+const ORDER = ['v0', 'vq', 'v1', 'tv', 'v2', 'v3', 'vb', 'br', 'ot', 'og', 'sv', 'tg', 'g1', 'g2', 'g4', 'vg', 'g3', 'pd', 'ls', 's1', 'hw', 'hub1', 'hk', 'hr', 'sr', 'tw', 'w1', 'w2', 'vw', 'w3', 'wb', 'sw', 'tq', 'q1', 'q2', 'q3', 'qb', 'sq', 'th', 'h1', 'h2', 'vh', 'h4', 'h3', 's2', 'tc', 'c1', 'c2', 'vc', 'c3', 's3', 'dc', 'hx', 'hub2', 'hl', 'ht', 'tu', 'u1', 'vu', 'u2', 'u3', 's5', 'tk', 'k1', 'vk', 'k2', 'k3', 'kb', 'sk', 'tl', 'l1', 'l2', 'l3', 'lb', 'sl', 'ti', 'i1', 'i2', 'i3', 'ib', 'ic', 'si', 'shc', 'shu', 'shl', 'sht', 'tt', 't1', 'tp', 't2', 's4', 'hv1', 'hv2', 'hv3', 'hv4', 'ga', 'wa', 'ha', 'ta', 'mr'];
 // The castle is a GRAPH, not a road.  Each chain is a run of rooms joined edge to edge (a's right end opens into b's left end); the chains meet at two crossroads (hub1, hub2), whose doors are signed:
 //   village - graveyard - hub1 -+- the Mire (a door high on a ledge: needs the double jump) ---------+
 //                               +- the Great Hall ------------------------------------------------+-- back to hub1; the Chapel door has two sigils: the Hall's and the Mire's boss
@@ -260,12 +264,12 @@ const CHAINS = [
   ['th', 'h1', 'h2', 'h4', 'h3'],
   ['tc', 'c1', 'c2', 'c3', 'hx', 'hub2', 'hl', 'ht'],
   ['tu', 'u1', 'u2', 'u3'],
-  ['tt', 't1', 't2'],
+  ['tt', 't1', 'tp', 't2'],
   ['tk', 'k1', 'k2', 'k3', 'kb'],
   ['tl', 'l1', 'l2', 'l3', 'lb'],
   ['ti', 'i1', 'i2', 'i3', 'ib'],
 ];
-const LINKS = CHAINS.flatMap(c => c.slice(1).map((id, i) => [c[i], 'R', id, 'L']));
+const LINKS = CHAINS.flatMap(c => c.slice(1).map((id, i) => [c[i], 'R', id, 'L'])).concat([['vq', 'R', 'v0', 'L']]);          // (the secret hollow joins the hill's left edge)
 // the crossroads' doors (two-way): hub a, its door tag ta, the first room of the branch b, the tag of that room's door tb; mod = how the door is built (see genCorridor), lock = boss flags it needs
 const PAIRS = [
   { a: 'hk', ta: 'hall', b: 'th', tb: 'in', kind: 'wood', mod: 'door', label: 'ARX NOCTIS: THE GREAT HALL', hint: 'THE GATE OF THE KEEP. EVERYTHING BEYOND IT BELONGS TO THE LORD.' },
@@ -291,7 +295,7 @@ export const PROGRESS = {
   doors: { mire: { needs: ['djump'] }, hall: {}, chapel: { bosses: ['h4', 'qb'] }, crypts: { needs: ['ember'] }, orloj: { needs: ['djump'], key: 'key_crypt' }, clockwork: {}, forge: { bosses: ['og'] }, ice: { needs: ['djump', 'dash', 'ember'] }, library: { key: 'key_frost' }, throne: { needs: ['thunder'], bosses: ['u3', 'kb'], key: 'key_gold' } },
 };
 // some neighbouring areas are joined by a DOOR at each end (UP) instead of an open edge: 'a>b' = a's far-right door leads to b's far-left door.  (Only when both are generated rooms: the hand-built classic ones keep their open edges.)
-const DOOR_LINK = { 'v2>v3': 'wood', 'g1>g2': 'crypt', 'w1>w2': 'wood', 'h1>h2': 'wood', 'c1>c2': 'wood', 'u1>u2': 'wood', 'k1>k2': 'wood', 'q1>q2': 'wood' };          // (consecutive rooms of a chain that are joined by doors instead)
+const DOOR_LINK = { 'tp>t2': 'crypt', 'v2>v3': 'wood', 'g1>g2': 'crypt', 'w1>w2': 'wood', 'h1>h2': 'wood', 'c1>c2': 'wood', 'u1>u2': 'wood', 'k1>k2': 'wood', 'q1>q2': 'wood' };          // (consecutive rooms of a chain that are joined by doors instead)
 // abilities the player owns when coming BACK through a zone (they've beaten that zone's boss by then)
 const BACK = { 10: ['djump', 'dash', 'ember'], 11: ['djump', 'dash', 'ember'], 9: ['djump'], 8: ['djump', 'dash', 'ember'], 6: [], 1: ['djump'], 7: ['djump'], 2: ['djump', 'dash'], 3: ['djump', 'dash', 'ember'], 4: ['djump', 'dash', 'ember', 'thunder'], 5: ['djump', 'dash', 'ember', 'thunder', 'dawn'] };
 // Everything after Baelphegaz (who gives the double jump) is built for a hero who HAS it - Prague and the Graveyard (zones 6 and 1) are not.  Such a room's baseline abilities include the double jump.
@@ -809,8 +813,8 @@ function genArena(id, spec, r) {
   if (!gated && spec.seal === 'both' && !spec.doorR) seals.push({ x: spec.exitGate ? W - 2 : W - 1, y0: BASE - 3, y1: BASE - 1 });
   b.bossSeals(...seals);
   if (spec.jets) {                                                                                       // STEAM JETS in the boss's room: on the floor, out from under the platforms, away from the doors and the boss's own ground; they stop when it dies
-    const cols = [], busyC = cx => (cx >= L - 3 && cx <= L + len1 + 2) || (cx >= Rr - 3 && cx <= Rr + len1 + 2) || Math.abs(cx - bossX) < 7 || cx < 9 || cx > W - 9 || (spec.plats >= 3 && b.def.tiles[(BASE - rise - 2) * W + cx] === TILE.PLAT);
-    for (const cx of r.shuffle(Array.from({ length: W }, (_, i) => i).filter(cx => !busyC(cx)))) { if (cols.length >= spec.jets) break; if (cols.some(q => Math.abs(q - cx) < 9)) continue; cols.push(cx); }
+    const gap = spec.jetGap || 9, pm = spec.jetGap ? 1 : 3, bn = spec.jetGap ? 3 : 7, cols = [], busyC = cx => (cx >= L - pm && cx <= L + len1 + pm - 1) || (cx >= Rr - pm && cx <= Rr + len1 + pm - 1) || Math.abs(cx - bossX) < bn || cx < 8 || cx > W - 8 || (spec.plats >= 3 && b.def.tiles[(BASE - rise - 2) * W + cx] === TILE.PLAT);
+    for (const cx of r.shuffle(Array.from({ length: W }, (_, i) => i).filter(cx => !busyC(cx)))) { if (cols.length >= spec.jets) break; if (cols.some(q => Math.abs(q - cx) < gap)) continue; cols.push(cx); }
     if (cols.length < Math.min(2, spec.jets)) return { ok: false, errs: ['no room for the steam jets'] };
     b.def.jets = cols.map(cx => ({ x: cx * 16 + 8, y: BASE * 16, h: 88, ph: r.f(), period: 240 + r.i(0, 40) })); b.def.jetsBoss = true;
   }
@@ -1016,7 +1020,29 @@ function genShop(id, spec, r) {
   return { ok: true, def: b.def };
 }
 
-const GEN = { despair: genDespair, abyss: genAbyss, well: genWell, shop: genShop, gears: genGears, disco: genDisco, authored: id => ({ ok: true, def: authoredDef(id) }), corridor: genCorridor, tower: genTower, arena: genArena, sanctuary: genSanctuary, teleport: genTeleport, interior: genInterior };
+// ------------------------------------------------------------------------------------------------ THE LAST DARK (the room before the Shadow Lord's: a pit that only the Ouroboros crosses)
+// Rooms like this one are proved differently: the two platforms are checked as they are, and the crossing by simulateChain (a bot that chains jump, double jump and dash for ever) from several places on the first platform, with the jump button tapped and held.
+function genChasm(id, spec, r) {
+  const L0 = r.i(15, 18), PW = r.i(spec.pit[0], spec.pit[1]), R0 = r.i(14, 16), W = L0 + PW + R0, H = 30, BASE = 12, P0 = L0, P1 = L0 + PW - 1;
+  const b = new B(id, spec.name, spec.zone, W, H, { ...spec.opts, theme: spec.theme, horizon: BASE });
+  b.floor(0, P0, BASE).floor(P1 + 1, W, BASE).ceil(0, W, 2).pit(P0, P1 + 1);                           // two cliffs, and between them a pit with spikes at the bottom of it (unseen: the dark hides them)
+  b.d('voidpit', (P0 + P1 + 1) / 2 - 0.5, BASE, { w: PW * 16 });                                       // (the scenery fades into black below the banks: see decor voidpit)
+  b.d('brazier', 4, BASE).d('brazier', P0 - 4, BASE); b.torches([2, 8, P0 - 2], 6);
+  b.tablet(10, BASE, 'There is no floor in the dark ahead, and no wall to lean on. Only the serpent that eats its own tail can cross it: strike, and leap, and leap again, and do not come down. I left it in the ice of the Glacier Road, where you were in too much of a hurry to look. I will be your light.', 'tabdark');                                                           // (her voice: it tells him what will carry him over, and where she left it)
+  if (spec.doorR) { b.door(W - 5, BASE, spec.doorR.to, 3, BASE, spec.doorR.kind || 'crypt'); patchDoor(b, { ...spec.doorR, needs: 'ouroboros' }); }          // the way on to the Throne (the validator knows the door needs the Ouroboros)
+  const meta = { abilities: ['djump', 'dash'], back: ['djump', 'dash'], entry: { L: { tx: 1, gy: BASE }, R: null }, must: [{ tx: 10, gy: BASE, name: 'tablet' }], items: [], start: { tx: 3, gy: BASE } };
+  b.def.meta = meta; b.def.entries = { L: meta.entry.L, R: null };
+  b.def.pitFade = { x0: P0 * 16, xm: Math.round((P0 + PW * 0.3) * 16), xd: Math.round((P0 + PW * 0.55) * 16) };
+  const room = roomOf(b.def);
+  for (const sx of [P0 - 1, P0 - 4, P0 - 9]) for (const hold of [false, true]) {
+    const res = simulateChain(room, { x: sx * 16 + 8, y: BASE * 16, dir: 1, hold, stopX: (P1 + 3) * 16, stopY: BASE * 16 - 8 });
+    if (!res || !res.over) return { ok: false, errs: ['the Ouroboros does not carry a hero across the pit (from ' + sx + ', ' + (hold ? 'held' : 'tapped') + ')'], def: b.def };
+  }
+  const sp = checkSpawns(b.def); if (sp.length) return { ok: false, errs: sp, def: b.def };
+  return { ok: true, def: b.def };
+}
+
+const GEN = { chasm: genChasm, despair: genDespair, abyss: genAbyss, well: genWell, shop: genShop, gears: genGears, disco: genDisco, authored: id => ({ ok: true, def: authoredDef(id) }), corridor: genCorridor, tower: genTower, arena: genArena, sanctuary: genSanctuary, teleport: genTeleport, interior: genInterior };
 
 // ------------------------------------------------------------------------------------------------ authored fallback + linking
 function authoredDef(id) {
@@ -1099,7 +1125,7 @@ function* buildSteps(seed, opts = {}) {
       if (!hand) throw new Error('level generator could not build room ' + id + ' for seed ' + seed + ': ' + (report.errors[id] || []).slice(0, 3).join(' | '));
       def = authoredDef(id); report.attempts[id] = MAX_TRY; report.fallbacks.push(id);
     }
-    def.id = id; if (SPEC[id].areaLabel) def.areaLabel = SPEC[id].areaLabel; tidyRoom(def); arrangeCandelabras(def); rooms[id] = def;          // (candelabras are scenery: set them once the room's doors and loot are known)
+    def.id = id; if (SPEC[id].hidden) def.hidden = true; if (SPEC[id].areaLabel) def.areaLabel = SPEC[id].areaLabel; tidyRoom(def); arrangeCandelabras(def); rooms[id] = def;          // (candelabras are scenery: set them once the room's doors and loot are known)
   }
   const linked = new Set();
   for (const k of Object.keys(DOOR_LINK)) {

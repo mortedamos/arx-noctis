@@ -196,7 +196,7 @@ export class Game {
   applyCode(code) {
     if (code !== 'all') return; const S = this.save;
     for (const k of Object.keys(S.abilities)) S.abilities[k] = true;
-    for (const f of ['got_mantle', 'got_lantern', 'got_shard', 'got_spring', 'got_tide', 'got_astrolabe', 'got_crampons', 'got_shoes', 'got_athanor']) S.flags[f] = true;
+    for (const f of ['got_mantle', 'got_lantern', 'got_shard', 'got_spring', 'got_tide', 'got_astrolabe', 'got_ouroboros', 'got_shoes', 'got_athanor']) S.flags[f] = true;
     for (let n = 1; n <= PAGE_COUNT; n++) { S.flags['page' + n] = true; markPage(n); }
     for (const id of Object.keys(ITEMS)) addItem(S, id, ITEMS[id].max);
     for (const id of this.world.stones || []) S.flags['tp_' + id] = true;
@@ -246,9 +246,10 @@ export class Game {
     if (this.gaze) { this.gaze = null; this.playerFrozen = false; } this.gateAnims = [];
     this.blackout = null; this.well = null; this.enemies = []; this.projectiles = []; this.pickups = []; this.props = []; this.popups = []; this.boss = null; this.delayed = []; this.fx.reset(); this.fx.setWisps(def.wisps || 0); this.flames = roomFlames(this.room); this.smokeSpots = this.room.fireOut ? this.room.decos.filter(d => d.t === 'blaze' && !d.small).map(d => ({ x: d.x, y: d.y })) : []; this.falls = this.room.decos.filter(d => d.t === 'waterfall'); this.fx.setWater(this.waterList()); this.mirrorView = def.mirror ? new MirrorView(def.mirror, !!S.flags['boss_' + id]) : null;          // (the Mirror Room: a great mirror - whole until you walk up to it)
     const dusk = def.zone === 6 && !S.flags.village_fire && !def.keepLook;          // Prague before the Cinder Warden's torches: a calm violet dusk, with golden dust in the air - the monsters are loose, but nothing burns yet
-    this.fx.setShadowMask(this.room); this.fx.setAmbient(dusk ? Math.max(def.ambient, 0.42) : def.ambient, dusk ? [0.05, 0.03, 0.12] : this.room.fireOut ? [0.09, 0.05, 0.06] : def.tint, def.vig); if (def.dark) this.fx.setDark(); this.fx.setAmbientFx(dusk ? 'dust' : this.room.fireOut ? 'mist' : def.weather); A.setIndoor(def.indoor); this.fx.setStorm(def.storm, 0.0035);
+    A.hush = 1; this.fx.setShadowMask(this.room); this.fx.setAmbient(dusk ? Math.max(def.ambient, 0.42) : def.ambient, dusk ? [0.05, 0.03, 0.12] : this.room.fireOut ? [0.09, 0.05, 0.06] : def.tint, def.vig); if (def.dark) this.fx.setDark(); this.fx.setAmbientFx(dusk ? 'dust' : this.room.fireOut ? 'mist' : def.weather); A.setIndoor(def.indoor); this.fx.setStorm(def.storm, 0.0035);
     this.fx.setFog(def.theme === 'graveyard' && def.weather === 'rain' ? 0 : def.fog * (def.theme === 'swamp' ? 0.8 * 0.9 : 1),          // (no ground fog in the rain of the Graveyard)
        def.horizon + 4, FOG_COL[def.theme] || FOG_COL.default, def.fogH);          // rolling ground fog in the damp, dead places
+    this.room.pitFade = def.pitFade ? { ...def.pitFade, on: true, m: 0, d: 0, base: this.fx.ambBase } : null;          // (a room whose music and light fade as you cross it)
     this.room.movers = def.movers ? new Movers(def.movers) : null; this.icicles = (def.icicleTraps || []).map(d => new Icicle(d)); this.jets = def.jets && !(def.jetsBoss && this.save && this.save.flags['boss_' + id]) ? def.jets.map(d => new SteamJet(d)) : [];          // (steam jets: in a boss's room they are only there while the boss lives) this.player.ride = null; this.vents = this.room.decos.filter(d => d.t === 'img' && d.img === 'sp_vent'); this.graves = this.room.decos.filter(d => d.t === 'grave'); this.ghost.snap();
     if (def.disco) { this.room.discoState = { mode: S.flags.disco_done ? 'gone' : 'party', t0: 0 }; A.preload('record_scratch'); }
     const bossDone = !!S.flags['boss_' + id];
@@ -609,6 +610,7 @@ export class Game {
     if (this.trans && this.trans.phase === 'out') { fx.update(1); return; }
     if (Input.pressed.pause && !this.cutscene && !p.dead) { this.pause(); return; }
     if (Input.pressed.map && !this.cutscene && !p.dead) { this.openMap(); return; }
+    if (this.room.pitFade && this.room.pitFade.on) this.stepPitFade();          // (the Last Dark: the music and the light go out as the hero crosses the pit)
     S.time += 1 / 60; if (S.flags.got_athanor && S.mp < S.maxMp) { S.mpAcc = (S.mpAcc || 0) + 1 / 540; if (S.mpAcc >= 1) { S.mpAcc -= 1; p.gainMp(1); } }          // (the Athanor: one point of mana every nine seconds, for ever)
     fx.clearLights(); if (this.room && this.room.maskDirty) { this.room.maskDirty = false; fx.setShadowMask(this.room); }
     this.checkVillageScene(); this.checkOpening(); this.discoStep(); this.stepChase();
@@ -674,6 +676,12 @@ export class Game {
       else { this.popup(this.player.x, this.player.y - 58, 'THE FLAMES ARE RIGHT BEHIND YOU!', '#bcd8ff'); this.after(70, start); }
     };
     this.after(40, go); return c;
+  }
+  // THE LAST DARK: the further across the pit the hero is, the quieter the music (silent a third of the way over) and the darker the room (black by the middle: only the wisp shows anything).  It follows the hero both ways.
+  stepPitFade() {
+    const f = this.room.pitFade, p = this.player, fx = this.fx, S = this.save, sm = v => { v = clamp(v, 0, 1); return v * v * (3 - 2 * v); };
+    f.m += (sm((p.x - f.x0) / (f.xm - f.x0)) - f.m) * 0.05; f.d += (sm((p.x - f.x0) / (f.xd - f.x0)) - f.d) * 0.05; A.hush = 1 - f.m;
+    const lamp = !!S.flags.got_lantern, lvl = lamp ? 1.1 : 0.8; fx.ambBase = f.base + (lvl - f.base) * f.d; fx.darkU.uAmbient.value = fx.ambBase; fx.darkU.uMax.value = 0.86 + (lamp ? 0.115 : 0.04) * f.d;
   }
   stepChase() {
     const c = this.chase, p = this.player, fx = this.fx, r = this.room; if (!c || !c.on || !r) return; c.t++;
@@ -767,7 +775,7 @@ export class Game {
       if (e.side !== 'L' && e.side !== 'R') continue;
       const L = e.side === 'L', wx = L ? 10 : r.pw - 10, sx = wx - cx, sy = (e.from + e.to + 1) / 2 * T - cy; if (sx < -10 || sx > W + 10 || sy < -10 || sy > H + 10) continue;
       let sealed = false; for (let k = 0; k < 8 && !sealed; k++) for (let row = e.from; row <= e.to; row++) if (r.get(L ? k : r.w - 1 - k, row) === TILE.SEAL) { sealed = true; break; }
-      if (!sealed) { drawExitArrow(top, sx, sy, t, L ? -1 : 1); if (Math.abs(p.x - wx) < 80) this.areaLabel(top, this.areaName(e.room), clamp(sx + (L ? 12 : -12), 0, W), sy - 4, L ? 'left' : 'right'); }
+      if (!sealed && !(this.world.rooms[e.room] && this.world.rooms[e.room].hidden)) { drawExitArrow(top, sx, sy, t, L ? -1 : 1); if (Math.abs(p.x - wx) < 80) this.areaLabel(top, this.areaName(e.room), clamp(sx + (L ? 12 : -12), 0, W), sy - 4, L ? 'left' : 'right'); }
     }
     fx.setCamera(cx, cy);
     if (r.spikes && r.spikes.length) { top.globalAlpha = 0.95; for (const [tx, ty] of r.spikes) { const sx = tx * T - cx, sy = ty * T - cy; if (sx < -16 || sx > W || sy < -16 || sy > H) continue; drawSheet(top, 'spikes', 0, sx, sy, { ax: 0, ay: 0 }); } top.globalAlpha = 1; }          // hazards are drawn again above the fog and the dark: they must always be seen

@@ -188,7 +188,7 @@ export class Player extends Entity {
       // ---- dash
       if (I.pressed.dash && S.abilities.dash && this.dashCd === 0 && !this.dashT && (this.onGround || this.canAirDash) && (!this.crouch || this.canStand(room))) {
         if (this.crouch) { this.crouch = false; this.h = PH; }
-        this.dashT = DASH_T; this.dashCd = S.flags.got_spring ? 15 : 34; this.atk = 0; this.atkBuf = 0; this.castT = 0; if (dx) this.dir = dx; if (!this.onGround) this.canAirDash = false; this.invT = Math.max(this.invT, DASH_T + 3); this.dashAtkId = ++g.attackCounter; this.dashHitDone = false;
+        this.dashT = DASH_T; this.dashCd = S.flags.got_spring ? 15 : 34; this.atk = 0; this.atkBuf = 0; this.castT = 0; if (dx) this.dir = dx; if (!this.onGround) { this.canAirDash = false; if (S.flags.got_ouroboros) this.airJump = true; } this.invT = Math.max(this.invT, DASH_T + 3);          // (the Ouroboros: a dash in the air gives a jump back) this.dashAtkId = ++g.attackCounter; this.dashHitDone = false;
         A.sfx('dash'); g.fx.burst(this.x, this.y - 18, 8, COLORS.purple, { speed: 1.5, s0: 10, s1: 2 });
       }
       // ---- jump
@@ -198,6 +198,10 @@ export class Player extends Entity {
       }
       if (this.jumpBuf > 0 && !this.crouch) {
         if (this.coyote > 0 || this.onGround) { this.vy = JUMP; this.jumpBuf = 0; this.coyote = 0; this.onGround = false; A.sfx('jump'); g.fx.burst(this.x, this.y - 1, 4, [[0.7, 0.7, 0.8], [0.4, 0.4, 0.5]], { speed: 0.8, s0: 7, s1: 2, l0: 10, l1: 18 }); }
+        else if (this.airJump && S.flags.got_ouroboros) {          // THE OUROBOROS: after a dash in the air, a whole jump again (it even cuts the dash short), and with it the double jump and the dash come back - jump, double jump, dash, jump, double jump, dash ... and never a need to land
+          this.airJump = false; this.dashT = 0; this.vy = JUMP; this.canDouble = true; this.canAirDash = true; this.jumpBuf = 0; this.djumpT = 0; A.sfx('jump');
+          g.fx.ring(this.x, this.y - 8, 20, [0.5, 0.95, 0.5], 18, 0.22, 4); g.fx.burst(this.x, this.y - 6, 8, [[0.6, 1, 0.6], [0.2, 0.6, 0.3]], { speed: 1.4, s0: 8, s1: 1, up: -0.5 });
+        }
         else if (S.abilities.djump && this.canDouble && !this.dashT) {
           this.vy = DJUMP; this.canDouble = false; this.jumpBuf = 0; this.djumpT = 18; A.sfx('djump'); g.fx.ring(this.x, this.y - 6, 18, [0.6, 0.8, 1], 18, 0.25, 4);
           g.fx.burst(this.x, this.y - 4, 12, COLORS.ice, { speed: 1.6, s0: 9, s1: 1, up: -0.6 });
@@ -246,7 +250,7 @@ export class Player extends Entity {
 
     // landing / coyote
     if (this.onGround) {
-      this.coyote = 6; this.canDouble = true; this.canAirDash = true; this.djumpT = 0;
+      this.coyote = 6; this.canDouble = true; this.canAirDash = true; this.djumpT = 0; this.airJump = false;
       if (!was) { A.sfx('land'); this.landedT = 8; if (this.fallSpeed > 3) g.fx.burst(this.x, this.y - 1, 5, [[0.7, 0.68, 0.75], [0.3, 0.3, 0.4]], { speed: 1, s0: 8, s1: 2, l0: 10, l1: 20 }); }
       // remember a safe spot to respawn after spikes/pits
       if (++this.safeT > 10 && this.hurtT === 0 && this.nearFloor(room) && !touchesSpikes({ x: this.x + this.dir * 10, y: this.y, w: this.w, h: this.h, box: { x: this.x + this.dir * 10 - 6, y: this.y - 36, w: 13, h: 36 } }, room)) { this.lastSafe = { x: this.x, y: this.y }; this.safeT = 0; }

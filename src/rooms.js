@@ -253,7 +253,19 @@ export function arrangeCandelabras(def) {
   b.d('img', 7, 12, { img: 'gy_st4', back: true }).d('img', 19, 12, { img: 'gy_st1', back: true }).d('img', 25, 10, { img: 'gy_st5' }).d('img', 36, 12, { img: 'gy_st3', back: true }).d('img', 47, 12, { img: 'gy_st7', back: true }).d('img', 44, 11, { img: 'gy_st8' }).d('img', 58, 12, { img: 'gy_st6', back: true });          // statues on the hill (Graveyard pack): a kneeling mourner beside her grave, the others among the stones and behind the fences, a gargoyle on the rise and an owl on the step
   b.tablet(51, 12, '', 'tabv0');
   b.e('upgrade', 25, 10, { kind: 'silberzahn', id: 'got_silberzahn' });          // the hero's sword, on top of the rise (a new game only: see game.js; the Player cannot swing until it is taken)
-  b.exit('R', 9, 11, 'v1', 1, 12);
+  b.exit('R', 9, 11, 'v1', 1, 12).exit('L', 9, 11, 'vq', 24, 12);          // (and, far to the left, past the stones: the way into the hollow under the yew - a secret: no arrow, no label, not on the map)
+  add(b);
+}
+{
+  // UNDER THE YEW - a hollow beyond the last stones on the left of the hill, where he sat the night she died and wrote the last page ("I am writing this on the hill because I cannot write it anywhere else").  It is a secret: you find it by walking left
+  // from the grave; nothing points to it (the exit arrow is not drawn: see Game.draw), and it is not on the map (def.hidden: levelgen SPEC vq).
+  const b = new B('vq', 'Under the Yew', 6, 26, 14, { theme: 'village', weather: 'rain', ambient: 0.3, horizon: 12, tint: [0.05, 0.03, 0.14], vig: 0.6, music: 'intro', map: { x: 0, y: 5 } });
+  b.def.keepLook = true; b.floor(0, 26, 12); b.block(0, 9, 3, 3).block(3, 11, 1, 1);          // the hill rises behind it, on the left
+  b.d('img', 5, 12, { img: 'forest_tree_4', back: true }).d('img', 9, 12, { img: 'forest_tree_2', back: true }).d('img', 17, 12, { img: 'forest_tree_1', back: true }).d('img', 21, 12, { img: 'forest_tree_3', back: true });
+  b.d('img', 12, 12, { img: 'cemetery_stone-4' }).d('img', 15, 12, { img: 'cemetery_bush-small' }).d('img', 19, 12, { img: 'cemetery_stone-2' }).d('img', 23, 12, { img: 'cemetery_bush-small' });
+  b.e('tablet', 11, 12, { id: 'tabyew', narr: true, text: 'A flat stone under an old yew, worn smooth, as if someone sat here a long time in the rain. A folded page lies under a smaller stone, kept dry.' });          // (the flat stone he sat on)
+  b.e('upgrade', 13, 12, { kind: 'page', n: 6, id: 'page6', secret: true });          // PAGE 6: THE NAME I LEFT
+  b.exit('R', 9, 11, 'v0', 1, 12);
   add(b);
 }
 {

@@ -15,7 +15,7 @@ export const Audio_ = {
   settings: { music: 0.7, sfx: 0.8, muted: false, hints: true, cloak: true, glow: true },     // hints = show boss attack icons + names
   tracks: {},          // id -> { file, type }
   available: null,     // Map (lowercase name -> real name) of the files in music/, when they can be listed (a local server, or music/files.json)
-  cur: null, outgoing: [], want: null, failed: new Set(), duck: 1, duckTarget: 1, indoor: 1, indoorTarget: 1, stingEl: null, lastSfx: {}, unlocked: false, blurred: false,
+  cur: null, outgoing: [], want: null, failed: new Set(), duck: 1, duckTarget: 1, indoor: 1, indoorTarget: 1, hush: 1, stingEl: null, lastSfx: {}, unlocked: false, blurred: false,
 
   // While the game is being tested (the page opened with ?nopause, or ?mute) it makes no sound at all - unless the test is of the music (?music).  The player's own saved MUTE setting is left alone.
   forceMute: false,
@@ -159,9 +159,9 @@ export const Audio_ = {
   update(dt) {
     const mv = this.silent ? 0 : this.settings.music; this.duck += (this.duckTarget - this.duck) * Math.min(1, dt * 0.08); this.indoor += (this.indoorTarget - this.indoor) * Math.min(1, dt * 0.05);
     const step = dt / 60;
-    if (this.cur) { const c = this.cur; c.vol = Math.min(1, c.vol + step / Math.max(0.05, c.fadeTime)); c.el.volume = Math.max(0, Math.min(1, c.vol * mv * this.duck * this.indoor)); }
+    if (this.cur) { const c = this.cur; c.vol = Math.min(1, c.vol + step / Math.max(0.05, c.fadeTime)); c.el.volume = Math.max(0, Math.min(1, c.vol * mv * this.duck * this.indoor * this.hush)); }          // (hush: a room that takes the music away as you cross it - the Last Dark)
     for (let i = this.outgoing.length - 1; i >= 0; i--) {
-      const o = this.outgoing[i]; o.vol -= step / Math.max(0.05, o.fadeTime); o.el.volume = Math.max(0, Math.min(1, o.vol * mv * this.indoor));
+      const o = this.outgoing[i]; o.vol -= step / Math.max(0.05, o.fadeTime); o.el.volume = Math.max(0, Math.min(1, o.vol * mv * this.indoor * this.hush));
       if (o.vol <= 0) { o.el.pause(); o.el.removeAttribute('src'); this.outgoing.splice(i, 1); }
     }
     if (this.stingEl) this.stingEl.volume = mv;

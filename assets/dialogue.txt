@@ -184,6 +184,12 @@ HER VOICE: I AM HERE. I NEVER LEFT YOU. LET HIM KEEP HIS DARKNESS - I WILL BE TH
 You cannot read this because of the tears in your eyes. You miss her terribly.
 
 ; in room v0
+[tablet tabyew]
+A flat stone under an old yew, worn smooth, as if someone sat here a long time in the rain. A folded page lies under a smaller stone, kept dry.
+
+[tablet tabdark]
+There is no floor in the dark ahead, and no wall to lean on. Only the serpent that eats its own tail can cross it: strike, and leap, and leap again, and do not come down. I left it in the ice of the Glacier Road, where you were in too much of a hurry to look. I will be your light.
+
 [tablet tabv0]
 There was never a stone big enough for the two of us, was there? Go down to the city. I will follow where I can. Look for blue light: that is where I show.
 

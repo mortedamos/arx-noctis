@@ -981,7 +981,7 @@ export class BossVampire extends Boss {
 // from the floor where the boiler overflows.  In the second half the boiler runs hot: it moves and strikes quicker, spits three fireballs and the vents burst in greater number.  When it falls the boiler goes up.
 export class BossGolem extends Boss {
   constructor(g, x, y, o) {
-    super(g, x, y, 44, 84, o); this.hp = this.maxHp = 320; this.dmg = 14; this.xp = 200; this.bossName = 'THE BOILER GOLEM'; this.voice = 'golem'; this.sub = 'WHO STILL KEEPS THE FIRES'; this.dir = -1; this.deathFx = COLORS.fire; this.ice = { w: 70, h: 96 };
+    super(g, x, y, 44, 84, o); this.hp = this.maxHp = 640; this.dmg = 14; this.xp = 200; this.bossName = 'THE BOILER GOLEM'; this.voice = 'golem'; this.sub = 'WHO STILL KEEPS THE FIRES'; this.dir = -1; this.deathFx = COLORS.fire; this.ice = { w: 70, h: 96 };
     this.hitDone = false; this.heat = 0;
   }
   get spd() { return this.phase === 2 ? 1.2 : 1; }

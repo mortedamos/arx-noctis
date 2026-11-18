@@ -76,6 +76,30 @@ export function simulate(room, o) {
   return null;
 }
 
+// THE OUROBOROS CHAIN.  With the Ouroboros an air dash gives a jump back (see Player.airJump), so a hero can jump, double jump, dash, jump, double jump, dash ... without ever landing.  This is that hero, as a bot (it makes the same choices every
+// time, every other frame, with the jump button tapped - short hops - or held - full jumps): where does the chain take them?  Returns where it lands (or null if it ends in the spikes or the pit), and how far it got.
+export function simulateChain(room, o) {
+  const e = { x: o.x, y: o.y, w: PW, h: PH, vx: 0, vy: 0, dropThrough: 0, onGround: true, hitX: 0, hitCeil: false }, dir = o.dir || 1, held = !!o.hold;
+  let dashT = 0, dashCd = 0, canDouble = true, canAirDash = true, airJump = false, maxX = e.x;
+  for (let step = 0; step < (o.steps || 1500); step++) {
+    if (dashCd > 0) dashCd--;
+    if (step % 2 === 0) {
+      if (e.onGround) { e.vy = JUMP; e.onGround = false; canDouble = true; canAirDash = true; airJump = false; }
+      else if (airJump && !dashT) { airJump = false; e.vy = JUMP; canDouble = true; canAirDash = true; }
+      else if (canDouble && e.vy > -0.5 && !dashT) { e.vy = DJUMP; canDouble = false; }
+      else if (canAirDash && dashCd === 0 && !canDouble && !dashT) { dashT = DASH_T; dashCd = 34; canAirDash = false; airJump = true; }
+    }
+    if (!held && e.vy < -2.4 && !dashT) e.vy = -2.4;
+    if (dashT > 0) { dashT--; e.vx = dir * DASH_V; e.vy = 0; if (dashT === 0) e.vx = dir * 2.2; }
+    else { e.vx = approach(e.vx, dir * RUN, AIRACC); e.vy = Math.min(e.vy + GRAV, MAXFALL); }
+    moveX(e, room); moveY(e, room); maxX = Math.max(maxX, e.x); if (o.trace && step % 12 === 0) o.trace.push([step, Math.round(e.x), Math.round(e.y), Math.round(e.vy * 10) / 10, dashT]);
+    if (o.stopX && e.x >= o.stopX && e.y < o.stopY) return { x: e.x, y: e.y, step, maxX, over: true };          // (far enough, and still above the floor: it has crossed)
+    if (e.onGround && step > 3) return { x: e.x, y: e.y, step, maxX };
+    if (e.y > room.ph + 40 || inSpikes(room, e)) return null;
+  }
+  return null;
+}
+
 function variants(abil, runUp) {
   const out = [], dj = abil.has('djump'), dash = abil.has('dash');
   for (const s of [0.4, 1]) for (const hold of [999, 9]) {
