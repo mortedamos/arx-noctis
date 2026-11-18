@@ -12,7 +12,7 @@ const PAD = { // standard gamepad mapping -> action
   up: [12], down: [13], left: [14], right: [15], interact: [12],
 };
 const actions = Object.keys(KEYMAP);
-export const ownKeys = e => !!(e.target && e.target.closest && e.target.closest('[data-own-keys]'));          // (a key typed in an HTML panel over the game - the SAVE CODE box - belongs to that panel, not to the game)
+export const ownKeys = e => !!(e.target && e.target.closest && e.target.closest('[data-own-keys]'));          // (a key pressed in an HTML panel over the game - the save file panels - belongs to that panel, not to the game)
 const codeToActions = {};
 for (const a of actions) for (const c of KEYMAP[a]) (codeToActions[c] ||= []).push(a);
 
@@ -41,8 +41,8 @@ export const Input = {
       for (const a of codeToActions[e.code] || []) this._pend.add(a);
     });
     addEventListener('keyup', e => {
+      this._keys.delete(e.code);          // (even a key let go in a panel: its key went down in the game, when the menu item was chosen, and must not stay held)
       if (ownKeys(e)) return;
-      this._keys.delete(e.code);
       for (const a of codeToActions[e.code] || []) this._pendRel.add(a);
     });
     addEventListener('blur', () => { this._keys.clear(); });

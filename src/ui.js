@@ -16,7 +16,7 @@ import { BUILD } from './build.js';
 import { secretStats } from './secrets.js';
 import { BestiaryScreen } from './bestiary.js';
 import { LetterBook, savePages, PAGE_COUNT } from './letters.js';
-import { openSavePanel } from './savecode.js';
+import { openSavePanel, openLoadPanel } from './savefile.js';
 import { isIOS, isStandalone } from './pwa.js';
 
 const GOLD = '#e8b84a', PALE = '#e8dcc0', DIM = '#8a7d9a', RED = '#c23b2a';
@@ -113,7 +113,7 @@ export function drawExitArrow(ctx, x, y, t, dir) {
 
 export class Dialog {
   constructor(text, o = {}) { this.font = o.font || (o.name && /^the stranger$/i.test(o.name) && hasFace('stranger') ? 'stranger' : o.name ? (hasFace('npc') ? 'npc' : 'mixed') : undefined); if (this.font === 'hand') text = handText(text); else if (this.font === 'mixed' || this.font === 'stranger' || this.font === 'npc') text = sentenceCase(text);          // (the Stranger speaks in his own bookhand)          // (a named speaker - an NPC, a boss - talks in sentence case; the gravestones in their own face)
-    this.lines = wrapText(text, 300, 1, this.font); this.full = this.lines.join('\n'); this.t = 0; this.done = false; this.closed = false; this.name = o.name || null; this.onClose = o.onClose || null; this.choices = o.choices || null; this.sel = 0; this.choice = -1; this.footer = o.footer || null; }
+    this.lines = wrapText(text, 300, 1, this.font); this.full = this.lines.join('\n'); this.t = 0; this.done = false; this.closed = false; this.name = o.name || null; this.onClose = o.onClose || null; this.choices = o.choices || null; this.sel = o.sel || 0; this.choice = -1; this.footer = o.footer || null; }
   update() {
     this.t += 1.2; const skip = Input.pressed.confirm || Input.pressed.back || Input.pressed.attack || Input.pressed.jump;
     if (this.choices && this.t >= this.full.length) {                                       // a question: LEFT / RIGHT (or UP / DOWN) choose, ENTER / SPACE answers, ESC says no
@@ -243,13 +243,14 @@ function loadCredits(cr) {
 export class TitleScreen {
   constructor(g) {
     this.g = g; this.t = 0; this.mode = 'main'; const has = g.hasSave();
-    // NEW GAME and CONTINUE stand centred; the rest is a two-column table of smaller items (the rows below)
+    // NEW GAME and QUICK LOAD (the game saved in this browser) stand centred; the rest is a two-column table of smaller items (the rows below)
     this.main = new Menu([
-      { label: 'NEW GAME', action: () => g.newGame() }, { label: 'CONTINUE', disabled: !has, action: () => g.continueGame() },
+      { label: 'NEW GAME', action: () => g.newGame() }, { label: 'QUICK LOAD', disabled: !has, action: () => g.loadSlot() },
+      { label: 'LOAD GAME', small: true, action: () => { this.mode = 'file'; openLoadPanel(g, ok => { this.mode = 'main'; if (ok) g.loadSlot(); }); } },          // (a save file chosen and played: an HTML panel, see savefile.js)
+      { label: 'SAVE GAME', small: true, disabled: !has, action: () => { const s = g.loadSave(); if (!s) return; this.mode = 'file'; openSavePanel(g, s, () => { this.mode = 'main'; }); } },          // (the game saved in this browser, written to a file)
       { label: 'CHOOSE SEED', small: true, action: () => { this.mode = 'seed'; this.seed = ''; Input.typed.length = 0; } },          // (on a phone, a keypad of numbers is drawn in the game itself: the game never opens a pop-up window)
-      { label: 'SAVE CODE', small: true, action: () => { this.mode = 'savecode'; openSavePanel(g, restored => { if (restored) g.title = new TitleScreen(g); else this.mode = 'main'; }); } },          // (the save as a code to keep, or a code to bring a game back: an HTML panel, see savecode.js)
       { label: 'CONTROLS', small: true, action: () => { this.mode = 'controls'; } }, { label: 'OPTIONS', small: true, action: () => { this.mode = 'options'; this.opts.i = 0; } }, { label: 'CREDITS', small: true, action: () => this.openCredits() },
-    ], [[0], [1], [2, 3], [4, 5], [6]]); if (has) this.main.i = 1;
+    ], [[0], [1], [2, 3], [4, 5], [6, 7]]); if (has) this.main.i = 1;
     this.homeHint = isIOS() && !isStandalone();          // (an iPhone in Safari: the save is not safe there for long - see pwa.js)
     this.opts = optionsMenu(() => { this.mode = 'main'; });
   }
@@ -278,7 +279,7 @@ export class TitleScreen {
       if (Input.touchOn) for (const tp of Input.taps) { const b = this.seedPad().find(b => tp.x >= b.x && tp.x < b.x + b.w && tp.y >= b.y && tp.y < b.y + b.h); if (!b) continue; A.sfx('click'); if (b.k === 'DEL') this.seed = this.seed.slice(0, -1); else if (b.k === 'BEGIN') go = true; else if (b.k === 'BACK') { this.mode = 'main'; A.sfx('back'); return; } else if (this.seed.length < 9) this.seed += b.k; }
       if (Input.pressed.esc) { this.mode = 'main'; A.sfx('back'); } else if (go) { const code = g.codeFor(this.seed); if (code) g.newGame(undefined, code); else g.newGame(this.seed === '' ? undefined : +this.seed); }
     } else if (this.mode === 'options') { this.opts.update(g); if (Input.pressed.back) { this.mode = 'main'; A.sfx('back'); } }
-    else if (this.mode === 'savecode') { /* the HTML panel has the keys and the taps until it is closed */ }
+    else if (this.mode === 'file') { /* the HTML panel has the keys and the taps until it is closed */ }
     else if (Input.pressed.back || Input.pressed.confirm || Input.taps.length) { this.mode = 'main'; A.sfx('back'); }
   }
   draw(ctx) {
@@ -289,9 +290,9 @@ export class TitleScreen {
     ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(0, 0, W, H);
     const lg = logo(); const bob = Math.sin(t * 0.03) * 1.5; ctx.drawImage(lg, Math.round(W / 2 - lg.lw / 2), Math.round(14 + bob), lg.lw, lg.lh);
     if (this.mode === 'main' && this.g.clean) { /* (the trailer's last card: the logo and the weather, no menu) */ }
-    else if (this.mode === 'main' || this.mode === 'savecode') {
+    else if (this.mode === 'main' || this.mode === 'file') {
       this.main.draw(ctx, W / 2, 104);
-      if (this.homeHint) drawText(ctx, 'KEEP YOUR SAVE: SHARE > ADD TO HOME SCREEN', W / 2 - 6, H - 12, { align: 'center', color: '#b5a47a', scale: 0.85 });          // (see SAVE CODE; small, to clear the build number in the corner)
+      if (this.homeHint) drawText(ctx, 'KEEP YOUR SAVE: SHARE > ADD TO HOME SCREEN', W / 2 - 6, H - 12, { align: 'center', color: '#b5a47a', scale: 0.85 });          // (see savefile.js; small, to clear the build number in the corner)
       else drawText(ctx, Input.touchOn ? 'TAP AN ITEM' : 'ENTER / Z TO SELECT', W / 2, H - 13, { align: 'center', color: DIM });
     }
     else if (this.mode === 'credits') {
@@ -377,7 +378,14 @@ function foundPanel(ctx, g, pm) {
 export class PauseMenu {
   constructor(g) {
     this.g = g; this.mode = 'main'; this.foc = 'menu'; this.sel = 0; this.opts = optionsMenu(() => { this.mode = 'main'; });
-    this.main = new Menu([{ label: 'RESUME', action: () => g.resume() }, { label: 'MAP', action: () => g.openMap() }, { label: 'BESTIARY', action: () => { this.mode = 'bestiary'; this.best = new BestiaryScreen(g, () => { this.mode = 'main'; }); } }, { label: () => 'LETTERS  ' + savePages(g.save).size + '/' + PAGE_COUNT, action: () => { this.mode = 'letters'; this.book = new LetterBook(() => { this.mode = 'main'; }, savePages(g.save)); } }, { label: 'OPTIONS', action: () => { this.mode = 'options'; this.opts.i = 0; } }, { label: 'CONTROLS', action: () => { this.mode = 'controls'; } }, { label: 'QUIT TO TITLE', action: () => g.toTitle() }]);
+    this.note = null; this.armed = 0;          // (a line of feedback under the menu - { text, bad, t } - and the countdown of a QUICK LOAD that has been asked for once)
+    const say = (text, bad = false) => { this.note = { text, bad, t: 170 }; };
+    this.main = new Menu([{ label: 'RESUME', action: () => g.resume() }, { label: 'MAP', action: () => g.openMap() }, { label: 'BESTIARY', action: () => { this.mode = 'bestiary'; this.best = new BestiaryScreen(g, () => { this.mode = 'main'; }); } }, { label: () => 'LETTERS  ' + savePages(g.save).size + '/' + PAGE_COUNT, action: () => { this.mode = 'letters'; this.book = new LetterBook(() => { this.mode = 'main'; }, savePages(g.save)); } },
+      { label: 'QUICK SAVE', small: true, action: () => { const why = g.quickSave(); if (why) { A.sfx('back'); say(why, true); } else { A.sfx('save'); say('QUICK SAVED'); } } },
+      { label: () => this.armed > 0 ? 'SURE?' : 'QUICK LOAD', small: true, get disabled() { return !g.hasSave(); }, action: () => { if (this.armed > 0) { this.armed = 0; g.loadSlot(); } else { this.armed = 170; say('PRESS AGAIN: ANYTHING UNSAVED IS LOST', true); } } },          // (asked twice: it throws away the game as it is now)
+      { label: 'SAVE GAME', small: true, action: () => { const why = g.quickSaveBlock(); this.mode = 'file'; openSavePanel(g, g.snapshot(), () => { this.mode = 'main'; }, why ? 'Where you stand cannot be saved just now (' + why.toLowerCase() + '), so the file holds your game as of your last save point.' : ''); } },          // (a save file of the game as it is now: an HTML panel, see savefile.js)
+      { label: 'LOAD GAME', small: true, action: () => { this.mode = 'file'; openLoadPanel(g, ok => { this.mode = 'main'; if (ok) g.loadSlot(); }); } },
+      { label: 'OPTIONS', small: true, action: () => { this.mode = 'options'; this.opts.i = 0; } }, { label: 'CONTROLS', small: true, action: () => { this.mode = 'controls'; } }, { label: 'QUIT TO TITLE', small: true, action: () => g.toTitle() }], [[0], [1], [2], [3], [4, 5], [6, 7], [8, 9], [10]]);
   }
   // LEFT moves the cursor over to the list of found things: UP / DOWN read each one out (what it is, what it does); RIGHT, BACK or OK returns to the menu.  A tap on a thing reads it out too.
   update() { if (this.mode === 'main') {
@@ -388,12 +396,15 @@ export class PauseMenu {
         if (Input.pressed.up && rows.length) { this.sel = (this.sel + rows.length - 1) % rows.length; A.sfx('click'); } if (Input.pressed.down && rows.length) { this.sel = (this.sel + 1) % rows.length; A.sfx('click'); }
         if (Input.pressed.right || Input.pressed.back || Input.pressed.confirm) { this.foc = 'menu'; A.sfx('back'); }
       } else {
-        this.main.update(this.g); if (Input.pressed.left && rows.length) { this.foc = 'found'; this.sel = Math.min(this.sel, rows.length - 1); A.sfx('select'); }
+        if (this.armed > 0) this.armed--; if (this.note && --this.note.t <= 0) this.note = null;
+        const row = this.main.rows.find(r => r.includes(this.main.i)), edge = !row || row[0] === this.main.i, i0 = this.main.i;          // (LEFT in the table moves along its row; from the first cell it goes on to the list of found things)
+        this.main.update(this.g); if (Input.pressed.left && edge && rows.length) { this.main.i = i0; this.foc = 'found'; this.sel = Math.min(this.sel, rows.length - 1); A.sfx('select'); }
+        if (this.main.i !== 5) this.armed = 0;          // (the cursor left QUICK LOAD: the question is forgotten)
         if (Input.pressed.pkey || Input.pressed.back) this.g.resume();
-      } } else if (this.mode === 'bestiary') this.best.update(); else if (this.mode === 'letters') this.book.update(); else if (this.mode === 'options') { this.opts.update(this.g); if (Input.pressed.back) this.mode = 'main'; } else if (Input.pressed.back || Input.pressed.confirm || Input.taps.length) this.mode = 'main'; }
+      } } else if (this.mode === 'bestiary') this.best.update(); else if (this.mode === 'letters') this.book.update(); else if (this.mode === 'options') { this.opts.update(this.g); if (Input.pressed.back) this.mode = 'main'; } else if (this.mode === 'file') { /* the HTML panel has the keys and the taps until it is closed */ } else if (Input.pressed.back || Input.pressed.confirm || Input.taps.length) this.mode = 'main'; }
   draw(ctx) {
     ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, 0, W, H);
-    if (this.mode === 'main') {
+    if (this.mode === 'main' || this.mode === 'file') {
       const g = this.g, S = g.save, cx = 260; foundPanel(ctx, g, this); panel(ctx, 142, 36, 236, 174);
       if (this.foc === 'found') {                                                              // the thing under the cursor: what it is and what it does
         const it = foundItems(g)[this.sel];
@@ -401,10 +412,11 @@ export class PauseMenu {
           wrapText(it.desc, 214, 1, 'mixed').forEach((ln, i) => drawText(ctx, ln, 154, 76 + i * 11, { color: PALE, font: 'mixed' }));
           drawText(ctx, 'UP / DOWN CHOOSE    RIGHT: BACK', cx, 196, { align: 'center', color: DIM }); }
       } else {
-      drawText(ctx, 'PAUSED', cx, 46, { align: 'center', scale: 2, color: GOLD });
-      this.main.draw(ctx, cx, 64, 11);
-      drawText(ctx, `LV ${S.level}   HP ${Math.round(S.hp)}/${Math.round(S.maxHp)}   MP ${Math.round(S.mp)}/${Math.round(S.maxMp)}`, cx, 150, { align: 'center', color: PALE }); drawText(ctx, `POWER ${g.player.atkPower}   GOLD ${S.gold}   TIME ${fmtTime(S.time)}`, cx, 161, { align: 'center', color: '#b5a47a' }); drawText(ctx, 'CASTLE SEED ' + S.seed, cx, 172, { align: 'center', color: DIM });
-      if (foundItems(g).length) drawText(ctx, 'LEFT: LOOK AT WHAT YOU HAVE FOUND', cx, 190, { align: 'center', color: '#6a6078' });
+      drawText(ctx, 'PAUSED', cx, 42, { align: 'center', scale: 2, color: GOLD });
+      this.main.draw(ctx, cx, 58, 11);
+      drawText(ctx, `LV ${S.level}   HP ${Math.round(S.hp)}/${Math.round(S.maxHp)}   MP ${Math.round(S.mp)}/${Math.round(S.maxMp)}`, cx, 165, { align: 'center', color: PALE }); drawText(ctx, `POWER ${g.player.atkPower}   GOLD ${S.gold}   TIME ${fmtTime(S.time)}`, cx, 175, { align: 'center', color: '#b5a47a' }); drawText(ctx, 'CASTLE SEED ' + S.seed, cx, 185, { align: 'center', color: DIM });
+      if (this.note) drawText(ctx, this.note.text, cx, 196, { align: 'center', color: this.note.bad ? '#e08a6a' : '#9ad8a0' });          // (what QUICK SAVE / QUICK LOAD answered)
+      else if (foundItems(g).length) drawText(ctx, 'LEFT: LOOK AT WHAT YOU HAVE FOUND', cx, 196, { align: 'center', color: '#6a6078' });
       }
     } else if (this.mode === 'options') { panel(ctx, 70, 40, W - 140, 150); drawText(ctx, 'OPTIONS', W / 2, 47, { align: 'center', scale: 1.5, color: GOLD, outline: '#000' }); this.opts.draw(ctx, 94, 68, 14, 'left'); }
     else if (this.mode === 'bestiary') this.best.draw(ctx);

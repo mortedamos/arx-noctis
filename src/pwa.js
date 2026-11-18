@@ -3,8 +3,8 @@
 //     It is registered everywhere except localhost (a stored sound would hide a sound just replaced with the Sound Browser): ?sw=1 turns it on there for testing, ?sw=0 turns it off anywhere
 //     (and either way off removes it, with what it had stored);
 //   * keepStorage() asks the browser to keep the game's storage for good (navigator.storage.persist): asked once a visit, when the game first saves;
-//   * the install prompt of Chrome / Edge is kept (PWA.install) so the SAVE CODE panel can offer an INSTALL button.  iPhones have no such prompt: the player is told to use Share > Add to Home Screen.
-// Why it matters on an iPhone: Safari erases a website's storage (the save!) after about a week without a visit, but not a game added to the Home Screen.  See savecode.js for the other half.
+//   * the install prompt of Chrome / Edge is kept (PWA.install) so the SAVE GAME panel can offer an INSTALL button.  iPhones have no such prompt: the player is told to use Share > Add to Home Screen.
+// Why it matters on an iPhone: Safari erases a website's storage (the save!) after about a week without a visit, but not a game added to the Home Screen.  See savefile.js for the other half.
 export const PWA = { install: null, persisted: null, sw: false };
 
 const q = new URLSearchParams(location.search), local = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);

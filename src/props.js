@@ -275,7 +275,8 @@ export class Altar {
     const p = g.player, S = g.save; S.hp = S.maxHp; S.mp = S.maxMp; this.used = 60; A.sfx('save');
     g.fx.ring(this.x, this.y - 20, 56, [0.8, 0.6, 1], 40, 0.14); g.fx.quad({ kind: 'beam', x: this.x, y: this.y - 80, w: 36, h: 190, color: [0.8, 0.6, 1], life: 50, a0: 1, a1: 0 });
     g.fx.souls(this.x, this.y - 10, 18, COLORS.purple); g.fx.flash([0.7, 0.5, 1], 0.2);
-    S.room = g.room.id; S.spawnX = this.x; S.spawnY = this.y; g.saveGame(); g.banner('GAME SAVED', 'HEALTH AND MANA RESTORED'); return true;
+    S.room = g.room.id; S.spawnX = this.x; S.spawnY = this.y; const ok = g.saveGame();          // (the quick save: the same slot QUICK SAVE in the pause menu writes)
+    g.banner(ok ? 'QUICK SAVE COMPLETE' : 'COULD NOT SAVE', ok ? 'HEALTH AND MANA RESTORED' : 'THE BROWSER WOULD NOT KEEP THE SAVE. HEALTH AND MANA RESTORED'); g.offerFile(ok); return true;
   }
   draw(ctx, cx, cy) { drawSheet(ctx, 'altar', 0, this.x - cx, this.y - cy); }
 }

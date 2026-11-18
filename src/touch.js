@@ -39,7 +39,7 @@ export const Touch = {
     this.show(!off && (this.forced || coarse));
     if (!off) {
       addEventListener('pointerdown', e => { if (e.pointerType === 'touch' && !this.on) this.show(true); }, true);                                 // a first touch brings the pad up
-      addEventListener('keydown', e => { if (this.on && !this.forced && e.isTrusted && !this.manual && !ownKeys(e)) this.show(false); });                     // a real key press sends it away (not one typed in the SAVE CODE box: a phone's own keyboard)
+      addEventListener('keydown', e => { if (this.on && !this.forced && e.isTrusted && !this.manual && !ownKeys(e)) this.show(false); });                     // a real key press sends it away (not one pressed in a save file panel: see ownKeys)
     }
     const letGo = () => { for (const f of this.rels) f(); Input.releaseTouch(); };                                                             // (never leave a button stuck down)
     addEventListener('blur', letGo); document.addEventListener('visibilitychange', () => { if (document.hidden) letGo(); });

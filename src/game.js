@@ -33,6 +33,7 @@ import { LetterReader, markPage, loadLetters, PAGE_COUNT } from './letters.js';
 import { loadDialogue, text as dtext } from './dialogue.js';
 import { focus as loaderFocus } from './loader.js';
 import { keepStorage } from './pwa.js';
+import { openSavePanel } from './savefile.js';
 
 const SAVE_KEY = 'shadowkeep.save.v1';
 const DOOR_CLEAR = 200;          // px: no enemy starts within this distance of a door you have just come through (about half a screen)
@@ -155,14 +156,48 @@ export class Game {
 
   // -------------------------------------------------------------------------------- save / load
   hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch { return false; } }
-  saveGame() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.save)); keepStorage(); } catch (e) { console.warn('save failed', e); } }          // (keepStorage: the first save of a visit asks the browser to keep the game's storage for good - see pwa.js)
+  saveGame() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.save)); keepStorage(); return true; } catch (e) { console.warn('save failed', e); return false; } }          // (keepStorage: the first save of a visit asks the browser to keep the game's storage for good - see pwa.js)
   loadSave() { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.v === 1) return s; } catch {} return null; }
-  savedText() { try { return localStorage.getItem(SAVE_KEY); } catch { return null; } }          // (the save exactly as stored: what a SAVE CODE is made from)
-  // a save brought back from a SAVE CODE (savecode.js has checked it is one) becomes the game saved here; CONTINUE then plays it.  Throws if the browser will not store it.
+  // a save brought back from a save file (savefile.js has checked it is one) becomes the game saved in this browser; loadSlot() then plays it.  Throws if the browser will not store it.
   restoreSave(s) {
     localStorage.setItem(SAVE_KEY, JSON.stringify(s)); keepStorage();
     for (let n = 1; n <= PAGE_COUNT; n++) if (s.flags['page' + n]) markPage(n);
     this.prebuild();          // (its castle is made while the title is up, as for any saved game)
+  }
+  // QUICK SAVE (pause menu) saves wherever the hero stands, into the same slot the altars use - so after a death the hero wakes where the quick save was made.  It is refused (returns why, in a few
+  // words) where waking up again could not be trusted: in a boss fight (the doors are shut and the master alive), in the air, or riding a moving platform.
+  quickSaveBlock() {
+    const p = this.player; if (!p || p.dead || !this.room) return 'NOT NOW';
+    if (this.boss) return 'NOT DURING A BOSS FIGHT'; if (this.cutscene) return 'NOT NOW';
+    if (!p.onGround || p.ride) return 'STAND ON SOLID GROUND FIRST';
+    return null;
+  }
+  quickSave() {
+    const why = this.quickSaveBlock(); if (why) return why;
+    const S = this.save, p = this.player; S.room = this.room.id; S.spawnX = Math.round(p.x); S.spawnY = Math.round(p.y);
+    return this.saveGame() ? null : 'THE BROWSER WOULD NOT STORE IT';
+  }
+  // the game as a save object, for a save file: the hero's life, powers and finds as they are now, standing where a quick save would put them (or, where that is refused, at the last save point)
+  snapshot() {
+    const s = JSON.parse(JSON.stringify(this.save)); if (!this.quickSaveBlock()) { s.room = this.room.id; s.spawnX = Math.round(this.player.x); s.spawnY = Math.round(this.player.y); } return s;
+  }
+  // After an altar has saved the game: a moment later (the altar's banner and light first) a YES / NO question - a save file as well?  The cursor starts on NO, and ESC says no, so an altar visited often
+  // is no trouble.  YES opens the SAVE GAME panel (savefile.js) over the frozen castle (state 'file').  `saved` is false if the browser would not keep the save: the file is then the only copy.
+  offerFile(saved) {
+    const room = this.room && this.room.id, id = this.offerId = (this.offerId || 0) + 1;
+    this.after(80, () => {
+      if (id !== this.offerId || this.state !== 'play' || this.cutscene || !this.room || this.room.id !== room || this.player.dead) return;          // (the hero has gone on to something else: the question is dropped)
+      this.showDialog(saved ? 'SAVE A COPY TO A FILE AS WELL?' : 'SAVE TO A FILE INSTEAD?', { choices: ['YES', 'NO'], sel: 1, onClose: ch => {
+        if (ch !== 0) return; this.state = 'file'; openSavePanel(this, this.loadSave() || this.snapshot(), () => { if (this.state === 'file') this.state = 'play'; });
+      } });
+    });
+  }
+  // QUICK LOAD, and a game brought back from a file: take up the game stored in this browser - from the title, or at once from the pause menu
+  loadSlot() {
+    const s = this.loadSave(); if (!s) return false;
+    if (this.state === 'title') { this.continueGame(); return true; }
+    if (!worldReady(s.seed || 0)) { this.toTitle(); this.continueGame(); return true; }          // (a different castle: it is made behind the title's 'gathering the dead' bar)
+    this.useSave(s); this.player = new Player(this, 0, 0); this.boss = null; this.cutscene = null; this.playerFrozen = false; this.trans = null; this.dialog = null; this.slow = 0; this.beginPlay(true); return true;
   }
 
   // -------------------------------------------------------------------------------- state changes
@@ -602,6 +637,7 @@ export class Game {
       case 'dialog': this.dialog.update(); if (this.dialog.closed) { const dlg = this.dialog, cb = dlg.onClose; this.state = 'play'; this.dialog = null; if (cb) cb(dlg.choice); } this.fx.update(0.0); break;
       case 'letter': this.reader.update(); if (this.reader.closed) { const cb = this.reader.onClose; this.reader = null; this.state = 'play'; if (cb) cb(); } this.fx.update(0.0); break;
       case 'pause': this.pauseMenu.update(); break;
+      case 'file': this.fx.update(0.0); break;          // (a save file panel is up over the frozen castle: it has the keys and the taps)
       case 'shop': this.shop.update(); this.fx.update(0.0); break;
       case 'map': this.mapScreen.update(); break;
       case 'dead': this.gameOver.update(); this.fx.update(1); break;
@@ -812,7 +848,7 @@ export class Game {
     this.finishFrame();
   }
   finishFrame() {
-    const cl = this.fx.cloak, pl = this.player; if (cl) cl.setVisible(A.settings.cloak && !!pl && !!this.room && (this.state === 'play' || this.state === 'dialog' || this.state === 'dead' || this.state === 'gameover'));
+    const cl = this.fx.cloak, pl = this.player; if (cl) cl.setVisible(A.settings.cloak && !!pl && !!this.room && (this.state === 'play' || this.state === 'dialog' || this.state === 'file' || this.state === 'dead' || this.state === 'gameover'));
     for (const c of [this.ctx, this.top]) if (this.fade > 0) { c.fillStyle = `rgba(0,0,0,${this.fade})`; c.fillRect(0, 0, W, H); }          // the fade to black covers the interface too
     if (this.state === 'title' || this.state === 'intro' || this.state === 'ending') this.fx.setShake(0, 0);
     this.fx.canvas.style.opacity = this.topCanvas.style.opacity = this.state === 'map' ? '0' : '1';       // the map is a full-screen sheet: hide the effects layer (it sits above the 2D canvas)
