@@ -32,6 +32,7 @@ import { HUD, drawBanner, drawPopups, drawPrompt, drawExitArrow, Dialog, TitleSc
 import { LetterReader, markPage, loadLetters, PAGE_COUNT } from './letters.js';
 import { loadDialogue, text as dtext } from './dialogue.js';
 import { focus as loaderFocus } from './loader.js';
+import { keepStorage } from './pwa.js';
 
 const SAVE_KEY = 'shadowkeep.save.v1';
 const DOOR_CLEAR = 200;          // px: no enemy starts within this distance of a door you have just come through (about half a screen)
@@ -154,8 +155,15 @@ export class Game {
 
   // -------------------------------------------------------------------------------- save / load
   hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch { return false; } }
-  saveGame() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.save)); } catch (e) { console.warn('save failed', e); } }
+  saveGame() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.save)); keepStorage(); } catch (e) { console.warn('save failed', e); } }          // (keepStorage: the first save of a visit asks the browser to keep the game's storage for good - see pwa.js)
   loadSave() { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.v === 1) return s; } catch {} return null; }
+  savedText() { try { return localStorage.getItem(SAVE_KEY); } catch { return null; } }          // (the save exactly as stored: what a SAVE CODE is made from)
+  // a save brought back from a SAVE CODE (savecode.js has checked it is one) becomes the game saved here; CONTINUE then plays it.  Throws if the browser will not store it.
+  restoreSave(s) {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(s)); keepStorage();
+    for (let n = 1; n <= PAGE_COUNT; n++) if (s.flags['page' + n]) markPage(n);
+    this.prebuild();          // (its castle is made while the title is up, as for any saved game)
+  }
 
   // -------------------------------------------------------------------------------- state changes
   toTitle(first = false) {

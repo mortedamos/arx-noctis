@@ -4,7 +4,7 @@
 //   * JUMP and HIT are the two big buttons (and double as OK / BACK in the menus, as Z and X do);  DASH, ITEM (use what is selected) and the two small arrows that change it are on the right;
 //   * the buttons along the top: pause, map, full screen.  In menus only the D-pad, OK and BACK show; tapping a menu item picks it, and tapping the item box in the corner changes the item.
 // Every button holds the same named actions a key would (Input.touchHold / touchRelease), so the game does not know the difference.
-import { Input } from './input.js';
+import { Input, ownKeys } from './input.js';
 
 const W = 384, H = 216;
 const CSS = `
@@ -39,7 +39,7 @@ export const Touch = {
     this.show(!off && (this.forced || coarse));
     if (!off) {
       addEventListener('pointerdown', e => { if (e.pointerType === 'touch' && !this.on) this.show(true); }, true);                                 // a first touch brings the pad up
-      addEventListener('keydown', e => { if (this.on && !this.forced && e.isTrusted && !this.manual) this.show(false); });                     // a real key press sends it away
+      addEventListener('keydown', e => { if (this.on && !this.forced && e.isTrusted && !this.manual && !ownKeys(e)) this.show(false); });                     // a real key press sends it away (not one typed in the SAVE CODE box: a phone's own keyboard)
     }
     const letGo = () => { for (const f of this.rels) f(); Input.releaseTouch(); };                                                             // (never leave a button stuck down)
     addEventListener('blur', letGo); document.addEventListener('visibilitychange', () => { if (document.hidden) letGo(); });

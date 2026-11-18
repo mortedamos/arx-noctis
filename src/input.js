@@ -12,6 +12,7 @@ const PAD = { // standard gamepad mapping -> action
   up: [12], down: [13], left: [14], right: [15], interact: [12],
 };
 const actions = Object.keys(KEYMAP);
+export const ownKeys = e => !!(e.target && e.target.closest && e.target.closest('[data-own-keys]'));          // (a key typed in an HTML panel over the game - the SAVE CODE box - belongs to that panel, not to the game)
 const codeToActions = {};
 for (const a of actions) for (const c of KEYMAP[a]) (codeToActions[c] ||= []).push(a);
 
@@ -32,6 +33,7 @@ export const Input = {
   init() {
     const block = new Set(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab']);
     addEventListener('keydown', e => {
+      if (ownKeys(e)) return;
       if (block.has(e.code)) e.preventDefault();
       if (/^[0-9]$/.test(e.key)) this.typed.push(e.key); else if (e.key === 'Backspace') this.typed.push('<'); if (this.typed.length > 32) this.typed.shift();      // typed digits (seed entry)
       if (e.repeat) return;
@@ -39,6 +41,7 @@ export const Input = {
       for (const a of codeToActions[e.code] || []) this._pend.add(a);
     });
     addEventListener('keyup', e => {
+      if (ownKeys(e)) return;
       this._keys.delete(e.code);
       for (const a of codeToActions[e.code] || []) this._pendRel.add(a);
     });

@@ -1,5 +1,6 @@
 # What is published (GitHub Pages) is only what the game needs to RUN:
-#   index.html, credits.txt, .nojekyll, src/, lib/, assets/ (the art the game loads + licence texts), music/ (tracks, tracks.txt, files.json)
+#   index.html, credits.txt, .nojekyll, src/, lib/, assets/ (the art the game loads + licence texts), music/ (tracks, tracks.txt, files.json),
+#   manifest.webmanifest + sw.js (the Home Screen app and the stored music: see src/pwa.js)
 # Everything below stays on the author's computer.
 
 # --- the art packs exactly as downloaded, and art that is not used ---------------------------------------------------------------

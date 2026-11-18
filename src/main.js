@@ -1,4 +1,5 @@
 import { loadAll } from './assets.js';
+import './pwa.js';          // (the service worker, and the Home Screen install: see pwa.js)
 
 const q = new URLSearchParams(location.search);
 const setBar = f => { const b = document.getElementById('barfill'); if (b) b.style.width = Math.round(f * 100) + '%'; };

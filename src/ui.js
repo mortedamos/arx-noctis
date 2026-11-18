@@ -16,6 +16,8 @@ import { BUILD } from './build.js';
 import { secretStats } from './secrets.js';
 import { BestiaryScreen } from './bestiary.js';
 import { LetterBook, savePages, PAGE_COUNT } from './letters.js';
+import { openSavePanel } from './savecode.js';
+import { isIOS, isStandalone } from './pwa.js';
 
 const GOLD = '#e8b84a', PALE = '#e8dcc0', DIM = '#8a7d9a', RED = '#c23b2a';
 const icon = (ctx, name, x, y, sc = 1, a) => drawSheet(ctx, 'icons', ICON.indexOf(name), x, y, { ay: 0.5, scale: sc, alpha: a });
@@ -215,8 +217,10 @@ export class TitleScreen {
     this.main = new Menu([
       { label: 'NEW GAME', action: () => g.newGame() }, { label: 'CONTINUE', disabled: !has, action: () => g.continueGame() },
       { label: 'CHOOSE SEED', action: () => { this.mode = 'seed'; this.seed = ''; Input.typed.length = 0; } },          // (on a phone, a keypad of numbers is drawn in the game itself: the game never opens a pop-up window)
+      { label: 'SAVE CODE', action: () => { this.mode = 'savecode'; openSavePanel(g, restored => { if (restored) g.title = new TitleScreen(g); else this.mode = 'main'; }); } },          // (the save as a code to keep, or a code to bring a game back: an HTML panel, see savecode.js)
       { label: 'CONTROLS', action: () => { this.mode = 'controls'; } }, { label: 'OPTIONS', action: () => { this.mode = 'options'; this.opts.i = 0; } }, { label: 'CREDITS', action: () => this.openCredits() },
     ]); if (has) this.main.i = 1;
+    this.homeHint = isIOS() && !isStandalone();          // (an iPhone in Safari: the save is not safe there for long - see pwa.js)
     this.opts = optionsMenu(() => { this.mode = 'main'; });
   }
   // the credits are read from credits.txt (a plain text file the game's owner can edit) each time they are opened
@@ -244,6 +248,7 @@ export class TitleScreen {
       if (Input.touchOn) for (const tp of Input.taps) { const b = this.seedPad().find(b => tp.x >= b.x && tp.x < b.x + b.w && tp.y >= b.y && tp.y < b.y + b.h); if (!b) continue; A.sfx('click'); if (b.k === 'DEL') this.seed = this.seed.slice(0, -1); else if (b.k === 'BEGIN') go = true; else if (b.k === 'BACK') { this.mode = 'main'; A.sfx('back'); return; } else if (this.seed.length < 9) this.seed += b.k; }
       if (Input.pressed.esc) { this.mode = 'main'; A.sfx('back'); } else if (go) { const code = g.codeFor(this.seed); if (code) g.newGame(undefined, code); else g.newGame(this.seed === '' ? undefined : +this.seed); }
     } else if (this.mode === 'options') { this.opts.update(g); if (Input.pressed.back) { this.mode = 'main'; A.sfx('back'); } }
+    else if (this.mode === 'savecode') { /* the HTML panel has the keys and the taps until it is closed */ }
     else if (Input.pressed.back || Input.pressed.confirm || Input.taps.length) { this.mode = 'main'; A.sfx('back'); }
   }
   draw(ctx) {
@@ -254,7 +259,11 @@ export class TitleScreen {
     ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(0, 0, W, H);
     const lg = logo(); const bob = Math.sin(t * 0.03) * 1.5; ctx.drawImage(lg, Math.round(W / 2 - lg.lw / 2), Math.round(14 + bob), lg.lw, lg.lh);
     if (this.mode === 'main' && this.g.clean) { /* (the trailer's last card: the logo and the weather, no menu) */ }
-    else if (this.mode === 'main') { this.main.draw(ctx, W / 2, 110); drawText(ctx, Input.touchOn ? 'TAP AN ITEM' : 'ENTER / Z TO SELECT', W / 2, H - 14, { align: 'center', color: DIM }); }
+    else if (this.mode === 'main' || this.mode === 'savecode') {
+      this.main.draw(ctx, W / 2, 104);
+      if (this.homeHint) drawText(ctx, 'KEEP YOUR SAVE: SHARE > ADD TO HOME SCREEN', W / 2 - 6, H - 12, { align: 'center', color: '#b5a47a', scale: 0.85 });          // (see SAVE CODE; small, to clear the build number in the corner)
+      else drawText(ctx, Input.touchOn ? 'TAP AN ITEM' : 'ENTER / Z TO SELECT', W / 2, H - 13, { align: 'center', color: DIM });
+    }
     else if (this.mode === 'credits') {
       const c = this.cr; ctx.fillStyle = 'rgba(6,4,14,0.95)'; ctx.fillRect(0, 0, W, H); drawText(ctx, 'CREDITS', W / 2, 12, { align: 'center', scale: 1.8, color: GOLD, outline: '#000', font: 'hand' });
       const top = 38, view = H - top - 30; drawCreditLines(ctx, c, top, view); ctx.fillStyle = 'rgba(10,10,28,0.9)'; ctx.fillRect(0, top - 6, W, 6);

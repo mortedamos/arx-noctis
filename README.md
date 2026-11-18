@@ -27,6 +27,13 @@ Before you publish:
 * `node tools/check-paths.mjs` - Windows ignores capital letters in file names but Pages does not; this checks that every file the game asks for is spelled exactly right.
 * `.nojekyll` (already here) stops Pages from running Jekyll over the folder.
 
+### On a phone: the Home Screen, and save codes
+
+* **Add to Home Screen.** `manifest.webmanifest` (name, icons in `assets/icons/`) and the service worker `sw.js` let the game be installed: on an iPhone, Safari's **Share > Add to Home Screen**; on Android, Chrome offers **Install** (and the SAVE CODE panel shows an INSTALL button when it can). It then opens full screen, like an app.
+* **The music is kept.** `sw.js` stores each track and sound effect the first time the game fetches it, and plays it from storage on every later visit (about 60 MB, most of the download). It checks each stored sound against the server at most twice a day by its *size* (a HEAD request): a replaced track or effect is fetched again; GitHub Pages' ETags change on every publish, so they are not used. Everything else (page, code, pictures) still comes from the network first, so a new build shows at once; the stored copy is only for when the network fails. Raising `CACHE` in `sw.js` (`arx-noctis-1`) throws away everything stored, for every player.
+* **The service worker is off on localhost** (a stored sound would hide one just replaced with the Sound Browser). `?sw=1` turns it on there for testing; `?sw=0` turns it off anywhere. Turning it off also deletes what it stored.
+* **Saves.** Safari on an iPhone erases a website's storage (the save!) after about a week without a visit, though not for a game on the Home Screen, which has storage of its own. So the title screen has **SAVE CODE**: the saved game as a code (`ARX1.` + the save, deflated and base64'd: about 1.5 KB for a finished game) to COPY, SHARE or SAVE AS FILE, and PASTE / OPEN FILE + RESTORE to bring one back on any device. On an iPhone in Safari the title screen also says how to keep the save. The first save of each visit asks the browser to keep the game's storage for good (`navigator.storage.persist()`; the browser decides).
+
 The published repository holds only what the game needs to run. `.gitignore` keeps `play.bat`, `play.ps1`, `server.js`, `tools/` (the launchers, the local server and the test scripts mentioned in this file), `assets/source/`, `assets/sprites/source/` (the art packs as downloaded) and `.claude/` out of it - they stay in the author's working copy.
 
 ## Controls
@@ -176,6 +183,7 @@ point a track at any file (spaces and brackets are fine).
 
 ```
 index.html          page + canvases (2D sprite canvas with the three.js effects canvas stacked on top)
+manifest.webmanifest + sw.js   the Home Screen app and the stored music (see "On a phone" above); icons in assets/icons/
 server.js           zero-dependency static server for local play (+ a live /__music file listing; not needed on GitHub Pages)
  credits.txt        what the title screen's CREDITS option shows (plain text, yours to edit)
 play.bat / play.ps1 Windows launchers
@@ -198,6 +206,7 @@ src/
   procart.js        code-drawn pixel art: bat, icons, props
   audio.js          music manager + synthesized sound effects      ui.js   HUD, menus, map, story screens
   touch.js          the on-screen controls for phones and tablets (HTML buttons that hold the same actions as the keys)
+  savecode.js pwa.js   SAVE CODE (the save as a code to keep or bring back: an HTML panel) / the service worker, persistent storage, install and iPhone checks
   font.js           gothic text: Pirata One + Almendra (+ Blackletter for the title, Eroded Motta for her gravestones) drawn as vector text on the hi-res canvas (bitmap fallback if the fonts are missing)
   assets.js input.js util.js decor.js viewer.js     decor.js also draws the bookcases and barred windows in code, and animates the torches
 assets/             sprites + environment art (+ sprites.json frame manifest, original licenses), fonts/ (the two gothic TTFs)
