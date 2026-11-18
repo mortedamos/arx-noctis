@@ -44,6 +44,7 @@ export class Player extends Entity {
     this.coyote = 0; this.jumpBuf = 0; this.canDouble = true; this.canAirDash = true; this.djumpT = 0; this.runT = 0; this.lastSafe = { x, y }; this.safeT = 0;
     this.trail = []; this.fallSpeed = 0; this.dead = false; this.deathT = 0; this.landedT = 0; this.spell = 'ember'; this.castFired = false; this.interactCd = 0; this.idleT = 0; this.hitsThisSwing = 0;
     this.ench = null; this.fireFired = false; this.sunQuad = null; this.crouch = false; this.crouchT = 0;
+    this.chillT = 0;          // CHILLED (the Rimewyrm's frost breath): frames left of the slowing cold
     this.stain = { soot: 0, mud: 0, blood: 0 };       // what the cloak has picked up (see stain.js)
     this.sel = null; this.castItem = null; this.healT = 0; this.healPer = 0;      // hotbar selection, the item being thrown, bandage healing
   }
@@ -229,7 +230,7 @@ export class Player extends Entity {
     if (this.attackActive()) g.swordHit(this);
 
     // ---- horizontal motion
-    const RUNV = RUN * (S.flags.got_shoes ? 1.1 : 1);                       // the Magic Shoes: 10% faster
+    const RUNV = RUN * (S.flags.got_shoes ? 1.1 : 1) * (this.chillT > 0 ? this.chillK() : 1);                       // the Magic Shoes: 10% faster; the cold: a good deal slower
     const groundLock = (this.atk && this.onGround) || this.castT || this.crouch;
     if (this.crouch && dx && !this.atk) this.dir = dx;
     const slip = this.onGround && !this.ride && !this.S.flags.got_crampons && room.theme === 'ice' && room.get(Math.floor(this.x / T), Math.floor((this.y + 2) / T)) === TILE.SOLID, kA = slip ? 0.4 : 1, kF = slip ? 0.16 : 1; this.onIce = slip;
@@ -260,7 +261,7 @@ export class Player extends Entity {
     // run animation (the hero makes no footstep sound)
     if (this.onGround && Math.abs(this.vx) > 0.3) this.runT += Math.abs(this.vx) * 0.13; else this.runT = 0;
     this.idleT = (Math.abs(this.vx) < 0.1 && this.onGround) ? this.idleT + 1 : 0;
-    this.updateEnchant(); this.updateStains(); this.updateHeal(); this.swishWind(); this.stepCloak(); this.stepLantern();
+    this.updateEnchant(); this.updateStains(); this.stepChill(); this.updateHeal(); this.swishWind(); this.stepCloak(); this.stepLantern();
     if (touchesSpikes(this, room)) this.hurtSpikes();
   }
   updateHeal() {            // bandage: life flows back over ~1.5s
@@ -301,6 +302,18 @@ export class Player extends Entity {
     L.trail.forEach((q, i) => { if (i < 1) return; const f = 1 - i / L.trail.length; fx.glow(q.x + Math.sin(this.t * 0.08 + i * 0.8) * i * 0.5, q.y + i * 1.2, 3.2 * f + 1, [0.55, 0.72, 1], 0.32 * f * low); });
   }
 
+  // ------------------------------------------------------------------ CHILLED: the Rimewyrm's frost breath.  For a few seconds the hero runs at little more than half speed (it wears off over the last two thirds of a second), sheds frost, and is tinted pale blue.
+  // (a dash is not slowed, and its blink of invulnerability still takes you through the breath; another breath only starts the clock again, it never stacks.)
+  chill(frames) {
+    if (this.dead) return; const g = this.g, was = this.chillT > 0; this.chillT = Math.max(this.chillT, frames);
+    if (!was) { g.popup(this.x, this.y - 52, 'CHILLED', '#bfe8ff'); A.sfx('freeze'); }
+    g.fx.burst(this.x, this.y - 18, 10, [[0.85, 0.95, 1], [0.5, 0.75, 1]], { speed: 1.6, s0: 6, s1: 1.5 });
+  }
+  chillK() { return this.chillT > 40 ? 0.55 : 0.55 + 0.45 * (1 - this.chillT / 40); }          // (the share of its speed the hero keeps)
+  stepChill() {
+    if (this.chillT <= 0) return; if (this.dead) { this.chillT = 0; return; } this.chillT--;
+    if (this.t % 5 === 0) this.g.fx.emit({ x: this.x + rand(-6, 6), y: this.y - rand(2, 30), vx: rand(-0.15, 0.15), vy: rand(0.1, 0.4), life: 26, s0: 3, s1: 1, c0: [0.85, 0.95, 1], c1: [0.55, 0.8, 1], a0: 0.9, a1: 0, kind: 1 });
+  }
   // ------------------------------------------------------------------ cloak stains (see stain.js)
   addStain(el, amt) {
     if (el === 'soot' && this.S.flags.got_mantle) return;
@@ -392,6 +405,7 @@ export class Player extends Entity {
     const sid = suf && SHEET[base + suf] ? base + suf : base;       // enchanted variants recolor the slash arc
     const jump = fi.cy !== undefined, yy = jump ? y - this.h / 2 + 1 : y, extra = jump ? { ay: fi.cy / fi.ch } : {};
     drawSheet(ctx, sid, fi.f, x, yy, { dir, ...extra, ...o });
+    if (this.chillT > 0 && !o.flash && !o.noFx) drawSheet(ctx, sid, fi.f, x, yy, { dir, ...extra, flash: '#bfe8ff', alpha: (o.alpha !== undefined ? o.alpha : 1) * Math.min(0.32, this.chillT / 60 * 0.32) });          // (frosted)
     if (cw && !o.flash && !o.noFx) for (const k of STAIN_KEYS) {       // stains on the sprite's mantle: its cape-only mask, tinted, laid over it
       const a = this.stain[k]; if (a > 0.02) drawSheet(ctx, fi.sheet + '_cwm', fi.f, x, yy, { dir, ...extra, flash: STAINS[k].color, alpha: (o.alpha !== undefined ? o.alpha : 1) * Math.min(0.6, a * 0.65) });
     }

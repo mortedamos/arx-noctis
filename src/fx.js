@@ -466,6 +466,21 @@ export class FX {
     }
     if (Math.random() < 0.7 * k) this.emit({ x: x + cs * rand(20, 120), y: y + sn * rand(20, 120), vx: cs * rand(0.5, 2) + rand(-0.5, 0.5), vy: sn * rand(0.5, 2) - rand(0.2, 1), life: rand(24, 50), s0: 2.4, s1: 0.5, c0: [0.8, 0.97, 1], c1: [0.2, 0.5, 1], a0: 1, a1: 0, kind: 1, gy: -0.01, drag: 0.98 });          // sparks
   }
+  // The Rimewyrm's breath: a cone of killing cold from its mouth (x,y) along angle ang.  Like blueBreath, but white and pale blue, with flurries of snow in it.  Call every logic step; k (0..1) swells it up and lets it die away.
+  frostBreath(x, y, ang, k = 1) {
+    const cs = Math.cos(ang), sn = Math.sin(ang), fl = 0.85 + 0.15 * Math.sin(this.time * 47) + 0.08 * Math.sin(this.time * 83);
+    this.add.add({ x, y, life: 1, s0: 60 * k * fl, s1: 60 * k * fl, c0: [0.45, 0.75, 1], a0: 0.26 * k, a1: 0.26 * k, kind: 0 });                       // the halo at the mouth
+    this.add.add({ x, y, life: 1, s0: 20 * k * fl, s1: 20 * k * fl, c0: [0.9, 0.97, 1], a0: 0.6 * k, a1: 0.6 * k, kind: 0 });                       // its white heart
+    for (let i = 1; i <= 5; i++) this.add.add({ x: x + cs * i * 40, y: y + sn * i * 40, life: 1, s0: (44 + i * 14) * k * fl, s1: (44 + i * 14) * k * fl, c0: [0.4, 0.7, 1], a0: (0.1 - i * 0.014) * k, a1: (0.1 - i * 0.014) * k, kind: 0 });   // a glow along the beam
+    for (let i = 0; i < 6; i++) {                                                                                                                      // the billows of cold
+      const a = ang + rand(-0.26, 0.26), v = rand(2.2, 5) * (0.5 + 0.5 * k);
+      this.emit({ x: x + rand(-3, 3), y: y + rand(-3, 3), vx: Math.cos(a) * v, vy: Math.sin(a) * v - 0.04, drag: 0.972, life: rand(24, 40), s0: 12, s1: rand(40, 64) * k, c0: i < 2 ? [0.92, 0.98, 1] : [0.6, 0.85, 1], c1: [0.25, 0.5, 0.85], a0: 0.3, a1: 0, kind: 5 });
+    }
+    for (let i = 0; i < 4; i++) {                                                                                                                      // flurries of snow and ice flung along it
+      const a = ang + rand(-0.3, 0.3), v = rand(3, 7) * k;
+      this.emit({ x: x + cs * rand(0, 30), y: y + sn * rand(0, 30), vx: Math.cos(a) * v, vy: Math.sin(a) * v, gy: 0.02, drag: 0.97, life: rand(30, 60), s0: 2.8, s1: 0.8, c0: [1, 1, 1], c1: [0.7, 0.9, 1], a0: 1, a1: 0, kind: 1 });
+    }
+  }
   souls(x, y, n = 6, color = COLORS.blue) { for (let i = 0; i < n; i++) this.emit({ x: x + rand(-8, 8), y: y + rand(-10, 4), vx: rand(-0.3, 0.3), vy: -rand(0.5, 1.4), gx: -0.004, drag: 0.99, life: rand(40, 80), s0: 7, s1: 1, c0: color[0], c1: color[1], a0: 0.95, a1: 0, kind: 6 }); }
 
   // ---- lightning --------------------------------------------------

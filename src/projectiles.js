@@ -2,7 +2,7 @@
 import { drawSheet } from './assets.js';
 import { Audio_ as A } from './audio.js';
 import { COLORS } from './fx.js';
-import { T, rand, TAU, clamp } from './util.js';
+import { T, rand, TAU, clamp, approach } from './util.js';
 import { TILE } from './world.js';
 import { TUNE } from './enchant.js';
 
@@ -104,6 +104,48 @@ export class Fireball extends Projectile {
 // the small fireball a Flame-enchanted sword flings with every slash: weak and short-ranged (does NOT burn barricades)
 export class SwordFire extends Fireball {
   constructor(x, y, dir, dmg) { super(x, y, dir, dmg, 'player'); this.life = TUNE.fireballLife; this.fireTiles = false; this.scale = 0.75; this.w = 12; this.h = 10; }
+}
+
+// A GEAR SHAKEN LOOSE FROM THE CEILING (the Boiler Golem's slam).  It rattles in the roof (dust trickles down, and a ring on the floor shows where it will land), drops, hits the floor with a bounce, then ROLLS away in a random direction, throwing sparks,
+// until it runs into a wall (where it breaks) or its time is up.  It hurts whatever it touches and keeps going: jump it, or dash through it.  (It has no vx / vy on purpose: the Mirror Shard cannot turn it.)
+export class RollingGear {
+  constructor(x, y, o = {}) {
+    this.x = x; this.y = y; this.fall = 0; this.roll = 0; this.owner = 'enemy'; this.kind = 'gear'; this.k = { glow: [1, 0.75, 0.3] }; this.dmg = o.dmg || 11; this.size = o.size || 22; this.w = this.size - 6; this.h = this.size - 6;
+    this.delay = o.delay || 0; this.life = (o.life || 330) + this.delay; this.t = 0; this.dead = false; this.pierce = true; this.rot = rand(TAU); this.rollDir = o.dir || (Math.random() < 0.5 ? -1 : 1); this.speed = o.speed || rand(1.5, 2.4); this.grounded = false; this.bounced = 0; this.floorY = o.floorY;
+  }
+  get box() { const r = this.size / 2; return this.delay > 0 ? { x: -9999, y: -9999, w: 1, h: 1 } : { x: this.x - this.w / 2, y: this.y - this.h / 2 + 1, w: this.w, h: this.h }; }
+  update(g) {
+    const room = g.room, r = this.size / 2; this.t++;
+    if (--this.life <= 0) { this.explode(g); return; }
+    if (this.delay > 0) {                                                                                         // still in the roof: it rattles and the dust comes down
+      this.delay--; if (this.t % 2 === 0) g.fx.emit({ x: this.x + rand(-8, 8), y: this.y + rand(-2, 4), vx: rand(-0.2, 0.2), vy: rand(0.4, 1.2), life: rand(24, 40), s0: 3, s1: 7, c0: [0.55, 0.5, 0.46], c1: [0.3, 0.28, 0.28], a0: 0.6, a1: 0, kind: 5 });
+      if (this.t % 6 === 0) g.fx.emit({ x: this.x + rand(-6, 6), y: this.y + 4, vx: rand(-0.3, 0.3), vy: rand(0.5, 1.6), gy: 0.12, life: 28, s0: 2, s1: 1, c0: [0.8, 0.7, 0.55], a0: 1, a1: 0, kind: 1 });
+      if (this.delay === 0) A.sfx('gear'); return; }
+    this.rot += (this.grounded ? this.roll : 0.12 * this.rollDir) * 0.9 / (r / 8);
+    this.fall = Math.min(this.fall + 0.3, 6.5); this.y += this.fall;
+    const tx = Math.floor(this.x / T), fy = Math.floor((this.y + r) / T);
+    if (this.fall > 0 && room.solid(tx, fy) && this.y + r > fy * T) {                                            // it hits the floor
+      this.y = fy * T - r;
+      if (this.fall > 2.8 && this.bounced < 1) { this.bounced++; if (this.bounced === 1) { A.sfx('boom'); g.shake(2, 8); g.fx.ring(this.x, fy * T, 36, [1, 0.8, 0.45], 14, 0.2, 3); g.fx.burst(this.x, fy * T - 2, 8, [[0.6, 0.55, 0.5], [0.25, 0.23, 0.25]], { speed: 1.2, s0: 8, s1: 2, up: 0.7 }); g.fx.sparks(this.x, fy * T - 4, 10, COLORS.gold, 3.2, { gy: 0.2 }); } this.fall = -this.fall * 0.3; }
+      else { this.fall = 0; this.grounded = true; }
+    } else if (this.grounded && this.fall > 0.4) this.grounded = false;                                          // (rolled off an edge: it falls)
+    if (this.grounded) {                                                                                         // rolling
+      this.roll = approach(this.roll, this.rollDir * this.speed, 0.08); this.x += this.roll;
+      const lead = Math.floor((this.x + this.rollDir * r) / T), cy = Math.floor((this.y - 2) / T);
+      if (room.solid(lead, cy) || this.x < 12 || this.x > room.pw - 12) { this.explode(g); return; }             // (a wall: it breaks)
+      if (this.t % 2 === 0) g.fx.sparks(this.x - this.rollDir * r * 0.5, this.y + r - 1, 2, COLORS.gold, 2.4, { gy: 0.2 });
+      if (this.t % 18 === 0) A.sfx('gear');
+    }
+    g.fx.glow(this.x, this.y, 22, [1, 0.7, 0.28], 0.3); g.fx.light(this.x, this.y, 46, 0.45, [1, 0.7, 0.3]);
+  }
+  explode(g) { this.dead = true; A.sfx('gear'); g.fx.burst(this.x, this.y, 8, COLORS.gold, { speed: 2, s0: 9, s1: 2 }); g.fx.sparks(this.x, this.y, 12, COLORS.gold, 3.4, { gy: 0.2 }); g.fx.glow(this.x, this.y, 34, [1, 0.7, 0.3], 0.6, 6); }
+  draw(ctx, cx, cy) {
+    if (this.delay > 0 || this.fall > 0 && !this.grounded && this.floorY !== undefined) {                      // where it will land
+      const fy = this.floorY; if (fy !== undefined) { const p = 0.5 + 0.5 * Math.sin(this.t * 0.5); ctx.save(); ctx.strokeStyle = 'rgba(255,190,90,' + (0.35 + 0.4 * p).toFixed(2) + ')'; ctx.fillStyle = 'rgba(255,170,70,0.14)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(Math.round(this.x - cx), Math.round(fy - cy - 1), 15, 4, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.restore(); }
+    }
+    if (this.delay > 0) return;
+    drawSheet(ctx, 'gear', Math.floor(this.t / 4) % 4, this.x - cx, this.y - cy, { scale: this.size / 10, rot: this.rot, ay: 0.5 });
+  }
 }
 
 // moving ground wave (boss stomps)

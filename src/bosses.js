@@ -11,7 +11,7 @@ import { ICON } from './procart.js';
 import * as D from './dialogue.js';
 import { Audio_ as A } from './audio.js';
 import { COLORS } from './fx.js';
-import { Projectile, Shockwave, FirePatch } from './projectiles.js';
+import { Projectile, Shockwave, FirePatch, RollingGear } from './projectiles.js';
 import { dropItem, rollEnchantDrop } from './props.js';
 import { drawText } from './font.js';
 import { PW as HPW, PH as HPH } from './physics.js';
@@ -33,6 +33,7 @@ const ATTACKS = {
   feathers: { label: 'FEATHERS', rgb: [200, 220, 255], icon: 'feather' },
   skulls: { label: 'SKULL VOLLEY', rgb: [100, 220, 255], icon: 'skull' },
   gears: { label: 'GEAR TOSS', rgb: [230, 180, 80], sheet: 'gear' },
+  gearslam: { label: 'GEAR SLAM', rgb: [230, 180, 80], sheet: 'gear' },          // (the Boiler Golem: it slams the floor and gears fall from the ceiling and roll away)
   summon: { label: 'SUMMONS', rgb: [180, 110, 255], icon: 'skull' },
   dive: { label: 'DIVE', rgb: [255, 255, 255], glyph: 'diag' },
   embers: { label: 'EMBER VOLLEY', rgb: [255, 130, 50], icon: 'ember' },
@@ -63,6 +64,7 @@ const ATTACKS = {
   icefall: { label: 'ICICLE FALL', rgb: [190, 232, 255], glyph: 'down' },
   encase: { label: 'ICE SHELL: USE FIRE!', rgb: [255, 190, 110], icon: 'ember' },
   blizzard: { label: 'BLIZZARD', rgb: [210, 230, 255], glyph: 'chevrons' },
+  frostbreath: { label: 'FROST BREATH', rgb: [175, 230, 255], icon: 'orb' },          // (the Rimewyrm: a cone of cold that sweeps the floor and slows you if it catches you)
 };
 const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 
@@ -196,9 +198,9 @@ export class Column {
 
 // -------------------------------------------------------------------------------------------- Boss base
 // how bosses read the player (see Boss.choose): which of their attacks are for when you are close, far off, or in the air
-const CLOSE_ATK = new Set(['punch', 'scoop', 'slam', 'stomp', 'lunge', 'strikes', 'tentacles', 'leap', 'dive', 'vents', 'shelves', 'spikes']);
-const FAR_ATK = new Set(['fireball', 'embers', 'breath', 'bolts', 'tideorbs', 'spores', 'skulls', 'feathers', 'gears', 'geysers', 'pillars', 'mist', 'summon', 'charge', 'gallop', 'pages', 'tomes', 'ink']);
-const AIR_ATK = new Set(['fireball', 'feathers', 'bolts', 'skulls', 'pillars', 'spores', 'embers', 'breath', 'tideorbs', 'pages', 'ink']);
+const CLOSE_ATK = new Set(['punch', 'scoop', 'gearslam', 'slam', 'stomp', 'lunge', 'strikes', 'tentacles', 'leap', 'dive', 'vents', 'shelves', 'spikes']);
+const FAR_ATK = new Set(['fireball', 'embers', 'breath', 'bolts', 'tideorbs', 'spores', 'skulls', 'feathers', 'gears', 'geysers', 'pillars', 'mist', 'summon', 'charge', 'gallop', 'pages', 'tomes', 'ink', 'frostbreath']);
+const AIR_ATK = new Set(['fireball', 'feathers', 'bolts', 'skulls', 'pillars', 'spores', 'embers', 'breath', 'tideorbs', 'pages', 'ink', 'frostbreath']);
 const combo_min = w => Math.max(58, Math.round(w * 0.5));
 export class Boss extends Enemy {
   constructor(g, x, y, w, h, o) {
@@ -550,17 +552,17 @@ export class BossLibrarian extends Boss {
 // then DIVES at where you stand, thrusts ICE SPIKES up through the floor, and shakes ICICLES from the roof.  Now and then it coils up and freezes itself in a SHELL of ice: no blade can touch it
 // while it is in there, and it rains icicles to keep you moving - but a flame (the Ember spell, a thrown torch) cracks the shell, and the wyrm drops to the floor, stunned and brittle, for a few seconds.
 // Leave the shell alone and it thaws on its own, healing and flinging shards.  In its second half the lights of the cavern go out and a BLIZZARD leans on you.
-const RW = { scale: 2.4, segs: 11, gap: 46 };          // (half as big again as it was, and a longer body: each of the 11 segments falls away as it is hurt - and each one lost makes the rest quicker)
+const RW = { scale: 1.2, segs: 17, gap: 23, hit: 21, touch: 19 };          // (half the size it was, and half as many segments again: each of the 17 segments falls away as it is hurt - and each one lost makes the rest quicker.  gap, hit and touch are the segment spacing and the sizes of the boxes a blade / the hero's body meets, all halved with the sprites)
 const rot16 = a => ((Math.round(a / (Math.PI / 8)) % 16) + 16) % 16;
 const angDiff = (a, b) => ((b - a + 3 * Math.PI) % (Math.PI * 2)) - Math.PI;
 export class BossRimewyrm extends Boss {
   constructor(g, x, y, o) {
-    super(g, x, y + 28, 69, 57, o); this.hp = this.maxHp = 560; this.dmg = 16; this.xp = 380; this.bossName = 'THE RIMEWYRM'; this.voice = 'rimewyrm'; this.sub = 'WARDEN OF THE KEY OF ANTIMONY'; this.gravity = false; this.deathFx = COLORS.ice; this.triggerDist = 260; this.noDrop = true; this.alive = RW.segs; this.chunks = []; this.rage = 1; this.rageT = 1;
+    super(g, x, y + 14, 35, 29, o); this.hp = this.maxHp = 560; this.dmg = 16; this.xp = 380; this.bossName = 'THE RIMEWYRM'; this.voice = 'rimewyrm'; this.sub = 'WARDEN OF THE KEY OF ANTIMONY'; this.gravity = false; this.deathFx = COLORS.ice; this.triggerDist = 260; this.noDrop = true; this.alive = RW.segs; this.chunks = []; this.rage = 1; this.rageT = 1;
     this.ang = Math.PI; this.dir = -1; this.trail = []; this.parts = Array.from({ length: RW.segs + 1 }, () => ({ x, y })); this.rime = 0; this.rimeT = 0; this.bodyHit = false; this.lock = { x, y }; this.wind = 0; this.nIcicle = 0;
   }
   get spd() { return (this.phase === 2 ? 1.22 : 1) * this.rage; }
   intro(g) { if (this.st === 8) { this.cry(); g.shake(4, 40); g.fx.flash([0.7, 0.9, 1], 0.4); g.fx.ring(this.x, this.cy, 120, [0.6, 0.85, 1], 40, 0.1); } g.fx.glow(this.x, this.cy, 70, [0.5, 0.8, 1], 0.5); this.steerSoft(g.room.pw / 2, 104, 1.2); }
-  // THE BODY FALLS AWAY: it has 11 segments, and loses one each time its life drops by a eleventh.  A lost segment tumbles off and shatters on the floor; every one lost makes the wyrm quicker (up to 75% quicker when only the head is left).
+  // THE BODY FALLS AWAY: it has 17 segments, and loses one each time its life drops by a seventeenth.  A lost segment tumbles off and shatters on the floor; every one lost makes the wyrm quicker (up to 75% quicker when only the head is left).
   onHurt(dmg, dir, opts) { super.onHurt(dmg, dir, opts); this.syncSegs(); }
   syncSegs() { const want = Math.max(0, Math.ceil(RW.segs * Math.max(0, this.hp) / this.maxHp)); while (this.alive > want) this.dropSeg(); this.rageT = 1 + 0.75 * (RW.segs - this.alive) / RW.segs; }
   dropSeg() {
@@ -570,21 +572,21 @@ export class BossRimewyrm extends Boss {
   groundY() { return this.g.room.ph - 32; }
   steerSoft(tx, ty, max = 1.7, k = 0.05) { this.vx += (clamp((tx - this.x) * k, -max, max) - this.vx) * 0.09; this.vy += (clamp((ty - this.cy) * k, -max, max) - this.vy) * 0.09; }
   physics() {                      // it has no weight: it flies where it is steered, the body following the head's path
-    const r = this.g.room; this.x += this.vx; this.y += this.vy; this.x = clamp(this.x, 50, r.pw - 50); this.y = clamp(this.y, 90 + 28, r.ph - 76 + 28); if (this.flashT > 0) this.flashT--;
+    const r = this.g.room; this.x += this.vx; this.y += this.vy; this.x = clamp(this.x, 50, r.pw - 50); this.y = clamp(this.y, 90 + 14, r.ph - 60 + 14); if (this.flashT > 0) this.flashT--;
     for (const c of this.chunks) { c.vy += 0.25; c.x += c.vx; c.y += c.vy; c.rot += c.vr; if (--c.life <= 0 || c.y > r.ph - 30) { if (c.life > 0) { this.g.fx.burst(c.x, r.ph - 34, 10, COLORS.ice, { speed: 2.2, s0: 11 }); this.g.fx.sparks(c.x, r.ph - 34, 6, COLORS.white, 2.8, { gy: 0.2 }); A.sfx('shatter'); } c.life = 0; } }
     this.chunks = this.chunks.filter(c => c.life > 0);
     const sp = Math.hypot(this.vx, this.vy); if (sp > 0.25) this.ang += clamp(angDiff(this.ang, Math.atan2(this.vy, this.vx)), -0.12, 0.12); this.dir = Math.cos(this.ang) >= 0 ? 1 : -1;
-    const last = this.trail[0]; if (!last || (this.x - last.x) ** 2 + (this.cy - last.y) ** 2 > 1) { this.trail.unshift({ x: this.x, y: this.cy }); if (this.trail.length > 320) this.trail.length = 320; }
+    const last = this.trail[0]; if (!last || (this.x - last.x) ** 2 + (this.cy - last.y) ** 2 > 1) { this.trail.unshift({ x: this.x, y: this.cy }); if (this.trail.length > RW.segs * RW.gap + 30) this.trail.length = RW.segs * RW.gap + 30; }
     const P = this.parts; let k = 0, acc = 0, ax = this.x, ay = this.cy;
     for (const q of this.trail) { const seg = Math.hypot(q.x - ax, q.y - ay); while (k < P.length && acc + seg >= RW.gap * (k + 1)) { const f = (RW.gap * (k + 1) - acc) / (seg || 1); P[k].x = ax + (q.x - ax) * f; P[k].y = ay + (q.y - ay) * f; k++; } acc += seg; ax = q.x; ay = q.y; if (k >= P.length) break; }
     for (; k < P.length; k++) { P[k].x = ax; P[k].y = ay; }
   }
-  hitBy(box) { if (overlap(box, this.hurtbox)) { this.bodyHit = false; return true; } for (let i = 0; i <= this.alive; i++) { const q = this.parts[i]; if (overlap(box, { x: q.x - 21, y: q.y - 21, w: 42, h: 42 })) { this.bodyHit = true; return true; } } return false; }
+  hitBy(box) { if (overlap(box, this.hurtbox)) { this.bodyHit = false; return true; } for (let i = 0; i <= this.alive; i++) { const q = this.parts[i]; if (overlap(box, { x: q.x - RW.hit / 2, y: q.y - RW.hit / 2, w: RW.hit, h: RW.hit })) { this.bodyHit = true; return true; } } return false; }
   modifyDamage(d) { const b = this.bodyHit; this.bodyHit = false; return Math.max(1, Math.round(b ? d * 0.65 : d)); }
   touch() {
     const p = this.g.player; if (this.harmless || this.dead || this.dying) return;
     if (overlap(this.hurtbox, p.hurtbox)) { p.hurt(this.dangerous() ? this.dmg : Math.max(3, Math.round(this.dmg * 0.4)), this.x); return; }
-    for (let i = 0; i <= this.alive; i++) { const q = this.parts[i]; if (overlap({ x: q.x - 19, y: q.y - 19, w: 38, h: 38 }, p.hurtbox)) { p.hurt(Math.max(4, Math.round(this.dmg * 0.4)), q.x); return; } }
+    for (let i = 0; i <= this.alive; i++) { const q = this.parts[i]; if (overlap({ x: q.x - RW.touch / 2, y: q.y - RW.touch / 2, w: RW.touch, h: RW.touch }, p.hurtbox)) { p.hurt(Math.max(4, Math.round(this.dmg * 0.4)), q.x); return; } }
   }
   dangerous() { return this.state === 'swoop' && this.st >= Math.round(46 / this.spd) && this.st < Math.round(46 / this.spd) + 40; }
   // while it is in its shell, a blade does nothing; fire cracks the shell; and when it is stunned every blow lands harder
@@ -615,6 +617,7 @@ export class BossRimewyrm extends Boss {
     this.rime = 0; this.harmless = false; this.state = 'idle'; this.st = -40; this.plan = null; g.fx.wisps.set(0); g.fx.setDark(0.85); g.popup(this.x, this.y - 54, 'THE LIGHTS GO OUT', '#bfe4ff');
   }
   die() { const g = this.g, r = g.room; if (!this.dying) { g.fx.setAmbient(r.ambient, r.tint, r.vig); g.fx.setWisps(r.wisps || 0); for (const ic of g.icicles || []) ic.dead = true; } super.die(); }
+  mouth() { return { x: this.x + this.dir * 26, y: this.cy + 2 }; }          // (where the breath comes from)
   fallIcicle(x, delay = 0, len = 30) { const ic = new Icicle({ x, y: 32, len: len + rand(0, 8), w: 9 }); ic.dmg = Math.round(9 * (this.dmgK || 1)); ic.state = 1; ic.t = -delay; this.g.icicles.push(ic); }
   ai(g) {
     const p = g.player, spd = this.spd, r = g.room, pw = r.pw, cold = [0.55, 0.82, 1], T0 = Math.round(46 / spd);
@@ -624,13 +627,13 @@ export class BossRimewyrm extends Boss {
       case 'idle':
         this.rage += (this.rageT - this.rage) * 0.05;
         this.steerSoft(clamp(p.x + Math.sin(this.t * 0.021) * 170, 80, pw - 80), 92 + Math.sin(this.t * 0.037) * 26, 1.5 * spd);
-        this.planNext(this.phase === 2 ? ['swoop', 'spikes', 'icefall', 'encase', 'blizzard', 'swoop'] : ['swoop', 'spikes', 'icefall', 'encase', 'swoop'], Math.round(88 / spd)); break;
+        this.planNext(this.phase === 2 ? ['swoop', 'spikes', 'icefall', 'encase', 'blizzard', 'swoop', 'frostbreath', 'frostbreath'] : ['swoop', 'spikes', 'icefall', 'encase', 'swoop', 'frostbreath'], Math.round(88 / spd)); break;
       case 'swoop': {
         if (this.st < T0) {                                                       // it rears back, the line to you showing where it will dive (the line stops following you in the last moments)
           if (this.st < T0 - 12) this.lock = { x: p.x, y: p.y - 18 };
           this.steerSoft(this.x - Math.sign(this.lock.x - this.x) * 40, 74, 0.9); this.tell('swoop', this.st / T0, [{ type: 'line', x0: this.x, y0: this.cy, x1: this.lock.x, y1: this.lock.y }]);
         } else if (this.st === T0) { this.cry(); g.shake(3, 12); const dx = this.lock.x - this.x, dy = this.lock.y - this.cy, d = Math.hypot(dx, dy) || 1, sp = 5.4 * spd; this.vx = dx / d * sp; this.vy = dy / d * sp; }
-        else if (this.st < T0 + 38) { if (this.cy > r.ph - 66 && this.vy > 0) { this.vy = -Math.abs(this.vy) * 0.25; this.vx *= 0.9; g.shake(2, 6); } g.fx.sparks(this.x, this.cy, 2, COLORS.white, 2, { gy: 0.05 }); }
+        else if (this.st < T0 + 38) { if (this.cy > r.ph - 52 && this.vy > 0) { this.vy = -Math.abs(this.vy) * 0.25; this.vx *= 0.9; g.shake(2, 6); } g.fx.sparks(this.x, this.cy, 2, COLORS.white, 2, { gy: 0.05 }); }
         else if (this.st < T0 + 86) { this.steerSoft(clamp(this.x, 80, pw - 80), 88, 2.2); }
         else { this.state = 'idle'; this.st = -20; } break; }
       case 'spikes': {
@@ -651,8 +654,24 @@ export class BossRimewyrm extends Boss {
           if (this.rimeT <= 0) this.thaw(g);
         } break; }
       case 'stunned': {                                                           // dropped to the floor: brittle, and open to every blow
-        this.steerSoft(this.x, r.ph - 80, 1.6); if (this.t % 6 === 0) g.fx.smoke(this.x, this.cy - 6, 1, { c0: [0.9, 0.95, 1], c1: [0.6, 0.7, 0.85], s0: 5, s1: 16, l: 0.5 });
+        this.steerSoft(this.x, r.ph - 64, 1.6); if (this.t % 6 === 0) g.fx.smoke(this.x, this.cy - 6, 1, { c0: [0.9, 0.95, 1], c1: [0.6, 0.7, 0.85], s0: 5, s1: 16, l: 0.5 });
         if (this.st > 190) { this.harmless = false; this.state = 'idle'; this.st = -30; this.plan = null; } break; }
+      case 'frostbreath': {                                                       // it hangs back and rears up, the whole sweep of the breath shown on the ground; then a cone of killing cold sweeps across it.  A hit CHILLS you: a few seconds at half speed.  (A dash goes through it.)
+        const W = Math.round(52 / spd), N = this.phase === 2 ? 72 : 58, L = this.phase === 2 ? 250 : 220, SW = 0.45;
+        if (this.st === 1) { this.fbSide = p.x < pw / 2 ? 1 : -1; this.fbSweep = Math.random() < 0.5 ? -1 : 1; }
+        if (this.st < W) {
+          this.steerSoft(clamp(p.x + this.fbSide * 210, 90, pw - 90), 108, 1.8 * spd); this.dir = p.x >= this.x ? 1 : -1; this.ang = this.dir > 0 ? 0 : Math.PI;
+          if (this.st < W - 14) this.lock = { x: p.x, y: p.y - 16 };
+          const m = this.mouth(), a0 = Math.atan2(this.lock.y - m.y, this.lock.x - m.x), pt = a => [m.x + Math.cos(a) * L, m.y + Math.sin(a) * L];
+          this.fbA = a0; this.tell('frostbreath', this.st / W, [{ type: 'poly', pts: [[m.x, m.y], pt(a0 - SW - 0.12), pt(a0 - SW / 2), pt(a0), pt(a0 + SW / 2), pt(a0 + SW + 0.12)] }]);
+        } else if (this.st < W + N) {
+          this.steerSoft(this.x, this.cy, 0.3); this.dir = Math.cos(this.fbA) >= 0 ? 1 : -1; this.ang = this.dir > 0 ? 0 : Math.PI;
+          const s = (this.st - W) / N, ang = this.fbA + this.fbSweep * (s - 0.5) * 2 * SW, m = this.mouth(), k = Math.min(1, (this.st - W) / 10, (W + N - this.st) / 12);
+          g.fx.frostBreath(m.x, m.y, ang, k); g.fx.light(m.x + Math.cos(ang) * 70, m.y + Math.sin(ang) * 70, 150, 0.9, [0.6, 0.85, 1]);
+          if (this.st === W) { this.cry(); A.sfx('freeze'); g.shake(2, 10); } if ((this.st - W) % 18 === 0) A.sfx('steam');
+          if (this.st % 3 === 0) for (let j = 1; j <= 9; j++) { const d = j * L / 9, hx = m.x + Math.cos(ang) * d, hy = m.y + Math.sin(ang) * d, hw = 12 + j * 6;
+            if (overlap({ x: hx - hw / 2, y: hy - hw / 2, w: hw, h: hw }, p.hurtbox)) { if (p.hurt(Math.round(9 * (this.dmgK || 1)), this.x, { kb: 0.9, stun: 10, inv: 55 })) p.chill(this.phase === 2 ? 300 : 240); break; } }
+        } else { this.state = 'idle'; this.st = -24; } break; }
       case 'blizzard': {
         if (this.st === 1) this.wind = Math.random() < 0.5 ? -1 : 1;
         this.steerSoft(pw / 2, 84, 1.2); if (this.st < 40) this.tell('blizzard', this.st / 40, [{ type: 'rect', x: this.wind > 0 ? 0 : pw - 60, y: r.ph - 70, w: 60, h: 38 }]);
@@ -668,12 +687,12 @@ export class BossRimewyrm extends Boss {
     for (const c of this.chunks) drawSheet(ctx, id + '_seg', sh * 16 + rot16(c.rot), c.x - cx, c.y - cy, { ...o, alpha: Math.min(1, c.life / 40) });          // (a lost segment, tumbling)
     const tl = P[n], tp = n > 0 ? P[n - 1] : { x: this.x, y: this.cy }; drawSheet(ctx, id + '_tail', sh * 16 + rot16(Math.atan2(tl.y - tp.y, tl.x - tp.x)), tl.x - cx, tl.y - cy, o);
     for (let i = n - 1; i >= 0; i--) { const q = P[i], f = i === 0 ? { x: this.x, y: this.cy } : P[i - 1], dx = f.x - q.x, dy = f.y - q.y; drawSheet(ctx, id + '_seg', sh * 16 + rot16(Math.atan2(dy, -Math.abs(dx)) + Math.PI), q.x - cx, q.y - cy, { ...o, dir: dx > 0 ? -1 : 1 }); }
-    const T0 = Math.round(46 / this.spd), pose = this.state === 'swoop' ? (this.st < T0 ? 2 : 1) : this.state === 'stunned' ? 2 : this.intent ? 2 : 0;
+    const T0 = Math.round(46 / this.spd), pose = this.state === 'swoop' ? (this.st < T0 ? 2 : 1) : this.state === 'stunned' ? 2 : this.state === 'frostbreath' ? 2 : this.intent ? 2 : 0;
     let rot = this.dir > 0 ? this.ang : this.ang - Math.PI; rot = Math.atan2(Math.sin(rot), Math.cos(rot));
     drawSheet(ctx, id + '_head', pose * 5 + sh, this.x - cx, this.cy - cy, { ...o, dir: this.dir, rot: clamp(rot, -1.2, 1.2) * 0.85 });
     const shell = this.rime > 0 ? 1 : this.state === 'encase' ? clamp(this.st / 50, 0, 1) : 0;
     if (shell > 0) {                                                                // the shell of ice: a lump over the head and over every joint of the body
-      const pts = [{ x: this.x, y: this.cy, r: 51 }, ...P.slice(0, n + 1).map((q, i) => ({ x: q.x, y: q.y, r: (26 - i * 1.0) * 1.5 }))];
+      const pts = [{ x: this.x, y: this.cy, r: 26 }, ...P.slice(0, n + 1).map((q, i) => ({ x: q.x, y: q.y, r: (26 - i * 0.65) * 0.75 }))];
       ctx.save(); for (const q of pts) { const x = Math.round(q.x - cx), y = Math.round(q.y - cy), rr = q.r * shell;
         ctx.fillStyle = 'rgba(120,190,225,' + (0.5 * shell).toFixed(2) + ')'; ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2); ctx.fill();
         ctx.strokeStyle = 'rgba(235,250,255,' + (0.85 * shell).toFixed(2) + ')'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y, Math.max(0, rr - 0.5), 0, Math.PI * 2); ctx.stroke();
@@ -985,8 +1004,8 @@ export class BossGolem extends Boss {
     this.hitDone = false; this.heat = 0;
   }
   get spd() { return this.phase === 2 ? 1.2 : 1; }
-  tele(k) { return Math.round({ punch: 56, scoop: 60, fireball: 58, vents: 30 }[k] / this.spd); }
-  dangerous() { return (this.state === 'punch' || this.state === 'scoop') && this.st >= this.tele(this.state) && this.st < this.tele(this.state) + 14; }
+  tele(k) { return Math.round({ punch: 56, scoop: 60, fireball: 58, vents: 30, gearslam: 62 }[k] / this.spd); }
+  dangerous() { return (this.state === 'punch' || this.state === 'scoop' || this.state === 'gearslam') && this.st >= this.tele(this.state) && this.st < this.tele(this.state) + 14; }
   // where things are on the sprite, from its feet (the art faces left; `dir` turns it round)
   vent(i) { return { x: this.x + this.dir * (i ? 1 : 10), y: this.y - 84 }; }          // the two stacks of the boiler
   mouth() { return { x: this.x + this.dir * 20, y: this.y - 52 }; }
@@ -1009,7 +1028,7 @@ export class BossGolem extends Boss {
     switch (this.state) {
       case 'idle':
         this.faceP(); this.vx = approach(this.vx, d > 70 ? this.dir * 0.55 * spd : 0, 0.05);
-        this.planNext(this.phase === 2 ? ['punch', 'scoop', 'fireball', 'vents', 'punch', 'scoop'] : ['punch', 'scoop', 'fireball', 'vents'], Math.round(88 / spd)); break;
+        this.planNext(this.phase === 2 ? ['punch', 'scoop', 'fireball', 'vents', 'punch', 'scoop', 'gearslam'] : ['punch', 'scoop', 'fireball', 'vents', 'gearslam'], Math.round(88 / spd)); break;
       case 'punch': case 'scoop': {
         const k = this.state, T0 = this.tele(k); this.vx = 0; if (this.st === 1) { this.faceP(); this.hitDone = false; A.sfx('steam'); }
         const hb = k === 'punch' ? { x: this.dir > 0 ? this.x + 4 : this.x - 4 - 84, y: this.y - 56, w: 84, h: 32 } : { x: this.dir > 0 ? this.x + 4 : this.x - 4 - 84, y: this.y - 34, w: 84, h: 34 };
@@ -1026,6 +1045,18 @@ export class BossGolem extends Boss {
           A.sfx('fire'); const dx = p.x - m.x, t = clamp(Math.abs(dx) / 2.6, 36, 90), vx = dx / t, vy = (p.y - 20 - m.y) / t - 0.045 * t / 2;          // (lobbed: it lands about where you stand)
           g.addProjectile(new Projectile(m.x, m.y, vx, vy, 'ember', { dmg: 9, scale: 1.7, grav: 0.045, life: 240 })); g.fx.ring(m.x, m.y, 30, [1, 0.5, 0.2], 14); g.fx.burst(m.x, m.y, 8, [[1, 0.7, 0.3], [0.6, 0.1, 0.02]], { speed: 2, s0: 10 });
         } else if (this.st > T0 + (this.phase === 2 ? 56 : 36)) { this.state = 'idle'; this.st = -14; } break; }
+      case 'gearslam': {                                                          // GEAR SLAM: it brings both fists down on the floor (a blow in front of it) and the roof shakes loose: gears drop at random along the room (dust and a ring on the floor warn where), land, and ROLL away in random directions, throwing sparks
+        const T0 = this.tele('gearslam'); this.vx = 0; if (this.st === 1) { this.faceP(); this.hitDone = false; A.sfx('steam'); }
+        const hb = { x: this.dir > 0 ? this.x + 4 : this.x - 4 - 84, y: this.y - 34, w: 84, h: 34 };
+        if (this.st < T0) { this.tell('gearslam', this.st / T0, [{ type: 'rect', ...hb }]); if (this.st % 5 === 0) { const v = this.vent(1); this.steam(v.x, v.y, 2, 1.6); } }
+        else if (this.st === T0 + 1) {
+          A.sfx('boom'); g.shake(9, 30); g.fx.flash([1, 0.85, 0.6], 0.2); g.fx.ring(this.x + this.dir * 56, this.y, 120, [1, 0.8, 0.45], 26, 0.14); g.fx.sparks(this.x + this.dir * 56, this.y - 10, 14, COLORS.gold, 4.4, { gy: 0.15 });
+          for (const sd of [-1, 1]) g.fx.burst(this.x + this.dir * 56, this.y - 2, 6, [[0.6, 0.55, 0.5], [0.25, 0.23, 0.25]], { speed: 1.6 * sd, s0: 9, s1: 2, up: 0.5 });
+          if (!this.hitDone && overlap(hb, p.hurtbox)) { this.hitDone = true; p.hurt(this.dmg + 2, this.x); }
+          const n = this.phase === 2 ? 6 : 4, pw = g.room.pw, xs = []; for (let tries = 0; xs.length < n && tries < 80; tries++) { const x = rand(46, pw - 46); if (xs.every(q => Math.abs(q - x) > 70)) xs.push(x); }
+          xs.sort(() => Math.random() - 0.5).forEach((x, i) => { let ty = 3; while (ty * 16 < g.room.ph && !g.room.solid(Math.floor(x / 16), ty)) ty++;          // (the floor below that spot)
+            g.addProjectile(new RollingGear(x, 38, { delay: 24 + i * 10 + Math.floor(rand(0, 8)), floorY: ty * 16, dmg: 11, life: 330 })); });
+        } else if (this.st > T0 + 56) { this.state = 'idle'; this.st = -12; } break; }
       case 'vents':
         this.vx = 0; this.faceP(); if (this.st < 30) { this.tell('vents', this.st / 30); for (const i of [0, 1]) { const v = this.vent(i); this.steam(v.x, v.y, 1, 2); } }
         if (this.st === 30) { A.sfx('steam'); const n = this.phase === 2 ? 4 : 3; for (let i = 0; i < n; i++) { const x = clamp(i === 0 ? p.x : p.x + rand(-130, 130), 30, g.room.pw - 30); g.addProjectile(new Column(x, this.y, 'steam', { warn: 62 + i * 14, active: 44, dmg: 12, w: 30, h: 150 })); } }
@@ -1055,9 +1086,9 @@ export class BossGolem extends Boss {
     if (d === 150) { g.fx.flash([1, 0.8, 0.5], 0.4); g.fx.ring(this.x, this.cy, 120, [1, 0.8, 0.5], 36, 0.1); g.fx.smoke(this.x, this.y - 16, 14, { s0: 14, s1: 44, c0: [0.3, 0.28, 0.29], c1: [0.08, 0.07, 0.08], a: 0.5, l: 1.6 }); g.fx.souls(this.x, this.cy, 24, COLORS.blue); A.sfx('thunder'); this.dead = true; g.player.gainXp(this.xp); if (!this.noDrop) rollEnchantDrop(g, this, true); g.bossDefeated(this); }
   }
   draw(ctx, cx, cy) {
-    const T = this.tele(this.state === 'punch' || this.state === 'scoop' ? this.state : this.state === 'fireball' ? 'fireball' : 'punch'); let id = 'golem_idle', f = Math.floor(this.t / 9) % 6;
+    const T = this.tele(this.state === 'punch' || this.state === 'scoop' || this.state === 'gearslam' ? this.state : this.state === 'fireball' ? 'fireball' : 'punch'); let id = 'golem_idle', f = Math.floor(this.t / 9) % 6;
     if (this.dying) { id = 'golem_death'; const d = this.dying; f = d < 40 ? 0 : d < 70 ? 1 : Math.min(9, 2 + Math.floor((d - 70) / 8)); }
-    else if (this.state === 'punch' || this.state === 'scoop') { id = this.state === 'punch' ? 'golem_attack' : 'golem_attack2'; f = this.st < T ? Math.min(4, Math.floor(this.st / T * 5)) : Math.min(7, 5 + Math.floor((this.st - T) / 5)); }
+    else if (this.state === 'punch' || this.state === 'scoop' || this.state === 'gearslam') { id = this.state === 'punch' ? 'golem_attack' : 'golem_attack2'; f = this.st < T ? Math.min(4, Math.floor(this.st / T * 5)) : Math.min(7, 5 + Math.floor((this.st - T) / 5)); }
     else if (this.state === 'fireball') { id = 'golem_spit'; f = this.st < T * 0.5 ? Math.floor(this.st / (T * 0.5) * 3) : this.st < T ? 3 : Math.min(6, 4 + Math.floor((this.st - T) / 5)); }
     else if (this.state === 'vents') { id = 'golem_hit'; f = this.st < 30 ? 0 : 1; }
     else if (Math.abs(this.vx) > 0.15) { id = 'golem_walk'; f = Math.floor(this.t / 7) % 8; }
