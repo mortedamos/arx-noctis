@@ -1,0 +1,11 @@
+Eroded Motta (assets/fonts/erodedmotta.regular.ttf)
+
+Source: https://www.1001fonts.com/erodedmotta-font.html  - by Lirkiv (https://www.1001fonts.com/users/Lirkiv/), created March 2026.
+The font file itself reads "Copyright (c) 2026, lirkiv AC" and was made with FontForge.
+
+The author's note on the 1001Fonts page, as checked on 2026-11-18:
+    "ENG - Thank you for downloading my font, it's free for anything you want to do (including commercial)."
+The listing's licence is "Free for commercial use" under custom terms (a Terms.txt inside erodedmotta.zip; that file was not kept
+with the game), and the page also says "This font can not be resold or republished".
+
+The game ships the font file only so that it can draw the text; it is not offered as a download of its own.

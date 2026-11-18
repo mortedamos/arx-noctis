@@ -1,0 +1,16 @@
+The Sidescroller's Dungeon - Tileset [32x32]
+by Icko - https://inr-1ko.itch.io/the-sidescrollers-dungeon  (author: https://inr-1ko.itch.io/)
+Downloaded as "The Sidescroller's Dungeon - Tileset [32x32].zip".
+
+No license file was included in the download.
+
+The author's description on the itch.io page gives the licence (the project owner quoted it on 2026-11-18, and it was
+checked on the page the same day):
+
+    You may use these assets for both free and commercial projects
+    You may modify this asset pack to suit the needs of your projects
+    You may not repackage, redistribute, or resell these assets whether they have been modified or not
+
+The page's "Asset license" field says "Creative Commons Attribution_NoDerivatives v4.0 International" (CC BY-ND 4.0),
+which would not allow the cutting and scaling ARX NOCTIS does. This project follows the author's own description.
+Credit is given in the game and in CREDITS.md either way.

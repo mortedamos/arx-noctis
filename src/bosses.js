@@ -919,7 +919,7 @@ export class BossBramble extends Boss {
 }
 
 // ============================================================================================== 8. THE CRIMSON COUNT (an optional lair behind a door in the Nave)
-// A vampire lord in crimson armour (sprites: xxg_4_free).  BLOOD LUNGE: he crouches, then dashes through the air where you stand with his blade.  BLOOD BOLTS: a fan of crimson orbs.
+// A vampire lord in crimson armour (sprites: assets2D's Gothic Vampire Undead Horde, the free download xxg_4_free).  BLOOD LUNGE: he crouches, then dashes through the air where you stand with his blade.  BLOOD BOLTS: a fan of crimson orbs.
 // MIST STEP: he dissolves and returns behind you with a slash (the ring on the floor shows where).  In the second half he also LEAPS onto where you stand, and is quicker.
 export class BossVampire extends Boss {
   constructor(g, x, y, o) {

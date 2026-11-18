@@ -5,12 +5,12 @@ Everything in ARX NOCTIS that was not made for it: who made it, the licence it c
 * **In the game.** The title screen's CREDITS option shows [`credits.txt`](credits.txt), the short version. This file is the full record.
 * **Licence texts** as supplied by the authors are in [`assets/credits/`](assets/credits/).
 * **Source packs.** The art packs as downloaded are kept in `assets/sprites/source/`, `assets/source/` and `assets/archive/`. They are **not published** (several licences forbid passing a pack on); the game ships only the pieces cut out of them into `assets/env/` and `assets/sprites/`.
-* **Links** were last checked on 2026-11-17. All were reachable except the Pixabay pages, which refuse automated requests.
-* Licences are given as the authors' own pages and files state them. Where a page and a file disagree, or nothing is stated, the item is listed under [Open items before publishing](#open-items-before-publishing).
+* **Links** were last checked on 2026-11-17, and the ones added since on 2026-11-18. All were reachable except the Pixabay pages, which refuse automated requests.
+* Licences are given as the authors' own pages and files state them. Where a page and a file disagree, or nothing is stated, the item is listed under [Open items before publishing](#open-items-before-publishing). Two itch.io packs (Icko, CaptainSkolot) have a licence field that is stricter than the author's own description; this project follows the descriptions, and the table row says so.
 
 ## Contents
 
-[Licences at a glance](#licences-at-a-glance) · [Open items before publishing](#open-items-before-publishing) · [Attribution required](#attribution-required) · [Art](#art) · [Fonts](#fonts) · [Sound effects](#sound-effects) · [Music](#music) · [Code and libraries](#code-and-libraries)
+[Licences at a glance](#licences-at-a-glance) · [Open items before publishing](#open-items-before-publishing) · [Attribution required](#attribution-required) · [AI-generated content](#ai-generated-or-ai-assisted-content) · [Art](#art) · [Fonts](#fonts) · [Sound effects](#sound-effects) · [Music](#music) · [Code and libraries](#code-and-libraries)
 
 ## Licences at a glance
 
@@ -18,10 +18,10 @@ Everything in ARX NOCTIS that was not made for it: who made it, the licence it c
 |---|---|---|
 | CC0 / public domain | most of the art (Ansimuz, ETTiNGRiNDER, FreeGameSprites, Szadi art) and most sound effects | nothing; credit is given anyway |
 | CC BY 4.0, CC BY 3.0, OGA-BY 3.0 | three art packs and six sounds | credit the creator, link the licence, say what was changed (see [Attribution required](#attribution-required)) |
-| Free for commercial use, on the author's own terms | Anokolisa, Eddie's Workshop, gamecrafterik, Worlds Without End, heosphorus; the Pixabay sounds | follow each author's note (see [Free for commercial use](#free-for-commercial-use)) |
+| Free for commercial use, on the author's own terms | Anokolisa, Eddie's Workshop, assets2D, Icko, CaptainSkolot, Worlds Without End, heosphorus; the fonts Blackletter, Eroded Motta and Livingstone; the Pixabay sounds | follow each author's note (see [Free for commercial use](#free-for-commercial-use)) |
 | SIL Open Font License 1.1 | Pirata One, Almendra, Elementary Gothic Bookhand | keep the licence text with the font (done) |
 | MIT | three.js | keep the licence notice (`lib/three/LICENSE`, done) |
-| **Not confirmed** | some art, two fonts, one sound, the music | see [Open items before publishing](#open-items-before-publishing) |
+| **Not confirmed** | the music | see [Open items before publishing](#open-items-before-publishing) |
 
 ## Open items before publishing
 
@@ -29,16 +29,7 @@ These are the things to settle before the game goes on a store or is sold. Each 
 
 | # | Item | The problem | Used for | What to do |
 |---|---|---|---|---|
-| 1 | **Magic Books**, CaptainSkolot | The page's licence field says CC BY-NC-SA 4.0 (non-commercial, share-alike), but its description says free and commercial projects are welcome and credit is appreciated. The page also says the art was AI-assisted. | the flying books of the Library of Ages, and the pages they show as they cast | Get the author's confirmation in writing, or replace the pack. |
-| 2 | **The Sidescroller's Dungeon** tileset, Icko | The itch.io page lists CC BY-ND 4.0: credit required, **no derivatives**. The game cuts tiles out of the sheet and draws some at half size. | teal pillars, banners, urns, crates, stone arch, wooden door, animated torches | Ask Icko whether use in a game, cut and scaled, is allowed, or replace the tiles. Credit is given meanwhile. |
-| 3 | **xxg_4_free** vampire sheet, xxg | No licence file came with the download, and the author's page was not recorded. | the Crimson Count | Find the author's page and terms, or replace the sheet. |
-| 4 | **Blackletter ExtraBold** font | The font says "All rights reserved" (c) 2001 Typographer Mediengestaltung; no licence came with it. | the game title | Get permission to ship it, or replace it with an OFL face. |
-| 5 | **Eroded Motta** font, lirkiv AC | The font names its author but carries no licence. | gravestones and tablets | Get permission to ship it, or replace it. |
-| 6 | **The fifteen painted portraits** | Their origin, and the right to publish them, are not recorded. | the framed pictures on the castle walls and the haunted portraits | Record where they came from and on what terms. |
-| 7 | **Prague Orloj clock picture** | The photographer is unknown and there is no licence file. The project owner says it is free to use. | the Orloj Tower dial | Find the photographer, or use your own photograph. |
-| 8 | **Graveyard 400 Assets**, Worlds Without End | The licence forbids passing on the original files or re-packaging them. Ten PNGs cut from the set ship in this public repository. | two headstones, four flowers, a wreath, three iron fences, eight statues | Ask the author that shipping those ten pieces inside a game is fine. |
-| 9 | **`record_scratch.mp3`** | Where it came from was not recorded. | the record scratch in the disco room | Record the source, or replace it. |
-| 10 | **The music** | Made with Suno. Whether the tracks may be used commercially depends on the plan they were generated on. | all the music | Keep the plan and Suno's terms at the time on file. |
+| 1 | **The music** | Made with Suno. Whether the tracks may be used commercially depends on the plan they were generated on. | all the music | Keep the plan and Suno's terms at the time on file. |
 
 ## Attribution required
 
@@ -49,7 +40,7 @@ CC BY and OGA-BY ask for the creator's name, the title, a link to the source and
 | [Castlevania-esque Tilemap (Stone and Bricks)](https://opengameart.org/content/castlevania-esque-tilemap-stone-and-bricks) | Chloe Wolfe | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | cropped and rearranged |
 | [Bosses and Monsters Spritesheets (Ars Notoria)](https://opengameart.org/content/bosses-and-monsters-spritesheets-ars-notoria) | Balmer, with Redshrike | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) | cropped and rearranged; recoloured while loading |
 | [Super Dead Gunner: Cyber-tooth (enemy)](https://opengameart.org/content/super-dead-gunner-cyber-tooth-enemy) | Emcee Flesher | [OGA-BY 3.0](https://opengameart.org/content/oga-by-30-faq) | sliced and re-assembled in code |
-| [The Sidescroller's Dungeon Tileset \[32x32\]](https://inr-1ko.itch.io/the-sidescrollers-dungeon) | Icko | [CC BY-ND 4.0](https://creativecommons.org/licenses/by-nd/4.0/) | cut out of the sheet, some drawn at half size (see open item 2) |
+| [The Sidescroller's Dungeon Tileset \[32x32\]](https://inr-1ko.itch.io/the-sidescrollers-dungeon) | [Icko](https://inr-1ko.itch.io/) | the licence field says [CC BY-ND 4.0](https://creativecommons.org/licenses/by-nd/4.0/), which asks for credit; the author's description allows commercial use and changes | cut out of the sheet, some drawn at half size |
 | [Animated Gears - Pixel Art Steampunk Machinery](https://heosphorus.itch.io/animated-gears) | heosphorus | free to use with credit (confirmed by the project owner) | five of the ten animations packed into strips |
 
 Six sound effects are by Free Sounds Library ([freesoundslibrary.com](https://www.freesoundslibrary.com/)), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Each was trimmed, level-matched and re-encoded as a mono mp3.
@@ -62,6 +53,20 @@ Six sound effects are by Free Sounds Library ([freesoundslibrary.com](https://ww
 | `kill_rot_4.mp3` | [Zombie Noise](https://www.freesoundslibrary.com/zombie-noise/) |
 | `boss_nightmare.mp3` | [Horse Whinny Sound Effect](https://www.freesoundslibrary.com/horse-whinny-sound-effect/) |
 | `boss_nightmare_2.mp3` | [Horse Neighing Sound Effect](https://www.freesoundslibrary.com/horse-neighing-sound-effect/) |
+
+## AI-generated or AI-assisted content
+
+Some stores ask developers to say which shipped content was made with AI. This is the list, from what the sources say about themselves.
+
+| Content | What is known | Used for |
+|---|---|---|
+| The fifteen portraits | made by the project owner with Google Gemini | the framed pictures and haunted portraits |
+| The music | made with Suno (open item 1) | all the music |
+| [Magic Books](https://captainskolot.itch.io/magic-books-pixelart-pixel-art-sprite-grimoire-pack-for-rpg-fantasy), CaptainSkolot | the itch.io page says "AI Assisted" | the flying books and their pages |
+| [Graveyard 400 Assets](https://worldswithoutend.itch.io/graveyard-2d-game-assets), Worlds Without End | the itch.io page says "AI Assisted" | headstones, flowers, fences and statues |
+| [Gothic Vampire Undead Horde](https://assets2d.itch.io/gothic-vampire-horde-pixel-art-2d-character-sprites), assets2D | the itch.io page says "AI Assisted" | the Crimson Count |
+
+The pages of the other itch.io packs (Icko, Anokolisa, Eddie's Workshop, heosphorus, Szadi art) carry no AI disclosure. Checked on 2026-11-18.
 
 ## Art
 
@@ -103,36 +108,27 @@ On the authors' own terms, as stated on their pages or in their downloads.
 |---|---|---|---|
 | [Hero's Journey: Moon Graveyard](https://anokolisa.itch.io/moon-graveyard) (the "Final" set) | Anokolisa | "completely free for commercial use"; credit optional, and none owed when shapes or colours are changed (`assets/credits/license-anokolisa-final-note.txt`) | the moonlit graveyard backdrop: moon and clouds, the mausoleum and chapel silhouette, ivy and headstone foliage (drawn at half size) |
 | [Old Golem](https://eddies-workshop.itch.io/old-golem) | Eddie's Workshop | "can be used freely and commercially... credits are not required but I would appreciate it" (`assets/credits/license-old-golem.txt`) | the **Boiler Golem**; the steam at its mouth and its explosion were cut out and are three.js effects now |
-| Steampunk Pixel Art Mega Pack v2.1.1 (itch.io; link not recorded) | gamecrafterik | its README says "royalty-free commercial licence"; the pack is described as AI-assisted | seven 32x32 props (boiler, steam vent, valve, clock, lamp post, furnace, tesla tower) in `assets/env/sp_*.png` |
+| [Gothic Vampire Undead Horde](https://assets2d.itch.io/gothic-vampire-horde-pixel-art-2d-character-sprites), the free download (`xxg_4_free.zip`, one sheet) | assets2D | "freely used in both non-commercial fan games and commercial revenue-generating game projects"; may be modified; may **not** be redistributed, resold or repackaged as a standalone asset bundle; credit "highly appreciated", not required | the **Crimson Count**, boss of the Crimson Crypt: the one sheet is cut into six strips (`assets/sprites/vampire_*.png`) and scaled down by the build step |
 | [Pixel Platformer Set 1](https://szadiart.itch.io/pixel-platformer-castle) (titled "Pixel Platformer Castle" on itch.io) | Szadi art | public domain, personal or commercial; may be edited, but the pack may not be sold (`assets/credits/license-szadi-pixel-platformer.txt`) | the sickle-fighting **zealot** and the sparkling diamond |
-| [Graveyard 400 Assets](https://worldswithoutend.itch.io/graveyard-2d-game-assets) | Worlds Without End | personal and commercial use in games; **the original files may not be redistributed or re-packaged** (see open item 8) | ten pieces cut from the 128x128 set (`assets/env/gy_*.png`): two headstones, four flowers, a wreath, three iron fences and eight statues, which are the stones the Lady speaks through |
+| [Graveyard 400 Assets](https://worldswithoutend.itch.io/graveyard-2d-game-assets) | [Worlds Without End](https://worldswithoutend.itch.io/) | personal and commercial use (`License.pdf` in the download); the original files may not be redistributed, resold, sublicensed or re-packaged. The project owner's reading, which this project follows: pieces cut out and used inside a game are use, not redistribution, or nobody could use the pack at all | eighteen pieces cut from the 128x128 set (`assets/env/gy_*.png`): two headstones, four flowers, a wreath, three iron fences and eight statues, which are the stones the Lady speaks through |
+| [The Sidescroller's Dungeon Tileset \[32x32\]](https://inr-1ko.itch.io/the-sidescrollers-dungeon) (`The Sidescroller's Dungeon - Tileset [32x32].zip`) | [Icko](https://inr-1ko.itch.io/) | the author's description: "You may use these assets for both free and commercial projects", "You may modify this asset pack to suit the needs of your projects", "You may not repackage, redistribute, or resell these assets whether they have been modified or not". The page's licence field says CC BY-ND 4.0, which would forbid changes; this project follows the description, as the author's own statement of what is allowed (`assets/credits/license-sidescrollers-dungeon-note.txt`) | pillars, banners, urns, crates, the stone arch, the wooden door and the animated torches |
+| [Magic Book pack](https://captainskolot.itch.io/magic-books-pixelart-pixel-art-sprite-grimoire-pack-for-rpg-fantasy) (32 grimoires; `Magic Book by CaptainSkeleto.zip` and `Magic Books interface.zip`) | [CaptainSkolot](https://captainskolot.itch.io/) | the author's description: "We want you to have the freedom to use this asset pack in both your free and commercial projects", "Feel free to modify the assets to suit your unique needs. While credit is not required, we genuinely appreciate any attribution given", "You may not redistribute or resell the assets on their own, that includes NFT/images asset compilations". The page's licence field says CC BY-NC-SA 4.0, which would forbid commercial use; this project follows the description, as the author's own statement of what is allowed (`assets/credits/license-magic-books-note.txt`) | the flying books of the Library of Ages (`assets/sprites/magicbooks.png`), and the open pages they show as they cast (`assets/sprites/bookpages.png`, cut from the interface pack and drawn translucent) |
 | [Animated Gears](https://heosphorus.itch.io/animated-gears) | heosphorus | free to use **with credit** (see [Attribution required](#attribution-required)) | five of its ten gear animations (`assets/env/gear_*.png`), faded and slowly turning behind the generated gears of the Orloj Tower and the Clockwork Dungeon |
-
-### Not confirmed
-
-See [Open items before publishing](#open-items-before-publishing).
-
-| Pack | Author | Licence | Used for |
-|---|---|---|---|
-| [The Sidescroller's Dungeon Tileset \[32x32\]](https://inr-1ko.itch.io/the-sidescrollers-dungeon) | Icko | CC BY-ND 4.0 on the page (item 2) | pillars, banners, urns, crates, the stone arch, the wooden door and the animated torches |
-| [Magic Book pack](https://captainskolot.itch.io/magic-books-pixelart-pixel-art-sprite-grimoire-pack-for-rpg-fantasy) (32 grimoires) | CaptainSkolot | CC BY-NC-SA 4.0 in the licence field, "free and commercial projects" in the text (item 1) | the flying books of the Library of Ages (`assets/sprites/magicbooks.png`), and the open pages they show as they cast (`assets/sprites/bookpages.png`, cut from the same author's "Magic Books interface" pack and drawn translucent) |
-| xxg_4_free (vampire sheet; link not recorded) | xxg | none came with the download (item 3) | the Crimson Count, the boss of the Crimson Crypt; the painted sheet is cut into strips and scaled down by the build step |
-| Prague astronomical clock picture (`assets/sprites/source/orloj.png`) | unknown (a photograph) | "free to use" per the project owner; no licence file (item 7) | the Orloj Tower dial, pixelated into `assets/env/orloj.png` by `tools/pixelate-orloj.ps1` |
-| The fifteen painted portraits (five expressions each) | supplied by the game's author | origin not recorded (item 6) | framed pictures on the castle walls and the haunted portraits |
-
-The full-size portraits are not shipped. `tools/pixelate-portraits.ps1` shrinks them to 26x33 pixels, gives each person one 32-colour palette and packs them into `assets/portraits/pixel/portraits.png`.
 
 ### Made for this project
 
-* **The Orloj tower photograph** (`assets/sprites/source/orloj_tower.png`) is the project owner's own photograph. Only the calendar dial is cut out of it (pixelated into `assets/env/orloj_calendar.png` by `tools/pixelate-orloj-calendar.ps1`); the rest of the street tower is drawn in code (`src/orlojtower.js`).
+* **The Prague Orloj clock picture** (`assets/sprites/source/orloj.png`) is the project owner's own photograph, taken on a visit to Prague. It is pixelated into `assets/env/orloj.png` by `tools/pixelate-orloj.ps1` and is the dial of the Orloj Tower.
+* **The Orloj tower photograph** (`assets/sprites/source/orloj_tower.png`) is the project owner's own photograph too. Only the calendar dial is cut out of it (pixelated into `assets/env/orloj_calendar.png` by `tools/pixelate-orloj-calendar.ps1`); the rest of the street tower is drawn in code (`src/orlojtower.js`).
+* **The fifteen portraits** (five expressions each; 75 files in `assets/portraits/`) were made by the project owner with Google Gemini prompts, for their other game, [The Kingdom Marches](https://mortedamos.github.io/Kingdom-Marches/). The files are byte-identical to the ones in that project's `assets/portraits/`. They are the framed pictures on the castle walls and the haunted portraits. The full-size pictures are not shipped: `tools/pixelate-portraits.ps1` shrinks them to 26x33 pixels, gives each person one 32-colour palette and packs them into `assets/portraits/pixel/portraits.png`.
 * **Drawn in code**, in `src/procart.js`: the bat, the item icons, the props (candelabra, torch, bookcase, barred window, brazier, altar, tablet, chest, pedestal, spikes, breakable, burnable, crystal and seal tiles), the projectiles, and some creatures.
 
 ### Kept but not used
 
-Neither is shipped (`assets/archive/` and `assets/sprites/source/` are not published).
+None of the three is shipped (`assets/archive/` and `assets/sprites/source/` are not published).
 
 * **Dark Hooded Warrior**, oliveiramiro2: [itch.io page](https://oliveiramiro2.itch.io/dark-hooded-warrior-pixel-art-player-character-free-2d-sprite). Described as free to use, but the pack came without a formal licence (`assets/archive/hooded-warrior/license-dark-hooded-warrior.txt`). Check the author's page again before any commercial release if it is ever put back.
 * **Metroidvania Kit**, CC0 per its page, in `assets/sprites/source/`.
+* **[Steampunk Pixel Art Mega Pack v2.1.1](https://gamecrafterik.itch.io/steampunk-pixel-art-mega-pack)**, gamecrafterik (downloaded as `steampunk-pixel-art-mega-pack-assets.zip`, kept in `assets/sprites/source/`). The page says "Royalty-free commercial license" and "No attribution required", and that the art is "Sprixen AI + curation": it is AI-generated. Seven of its 32x32 environment props (pressure tank, steam vent, pipe valve, Victorian clock, lamp post, steam furnace, tesla tower) were once placed in the Clockwork Dungeon, then taken out because they did not suit the place. Their files (`assets/env/sp_*.png`) and the code that loaded them were removed on 2026-11-18, so nothing from the pack ships. It is not in the in-game credits.
 
 ## Fonts
 
@@ -142,10 +138,10 @@ The font files are in `assets/fonts/`.
 |---|---|---|---|
 | [Pirata One](https://fonts.google.com/specimen/Pirata+One) | Rodrigo Fuenzalida, Nicolas Massi | [SIL OFL 1.1](https://openfontlicense.org/) (`assets/credits/license-pirata-one-OFL.txt`) | the logo, banners, menus, HUD and floating text |
 | [Almendra Bold](https://fonts.google.com/specimen/Almendra) | Ana Sanfelippo | SIL OFL 1.1 (`assets/credits/license-almendra-OFL.txt`) | dialogue, boss exchanges and descriptive text |
-| Elementary Gothic Bookhand (link not recorded) | Bill Roach, (c) 2012 | SIL OFL 1.1 (`assets/credits/license-elementary-gothic-bookhand-OFL.txt`) | the Stranger's own voice in dialogue and boss exchanges |
+| [Elementary Gothic Bookhand](https://www.dafont.com/elementary-gothic-bookhand.font) | [Bill Roach](https://www.dafont.com/bill-roach.d3814), (c) 2012 | SIL OFL 1.1; the download page says "SIL/OFL licensed. Free for commercial and non-commercial use." (`assets/credits/license-elementary-gothic-bookhand-OFL.txt`) | the Stranger's own voice in dialogue and boss exchanges |
 | Livingstone | PrimaFont, "American Collection" | free font; the folder may be passed on as often as wanted if nothing in it is changed and no file is missing, which is how it ships (`assets/fonts/livingstone/LIVINGST.TXT`); the project owner confirmed it is fine for commercial use | everyone else who speaks: villagers, the Keeper and the bosses |
-| **Blackletter ExtraBold** | Typographer Mediengestaltung, (c) 2001 | **all rights reserved, no licence file** (open item 4) | the game title |
-| **Eroded Motta** | lirkiv AC, (c) 2026 | **no licence file** (open item 5) | the Lady's words: every gravestone and tablet |
+| [Blackletter ExtraBold](https://www.dafont.com/blackletter-ds.font) (listed on dafont as "Blackletter") | [Dieter Steffmann](https://www.dafont.com/dieter-steffmann.d253); the font's own copyright line reads "Typographer Mediengestaltung, 2001. All rights reserved." | dafont lists it as "100% Free" (the download holds `BLACEB__.TTF`, which is the file used here). dafont's FAQ says the licence shown above a download is only an indication and the readme in the archive governs (`assets/credits/license-blackletter-dafont-note.txt`) | the game title |
+| [Eroded Motta](https://www.1001fonts.com/erodedmotta-font.html) | [Lirkiv](https://www.1001fonts.com/users/Lirkiv/), (c) 2026 (the font file reads "lirkiv AC") | the author's note on 1001Fonts: "it's free for anything you want to do (including commercial)"; the listing says "Free for commercial use" under custom terms (a `Terms.txt` is in the download, which was not kept) and "This font can not be resold or republished" (`assets/credits/license-eroded-motta-note.txt`) | the Lady's words: every gravestone and tablet |
 
 Blackletter ExtraBold was rebuilt from the original `BLACEB__.TTF` so that browsers accept it.
 
@@ -154,7 +150,7 @@ Blackletter ExtraBold was rebuilt from the original `BLACEB__.TTF` so that brows
 Only the recorded sounds are listed here; every other sound is synthesized in code. Each recording was trimmed, level-matched and re-encoded as a mono 96 kbps mp3. Pixabay sounds are under the [Pixabay Content License](https://pixabay.com/service/license-summary/): free for commercial use, no credit required, not to be resold or passed on as a sound pack. The table is sorted by file name.
 
 <!-- sfx-table:start -->
-127 recordings: 103 CC0, 18 Pixabay Content License, 6 CC BY 4.0.
+136 recordings: 112 CC0, 18 Pixabay Content License, 6 CC BY 4.0.
 
 | File | Sound | By | Source | Licence |
 |---|---|---|---|---|
@@ -170,6 +166,14 @@ Only the recorded sounds are listed here; every other sound is synthesized in co
 | `boss_beast.mp3` | Deep Monster Growl | uagadugu | [Freesound](https://freesound.org/people/uagadugu/sounds/222523/) | CC0 |
 | `boss_beast_2.mp3` | Demon_Ghost Growling 1.wav | Osiruswaltz | [Freesound](https://freesound.org/people/Osiruswaltz/sounds/362672/) | CC0 |
 | `boss_beast_die.mp3` | Dragons Dying Breath | MickBoere | [Freesound](https://freesound.org/people/MickBoere/sounds/276577/) | CC0 |
+| `boss_bramble.mp3` | Monster sound 02 based on plants | rubberduck9999 | [Freesound](https://freesound.org/people/rubberduck9999/sounds/672920/) | CC0 |
+| `boss_bramble_2.mp3` | creaturechitter.wav | j1987 | [Freesound](https://freesound.org/people/j1987/sounds/106126/) | CC0 |
+| `boss_cinder.mp3` | Sleeping  Monster | szegvari | [Freesound](https://freesound.org/people/szegvari/sounds/546402/) | CC0 |
+| `boss_cinder_2.mp3` | Dragon roar 1.wav | AMWD_Mortsel-Edegem-Kontich | [Freesound](https://freesound.org/people/AMWD_Mortsel-Edegem-Kontich/sounds/651817/) | CC0 |
+| `boss_cinder_die.mp3` | Sleeping  Monster | szegvari | [Freesound](https://freesound.org/people/szegvari/sounds/546402/) | CC0 |
+| `boss_colossus.mp3` | Bycicle grears in reverse.wav | MichelleGrobler | [Freesound](https://freesound.org/people/MichelleGrobler/sounds/410557/) | CC0 |
+| `boss_colossus_2.mp3` | clock.wav | Narjara | [Freesound](https://freesound.org/people/Narjara/sounds/527517/) | CC0 |
+| `boss_colossus_die.mp3` | Trap Springing Shut | qubodup | [Freesound](https://freesound.org/people/qubodup/sounds/752070/) | CC0 |
 | `boss_librarian.mp3` | Creepy Whispering | RaspberryTickle | [Freesound](https://freesound.org/people/RaspberryTickle/sounds/234044/) | CC0 |
 | `boss_librarian_2.mp3` | LongWhisper | EvaMusik | [Freesound](https://freesound.org/people/EvaMusik/sounds/832739/) | CC0 |
 | `boss_librarian_die.mp3` | Release me - Whispering ROUGH Latin | JoelMcDaniel | [Freesound](https://freesound.org/people/JoelMcDaniel/sounds/851763/) | CC0 |
@@ -180,9 +184,9 @@ Only the recorded sounds are listed here; every other sound is synthesized in co
 | `boss_rimewyrm.mp3` | Dragon roar 1.wav | AMWD_Mortsel-Edegem-Kontich | [Freesound](https://freesound.org/people/AMWD_Mortsel-Edegem-Kontich/sounds/651817/) | CC0 |
 | `boss_rimewyrm_2.mp3` | DRAGON_ROAR.wav | JoelAudio | [Freesound](https://freesound.org/people/JoelAudio/sounds/85568/) | CC0 |
 | `boss_rimewyrm_die.mp3` | Dragons Dying Breath | MickBoere | [Freesound](https://freesound.org/people/MickBoere/sounds/276577/) | CC0 |
-| `boss_shadow.mp3` | Evil Presence 01.wav | LilMati | [Freesound](https://freesound.org/people/LilMati/sounds/445719/) | CC0 |
+| `boss_shadow.mp3` | You Are Lost | Hoody468 | [Freesound](https://freesound.org/people/Hoody468/sounds/841521/) | CC0 |
 | `boss_shadow_2.mp3` | Deep Evil Laugh | DRFX | [Freesound](https://freesound.org/people/DRFX/sounds/350679/) | CC0 |
-| `boss_shadow_3.mp3` | demon voice / dl_demon_fight_grunt_3.wav | Will Papeteiro | [OpenGameArt](https://opengameart.org/content/demon-voice) | CC0 |
+| `boss_shadow_3.mp3` | Evil Presence 01.wav | LilMati | [Freesound](https://freesound.org/people/LilMati/sounds/445719/) | CC0 |
 | `boss_shadow_die.mp3` | Cthulhu | qubodup | [Freesound](https://freesound.org/people/qubodup/sounds/827668/) | CC0 |
 | `break.mp3` | Barrel Break 4.wav | kevinkace | [Freesound](https://freesound.org/people/kevinkace/sounds/66772/) | CC0 |
 | `break_2.mp3` | Smash.ogg | egomassive | [Freesound](https://freesound.org/people/egomassive/sounds/536777/) | CC0 |
@@ -260,6 +264,7 @@ Only the recorded sounds are listed here; every other sound is synthesized in co
 | `page_5.mp3` | Quiet Page Turn - 8 | SpaceJoe | [Freesound](https://freesound.org/people/SpaceJoe/sounds/484968/) | CC0 |
 | `pickup.mp3` | Item Pickup (1) | Yodguard | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-item-pickup-1-540174/) | Pixabay Content License |
 | `pickup_2.mp3` | Item Pickup (3) | Yodguard | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-item-pickup-3-540193/) | Pixabay Content License |
+| `record_scratch.mp3` | record_scratch.wav | simkiott | [Freesound](https://freesound.org/people/simkiott/sounds/43404/) | CC0 |
 | `roar.mp3` | Yeti Roar - Skiing Game - Roar SFX Remix (2 of 2) | el_boss | [Freesound](https://freesound.org/people/el_boss/sounds/751713/) | CC0 |
 | `save.mp3` | Holy Spell Cast | DRAGON-STUDIO | [Pixabay](https://pixabay.com/sound-effects/musical-holy-spell-cast-450460/) | Pixabay Content License |
 | `seal.mp3` | Gates of Hell 2 (Gate Slam 2) | magnuswaker | [Freesound](https://freesound.org/people/magnuswaker/sounds/530061/) | CC0 |
@@ -287,11 +292,9 @@ Only the recorded sounds are listed here; every other sound is synthesized in co
 | `unseal.mp3` | Unlock stinger | Sunovia | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-unlock-stinger-289722/) | Pixabay Content License |
 <!-- sfx-table:end -->
 
-`record_scratch.mp3` (the record scratch in the disco room) is in `assets/sfx/` too, but its source was not recorded (open item 9).
-
 ## Music
 
-Made for this game by the project owner; see `music/TRACKLIST.txt` (a working file that is not published; the game reads `music/tracks.txt`). See open item 10 about the terms.
+Made for this game by the project owner; see `music/TRACKLIST.txt` (a working file that is not published; the game reads `music/tracks.txt`). See open item 1 about the terms.
 
 ## Code and libraries
 

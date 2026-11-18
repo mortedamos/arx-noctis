@@ -1,0 +1,15 @@
+Magic Books - pixel art grimoires (CaptainSkolot)
+https://captainskolot.itch.io/magic-books-pixelart-pixel-art-sprite-grimoire-pack-for-rpg-fantasy   (author: https://captainskolot.itch.io/)
+Downloaded as "Magic Book by CaptainSkeleto.zip" (32 grimoire covers) and "Magic Books interface.zip" (the open pages).
+
+No license file was included in the downloads.
+
+The author's description on the itch.io page, as checked on 2026-11-18, gives the licence:
+
+    We want you to have the freedom to use this asset pack in both your free and commercial projects.
+    Feel free to modify the assets to suit your unique needs. While credit is not required, we genuinely appreciate any attribution given.
+    You may not redistribute or resell the assets on their own, that includes NFT/images asset compilations.
+
+The page's "Asset license" field says "Creative Commons Attribution_NonCommercial_ShareAlike v4.0 International" (CC BY-NC-SA 4.0),
+which would not allow a commercial game. This project follows the author's own description (the project owner's decision, 2026-11-18).
+The page's AI disclosure says "AI Assisted". Credit is given in the game and in CREDITS.md.

@@ -23,7 +23,7 @@ const ENV = [
   'gy_stone', 'gy_stone_old', 'gy_lily', 'gy_daisy', 'gy_rose', 'gy_posy', 'gy_wreath', 'gy_fence_a', 'gy_fence_b', 'gy_fence_c', 'gy_angel', 'cdl_a', 'cdl_b', 'signpost', 'gy_st1', 'gy_st3', 'gy_st4', 'gy_st5', 'gy_st6', 'gy_st7', 'gy_st8', 'orloj', 'orloj_small', 'orloj_calendar', 'gear_a', 'gear_b', 'gear_c', 'gear_d', 'gear_e',          // gear_*: strips of the Animated Gears pack (heosphorus, itch.io), packed by tools/pack-gears.ps1
            // orloj: the Prague astronomical clock, pixelated by tools/pixelate-orloj.ps1
            // Graveyard 400 Assets (worldswithoutend): her gravestones and the flowers at their feet (trimmed and shrunk to game size by buildGraveyard)
-  'sp_tank', 'sp_vent', 'sp_valve', 'sp_clock', 'sp_lamp', 'sp_furnace', 'sp_tesla', 'ba_castle',          // Steampunk Pixel Art Mega Pack (32x32): the Clockwork Dungeon's props
+  'ba_castle',          // Gothicvania Bridge Expansion Pack 1 (ansimuz, CC0): the castle prop the gate of Arx Noctis is built from (src/keepgate.js)
 ];
 
 // per-sheet overrides.  face: which way the art faces.  ax/ay: anchor fractions.  dx/dy: pixel nudges.
@@ -41,7 +41,7 @@ const META = {
   fireball: { ay: 0.5 }, death_small: {}, death_big: {},
   // (Szadi's sickle fighter, reaper_*, is drawn facing RIGHT in every animation - the default - so it has no entry here; it was once marked as facing left, which made him run backwards)
 };
-// the Crimson Count (xxg_4_free): his feet are on row 130 of each 144px cell
+// the Crimson Count (assets2D, Gothic Vampire Undead Horde: xxg_4_free): his feet are on row 130 of each 144px cell
 Object.assign(META, { vampire_idle: { ay: 0.9 }, vampire_run: { ay: 0.9 }, vampire_atk: { ay: 0.9 }, vampire_jump: { ay: 0.9 }, vampire_hurt: { ay: 0.9 }, vampire_dead: { ay: 0.9 } });
 // the Boiler Golem (Old Golem, Eddie's Workshop): 160x104 cells, faces LEFT, its feet are on row 101
 Object.assign(META, Object.fromEntries(['idle', 'walk', 'attack', 'attack2', 'spit', 'hit', 'death'].map(n => ['golem_' + n, { face: -1, ay: 101 / 104 }])));

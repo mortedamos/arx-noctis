@@ -258,7 +258,8 @@ export class Game {
     this.fx.setFog(def.theme === 'graveyard' && def.weather === 'rain' ? 0 : def.fog * (def.theme === 'swamp' ? 0.8 * 0.9 : 1),          // (no ground fog in the rain of the Graveyard)
        def.horizon + 4, FOG_COL[def.theme] || FOG_COL.default, def.fogH);          // rolling ground fog in the damp, dead places
     this.room.pitFade = def.pitFade ? { ...def.pitFade, on: true, m: 0, d: 0, base: this.fx.ambBase } : null;          // (a room whose music and light fade as you cross it)
-    this.room.movers = def.movers ? new Movers(def.movers) : null; this.icicles = (def.icicleTraps || []).map(d => new Icicle(d)); this.jets = def.jets && !(def.jetsBoss && this.save && this.save.flags['boss_' + id]) ? def.jets.map(d => new SteamJet(d)) : [];          // (steam jets: in a boss's room they are only there while the boss lives) this.player.ride = null; this.vents = this.room.decos.filter(d => d.t === 'img' && d.img === 'sp_vent'); this.graves = this.room.decos.filter(d => d.t === 'grave'); this.ghost.snap();
+    this.room.movers = def.movers ? new Movers(def.movers) : null; this.icicles = (def.icicleTraps || []).map(d => new Icicle(d)); this.jets = def.jets && !(def.jetsBoss && this.save && this.save.flags['boss_' + id]) ? def.jets.map(d => new SteamJet(d)) : [];          // (steam jets: in a boss's room they are only there while the boss lives)
+    this.player.ride = null; this.graves = this.room.decos.filter(d => d.t === 'grave'); this.ghost.snap();
     if (def.disco) { this.room.discoState = { mode: S.flags.disco_done ? 'gone' : 'party', t0: 0 }; A.preload('record_scratch'); }
     const bossDone = !!S.flags['boss_' + id];
     for (let si = 0; si < def.spawns.length; si++) {
@@ -625,7 +626,6 @@ export class Game {
     if (this.room.movers) { this.room.movers.step(false, this); for (const m of this.room.movers.list) fx.light(m.x, m.y + 6, 70, 0.5, [1, 0.8, 0.45]); }          // the brass platforms glide, and glow a little
     if (this.icicles && this.icicles.length > 14) this.icicles = this.icicles.filter(i => !i.dead); for (const ic of this.icicles || []) ic.step(this); for (const j of this.jets || []) j.step(this);                          // loose icicles: shiver when the hero comes close, then drop
     if (this.smokeSpots && this.smokeSpots.length && this.frame % 5 === 0) for (const sp of this.smokeSpots) if (sp.x > this.camera.x - 40 && sp.x < this.camera.x + W + 40 && sp.y > this.camera.y - 60 && sp.y < this.camera.y + H + 40 && Math.random() < 0.3) fx.smoke(sp.x + rand(-6, 6), sp.y, 1, { c0: [0.5, 0.47, 0.46], c1: [0.28, 0.26, 0.27], s0: 7, s1: 26, l: 1.5, a: 0.4 });          // (the burnt city smoulders: the fires are out - no flames - but smoke still rises from the ruins)
-    for (const d of this.vents || []) if (this.frame % 9 === 0 && d.x > this.camera.x - 20 && d.x < this.camera.x + W + 20) fx.smoke(d.x, d.y - 40, 1, { c0: [0.62, 0.6, 0.58], c1: [0.4, 0.38, 0.36], s0: 5, s1: 20, l: 0.8 });          // steam
     if (this.cutscene) this.updateCutscene();
     if (this.gaze) this.stepGaze(); if (this.gateAnims.length) this.stepGates(); if (this.room.levers && this.frame % 10 === 0) this.gateHint();
     p.update();

@@ -1,0 +1,13 @@
+Blackletter ExtraBold (assets/fonts/Blackletter-ExtraBold.otf)
+
+Source: https://www.dafont.com/blackletter-ds.font  - listed as "Blackletter", by Dieter Steffmann
+        (https://www.dafont.com/dieter-steffmann.d253), category Gothic > Medieval, licence label "100% Free",
+        first seen on dafont on July 12, 2006. The download holds two files, BLACEB__.TTF and Blacklettersh.ttf.
+        The game uses BLACEB__.TTF, rebuilt as an OpenType file so that browsers accept it.
+
+The font's own copyright line reads: "Copyright (c) Typographer Mediengestaltung, 2001. All rights reserved."
+
+dafont's FAQ (https://www.dafont.com/faq.php) says the licence mentioned above a download is only an indication, and that
+the readme in the archive, or the author's website, is the place to check. The readme from the download was not kept.
+
+Provenance given by the project owner and checked against the page on 2026-11-18.
