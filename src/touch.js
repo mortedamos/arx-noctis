@@ -20,6 +20,8 @@ const CSS = `
 #touch .dpad i { position: absolute; font-style: normal; font-size: calc(var(--u) * 0.55); line-height: 1; color: rgba(240,220,174,0.75); width: 33%; height: 33%; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
 #touch .dpad i.on { color: #fff; background: rgba(205,142,60,0.7); }
 #touch .dpad .u { top: 4%; left: 33.5%; } #touch .dpad .d { bottom: 4%; left: 33.5%; } #touch .dpad .l { left: 4%; top: 33.5%; } #touch .dpad .r { right: 4%; top: 33.5%; }
+/* the arrows are SHAPES, not characters: iOS draws the characters U+25C0 / U+25B6 as blue emoji buttons, whatever the font says */
+#touch .dpad i::before { content: ''; display: block; width: calc(var(--u) * 0.36); height: calc(var(--u) * 0.36); background: currentColor; } #touch .dpad .u::before { clip-path: polygon(50% 6%, 96% 90%, 4% 90%); } #touch .dpad .d::before { clip-path: polygon(4% 10%, 96% 10%, 50% 94%); } #touch .dpad .l::before { clip-path: polygon(6% 50%, 90% 4%, 90% 96%); } #touch .dpad .r::before { clip-path: polygon(94% 50%, 10% 4%, 10% 96%); }
 #touch .dpad b { position: absolute; width: 26%; height: 26%; left: 37%; top: 37%; border-radius: 50%; background: rgba(0,0,0,0.35); border: 1px solid rgba(214,166,80,0.35); }
 #touch .hint { position: absolute; left: 0; right: 0; top: calc(56.25vw + 10px); text-align: center; color: #b58a4a; font-size: 13px; letter-spacing: 1px; display: none; animation: tfade 12s forwards; }
 @keyframes tfade { 0%, 75% { opacity: 1; } 100% { opacity: 0; } }
@@ -41,6 +43,14 @@ export const Touch = {
     }
     const letGo = () => { for (const f of this.rels) f(); Input.releaseTouch(); };                                                             // (never leave a button stuck down)
     addEventListener('blur', letGo); document.addEventListener('visibilitychange', () => { if (document.hidden) letGo(); });
+    // A finger that is no longer on the screen cannot be holding anything.  iOS now and then loses the LIFT of a finger (no pointerup): the hero then walks on for ever, or the pad stops answering.  The TOUCH events still say how many fingers are
+    // down, so they are the second opinion: no fingers (and no mouse button) means let everything go.
+    this.fingers = 0; this.mice = 0;
+    const count = e => { this.fingers = (e.touches || []).length; if (!this.fingers) setTimeout(() => { if (!this.fingers && !this.mice) letGo(); }, 40); };
+    for (const t of ['touchstart', 'touchmove', 'touchend', 'touchcancel']) addEventListener(t, count, { capture: true, passive: true });
+    addEventListener('pointerdown', e => { if (e.pointerType !== 'touch') this.mice++; }, true);
+    const mouseUp = e => { if (e.pointerType !== 'touch') this.mice = Math.max(0, this.mice - 1); };
+    addEventListener('pointerup', mouseUp, true); addEventListener('pointercancel', mouseUp, true);
     // tapping the game: a menu item, a dialogue, the item box in the corner
     const stage = document.getElementById('stage');
     stage.addEventListener('pointerdown', e => {
@@ -94,9 +104,10 @@ export const Touch = {
     const button = (label, acts, pos, size, modes, cls = '', wide = size) => {
       const e = el('div', 'tb ' + cls, label); let id = null; e.style.height = `calc(var(--u) * ${size})`; e.style.width = `calc(var(--u) * ${wide})`;
       for (const k in pos) e.style[k] = typeof pos[k] === 'string' ? pos[k] : k === 'left' ?`calc(env(safe-area-inset-left, 0px) + var(--u) * ${pos[k]})` : k === 'right' ? `calc(env(safe-area-inset-right, 0px) + var(--u) * ${pos[k]})` : k === 'bottom' ? `calc(env(safe-area-inset-bottom, 0px) + var(--u) * ${pos[k]})` : pos[k];
-      const down = ev => { ev.preventDefault(); if (id !== null) return; id = ev.pointerId; try { e.setPointerCapture(id); } catch {} e.classList.add('on'); for (const a of acts) Input.touchHold(a); };
+      const down = ev => { ev.preventDefault(); if (id !== null) up(null); id = ev.pointerId;          // (a lift that never came: the new touch takes over)
+        try { e.setPointerCapture(id); } catch {} e.classList.add('on'); for (const a of acts) Input.touchHold(a); };
       const up = ev => { if (ev && ev.pointerId !== id) return; if (id === null) return; id = null; e.classList.remove('on'); for (const a of acts) Input.touchRelease(a); };
-      e.addEventListener('pointerdown', down); e.addEventListener('pointerup', up); e.addEventListener('pointercancel', up); e.addEventListener('lostpointercapture', up); this.rels.push(() => up(null));
+      e.addEventListener('pointerdown', down); e.addEventListener('pointerup', up); e.addEventListener('pointercancel', up); e.addEventListener('lostpointercapture', up); addEventListener('pointerup', up, true); addEventListener('pointercancel', up, true); this.rels.push(() => up(null));
       root.appendChild(e); this.btns.push({ el: e, modes }); return e;
     };
     button('JUMP', ['jump', 'confirm'], { right: 0.3, bottom: 1.5 }, 1.35, ALL);
@@ -116,14 +127,15 @@ export const Touch = {
       });
     }
     // the D-pad: one round pad, a thumb slides round it
-    const pad = el('div', 'dpad'), arrows = { up: el('i', 'u', '▲'), down: el('i', 'd', '▼'), left: el('i', 'l', '◀'), right: el('i', 'r', '▶') };
+    const pad = el('div', 'dpad'), arrows = { up: el('i', 'u'), down: el('i', 'd'), left: el('i', 'l'), right: el('i', 'r') };          // (drawn by the stylesheet above: see the note on i::before)
     pad.appendChild(el('b')); for (const k in arrows) pad.appendChild(arrows[k]); root.appendChild(pad); this.btns.push({ el: pad, modes: ALL });
     const ACTS = { left: ['left'], right: ['right'], up: ['up', 'interact'], down: ['down'] }, held = { left: false, right: false, up: false, down: false }; let pid = null;
     const set = d => { for (const k in held) if (held[k] !== !!d[k]) { held[k] = !!d[k]; arrows[k].classList.toggle('on', held[k]); for (const a of ACTS[k]) held[k] ? Input.touchHold(a) : Input.touchRelease(a); } };
     const read = ev => { const r = pad.getBoundingClientRect(), dx = (ev.clientX - (r.left + r.width / 2)) / (r.width / 2), dy = (ev.clientY - (r.top + r.height / 2)) / (r.height / 2); set({ left: dx < -0.28, right: dx > 0.28, up: dy < -0.42, down: dy > 0.42 }); };
-    pad.addEventListener('pointerdown', ev => { ev.preventDefault(); if (pid !== null) return; pid = ev.pointerId; try { pad.setPointerCapture(pid); } catch {} read(ev); });
+    pad.addEventListener('pointerdown', ev => { ev.preventDefault(); if (pid !== null) { pid = null; set({}); } pid = ev.pointerId;          // (a lift that never came: the new touch takes over)
+       try { pad.setPointerCapture(pid); } catch {} read(ev); });
     pad.addEventListener('pointermove', ev => { if (ev.pointerId === pid) read(ev); });
     const end = ev => { if (ev && ev.pointerId !== pid) return; pid = null; set({}); };
-    pad.addEventListener('pointerup', end); pad.addEventListener('pointercancel', end); pad.addEventListener('lostpointercapture', end); this.rels.push(() => end(null));
+    pad.addEventListener('pointerup', end); pad.addEventListener('pointercancel', end); pad.addEventListener('lostpointercapture', end); addEventListener('pointerup', end, true); addEventListener('pointercancel', end, true); this.rels.push(() => end(null));          // (the lift counts wherever it happens, not only over the pad)
   },
 };
