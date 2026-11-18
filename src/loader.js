@@ -18,7 +18,7 @@ export const STAGES = [
   { id: 'prague', zone: [6], music: ['boss', 'save'], sfx: ['boss_cinder', 'boss_cinder_die'] },
   { id: 'graveyard', zone: [1], music: ['zone1'], sfx: ['boss_beast', 'boss_beast_die'] },
   { id: 'mire', zone: [7], music: ['zone7'], sfx: ['boss_bramble', 'boss_bramble_die'] },
-  { id: 'hall', zone: [2], music: ['zone2'], sfx: ['boss_nightmare', 'boss_nightmare_die', 'boss_mirror', 'boss_mirror_die'] },
+  { id: 'hall', zone: [2], music: ['zone2'], sfx: ['boss_nightmare', 'boss_nightmare_die', 'boss_mirror_die'] },
   { id: 'cistern', zone: [9], music: ['zone9'], sfx: ['boss_drowned', 'boss_drowned_die'] },
   { id: 'chapel', zone: [3], music: ['zone3'], sfx: ['boss_angel', 'boss_angel_die'] },
   { id: 'clockwork', zone: [8], music: ['zone8'], sfx: ['gear', 'steam', 'boss_colossus', 'boss_colossus_die'] },

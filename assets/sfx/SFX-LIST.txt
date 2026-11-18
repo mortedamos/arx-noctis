@@ -139,7 +139,8 @@ boss_vampire         length 0.8-2.5 s   the Crimson Count (a vampire): a hiss an
 boss_vampire_die     length 1.0-3.5 s   the Crimson Count dies: a vampire's dying shriek.
 boss_golem           length 0.8-2.5 s   the Boiler Golem (a brass golem with a boiler on its back): a deep metallic groan with a hiss of venting steam.
 boss_golem_die       length 1.0-3.5 s   the Boiler Golem dies: a long hiss of steam, the boiler bursting, a heavy collapse of metal.
-boss_mirror          length 0.8-2.5 s   the Reflection (what the glass kept): a distorted, echoing cry with a glassy ring.
+(boss_mirror has no sound of its own: the Reflection is the hero's twin, so it makes the hero's sounds - jump,
+ slash, dash, enchant, the item and bandage sounds.)
 boss_mirror_die      length 1.0-3.5 s   the Reflection dies: a big mirror shattering.
 boss_drowned         length 0.8-2.5 s   the Drowned Warden (keeper of the flooded gate): a drowned, bubbling groan from under water.
 boss_drowned_die     length 1.0-3.5 s   the Drowned Warden dies: a gurgling death rattle and a rush of water.

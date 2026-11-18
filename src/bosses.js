@@ -1110,6 +1110,7 @@ export class BossMirror extends Boss {
     this.reflecting = true; this.evil = 0; this.hold = null; this.live = false; this.hitDone = false; this.blow = 0; this.bt = 0; this.tx = x; this.trail = []; this.heals = 0; this.thrown = 0; this.lastToss = -99; this.hi = false;
   }
   get spd() { return this.phase === 2 ? 1.18 : 1; }
+  cry(die) { if (die) super.cry(true); else A.sfx('jump'); }          // (no voice of its own while it lives: it is you, so it makes your sounds - leaping out of the glass is your jump, the sword, dash, items and bandage already use yours.  Only its death is its own: the glass going - boss_mirror_die)
   tele(k) { return Math.round({ slash: 46, dash: 50, dagger: 46, torch: 48, marrow: 46, holy: 48, leap: 54, bandage: 34 }[k] / this.spd); }
   dangerous() { return this.live; }
   physics() { if (this.reflecting) return; super.physics(); }                 // (inside the glass it has no body: nothing pushes it about)
@@ -1237,7 +1238,7 @@ export class BossMirror extends Boss {
     super.dyingSeq();
   }
   onPhase2() {
-    const g = this.g; g.fx.flash([0.7, 0.5, 1], 0.5); g.shake(5, 24); this.cry(); g.fx.ring(this.x, this.cy, 90, [0.7, 0.5, 1], 34, 0.14);
+    const g = this.g; g.fx.flash([0.7, 0.5, 1], 0.5); g.shake(5, 24); A.sfx('enchant'); g.fx.ring(this.x, this.cy, 90, [0.7, 0.5, 1], 34, 0.14);          // (phase two: the hero's own sword-enchant shing)
     const X = x => clamp(x, 20, g.room.pw - 20); dropItem(g, 'heart', X(this.x - 36), this.cy - 20); dropItem(g, 'heart', X(this.x + 36), this.cy - 20); dropItem(g, 'mana', X(this.x), this.cy - 30);          // (a breather, as every boss gives)
     this.state = 'idle'; this.st = -40; this.plan = null; g.banner('IT LEARNS', 'FROM YOU', 150, { y: 60, color: '#c9c0ff' });
   }
