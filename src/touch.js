@@ -53,8 +53,11 @@ export const Touch = {
     addEventListener('pointerup', mouseUp, true); addEventListener('pointercancel', mouseUp, true);
     // tapping the game: a menu item, a dialogue, the item box in the corner
     const stage = document.getElementById('stage');
+    const at = e => { const r = stage.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H }; };
+    stage.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' && !this.on) { const p = at(e); Input.hover(p.x, p.y); } });          // (a mouse on a desktop: see Input.clicks)
     stage.addEventListener('pointerdown', e => {
-      if (!this.on) return; const g = this.game, s = g.state, r = stage.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * W, y = (e.clientY - r.top) / r.height * H;
+      const g = this.game, s = g.state, { x, y } = at(e);
+      if (!this.on) { if (e.pointerType !== 'touch') Input.click(x, y); return; }
       if (s === 'play') { if (!g.cutscene && x > 322 && y < 52) this.blip('itemNext'); return; }
       Input.tap(x, y); if (s === 'dialog' || s === 'dead' || s === 'intro' || s === 'ending') this.blip('confirm');
     });

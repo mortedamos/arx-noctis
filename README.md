@@ -159,7 +159,8 @@ where they should be, but every room's insides are re-rolled - ground height, pi
 the layout of the climbing towers, arena platforms, where the enemies stand and where the statues, barrels and scenery go. (The opening Market Street
   is hand-built and the same every time; everything else is generated, whatever the seed.)
 
-* New game = a random seed.  **Choose Seed** on the title screen lets you type one (the same seed always builds the same
+* New game = a random seed.  **Choose Seed** on the title screen lets you pick one on a keypad drawn in the game: click or tap the numbers, move
+  the cursor with the arrow keys or the controller's D-pad and press OK, or just type the digits (the same seed always builds the same
   castle, so you can share them).  `?seed=1234` in the URL also works. (A save made before the castle's layout last changed wakes at the start with everything it carries.)
 * The seed is shown on the map and pause screens and is stored in your save, so Continue always loads the same castle.
 * **Nothing impossible ever ships.** Each generated room is simulated with the game's *real* movement code (same physics

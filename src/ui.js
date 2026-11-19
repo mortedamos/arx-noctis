@@ -240,15 +240,16 @@ function loadCredits(cr) {
     .catch(() => { cr.lines = layoutCredits('# CREDITS\ncredits.txt could not be loaded.'); });
 }
 
+const SEED_BEGIN = 11;          // (the BEGIN key of the seed keypad: where the cursor starts; see TitleScreen.seedPad)
 export class TitleScreen {
   constructor(g) {
-    this.g = g; this.t = 0; this.mode = 'main'; const has = g.hasSave();
+    this.g = g; this.t = 0; this.mode = 'main'; this.padI = SEED_BEGIN; const has = g.hasSave();
     // NEW GAME and QUICK LOAD (the game saved in this browser) stand centred; the rest is a two-column table of smaller items (the rows below)
     this.main = new Menu([
       { label: 'NEW GAME', action: () => g.newGame() }, { label: 'QUICK LOAD', disabled: !has, action: () => g.loadSlot() },
       { label: 'LOAD GAME', small: true, action: () => { this.mode = 'file'; openLoadPanel(g, ok => { this.mode = 'main'; if (ok) g.loadSlot(); }); } },          // (a save file chosen and played: an HTML panel, see savefile.js)
       { label: 'SAVE GAME', small: true, disabled: !has, action: () => { const s = g.loadSave(); if (!s) return; this.mode = 'file'; openSavePanel(g, s, () => { this.mode = 'main'; }); } },          // (the game saved in this browser, written to a file)
-      { label: 'CHOOSE SEED', small: true, action: () => { this.mode = 'seed'; this.seed = ''; Input.typed.length = 0; } },          // (on a phone, a keypad of numbers is drawn in the game itself: the game never opens a pop-up window)
+      { label: 'CHOOSE SEED', small: true, action: () => { this.mode = 'seed'; this.seed = ''; this.padI = SEED_BEGIN; Input.typed.length = 0; } },          // (a keypad of numbers is drawn in the game itself, on a phone and on a desktop: the game never opens a pop-up window)
       { label: 'CONTROLS', small: true, action: () => { this.mode = 'controls'; } }, { label: 'OPTIONS', small: true, action: () => { this.mode = 'options'; this.opts.i = 0; } }, { label: 'CREDITS', small: true, action: () => this.openCredits() },
     ], [[0], [1], [2, 3], [4, 5], [6, 7]]); if (has) this.main.i = 1;
     this.homeHint = isIOS() && !isStandalone();          // (an iPhone in Safari: the save is not safe there for long - see pwa.js)
@@ -258,7 +259,8 @@ export class TitleScreen {
   openCredits() {
     this.mode = 'credits'; loadCredits(this.cr = { lines: null, scroll: 0, t: 0 });
   }
-  // the keypad of the seed screen on a phone (drawn in the game, never a pop-up window): ten numbers in two rows, then DEL, BEGIN and BACK.  Each is { k, label, x, y, w, h } in game pixels
+  // the keypad of the seed screen (drawn in the game, never a pop-up window): ten numbers in two rows, then DEL, BEGIN and BACK.  Each is { k, x, y, w, h } in game pixels.
+  // It is pressed by a tap, by a mouse click, or by moving the cursor (this.padI) with the arrows / the controller's D-pad and pressing OK; typing numbers on a keyboard works as well
   seedPad() {
     const B = [], num = (i, r, c) => B.push({ k: String(i), x: 90 + c * 42, y: 86 + r * 28, w: 36, h: 23 });
     [1, 2, 3, 4, 5].forEach((n, c) => num(n, 0, c)); [6, 7, 8, 9, 0].forEach((n, c) => num(n, 1, c));
@@ -274,10 +276,20 @@ export class TitleScreen {
       if (Input.pressed.back || Input.pressed.confirm || Input.taps.length) { this.mode = 'main'; A.sfx('back'); }
     }
     else if (this.mode === 'seed') {
-      for (const k of Input.typed.splice(0)) { if (k === '<') this.seed = this.seed.slice(0, -1); else if (this.seed.length < 9) this.seed += k; }
-      let go = Input.pressed.confirm;
-      if (Input.touchOn) for (const tp of Input.taps) { const b = this.seedPad().find(b => tp.x >= b.x && tp.x < b.x + b.w && tp.y >= b.y && tp.y < b.y + b.h); if (!b) continue; A.sfx('click'); if (b.k === 'DEL') this.seed = this.seed.slice(0, -1); else if (b.k === 'BEGIN') go = true; else if (b.k === 'BACK') { this.mode = 'main'; A.sfx('back'); return; } else if (this.seed.length < 9) this.seed += b.k; }
-      if (Input.pressed.esc) { this.mode = 'main'; A.sfx('back'); } else if (go) { const code = g.codeFor(this.seed); if (code) g.newGame(undefined, code); else g.newGame(this.seed === '' ? undefined : +this.seed); }
+      const B = this.seedPad(), hit = p => B.findIndex(b => p.x >= b.x && p.x < b.x + b.w && p.y >= b.y && p.y < b.y + b.h); let go = false, leave = false, backspace = false, typed = false;
+      const press = b => { if (b.k === 'BACK') { leave = true; return; } A.sfx('click'); if (b.k === 'DEL') this.seed = this.seed.slice(0, -1); else if (b.k === 'BEGIN') go = true; else if (this.seed.length < 9) this.seed += b.k; };
+      for (const k of Input.typed.splice(0)) { if (k === '<') { backspace = true; this.seed = this.seed.slice(0, -1); } else { typed = true; if (this.seed.length < 9) this.seed += k; } }
+      if (typed) this.padI = SEED_BEGIN;          // (numbers typed on a keyboard, then ENTER: begins, as it always has)
+      if (Input.hovered) { const i = hit(Input.hovered); if (i >= 0) this.padI = i; }          // (a mouse moving over a key takes the cursor with it)
+      for (const tp of [...Input.taps, ...Input.clicks]) { const i = hit(tp); if (i < 0) continue; this.padI = i; press(B[i]); }          // (a finger or a mouse click)
+      // the cursor: left / right along a row, up / down to the nearest key in the next row (the three bottom keys sit between the numbers)
+      const R = [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9], [10, 11, 12]], r = R.findIndex(row => row.includes(this.padI)), row = R[r], k = row.indexOf(this.padI), mid = i => B[i].x + B[i].w / 2; let ni = this.padI;
+      if (Input.pressed.left) ni = row[(k + row.length - 1) % row.length]; else if (Input.pressed.right) ni = row[(k + 1) % row.length];
+      else if (Input.pressed.up || Input.pressed.down) { const to = R[(r + (Input.pressed.up ? R.length - 1 : 1)) % R.length], cx = mid(this.padI); ni = to.reduce((best, i) => Math.abs(mid(i) - cx) < Math.abs(mid(best) - cx) ? i : best, to[0]); }
+      if (ni !== this.padI) { this.padI = ni; A.sfx('click'); }
+      if (Input.pressed.confirm) press(B[this.padI]);
+      if (Input.pressed.esc || (Input.pressed.back && !backspace)) leave = true;          // (ESC, X, the controller's B, or the HIT button; BACKSPACE only deletes)
+      if (leave) { this.mode = 'main'; A.sfx('back'); } else if (go) { const code = g.codeFor(this.seed); if (code) g.newGame(undefined, code); else g.newGame(this.seed === '' ? undefined : +this.seed); }
     } else if (this.mode === 'options') { this.opts.update(g); if (Input.pressed.back) { this.mode = 'main'; A.sfx('back'); } }
     else if (this.mode === 'file') { /* the HTML panel has the keys and the taps until it is closed */ }
     else if (Input.pressed.back || Input.pressed.confirm || Input.taps.length) { this.mode = 'main'; A.sfx('back'); }
@@ -301,21 +313,18 @@ export class TitleScreen {
       drawText(ctx, Input.touchOn ? 'UP / DOWN SCROLL     TAP TO GO BACK' : 'UP / DOWN SCROLL     ESC BACK', W / 2, H - 14, { align: 'center', color: DIM });
     }
     else if (this.mode === 'options') { panel(ctx, 60, 66, W - 120, 148); drawText(ctx, 'OPTIONS', W / 2, 73, { align: 'center', scale: 1.5, color: GOLD, outline: '#000' }); this.opts.draw(ctx, 84, 92, 14, 'left'); }
-    else if (this.mode === 'seed' && Input.touchOn) {
+    else if (this.mode === 'seed') {
       panel(ctx, 40, 10, W - 80, 168); drawText(ctx, 'CHOOSE A SEED', W / 2, 17, { align: 'center', scale: 1.5, color: GOLD, outline: '#000' });
       const tw = textWidth(this.seed, 2); drawText(ctx, this.seed || 'RANDOM', W / 2 - (this.seed ? 3 : 0), 40, { align: 'center', scale: 2, color: this.seed ? PALE : DIM });
       if (this.seed && Math.floor(t / 24) % 2) { ctx.fillStyle = PALE; ctx.fillRect(Math.round(W / 2 - 3 + tw / 2 + 2), 40, 8, 12); }
       drawText(ctx, 'THE SAME SEED ALWAYS BUILDS THE SAME CASTLE.', W / 2, 62, { align: 'center', color: '#b5a47a' });
-      drawText(ctx, 'TAP NUMBERS.   NONE = A RANDOM CASTLE.', W / 2, 73, { align: 'center', color: DIM });
-      for (const b of this.seedPad()) { ctx.fillStyle = 'rgba(20,16,36,0.95)'; ctx.fillRect(b.x, b.y, b.w, b.h); ctx.strokeStyle = b.k === 'BEGIN' ? GOLD : '#5d5772'; ctx.lineWidth = 1; ctx.strokeRect(b.x + 0.5, b.y + 0.5, b.w - 1, b.h - 1); drawText(ctx, b.k, b.x + b.w / 2, b.y + b.h / 2 - 4, { align: 'center', scale: b.k.length > 1 ? 1 : 1.6, color: b.k === 'BEGIN' ? GOLD : PALE }); }
-    }
-    else if (this.mode === 'seed') {
-      panel(ctx, 50, 84, W - 100, 112); drawText(ctx, 'CHOOSE A SEED', W / 2, 91, { align: 'center', scale: 1.5, color: GOLD, outline: '#000' });
-      const tw = textWidth(this.seed, 2); drawText(ctx, this.seed || 'RANDOM', W / 2 - (this.seed ? 3 : 0), 112, { align: 'center', scale: 2, color: this.seed ? PALE : DIM });
-      if (this.seed && Math.floor(t / 24) % 2) { ctx.fillStyle = PALE; ctx.fillRect(Math.round(W / 2 - 3 + tw / 2 + 2), 112, 8, 12); }
-      drawText(ctx, 'THE SAME SEED ALWAYS BUILDS THE SAME CASTLE.', W / 2, 138, { align: 'center', color: '#b5a47a' });
-      drawText(ctx, 'TYPE NUMBERS.   NONE = A RANDOM CASTLE.', W / 2, 150, { align: 'center', color: DIM });
-      drawText(ctx, 'ENTER = BEGIN     ESC = BACK', W / 2, 176, { align: 'center', color: PALE });
+      drawText(ctx, Input.touchOn ? 'TAP NUMBERS.   NONE = A RANDOM CASTLE.' : 'PICK OR TYPE NUMBERS.   NONE = A RANDOM CASTLE.', W / 2, 73, { align: 'center', color: DIM });
+      this.seedPad().forEach((b, i) => {
+        const sel = i === this.padI, begin = b.k === 'BEGIN';          // (the cursor key: a lit fill and a heavy gold edge)
+        ctx.fillStyle = sel ? 'rgba(84,58,26,0.97)' : 'rgba(20,16,36,0.95)'; ctx.fillRect(b.x, b.y, b.w, b.h);
+        ctx.strokeStyle = sel ? GOLD : begin ? '#8a7035' : '#5d5772'; ctx.lineWidth = sel ? 2 : 1; ctx.strokeRect(b.x + (sel ? 1 : 0.5), b.y + (sel ? 1 : 0.5), b.w - (sel ? 2 : 1), b.h - (sel ? 2 : 1));
+        drawText(ctx, b.k, b.x + b.w / 2, b.y + b.h / 2 - 4, { align: 'center', scale: b.k.length > 1 ? 1 : 1.6, color: sel ? '#fff0b0' : begin ? GOLD : PALE });
+      });
     }
     else controlsScreen(ctx);
     if (!this.g.clean) drawText(ctx, 'BUILD ' + BUILD.n + '  ' + BUILD.when, W - 3, H - 8, { align: 'right', color: '#6a6280', alpha: 0.8, scale: 0.7 });          // (which build this is: small, bottom right)

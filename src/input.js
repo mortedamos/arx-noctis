@@ -23,6 +23,10 @@ export const Input = {
   _keys: new Set(), _pend: new Set(), _pendRel: new Set(), _padHeld: {}, anyKey: false, _anyPend: false, gamepad: false, typed: [],
   // on-screen touch controls (touch.js): a touch button holds the same named actions a key would (a count per action, since two fingers may hold one); taps = where a finger touched a menu screen, in 384x216 game pixels
   _touch: {}, touchOn: false, taps: [], _taps: [],
+  // the mouse on a desktop (touch.js; game pixels again): clicks = where it was clicked, hovered = where it moved to (null if it did not) - only the screens that ask for them (the seed keypad) look
+  clicks: [], _clicks: [], hovered: null, _hover: null,
+  click(x, y) { this._clicks.push({ x, y }); },
+  hover(x, y) { this._hover = { x, y }; },
   touchHold(a) { this._touch[a] = (this._touch[a] || 0) + 1; this._pend.add(a); this._anyPend = true; },
   touchRelease(a) { if (!this._touch[a]) return; this._touch[a]--; this._pendRel.add(a); },
   releaseTouch() { for (const a in this._touch) { if (this._touch[a] > 0) this._pendRel.add(a); this._touch[a] = 0; } },
@@ -73,7 +77,7 @@ export const Input = {
     }
     this.anyKey = this._anyPend || Object.values(padNow).some(Boolean) && !this._padAny;
     this._padAny = Object.values(padNow).some(Boolean);
-    this._anyPend = false; this.taps = this._taps; this._taps = [];
+    this._anyPend = false; this.taps = this._taps; this._taps = []; this.clicks = this._clicks; this._clicks = []; this.hovered = this._hover; this._hover = null;
     this._pend.clear(); this._pendRel.clear();
   },
   get horiz() { return (this.held.right ? 1 : 0) - (this.held.left ? 1 : 0); },
