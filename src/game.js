@@ -156,7 +156,7 @@ export class Game {
 
   // -------------------------------------------------------------------------------- save / load
   hasSave() { try { return !!localStorage.getItem(SAVE_KEY); } catch { return false; } }
-  saveGame() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.save)); keepStorage(); return true; } catch (e) { console.warn('save failed', e); return false; } }          // (keepStorage: the first save of a visit asks the browser to keep the game's storage for good - see pwa.js)
+  saveGame() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.save)); keepStorage(); return true; } catch (e) { console.warn('save failed', e); return false; } }          // (keepStorage: asked at the first key or click of a visit, so a no-op here unless a save came first - see pwa.js)
   loadSave() { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.v === 1) return s; } catch {} return null; }
   // a save brought back from a save file (savefile.js has checked it is one) becomes the game saved in this browser; loadSlot() then plays it.  Throws if the browser will not store it.
   restoreSave(s) {

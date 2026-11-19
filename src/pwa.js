@@ -2,7 +2,7 @@
 //   * the service worker (sw.js) keeps the music and the recorded sounds once they are fetched (about 60 MB: most of the game's weight), and lets the game be added to the Home Screen as an app.
 //     It is registered everywhere except localhost (a stored sound would hide a sound just replaced with the Sound Browser): ?sw=1 turns it on there for testing, ?sw=0 turns it off anywhere
 //     (and either way off removes it, with what it had stored);
-//   * keepStorage() asks the browser to keep the game's storage for good (navigator.storage.persist): asked once a visit, when the game first saves;
+//   * keepStorage() asks the browser to keep the game's storage for good (navigator.storage.persist): asked once a visit, on the first key or click (the title screen), so that Firefox's pop-up question comes before play and not in the middle of it;
 //   * the install prompt of Chrome / Edge is kept (PWA.install) so the SAVE GAME panel can offer an INSTALL button.  iPhones have no such prompt: the player is told to use Share > Add to Home Screen.
 // Why it matters on an iPhone: Safari erases a website's storage (the save!) after about a week without a visit, but not a game added to the Home Screen.  See savefile.js for the other half.
 export const PWA = { install: null, persisted: null, sw: false };
@@ -25,5 +25,9 @@ export function keepStorage() {
   if (asked) return; asked = true;
   try { const s = navigator.storage; if (s && s.persist) s.persisted().then(p => p || s.persist()).then(ok => { PWA.persisted = !!ok; }).catch(() => {}); } catch {}
 }
+// Firefox answers persist() with a pop-up question to the player, so it is asked at the very start - on the first key or click of a visit, on the title screen - and not at the first
+// save, which would put the question in the middle of play.  (Chrome and Safari decide by themselves without asking.)  Saving still calls keepStorage(), which does nothing a second time.
+const firstGesture = () => { removeEventListener('pointerdown', firstGesture, true); removeEventListener('keydown', firstGesture, true); keepStorage(); };
+addEventListener('pointerdown', firstGesture, true); addEventListener('keydown', firstGesture, true);
 export const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);          // (an iPad says it is a Mac)
 export const isStandalone = () => navigator.standalone === true || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;          // (opened from the Home Screen)
