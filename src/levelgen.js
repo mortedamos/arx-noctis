@@ -80,8 +80,8 @@ const SPEC = {
   hv1: { kind: 'interior', zone: 6, name: "Weaver's Cottage", parent: 'v1', look: 'cottage', npcs: [2, 2] },
   hv2: { kind: 'interior', zone: 6, name: "Smith's House", parent: 'v1', look: 'cottage', npcs: [1, 2], sellers: 1 },
   hv3: { kind: 'interior', zone: 6, name: "Baker's House", parent: 'v1', look: 'cottage', npcs: [2, 3] },
-  // the Cooper's house stands EMPTY, and keeps a secret: a stretch of its floor is loose planks (DOWN + JUMP drops through them) over the Cooper's cellar (hc), where a fifth Keeper has set up shop (shk)
-  hv4: { kind: 'interior', zone: 6, name: "Cooper's House", parent: 'v2', look: 'cottage', empty: true, trapdoor: { room: 'hc', tx: 14, gy: 3 } },
+  // the Cooper's house stands EMPTY, and keeps a secret: a stretch of its floor is a hatch that a lever on the floor draws back, over the Cooper's cellar (hc), where a fifth Keeper has set up shop (shk)
+  hv4: { kind: 'interior', zone: 6, name: "Cooper's House", parent: 'v2', look: 'cottage', empty: true, trapdoor: { room: 'hc', tx: 14, gy: 3, lever: 'hv4_lever' } },
   hc: { kind: 'cellar', zone: 6, name: "The Cooper's Cellar", parent: 'hv4', exitTo: 'v2', exitTag: 'cooper', shop: 'shk' },
   shk: { kind: 'shop', zone: 6, name: 'The First Bargain', parent: 'hc', tier: 0 },
 
@@ -888,11 +888,15 @@ function genInterior(id, spec, r) {
   const W = r.i(spec.w ? spec.w[0] : 22, spec.w ? spec.w[1] : 28), H = 14, look = spec.look || 'cottage';
   const b = new B(id, spec.name, spec.zone, W, H, { theme: spec.theme || 'hall', ambient: spec.ambient === undefined ? 0.4 : spec.ambient, tint: spec.tint || [0.14, 0.06, 0.01], vig: 0.6, horizon: 12, weather: spec.weather || null, indoor: true });
   b.floor(0, W, 12).ceil(0, W, 2).door(3, 12, spec.parent, 0, 12, 'wood').torches([7, W - 5], 6); if (look === 'cottage') b.def.house = true;          // (a cottage has wooden walls: see drawHouse in world.js)
-  // A SECRET FLOOR (spec.trapdoor): three tiles of the floor are loose planks over open air (DOWN + JUMP drops through, as on Karluv Bridge), and a hero who falls out of the bottom of the room lands in the room named
-  // (Game.checkExits reads def.dropTo).  The planks are all that tells it from the rest of the floor.
+  // A SECRET FLOOR (spec.trapdoor): three tiles of the floor are a wooden HATCH, and a LEVER on the floor a few steps away draws it back (it slides under the floor beside it: see Game.openHatch and the 'hatch' scenery in decor.js; the
+  // lever is thrown once, for good, and the hole stays open).  A hero who walks or falls into the hole drops out of the bottom of the room and lands in the room named (Game.checkExits reads def.dropTo).
   const trap = spec.trapdoor ? Math.floor(W * 0.62) : -99;
-  if (spec.trapdoor) { b.rect(trap, 12, 3, 1, TILE.PLAT).rect(trap, 13, 3, 1, TILE.EMPTY); b.def.dropTo = { room: spec.trapdoor.room, tx: spec.trapdoor.tx, gy: spec.trapdoor.gy }; }
-  const slots = r.shuffle(Array.from({ length: Math.floor((W - 13) / 3) + 1 }, (_, i) => 8 + i * 3).filter(x => Math.abs(x - (trap + 1)) > 2)), take = () => slots.pop();
+  if (spec.trapdoor) {
+    const lever = spec.trapdoor.lever, gate = []; for (let k = 0; k < 3; k++) for (const ty of [12, 13]) gate.push([trap + k, ty]);
+    b.def.dropTo = { room: spec.trapdoor.room, tx: spec.trapdoor.tx, gy: spec.trapdoor.gy };
+    b.d('hatch', trap + 1, 12, { w: 48, lever }); b.e('lever', trap + 6, 12, { id: lever }); b.def.levers = [{ id: lever, kind: 'hatch', gate, hx: trap }];
+  }
+  const slots = r.shuffle(Array.from({ length: Math.floor((W - 13) / 3) + 1 }, (_, i) => 8 + i * 3).filter(x => Math.abs(x - (trap + 1)) > 2 && Math.abs(x - (trap + 6)) > 1)), take = () => slots.pop();
   const furnish = {
     cottage: [['bookcase', null, true], ['bookcase', null, true], ['img', 'town_crates'], ['img', 'dg_crates'], ['img', 'dg_urn_' + r.i(1, 3)], ['img', 'dg_urn_' + r.i(1, 3)]],
     hut: [['img', 'dg_crates'], ['img', 'town_crates'], ['img', 'dg_urn_' + r.i(1, 3)], ['img', 'dg_urn_' + r.i(1, 3)]],
@@ -1054,7 +1058,7 @@ function genGateTower(id, spec, r) {
 }
 
 // ------------------------------------------------------------------------------------------------ THE COOPER'S CELLAR (a secret room under a house: a way in from above, and two doors)
-// The loose planks in the Cooper's House drop the hero into the middle of this room (see genInterior: def.dropTo).  On the left, the way out - a door back to the street, the one the house stands at - with a sign
+// The hatch in the Cooper's House floor (drawn back by a lever) drops the hero into the middle of this room (see genInterior: def.dropTo).  On the left, the way out - a door back to the street, the one the house stands at - with a sign
 // that says EXIT; on the right, a door to the Keeper's stall, with the same sign as every other Keeper's door.  Fixed size (the house names the tile he lands on).
 function genCellar(id, spec, r) {
   const W = 28, H = 14, BASE = 12, XD = 4, SD = W - 5;

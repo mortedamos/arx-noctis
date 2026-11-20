@@ -75,6 +75,14 @@ export function drawDeco(g, d, cx, cy, t, room) {
   if (x < -150 || x > 540) return;
   switch (d.t) {
     case 'orlojtower': { const tw = orlojTower(); if (tw) g.drawImage(tw, x - TOWER_W / 2, y - TOWER_H); break; }          // (the tower stands on the ground: y is its foot)
+    case 'hatch': {          // a wooden hatch in the floor, three tiles wide (the Cooper's House).  A lever draws it back: it slides left, under the floor beside it (d.p: 0 shut .. 1 gone - see Game.stepHatch)
+      const w = d.w || 48, p = d.p || 0; if (p >= 1) break;
+      const x0 = Math.round(x - w / 2); g.save(); g.beginPath(); g.rect(x0, y, w, 16); g.clip(); g.translate(-Math.round(p * w), 0);
+      g.fillStyle = '#1c130b'; g.fillRect(x0, y, w, 16);                                                  // the frame it lies in
+      for (let i = 0; i < 6; i++) { const bx = x0 + 3 + i * 7; g.fillStyle = i % 2 ? '#6b4a2b' : '#7a5632'; g.fillRect(bx, y + 2, 6, 12); g.fillStyle = 'rgba(255,230,180,0.14)'; g.fillRect(bx, y + 2, 6, 1); g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(bx + 5, y + 2, 1, 12); }
+      g.fillStyle = '#2a2a32'; g.fillRect(x0 + 6, y + 2, 4, 12); g.fillRect(x0 + w - 10, y + 2, 4, 12); g.fillStyle = '#4a4a54'; g.fillRect(x0 + 6, y + 2, 4, 1); g.fillRect(x0 + w - 10, y + 2, 4, 1);          // two iron straps
+      g.strokeStyle = '#a2a2ae'; g.lineWidth = 1; g.beginPath(); g.arc(x0 + w / 2 + 0.5, y + 8.5, 2.5, 0, Math.PI * 2); g.stroke();          // and a ring to lift it by
+      g.restore(); break; }
     case 'bridgetower': { const bt = bridgeTower(); if (bt) g.drawImage(bt, Math.round(x - BT_W / 2), y - BT_H); break; }          // (the Stone Bridge Tower, standing on the ground behind the Bridge Gate's altar)
     case 'keepgate': { const kg = keepGate(); if (kg) g.drawImage(kg, Math.round(x - kg.width / 2), y - kg.height); break; }          // (the great gate of Arx Noctis, standing on the ground behind a door into the keep)
     case 'animgear': {          // an accent: a cluster of meshing gears from the Animated Gears pack (a strip of 128x128 frames), turning slowly among the generated ones

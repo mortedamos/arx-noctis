@@ -286,7 +286,7 @@ export class Game {
     if (id === 'ib' && S.flags.boss_ib) for (let ty = def.h - 2; ty < def.h; ty++) for (let tx = 5; tx <= def.w - 6; tx++) tiles[ty * def.w + tx] = 0;          // (the Rimewyrm's floor stays shattered: a way down into the Frozen Well)
     const prevZone = this.zone; this.room = new Room({ ...def, tiles }); this.room.flags = S.flags; this.room.ignited = new Set(); this.room.fireOut = def.zone === 6 && !!S.flags.boss_vb; if (S.flags.boss_vb) S.flags.village_fire = true; S.visited[id] = true; this.zone = def.zone;          // (the room can see the save's flags: scenery such as the sigils over a locked door reads them)
     { const spk = []; for (let ty = 0; ty < def.h; ty++) for (let tx = 0; tx < def.w; tx++) if (tiles[ty * def.w + tx] === TILE.SPIKE) spk.push([tx, ty]); if (spk.length) this.room.decos = def.decos.filter(d => !decoCoversHazard(d, spk)); }          // nothing may stand in front of a hazard
-    if (this.gaze) { this.gaze = null; this.playerFrozen = false; } this.gateAnims = [];
+    if (this.gaze) { this.gaze = null; this.playerFrozen = false; } this.gateAnims = []; this.hatchAnim = null; for (const d of this.room.decos) if (d.t === 'hatch') d.p = S.flags[d.lever] ? 1 : 0;          // (a hatch whose lever has been thrown stays drawn back: p = how far it has slid, 0..1)
     this.blackout = null; this.well = null; this.enemies = []; this.projectiles = []; this.pickups = []; this.props = []; this.popups = []; this.boss = null; this.delayed = []; this.fx.reset(); this.fx.setWisps(def.wisps || 0); this.flames = roomFlames(this.room); this.smokeSpots = this.room.fireOut ? this.room.decos.filter(d => d.t === 'blaze' && !d.small).map(d => ({ x: d.x, y: d.y })) : []; this.falls = this.room.decos.filter(d => d.t === 'waterfall'); this.fx.setWater(this.waterList()); this.mirrorView = def.mirror ? new MirrorView(def.mirror, !!S.flags['boss_' + id]) : null;          // (the Mirror Room: a great mirror - whole until you walk up to it)
     const dusk = def.zone === 6 && !S.flags.village_fire && !def.keepLook;          // Prague before the Cinder Warden's torches: a calm violet dusk, with golden dust in the air - the monsters are loose, but nothing burns yet
     A.hush = 1; this.fx.setShadowMask(this.room); this.fx.setAmbient(dusk ? Math.max(def.ambient, 0.42) : def.ambient, dusk ? [0.05, 0.03, 0.12] : this.room.fireOut ? [0.09, 0.05, 0.06] : def.tint, def.vig); if (def.dark) this.fx.setDark(); this.fx.setAmbientFx(dusk ? 'dust' : this.room.fireOut ? 'mist' : def.weather); A.setIndoor(def.indoor); this.fx.setStorm(def.storm, 0.0035);
@@ -435,7 +435,7 @@ export class Game {
   }
   stepGaze() {
     const gz = this.gaze; gz.t++;
-    if (!gz.opened && gz.t >= gz.pan + 10) { gz.opened = true; this.openGate(gz.def.gate); }
+    if (!gz.opened && gz.t >= gz.pan + 10) { gz.opened = true; if (gz.def.kind === 'hatch') this.openHatch(gz.def); else this.openGate(gz.def.gate); }
     if (gz.t >= gz.pan + 10 + 72) { this.gaze = null; this.playerFrozen = false; this.player.invT = Math.max(this.player.invT, 30); }
   }
   // the gate rises: its bars slide up out of sight (drawn by drawGates), and once there is room to walk under, the tiles are cleared
@@ -446,11 +446,23 @@ export class Game {
     A.sfx('seal'); A.sfx('gear'); this.shake(3, 40);
     this.after(30, () => { const rr = this.room; if (rr !== r) return; for (const [tx, ty] of tiles) if (rr.get(tx, ty) === TILE.GATE) rr.set(tx, ty, TILE.EMPTY); });
   }
+  // A HATCH in the floor draws back: its leaf slides under the floor beside it, and each column of floor under it is cleared as the leaf's edge passes (a hole into the room below: see def.dropTo)
+  openHatch(def) {
+    const d = this.room.decos.find(q => q.t === 'hatch' && q.lever === def.id); if (!d) { for (const [tx, ty] of def.gate) this.room.set(tx, ty, TILE.EMPTY); this.room.dirty = true; return; }
+    this.hatchAnim = { d, def, t: 0, dur: 54 }; A.sfx('door'); A.sfx('gear'); this.shake(2, 30);
+  }
+  stepHatch() {
+    const a = this.hatchAnim, r = this.room, w = a.d.w || 48; a.t++;
+    const p = Math.min(1, a.t / a.dur), e = 1 - Math.pow(1 - p, 2); a.d.p = e;
+    for (const [tx, ty] of a.def.gate) if (r.get(tx, ty) !== TILE.EMPTY && e * w >= w - 16 * (tx - a.def.hx)) { r.set(tx, ty, TILE.EMPTY); r.dirty = true; if (ty === 12) this.fx.burst(tx * 16 + 8, ty * 16 + 6, 6, [[0.5, 0.4, 0.3], [0.3, 0.25, 0.2]], { speed: 1.2, s0: 8, gy: 0.03 }); }
+    if (a.t % 8 === 0 && p < 1) A.sfx('gear');
+    if (p >= 1) { A.sfx('click'); this.hatchAnim = null; }
+  }
   // walking up to a gate that is still down: a few words, now and then, so it is clear what it is
   gateHint() {
     const p = this.player, S = this.save; if (p.dead || this.gaze || this.frame < (this.gateHintT || 0)) return;
     for (const lv of this.room.levers) {
-      if (S.flags[lv.id]) continue; const x0 = lv.gate[0][0] * 16, ys = lv.gate.map(q => q[1]), y0 = Math.min(...ys) * 16, y1 = (Math.max(...ys) + 1) * 16;
+      if (S.flags[lv.id] || lv.kind === 'hatch') continue; const x0 = lv.gate[0][0] * 16, ys = lv.gate.map(q => q[1]), y0 = Math.min(...ys) * 16, y1 = (Math.max(...ys) + 1) * 16;
       if (p.x > x0 - 24 && p.x < x0 + 56 && p.y > y0 && p.y < y1 + 8) { this.popup(p.x, p.y - 48, 'BARRED - A LEVER MUST RAISE IT', '#e8dcc0'); this.gateHintT = this.frame + 300; A.sfx('back'); return; }
     }
   }
@@ -665,7 +677,7 @@ export class Game {
     if (this.icicles && this.icicles.length > 14) this.icicles = this.icicles.filter(i => !i.dead); for (const ic of this.icicles || []) ic.step(this); for (const j of this.jets || []) j.step(this);                          // loose icicles: shiver when the hero comes close, then drop
     if (this.smokeSpots && this.smokeSpots.length && this.frame % 5 === 0) for (const sp of this.smokeSpots) if (sp.x > this.camera.x - 40 && sp.x < this.camera.x + W + 40 && sp.y > this.camera.y - 60 && sp.y < this.camera.y + H + 40 && Math.random() < 0.3) fx.smoke(sp.x + rand(-6, 6), sp.y, 1, { c0: [0.5, 0.47, 0.46], c1: [0.28, 0.26, 0.27], s0: 7, s1: 26, l: 1.5, a: 0.4 });          // (the burnt city smoulders: the fires are out - no flames - but smoke still rises from the ruins)
     if (this.cutscene) this.updateCutscene();
-    if (this.gaze) this.stepGaze(); if (this.gateAnims.length) this.stepGates(); if (this.room.levers && this.frame % 10 === 0) this.gateHint();
+    if (this.gaze) this.stepGaze(); if (this.gateAnims.length) this.stepGates(); if (this.hatchAnim) this.stepHatch(); if (this.room.levers && this.frame % 10 === 0) this.gateHint();
     p.update();
     const cam = this.camera, ccx = cam.x + W / 2, ccy = cam.y + H / 2;
     const still = !!(this.cutscene && this.cutscene.scene);          // (during a scripted scene the monsters neither move nor attack)
