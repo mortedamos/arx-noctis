@@ -102,6 +102,13 @@ export const Audio_ = {
     const have = GENERAL.map(g => ({ real: g, url: this.resolve(g) })).filter(c => c.url); if (!have.length) return null;
     const fresh = have.filter(c => c.real !== avoid); const from = fresh.length ? fresh : have; return from[Math.floor(Math.random() * from.length)];
   },
+  // every file that could play for a track id: its own, or - for a level / boss track whose file has not been made - the stand-ins pick() chooses from.  What the background loader fetches ahead of time.
+  urlsFor(id) {
+    const own = this.resolve(id); if (own) return [own];
+    if (!isLevelTrack(id)) return [];
+    for (const f of FALLBACK_FIRST[id] || []) { const u = this.resolve(f); if (u) return [u]; }
+    return GENERAL.map(g => this.resolve(g)).filter(Boolean);
+  },
   play(id, { fade = 1.5 } = {}) {
     if (this.want === id) return; this.want = id;
     const prev = this.cur && this.cur.real;
@@ -153,7 +160,7 @@ export const Audio_ = {
   sting(id) {
     if (this.blurred) return;
     const url = this.resolve(id); if (!url) return;
-    const el = new window.Audio(url); el.volume = this.silent ? 0 : this.settings.music; this.stingEl = el;
+    const el = new window.Audio(this.urlHook ? this.urlHook(url) : url); el.volume = this.silent ? 0 : this.settings.music; this.stingEl = el;
     this.duckTarget = 0.1; const done = () => { if (this.stingEl === el) { this.duckTarget = 1; this.stingEl = null; } };
     el.addEventListener('ended', done); el.addEventListener('error', done); el.play().catch(done);
   },

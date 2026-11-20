@@ -331,7 +331,8 @@ export class Game {
     this.snapCamera();
     // music + banners
     this.chase = def.chase && pos && pos.y > def.h * 8 ? this.beginChase(def) : null;          // (the Bell Tower: entered from the street, it is already burning)
-    loaderFocus(def.zone);          // (the background loader fetches this zone's music and sounds first, then the next ones)
+    const nearZones = new Set(); for (const e of [...(def.exits || []), ...(def.doors || [])]) { const rz = this.world.rooms[e.room]; if (rz && rz.zone !== undefined && rz.zone !== def.zone) nearZones.add(rz.zone); }
+    loaderFocus(def.zone, [...nearZones]);          // (the background loader fetches this zone's music and sounds first, then those of the zones this room's doors and edges lead to, then the rest of the castle)
     const zm = ZONES[def.zone].music, mus = def.boss ? zm : def.music;
     if (def.disco && S.flags.disco_done) A.stop(0.4); else A.play(mus, { fade: 1.2 });          // (the empty disco is silent)
     const inKeep = KEEP.has(def.zone);
