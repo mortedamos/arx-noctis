@@ -2,11 +2,11 @@
 // Missing music files are skipped silently, so the game is playable before any track exists.
 const EXTS = ['.mp3', '.ogg', '.wav', '.m4a', '.flac', '.opus'];
 // A level whose own track has not been made yet plays one of these instead, chosen at random each time (never the same one twice in a row, if there is another).
-// The final boss, and a second boss theme, fall back to the ordinary boss track first.  Short stings and the title / intro / ending never fall back.
+// The final boss, and a second boss theme, fall back to the ordinary boss track first; the Keeper's shop falls back to the sanctuary's.  Short stings and the title / intro / ending never fall back.
 const INDOOR_VOL = 0.4;          // the background music's volume inside a building: 60% quieter
 const GENERAL = ['general_track_1', 'general_track_2', 'general_track_3', 'general_track_4'];
-const FALLBACK_FIRST = { boss_final: ['boss'], boss2: ['boss'] };
-const isLevelTrack = id => /^(zone\d+|save|boss\w*)$/.test(id);
+const FALLBACK_FIRST = { boss_final: ['boss'], boss2: ['boss'], shop: ['save'] };
+const isLevelTrack = id => /^(zone\d+|save|shop|boss\w*)$/.test(id);
 // recorded sound effects (the synthesized ones are in S below).  name -> file in assets/sfx/.  A new one is one line here; Audio_.sample('name') plays it, Audio_.preload('name') fetches it ahead of time.
 const SAMPLES = { record_scratch: 'assets/sfx/record_scratch.mp3' };
 

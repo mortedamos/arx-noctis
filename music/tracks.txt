@@ -14,6 +14,7 @@ zone10 | zone10_library_of_ink.mp3 | LOOP
 zone11 | zone11_frozen_caverns.mp3 | LOOP
 disco | disco_room.mp3 | LOOP
 save | save_sanctuary.mp3 | LOOP
+shop | shop_keeper.mp3 | LOOP
 boss | boss_battle.mp3 | LOOP
 boss2 | boss_battle_2.mp3 | LOOP
 general_track_1 | general_track_1.mp3 | LOOP

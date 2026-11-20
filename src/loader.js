@@ -15,17 +15,17 @@ import { Audio_ as A } from './audio.js';
 // recorded effect that no stage claims below: the hero's own sounds, the menus, the common enemies; 'rest' = whatever is left)
 export const STAGES = [
   { id: 'hill', zone: [6], music: ['intro', 'zone6'], sfx: 'core' },
-  { id: 'prague', zone: [6], music: ['boss', 'save'], sfx: ['boss_cinder', 'boss_cinder_die'] },
+  { id: 'prague', zone: [6], music: ['boss', 'save', 'shop'], sfx: ['boss_cinder', 'boss_cinder_die'] },
   { id: 'graveyard', zone: [1], music: ['zone1'], sfx: ['boss_beast', 'boss_beast_die'] },
   { id: 'mire', zone: [7], music: ['zone7'], sfx: ['boss_bramble', 'boss_bramble_die'] },
   { id: 'hall', zone: [2], music: ['zone2'], sfx: ['boss_nightmare', 'boss_nightmare_die', 'boss_mirror_die'] },
   { id: 'cistern', zone: [9], music: ['zone9'], sfx: ['boss_drowned', 'boss_drowned_die'] },
-  { id: 'chapel', zone: [3], music: ['zone3'], sfx: ['boss_angel', 'boss_angel_die'] },
+  { id: 'chapel', zone: [3], music: ['zone3', 'shop'], sfx: ['boss_angel', 'boss_angel_die'] },
   { id: 'clockwork', zone: [8], music: ['zone8'], sfx: ['gear', 'steam', 'boss_colossus', 'boss_colossus_die'] },
-  { id: 'crypts', zone: [4], music: ['general_track_1', 'general_track_2'], sfx: ['boss_vampire', 'boss_vampire_die'] },          // (the Crypts have no track of their own yet: a general one plays)
-  { id: 'library', zone: [10], music: ['zone10'], sfx: ['page', 'ink', 'boss_librarian', 'boss_librarian_die'] },
+  { id: 'crypts', zone: [4], music: ['general_track_1', 'general_track_2', 'shop'], sfx: ['boss_vampire', 'boss_vampire_die'] },          // (the Crypts have no track of their own yet: a general one plays)
+  { id: 'library', zone: [10], music: ['zone10', 'shop'], sfx: ['page', 'ink', 'boss_librarian', 'boss_librarian_die'] },
   { id: 'ice', zone: [11], music: ['zone11'], sfx: ['shatter', 'boss_rimewyrm', 'boss_rimewyrm_die'] },
-  { id: 'throne', zone: [5], music: ['general_track_3', 'general_track_4', 'ending'], sfx: ['boss_shadow', 'boss_shadow_die'] },
+  { id: 'throne', zone: [5], music: ['general_track_3', 'general_track_4', 'shop', 'ending'], sfx: ['boss_shadow', 'boss_shadow_die'] },
   { id: 'rest', zone: [], music: ['disco'], sfx: 'rest' },
 ];
 
