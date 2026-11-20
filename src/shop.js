@@ -17,6 +17,7 @@ const THANKS = ['A FAIR TRADE.', 'YES. THAT WILL SERVE YOU... FOR A WHILE.', 'TH
 import * as D from './dialogue.js';
 const kl = (k, d) => D.lines('keeper ' + k) || d, pickOf = a => a[Math.floor(Math.random() * a.length)];          // (the Keeper's words are read from assets/dialogue.txt; the lists here are only what he says if a section is missing)
 const POOR = ['YOUR POCKETS ARE AS EMPTY AS THIS CASTLE.', 'COME BACK WITH MORE. I AM PATIENT.', 'I TAKE GOLD. ONLY GOLD. NOT PROMISES.'];
+const PRICE_CUT = 0.8;          // every Keeper's prices are this fraction of the list below (a fifth off), taken after the zone's mark-up and rounded to the nearest 5 gold
 
 export class Shopkeeper {
   constructor(x, y, o) { this.x = x; this.y = y; this.id = o.id; this.tier = o.tier || 0; this.t = 0; this.dead = false; this.dir = -1; }
@@ -42,7 +43,7 @@ export class ShopScreen {
   }
   flag(key) { return 'shop_' + this.keeper.id + '_' + key; }
   build() {
-    const g = this.g, S = g.save, p = g.player, k = 1 + 0.12 * (this.keeper.tier || 0), pr = n => Math.round(n * k / 5) * 5, out = [];
+    const g = this.g, S = g.save, p = g.player, k = 1 + 0.12 * (this.keeper.tier || 0), pr = n => Math.round(n * k * PRICE_CUT / 5) * 5, out = [];
     const ench = (type, price, blurb) => ({ name: ENCH[type].title, tag: 'BLADE', price: pr(price), desc: blurb, can: () => '', buy: () => p.setEnchant(type) });
     out.push(ench('fire', 150, 'YOUR SWORD BURNS: MORE DAMAGE, AND A SMALL FIREBALL WITH EVERY SLASH. LASTS ONE MINUTE; BUY AGAIN TO ADD ANOTHER, UP TO TWO.'));
     out.push(ench('ice', 170, 'HITS CAN FREEZE FOES SOLID, AND FROZEN THINGS TAKE MORE DAMAGE. LASTS ONE MINUTE; BUY AGAIN TO ADD ANOTHER, UP TO TWO.'));
