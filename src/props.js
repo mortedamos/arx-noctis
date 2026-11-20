@@ -38,7 +38,7 @@ export const UPGRADES = {
   shoes: { name: 'SHOES OF HERMES', desc: 'MOVE 10% FASTER', icon: 'shoes', color: [1, 0.45, 0.95] },          // (its id is the flag 'got_shoes': the Player reads it)
 };
 export const iconFrame = name => ICON.indexOf(name);
-const pageUpgrade = n => ({ name: 'A PAGE: ' + letterTitle(n), desc: 'A LETTER, FOLDED SMALL. IT IS KEPT IN THE LETTERS ON THE TITLE SCREEN.', icon: 'scroll', color: [0.95, 0.9, 0.75] });
+const pageUpgrade = n => ({ name: 'A PAGE: ' + letterTitle(n), desc: 'A LETTER, FOLDED SMALL. IT IS KEPT IN LETTERS, IN THE PAUSE MENU.', icon: 'scroll', color: [0.95, 0.9, 0.75] });
 // a key picked up from a chest, a ledge or the top of a tower (its id, with or without the chest's '_u', names it - see KEYS)
 const keyBase = id => String(id).replace(/_u$/, '');
 function keyUpgrade(id) { const K = KEYS.find(k => k.id === keyBase(id)); return { name: K ? K.name : 'IRON KEY', desc: 'OPENS A LOCKED DOOR', icon: 'key', color: K ? K.rgb.map(v => v / 255) : [1, 0.85, 0.4] }; }
@@ -230,7 +230,7 @@ export class Bell {
     if (!g.save.flags[this.id]) {
       g.save.flags[this.id] = true; markPage(5); g.after(150, () => {
         if (g.state !== 'play') return; g.ghost.reveal(420); A.sfx('ghost'); g.fx.ring(this.x, this.y - 20, 50, [0.55, 0.78, 1], 30, 0.1);
-        g.showDialog(STORY.bell[0], { name: STORY.speaker, font: 'hand', onClose: () => g.showDialog(STORY.bell[1], { name: STORY.speaker, font: 'hand', onClose: () => { A.sfx('item'); g.banner('A PAGE: ' + letterTitle(5), 'SHE WROTE IT ON THE ROAD HOME'); g.after(70, () => g.openLetter(5)); } }) });
+        g.showDialog(STORY.bell[0], { name: STORY.speaker, font: 'hand', onClose: () => g.showDialog(STORY.bell[1], { name: STORY.speaker, font: 'hand', onClose: () => { A.sfx('item'); } }) });          // (the page is given without a banner, and not opened)
       });
     }
     return true;
@@ -384,8 +384,8 @@ export class Upgrade {
     this.dead = true; const S = g.save, hadLantern = !!S.flags.got_lantern; g.save.flags[this.id] = true;
     if (this.kind === 'hpup') { S.maxHp += 20; S.hp = S.maxHp; } else if (this.kind === 'mpup') { S.maxMp += 10; S.mp = S.maxMp; } else if (this.kind === 'atkup') S.atk += 2; else if (this.kind === 'tide') S.flags.got_tide = true; else if (this.kind === 'mantle') S.flags.got_mantle = true; else if (this.kind === 'lantern') S.flags.got_lantern = true; else if (this.kind === 'shard') S.flags.got_shard = true; else if (this.kind === 'spring') S.flags.got_spring = true; else if (this.kind === 'athanor') S.flags.got_athanor = true; else if (this.kind === 'astrolabe') S.flags.got_astrolabe = true; else if (this.kind === 'goldkey') S.flags.has_key_gold = true; else if (this.kind === 'frostkey') S.flags.has_key_frost = true; else if (this.kind === 'hoard') { S.gold += 400; g.popup(this.x, this.y - 30, '+400 GOLD', '#ffd860'); } else if (this.kind === 'ouroboros') S.flags.got_ouroboros = true; else if (this.kind === 'key') S.flags['has_' + keyBase(this.id)] = true;
     A.sfx('item'); g.fx.ring(this.x, this.y - 8, 44, this.U.color, 30); g.fx.flash(this.U.color, 0.3); g.fx.sparks(this.x, this.y - 8, 18, [[1, 1, 0.8], this.U.color], 3);
-    g.banner(this.U.name, this.kind === 'tide' && !S.abilities.dash ? 'ITS POWER WAKES ONCE YOU CAN DASH' : this.U.desc);
-    if (this.kind === 'page') g.foundPage(this.n);
+    if (this.kind === 'page') g.foundPage(this.n);          // (a page is picked up without a word: no banner, and it is not opened; it is read from LETTERS in the pause menu)
+    else g.banner(this.U.name, this.kind === 'tide' && !S.abilities.dash ? 'ITS POWER WAKES ONCE YOU CAN DASH' : this.U.desc);
     if (this.kind === 'lantern' && !hadLantern) g.lanternScene();          // (only the first time: a hero given the lantern by a secret code has no scene to see)
   }
   draw(ctx, cx, cy) {

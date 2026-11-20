@@ -137,11 +137,11 @@ export class Game {
   }
   // the flow of the room's water has changed (a boss heaves the tide): hand the new speeds to the water shader
   syncFlow() { this.fx.setFlows(this.waterList().map(o => o.v)); }
-  // a page of the story has been found: kept in the save and in the browser's own storage (the LETTERS book on the title screen), then read at once
   // the six hidden skulls: how many are broken, and what the sixth does
   skullsBroken() { let n = 0; for (let i = 1; i <= SKULL_COUNT; i++) if (this.save.flags['skull' + i]) n++; return n; }
   skullsDone() { this.save.flags.skulls_done = true; this.after(50, () => { A.sfx('boom'); this.shake(5, 40); this.fx.flash([0.7, 0.6, 0.9], 0.3); this.banner('THE SIXTH SKULL', 'FAR AWAY, STONE GRINDS ON STONE', 220, { y: 52, color: '#cfc2a0' }); }); }
-  foundPage(n, delay = 80) { this.save.flags['page' + n] = true; markPage(n); this.after(delay, () => { if (this.state === 'play') this.openLetter(n); }); }
+  // a page of the story has been found: kept in the save and in the browser's own storage.  It is NOT opened: the player reads it when they like, from LETTERS in the pause menu (or the book on the title screen)
+  foundPage(n) { this.save.flags['page' + n] = true; markPage(n); }
   openLetter(n, done) { this.reader = new LetterReader(n, done); this.state = 'letter'; A.sfx('page'); }
   showDialog(text, o) { this.dialog = new Dialog(text, o); this.state = 'dialog'; }
   // a short exchange of words: lines = [[speaker, text], ...], each in a box of its own; done() runs when the last box is closed

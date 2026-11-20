@@ -55,15 +55,16 @@ export class ShopScreen {
     once('hp', 'VITA: +20 MAX LIFE', 1400, 'YOUR LIFE GROWS BY TWENTY, AND IS MADE WHOLE. THIS STALL OFFERS IT ONLY ONCE.', () => { S.maxHp += 20; S.hp = S.maxHp; });
     once('mp', 'VIS: +10 MAX MANA', 1100, 'YOUR MANA GROWS BY TEN, AND IS MADE WHOLE. THIS STALL OFFERS IT ONLY ONCE.', () => { S.maxMp += 10; S.mp = S.maxMp; });
     once('atk', 'WHETSTONE: +2 SWORD POWER', 1600, 'YOUR SWORD HITS A LITTLE HARDER, FOR GOOD. THIS STALL OFFERS IT ONLY ONCE.', () => { S.atk += 2; });
-    if (!S.flags.page1) out.push({ name: 'A FOLDED PAGE', tag: 'LETTER', price: pr(350), desc: 'I DO NOT READ THE LETTERS OF OTHERS. THIS ONE WAS LEFT WITH ME BY A MAN WHO NEVER CAME BACK FOR THE CHANGE. IT IS YOURS, FOR A PRICE. THIS STALL OFFERS IT ONLY ONCE.', can: () => '', buy: () => { S.flags.page1 = true; markPage(1); this.read = 1; g.fx.flash([0.9, 0.85, 0.6], 0.2); } });          // the first letter of the story: sold by the Keeper
+    if (!S.flags.page1) out.push({ name: 'A FOLDED PAGE', tag: 'LETTER', price: pr(350), desc: 'I DO NOT READ THE LETTERS OF OTHERS. THIS ONE WAS LEFT WITH ME BY A MAN WHO NEVER CAME BACK FOR THE CHANGE. IT IS YOURS, FOR A PRICE. THIS STALL OFFERS IT ONLY ONCE.', can: () => '', buy: () => { S.flags.page1 = true; markPage(1); g.fx.flash([0.9, 0.85, 0.6], 0.2); } });          // the first letter of the story: sold by the Keeper (not opened and not announced: it is read from LETTERS in the pause menu)
     return out;
   }
-  close() { this.g.state = 'play'; A.sfx('back'); if (this.read) { const n = this.read, g = this.g; this.read = 0; g.after(24, () => { if (g.state === 'play') g.openLetter(n); }); } }
+  close() { this.g.state = 'play'; A.sfx('back'); }
   buy() {
     const g = this.g, S = g.save, e = this.stock[this.sel], why = e.can();
     if (why) { A.sfx('back'); this.speak(why === 'SOLD' ? 'THAT, I HAVE ALREADY SOLD YOU.' : 'YOU HAVE ALL YOU CAN CARRY OF THAT.'); return; }
     if (S.gold < e.price) { A.sfx('back'); this.speak(pickOf(kl('poor', POOR))); return; }
     S.gold -= e.price; e.buy(); A.sfx('coin'); A.sfx('item'); this.speak(pickOf(kl('thanks', THANKS))); this.stock = this.build();
+    this.sel = Math.min(this.sel, this.stock.length - 1);          // (a ware that is gone once bought - the folded page - leaves the list a row shorter: the cursor must not be left below its end, or the next frame draws a ware that is not there and the screen freezes)
   }
   speak(s) { this.say = s; this.sayT = 0; }
   update() {
