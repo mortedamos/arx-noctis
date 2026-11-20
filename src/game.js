@@ -357,6 +357,7 @@ export class Game {
     else if (p.x > r.pw - 3) { const e = r.exitRows.R[row]; if (e && p.vx >= 0) this.changeRoom({ room: e.room, x: e.tx * 16 + 8, y: e.gy * 16 }, 1); }
     if (r.id === 'ib' && this.save.flags.boss_ib && p.y > r.ph - 4 && !p.dead && !this.well) { this.enterWell(); return; }          // (the broken arena: a drop into the Frozen Well)
     if (r.id === 'pd' && p.y > r.ph - 4 && !p.dead && !this.trans) { this.enterAbyss(); return; }          // (the Pit of Despair has no bottom, until you reach it)
+    if (r.dropTo && p.y > r.ph - 4 && !p.dead && !this.trans) { this.dropInto(r.dropTo); return; }          // (a floor with a way through: the loose planks of the Cooper's House drop into the cellar)
     if (p.y > r.ph + 48 && !p.dead) { p.hurt(10, p.x, { kb: 0 }); this.respawnAtSafe(p); }
   }
   respawnAtSafe(p) { this.after(0, () => { p.x = p.lastSafe.x; p.y = p.lastSafe.y; p.vx = p.vy = 0; p.invT = 90; this.fx.flash([0.6, 0.4, 1], 0.3); this.fx.burst(p.x, p.y - 16, 10, COLORS.purple, { speed: 1.5 }); }); }
@@ -574,6 +575,7 @@ export class Game {
       }
     } else if (w.phase === 'fall' && p.y > r.ph - 4) { this.well = null; this.enterWell(); }
   }
+  dropInto(d) { if (this.trans) return; const p = this.player; p.invT = Math.max(p.invT, 120); p.vx = 0; A.sfx('land'); this.changeRoom({ room: d.room, x: d.tx * 16 + 8, y: d.gy * 16 }, 1); }          // (a fall out of the bottom of a room into the one below it: the hero arrives at the top of that room and drops to its floor)
   enterAbyss() { if (this.trans) return; const p = this.player; p.invT = Math.max(p.invT, 600); p.vx = 0; this.changeRoom({ room: 'ls', x: 17 * 16 + 8, y: 3 * 16 }, 1); }          // (a long fall into Letosnik Abyss)
   // the wisp is taken up: she steps out of it, once, and tells him she can go with him now
   lanternScene() {

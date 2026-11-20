@@ -273,6 +273,10 @@ The clock still keeps Prague's hour. The apostles still walk in their windows, a
 [tablet tab19]
 Thirty saints stand watch on this bridge, and not one of them could stop the fire. The river takes what falls. Not everything that falls is lost, though: the toll-keepers kept a cellar under these stones, and I have always wondered about the planks in the deck.
 
+; in room vs (the Stone Bridge Tower; nothing in it is later than 1541, the year of the game)
+[tablet tab23]
+Charles the Fourth began this tower in 1357. Peter Parler drew it, and his masons carved its face. The kings of Bohemia rode under this arch on their way to be crowned. Saint Vitus stands between two of them, and I always thought he looked the most tired. Rest a while. The fire has not come into the passage.
+
 ; in room l1
 [tablet tab20]
 THE LORD READ EVERY BOOK IN THE WORLD AND FOUND THE ENDING WRONG. HE HAS BEEN REWRITING IT EVER SINCE, AND THE BOOKS HAVE LEARNED TO FIGHT BACK.
@@ -325,6 +329,14 @@ THE KEEPER - SOMETHING IN THE DARK SELLS WHAT THE DEAD NO LONGER NEED.
 ; (the sign before the Keeper's door)
 [sign sht]
 THE KEEPER - SOMETHING IN THE DARK SELLS WHAT THE DEAD NO LONGER NEED.
+
+; (the sign before the Keeper's door in the Cooper's cellar, under the house in Smouldering Lane)
+[sign shk]
+THE KEEPER - SOMETHING IN THE DARK SELLS WHAT THE DEAD NO LONGER NEED.
+
+; (the sign by the way out of the Cooper's cellar)
+[sign cellarexit]
+EXIT
 
 ; ---------------------------------------------------------------------------------------------------------------------
 ;  PEOPLE INDOORS  (by room id)

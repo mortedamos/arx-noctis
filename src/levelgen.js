@@ -61,12 +61,14 @@ const SPEC = {
   og: { kind: 'arena', zone: 8, name: 'The Boiler Loft', areaLabel: 'The Orloj Tower', parent: 'ot', loft: true, w: [44, 50], h: 14, boss: 'golem', reward: 'athanor', plats: 2, rise: 3, abilities: ['djump'], decor: 'brazier', candles: [2, 2], jets: 2, jetGap: 12,
     opts: { ...LOOK[8], ambient: 0.32, boss: 'golem', music: 'boss' } },
   v2: { kind: 'corridor', zone: 6, name: 'Smouldering Lane', tall: 26, w: [90, 104], outdoor: true, opts: LOOK[6],
-    mods: [{ t: 'door', to: 'sv', kind: 'wood' }, { t: 'door', to: 'hv4', kind: 'house' }, { t: 'djLedge', kind: 'atkup', id: 'v2_atk' }, { t: 'djLedge', kind: 'hpup', id: 'v2_hp' }, { t: 'tablet', id: 'tab9', near: 'start', text: 'THE BELLS WERE THE FIRST TO FALL SILENT. THE PRIEST BARRED THE CHAPEL DOOR AND PRAYED. IT DID NOT HELP.' }],
+    mods: [{ t: 'door', to: 'sv', kind: 'wood' }, { t: 'door', to: 'hv4', kind: 'house', tag: 'cooper' }, { t: 'djLedge', kind: 'atkup', id: 'v2_atk' }, { t: 'djLedge', kind: 'hpup', id: 'v2_hp' }, { t: 'tablet', id: 'tab9', near: 'start', text: 'THE BELLS WERE THE FIRST TO FALL SILENT. THE PRIEST BARRED THE CHAPEL DOOR AND PRAYED. IT DID NOT HELP.' }],
     candles: [3, 5], barrels: [1, 2], mix: { zombie: [2, 3], skeleton: [1, 2], hound: [1, 1], bat: [1, 2], fireskull: [1, 1], villager: [1, 2] } },
   v3: { kind: 'tower', zone: 6, name: 'The Bell Tower', bell: true, chase: true, w: [28, 32], h: [34, 38], top: [8, 10], opts: { ...LOOK[6], ambient: 0.4 },
     mods: [{ t: 'tablet', id: 'tab10', text: 'HE CALLS IT MERCY, TO BURN WHAT HE CANNOT PROTECT. THE WARDEN WAITS IN THE SQUARE BELOW THE HILL ROAD.' }], topItem: { kind: 'mpup', id: 'v3_mp' }, candles: [3, 4], mix: { bat: [2, 3], fireskull: [2, 3], zombie: [1, 2] } },
   vb: { kind: 'arena', zone: 6, name: 'The Burning Square', w: [40, 46], outdoor: true, boss: 'cinder', reward: 'mantle', plats: 2, rise: 3, seal: 'both', candles: [3, 3], decor: 'village',
     opts: { ...LOOK[6], boss: 'cinder', music: 'boss' } },
+  // THE STONE BRIDGE TOWER: the Gothic gate at the foot of the bridge (the game's year is 1541: the names "Old Town Bridge Tower" and "Charles Bridge" are younger), calm, with an altar in its gateway - the first place to save after the Cinder Warden - and a scaffold up its front to a gallery with a secret
+  vs: { kind: 'gatetower', zone: 6, name: 'The Stone Bridge Tower', outdoor: true, opts: LOOK[6] },
   // KARLUV BRIDGE: the old stone bridge over the Vltava, between the burning city and the road to the Graveyard.  The castle's one open-air platforming run: broken spans, rubble and
   // stepping stones over the river (a fall is the river: spikes under the water), saints on the parapet, and a cracked wall hiding a prize.  Entered by a hero with only a single jump.
   br: { kind: 'corridor', zone: 6, name: 'Karluv Bridge', areaLabel: 'Karluv Bridge', bridge: true, under: 18, w: [96, 112], outdoor: true, opts: { ...LOOK[6], weather: 'mist', fog: 0.4, ambient: 0.4 },          // (no drifting embers on the bridge: a river mist)
@@ -78,7 +80,10 @@ const SPEC = {
   hv1: { kind: 'interior', zone: 6, name: "Weaver's Cottage", parent: 'v1', look: 'cottage', npcs: [2, 2] },
   hv2: { kind: 'interior', zone: 6, name: "Smith's House", parent: 'v1', look: 'cottage', npcs: [1, 2], sellers: 1 },
   hv3: { kind: 'interior', zone: 6, name: "Baker's House", parent: 'v1', look: 'cottage', npcs: [2, 3] },
-  hv4: { kind: 'interior', zone: 6, name: "Cooper's House", parent: 'v2', look: 'cottage', npcs: [1, 2] },
+  // the Cooper's house stands EMPTY, and keeps a secret: a stretch of its floor is loose planks (DOWN + JUMP drops through them) over the Cooper's cellar (hc), where a fifth Keeper has set up shop (shk)
+  hv4: { kind: 'interior', zone: 6, name: "Cooper's House", parent: 'v2', look: 'cottage', empty: true, trapdoor: { room: 'hc', tx: 14, gy: 3 } },
+  hc: { kind: 'cellar', zone: 6, name: "The Cooper's Cellar", parent: 'hv4', exitTo: 'v2', exitTag: 'cooper', shop: 'shk' },
+  shk: { kind: 'shop', zone: 6, name: 'The First Bargain', parent: 'hc', tier: 0 },
 
   // ======== ZONE 1 - THE GRAVEYARD APPROACH (Gothicvania Cemetery)
   tg: { kind: 'teleport', zone: 1, name: 'Waystone Crossroads', outdoor: true, opts: LOOK[1] },
@@ -250,7 +255,7 @@ const SPEC = {
   s4: { kind: 'sanctuary', zone: 5, name: 'Last Sanctuary', parent: 't1' },
   ta: { kind: 'interior', zone: 5, name: 'The Hidden Study', parent: 't1', look: 'study', theme: 'hall', ambient: 0.5, tint: [0.03, 0.0, 0.05], npc: { kind: 'oldman', title: 'THE LORD\'S SCRIBE', text: 'I WROTE DOWN EVERYTHING HE DID, AND NEVER ONCE LOOKED UP. NOW I CANNOT STOP LOOKING. HE IS ABOVE US. TAKE THIS, STRANGER - AND WHEN YOU MEET HIM, DO NOT LET HIM SPEAK.', again: 'I HAVE NO MORE PAGES. ONLY THE ONES I CANNOT BURN.', gifts: ['it_holy', 'it_holy', 'heart'], sells: { item: 'holy', price: 50 } } },
 };
-const ORDER = ['v0', 'vq', 'v1', 'tv', 'v2', 'v3', 'vb', 'br', 'ot', 'og', 'sv', 'tg', 'g1', 'g2', 'g4', 'vg', 'g3', 'pd', 'ls', 's1', 'hw', 'hub1', 'hk', 'hr', 'sr', 'tw', 'w1', 'w2', 'vw', 'w3', 'wb', 'sw', 'tq', 'q1', 'q2', 'q3', 'qb', 'sq', 'th', 'h1', 'h2', 'vh', 'h4', 'h3', 's2', 'tc', 'c1', 'c2', 'vc', 'c3', 's3', 'dc', 'hx', 'hub2', 'hl', 'ht', 'tu', 'u1', 'vu', 'u2', 'u3', 's5', 'tk', 'k1', 'vk', 'k2', 'k3', 'kb', 'sk', 'tl', 'l1', 'l2', 'l3', 'lb', 'sl', 'ti', 'i1', 'i2', 'i3', 'ib', 'ic', 'si', 'shc', 'shu', 'shl', 'sht', 'tt', 't1', 'tp', 't2', 's4', 'hv1', 'hv2', 'hv3', 'hv4', 'ga', 'wa', 'ha', 'ta', 'mr'];
+const ORDER = ['v0', 'vq', 'v1', 'tv', 'v2', 'v3', 'vb', 'vs', 'br', 'ot', 'og', 'sv', 'tg', 'g1', 'g2', 'g4', 'vg', 'g3', 'pd', 'ls', 's1', 'hw', 'hub1', 'hk', 'hr', 'sr', 'tw', 'w1', 'w2', 'vw', 'w3', 'wb', 'sw', 'tq', 'q1', 'q2', 'q3', 'qb', 'sq', 'th', 'h1', 'h2', 'vh', 'h4', 'h3', 's2', 'tc', 'c1', 'c2', 'vc', 'c3', 's3', 'dc', 'hx', 'hub2', 'hl', 'ht', 'tu', 'u1', 'vu', 'u2', 'u3', 's5', 'tk', 'k1', 'vk', 'k2', 'k3', 'kb', 'sk', 'tl', 'l1', 'l2', 'l3', 'lb', 'sl', 'ti', 'i1', 'i2', 'i3', 'ib', 'ic', 'si', 'shc', 'shu', 'shl', 'sht', 'tt', 't1', 'tp', 't2', 's4', 'hv1', 'hv2', 'hv3', 'hv4', 'hc', 'shk', 'ga', 'wa', 'ha', 'ta', 'mr'];
 // The castle is a GRAPH, not a road.  Each chain is a run of rooms joined edge to edge (a's right end opens into b's left end); the chains meet at two crossroads (hub1, hub2), whose doors are signed:
 //   village - graveyard - hub1 -+- the Mire (a door high on a ledge: needs the double jump) ---------+
 //                               +- the Great Hall ------------------------------------------------+-- back to hub1; the Chapel door has two sigils: the Hall's and the Mire's boss
@@ -259,7 +264,7 @@ const ORDER = ['v0', 'vq', 'v1', 'tv', 'v2', 'v3', 'vb', 'br', 'ot', 'og', 'sv',
 //                                                     +- the Throne
 // Every branch ends in a return door (RETURNS) that drops you at its crossroads, so you can always come back.
 const CHAINS = [
-  ['v0', 'v1', 'tv', 'v2', 'v3', 'vb', 'br', 'tg', 'g1', 'g2', 'g4', 'g3', 'pd', 'hw', 'hub1', 'hk', 'hr'],
+  ['v0', 'v1', 'tv', 'v2', 'v3', 'vb', 'vs', 'br', 'tg', 'g1', 'g2', 'g4', 'g3', 'pd', 'hw', 'hub1', 'hk', 'hr'],
   ['tw', 'w1', 'w2', 'w3', 'wb', 'tq', 'q1', 'q2', 'q3', 'qb'],
   ['th', 'h1', 'h2', 'h4', 'h3'],
   ['tc', 'c1', 'c2', 'c3', 'hx', 'hub2', 'hl', 'ht'],
@@ -883,7 +888,11 @@ function genInterior(id, spec, r) {
   const W = r.i(spec.w ? spec.w[0] : 22, spec.w ? spec.w[1] : 28), H = 14, look = spec.look || 'cottage';
   const b = new B(id, spec.name, spec.zone, W, H, { theme: spec.theme || 'hall', ambient: spec.ambient === undefined ? 0.4 : spec.ambient, tint: spec.tint || [0.14, 0.06, 0.01], vig: 0.6, horizon: 12, weather: spec.weather || null, indoor: true });
   b.floor(0, W, 12).ceil(0, W, 2).door(3, 12, spec.parent, 0, 12, 'wood').torches([7, W - 5], 6); if (look === 'cottage') b.def.house = true;          // (a cottage has wooden walls: see drawHouse in world.js)
-  const slots = r.shuffle(Array.from({ length: Math.floor((W - 13) / 3) + 1 }, (_, i) => 8 + i * 3)), take = () => slots.pop();
+  // A SECRET FLOOR (spec.trapdoor): three tiles of the floor are loose planks over open air (DOWN + JUMP drops through, as on Karluv Bridge), and a hero who falls out of the bottom of the room lands in the room named
+  // (Game.checkExits reads def.dropTo).  The planks are all that tells it from the rest of the floor.
+  const trap = spec.trapdoor ? Math.floor(W * 0.62) : -99;
+  if (spec.trapdoor) { b.rect(trap, 12, 3, 1, TILE.PLAT).rect(trap, 13, 3, 1, TILE.EMPTY); b.def.dropTo = { room: spec.trapdoor.room, tx: spec.trapdoor.tx, gy: spec.trapdoor.gy }; }
+  const slots = r.shuffle(Array.from({ length: Math.floor((W - 13) / 3) + 1 }, (_, i) => 8 + i * 3).filter(x => Math.abs(x - (trap + 1)) > 2)), take = () => slots.pop();
   const furnish = {
     cottage: [['bookcase', null, true], ['bookcase', null, true], ['img', 'town_crates'], ['img', 'dg_crates'], ['img', 'dg_urn_' + r.i(1, 3)], ['img', 'dg_urn_' + r.i(1, 3)]],
     hut: [['img', 'dg_crates'], ['img', 'town_crates'], ['img', 'dg_urn_' + r.i(1, 3)], ['img', 'dg_urn_' + r.i(1, 3)]],
@@ -898,13 +907,14 @@ function genInterior(id, spec, r) {
   const spot = () => { for (let k = 0; k < 40; k++) { const x = r.i(7, W - 4); if (used.every(u => Math.abs(u - x) >= 3)) { used.push(x); return x; } } return null; };
   if (spec.chest) { const x = Math.floor(W * 0.6); used.push(x); b.e('chest', x, 12, { contents: spec.chest.kind, id: spec.chest.id }); }          // (a vault: the treasure behind the locked door)
   if (spec.page) { const x = Math.floor(W * 0.6); used.push(x); b.e('upgrade', x, 12, { kind: 'page', n: spec.page, id: 'page' + spec.page, secret: true }); }          // (a page of the story on a stone, waiting)
-  if (spec.npc) { const x = Math.floor(W * 0.55); used.push(x); b.e('villager', x, 12, { kind: spec.npc.kind, calm: true, stand: true, title: spec.npc.title, text: spec.npc.text, gifts: spec.npc.gifts, again: spec.npc.again, ...(spec.npc.sells ? { sells: offerOf(spec.npc.sells.item, spec.npc.sells) } : {}) }); }
+  if (spec.empty) { /* (nobody lives here now: no people, no barrels, nothing on the floor) */ }
+  else if (spec.npc) { const x = Math.floor(W * 0.55); used.push(x); b.e('villager', x, 12, { kind: spec.npc.kind, calm: true, stand: true, title: spec.npc.title, text: spec.npc.text, gifts: spec.npc.gifts, again: spec.npc.again, ...(spec.npc.sells ? { sells: offerOf(spec.npc.sells.item, spec.npc.sells) } : {}) }); }
   else {
     const n = r.i(spec.npcs ? spec.npcs[0] : 1, spec.npcs ? spec.npcs[1] : 2), kinds = r.shuffle(['woman', 'bearded', 'hatman', 'oldman']), shops = r.shuffle(Array.from({ length: n }, (_, i) => i)).slice(0, spec.sellers === undefined ? (r.chance(0.55) ? 1 : 0) : spec.sellers);       // some of them sell
     for (let i = 0; i < n; i++) { const x = spot(); if (x !== null) b.e('villager', x, 12, { kind: kinds[i % 4], calm: true, stand: r.chance(0.4), ...(shops.includes(i) ? { sells: offerOf(r.wpick(ITEM_ORDER.map(k => [k, ITEMS[k].weight + 1]))) } : {}) }); }
   }
-  for (let i = 0, n = r.i(1, 2); i < n; i++) { const x = spot(); if (x !== null) b.e('barrel', x, 12, { drop: r.pick(['coin', 'coin', 'heart', 'mana', 'heart']) }); }
-  if (r.chance(0.5)) { const x = spot(); if (x !== null) { const item = r.wpick(ITEM_ORDER.map(k => [k, ITEMS[k].weight])); b.e('itemspawn', x, 12, { item, qty: ITEMS[item].pack, id: 'ip_' + id + '_' + x }); } }
+  for (let i = 0, n = spec.empty ? 0 : r.i(1, 2); i < n; i++) { const x = spot(); if (x !== null) b.e('barrel', x, 12, { drop: r.pick(['coin', 'coin', 'heart', 'mana', 'heart']) }); }
+  if (!spec.empty && r.chance(0.5)) { const x = spot(); if (x !== null) { const item = r.wpick(ITEM_ORDER.map(k => [k, ITEMS[k].weight])); b.e('itemspawn', x, 12, { item, qty: ITEMS[item].pack, id: 'ip_' + id + '_' + x }); } }
   b.def.meta = { abilities: [], entry: {}, start: { tx: 3, gy: 12 }, must: spec.page ? [{ tx: Math.floor(W * 0.6), gy: 12, name: 'page' }] : [], items: [] }; b.def.entries = {};
   const v = validateRoom(b.def); if (!v.ok) return { ok: false, errs: v.errs, def: b.def };
   const sp = checkSpawns(b.def); if (sp.length) return { ok: false, errs: sp, def: b.def };
@@ -1011,12 +1021,54 @@ function genAbyss(id, spec, r) {
 
 // ------------------------------------------------------------------------------------------------ SHOP (the Keeper's stall)
 function genShop(id, spec, r) {
-  const W = 26, H = 14, b = new B(id, spec.name, spec.zone, W, H, { theme: 'chapel', ambient: 0.3, tint: [0.07, 0.0, 0.1], vig: 0.7, horizon: 12, indoor: true, music: 'save', weather: 'dust' });
+  const W = 26, H = 14, b = new B(id, spec.name, spec.zone, W, H, { theme: 'chapel', ambient: 0.3, tint: [0.07, 0.0, 0.1], vig: 0.7, horizon: 12, indoor: true, music: 'shop', weather: 'dust' });          // (the Keeper's own theme: music/shop_keeper.mp3; the sanctuary's track plays if it is missing)
   b.floor(0, W, 12).ceil(0, W, 2).door(3, 12, spec.parent, 0, 12, 'wood');
   b.d('brazier', 8, 12).d('brazier', W - 6, 12); b.d('banner', 12, 2, { len: 6, color: '#3a1450' }).d('banner', 18, 2, { len: 6, color: '#3a1450' });
   b.e('shopkeeper', 15, 12, { id, tier: spec.tier || 0 });
   b.def.meta = { abilities: [], entry: {}, start: { tx: 3, gy: 12 }, must: [{ tx: 15, gy: 12, name: 'shopkeeper' }], items: [] }; b.def.entries = {};
   const v = validateRoom(b.def); if (!v.ok) return { ok: false, errs: v.errs, def: b.def };
+  return { ok: true, def: b.def };
+}
+
+// ------------------------------------------------------------------------------------------------ THE STONE BRIDGE TOWER (the calm gate at the Prague end of the bridge, after the Cinder Warden: an altar to save at)
+// A chain room like a waystone chamber (the road runs through it, left to right).  The Gothic gate tower (src/bridgetower.js) stands behind the road and the altar stands in its gateway: UP at the altar saves the game and
+// restores health and mana.  A mason's scaffold of planks zig-zags up the front of the tower, past the statues, to a gallery under the rose window, where a hoard waits (a secret).  A tablet by the road tells the tower's story
+// (nothing later than 1541: the game's own year).  The room is tall (28 rows), the ground at row 26.
+function genGateTower(id, spec, r) {
+  const W = 32, H = 34, BASE = 32, cx = W >> 1;
+  const b = new B(id, spec.name, spec.zone, W, H, { ...spec.opts, music: 'save', save: true, horizon: BASE });
+  b.floor(0, W, BASE);
+  b.d('bridgetower', cx, BASE);
+  b.d('cdl', cx - 2, BASE, { keep: true }).d('cdl', cx + 2, BASE, { keep: true }).e('altar', cx, BASE);
+  b.d('brazier', cx - 7, BASE).d('brazier', cx + 7, BASE).d('img', 3, BASE, { img: 'town_lamp' }).d('img', W - 4, BASE, { img: 'town_lamp' }).d('img', cx - 11, BASE, { img: 'town_crates' }).d('img', cx + 11, BASE, { img: 'town_cart' });
+  b.tablet(6, BASE, 'Charles the Fourth began this tower in 1357. Peter Parler drew it, and his masons carved its face. The kings of Bohemia rode under this arch on their way to be crowned. Saint Vitus stands between two of them, and I always thought he looked the most tired. Rest a while. The fire has not come into the passage.', 'tab23');
+  // the scaffold: planks three rows apart, zig-zagging up the front of the tower to the gallery (row 8), where the hoard stands in the middle
+  const steps = [[8, 3, BASE - 3], [12, 3, BASE - 6], [16, 3, BASE - 9], [19, 3, BASE - 12], [14, 3, BASE - 15]], GAL = BASE - 18;
+  for (const [x, len, gy] of steps) b.plat(x, len, gy);
+  b.plat(cx - 4, 9, GAL); b.e('chest', cx, GAL, { contents: 'hoard', id: 'vs_hoard', secret: true });
+  const meta = { abilities: [], back: BACK[spec.zone], entry: { L: { tx: 1, gy: BASE }, R: { tx: W - 2, gy: BASE } }, must: [{ tx: cx, gy: BASE, name: 'altar' }, { tx: 6, gy: BASE, name: 'tablet' }, { tx: cx, gy: GAL, name: 'chest' }], items: [], start: { tx: 3, gy: BASE } };
+  b.def.meta = meta; b.def.entries = { L: meta.entry.L, R: meta.entry.R };
+  const v = validateRoom(b.def); if (!v.ok) return { ok: false, errs: v.errs, def: b.def };
+  const sp = checkSpawns(b.def); if (sp.length) return { ok: false, errs: sp, def: b.def };
+  return { ok: true, def: b.def };
+}
+
+// ------------------------------------------------------------------------------------------------ THE COOPER'S CELLAR (a secret room under a house: a way in from above, and two doors)
+// The loose planks in the Cooper's House drop the hero into the middle of this room (see genInterior: def.dropTo).  On the left, the way out - a door back to the street, the one the house stands at - with a sign
+// that says EXIT; on the right, a door to the Keeper's stall, with the same sign as every other Keeper's door.  Fixed size (the house names the tile he lands on).
+function genCellar(id, spec, r) {
+  const W = 28, H = 14, BASE = 12, XD = 4, SD = W - 5;
+  const b = new B(id, spec.name, spec.zone, W, H, { theme: 'chapel', ambient: 0.32, tint: [0.12, 0.05, 0.01], vig: 0.7, horizon: 12, indoor: true, music: 'save', weather: 'dust' });
+  b.floor(0, W, BASE).ceil(0, W, 2).torches([10, 19], 6);
+  b.door(XD, BASE, spec.exitTo, 0, BASE, 'wood'); patchDoor(b, { tag: 'out', destTag: spec.exitTag });          // (a one-way door, like the ones that bring a branch back to its crossroads: it arrives at the street door of the house above, the door with that tag)
+  b.door(SD, BASE, spec.shop, 3, BASE, 'wood');
+  b.tablet(XD + 3, BASE, 'EXIT', 'sign_' + id + '_exit', 'cellarexit');
+  b.tablet(SD - 3, BASE, 'THE KEEPER - SOMETHING IN THE DARK SELLS WHAT THE DEAD NO LONGER NEED.', 'sign_' + id + '_shop', spec.shop);
+  b.e('barrel', 10, BASE, { drop: r.pick(['coin', 'coin', 'heart']) }).e('barrel', 17, BASE, { drop: r.pick(['coin', 'mana', 'heart']) });          // (a cooper's cellar: barrels)
+  b.d('img', 11, BASE, { img: 'dg_crates', back: true }).d('img', 18, BASE, { img: 'town_crates', back: true }).d('img', 1, BASE, { img: 'dg_urn_' + r.i(1, 3), back: true }).d('img', 26, BASE, { img: 'dg_urn_' + r.i(1, 3), back: true });
+  b.def.meta = { abilities: [], entry: {}, start: { tx: 14, gy: BASE }, must: [{ tx: XD, gy: BASE, name: 'door' }, { tx: SD, gy: BASE, name: 'door' }, { tx: XD + 3, gy: BASE, name: 'sign' }, { tx: SD - 3, gy: BASE, name: 'sign' }], items: [] }; b.def.entries = {};
+  const v = validateRoom(b.def); if (!v.ok) return { ok: false, errs: v.errs, def: b.def };
+  const sp = checkSpawns(b.def); if (sp.length) return { ok: false, errs: sp, def: b.def };
   return { ok: true, def: b.def };
 }
 
@@ -1042,7 +1094,7 @@ function genChasm(id, spec, r) {
   return { ok: true, def: b.def };
 }
 
-const GEN = { chasm: genChasm, despair: genDespair, abyss: genAbyss, well: genWell, shop: genShop, gears: genGears, disco: genDisco, authored: id => ({ ok: true, def: authoredDef(id) }), corridor: genCorridor, tower: genTower, arena: genArena, sanctuary: genSanctuary, teleport: genTeleport, interior: genInterior };
+const GEN = { chasm: genChasm, despair: genDespair, abyss: genAbyss, well: genWell, shop: genShop, gatetower: genGateTower, cellar: genCellar, gears: genGears, disco: genDisco, authored: id => ({ ok: true, def: authoredDef(id) }), corridor: genCorridor, tower: genTower, arena: genArena, sanctuary: genSanctuary, teleport: genTeleport, interior: genInterior };
 
 // ------------------------------------------------------------------------------------------------ authored fallback + linking
 function authoredDef(id) {
@@ -1089,7 +1141,7 @@ function checkLinks(rooms) {
 // ------------------------------------------------------------------------------------------------ the map
 // Every chain of the castle is a row of rooms running left to right; a chain starts just right of the crossroads its door leaves from, so the branches fan out above and below the main row.
 // Side rooms (sanctuaries, houses, lairs) hang below their parent.  The map screen draws the lines from where each doorway really is.
-const CHAIN_AT = [[3, 0], [1, 17], [5, 17], [3, 17], [0, 28], [3, 28], [7, 4], [9, 17], [11, 17]];                 // [row, first column] of each chain
+const CHAIN_AT = [[3, 0], [1, 18], [5, 18], [3, 18], [0, 29], [3, 29], [7, 4], [9, 18], [11, 18]];                 // [row, first column] of each chain
 function layoutMap(rooms) {
   const pos = {}, taken = new Set(), key = (x, y) => x + ',' + y;
   CHAINS.forEach((c, ci) => { const [row, col0] = CHAIN_AT[ci]; c.forEach((id, i) => { pos[id] = { x: col0 + i, y: row }; taken.add(key(col0 + i, row)); }); });

@@ -6,8 +6,9 @@ import { T } from './util.js';
 import { drawFramedPortrait, FH } from './portraitart.js';
 import { orlojTower, TOWER_W, TOWER_H } from './orlojtower.js';
 import { keepGate, KEEP_W, KEEP_H } from './keepgate.js';
+import { bridgeTower, BT_W, BT_H } from './bridgetower.js';
 
-const BACK_KINDS = new Set(['column', 'waterfall', 'portrait', 'cog', 'pendulum', 'animgear', 'orlojtower', 'keepgate', 'icicles', 'crystals', 'voidpit']);
+const BACK_KINDS = new Set(['column', 'waterfall', 'portrait', 'cog', 'pendulum', 'animgear', 'orlojtower', 'keepgate', 'bridgetower', 'icicles', 'crystals', 'voidpit']);
 // Is this piece of scenery drawn over a hazard (a spike tile)?  Nothing may stand in front of a hazard: the room drops such pieces when it loads.
 export function decoCoversHazard(d, spikes) {
   if (isBack(d)) return false; let x0, y0, w, h;
@@ -74,6 +75,7 @@ export function drawDeco(g, d, cx, cy, t, room) {
   if (x < -150 || x > 540) return;
   switch (d.t) {
     case 'orlojtower': { const tw = orlojTower(); if (tw) g.drawImage(tw, x - TOWER_W / 2, y - TOWER_H); break; }          // (the tower stands on the ground: y is its foot)
+    case 'bridgetower': { const bt = bridgeTower(); if (bt) g.drawImage(bt, Math.round(x - BT_W / 2), y - BT_H); break; }          // (the Stone Bridge Tower, standing on the ground behind the Bridge Gate's altar)
     case 'keepgate': { const kg = keepGate(); if (kg) g.drawImage(kg, Math.round(x - kg.width / 2), y - kg.height); break; }          // (the great gate of Arx Noctis, standing on the ground behind a door into the keep)
     case 'animgear': {          // an accent: a cluster of meshing gears from the Animated Gears pack (a strip of 128x128 frames), turning slowly among the generated ones
       const im = IMG[d.img]; if (!im) break; const n = Math.max(1, Math.round(im.width / 128)), f = (((Math.floor((d.phase || 0) + t * (d.rate || 0.4)) % n) + n) % n), s = Math.round((d.scale || 1) * 128);
