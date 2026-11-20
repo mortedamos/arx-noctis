@@ -36,6 +36,7 @@ import { keepStorage } from './pwa.js';
 import { openSavePanel } from './savefile.js';
 
 const SAVE_KEY = 'shadowkeep.save.v1';
+const CHASE_DELAY = 140 + 180;          // steps (60 a second) from the Bell Tower's flames igniting to their first step upward: 140 to get moving, plus 3 seconds
 const DOOR_CLEAR = 200;          // px: no enemy starts within this distance of a door you have just come through (about half a screen)
 const FLYERS = new Set(['bat', 'ghost', 'wraith', 'fireskull', 'wyrm', 'frostwyrm', 'emberwyrm', 'tome', 'grimoire']);
 const ITEM_IDS = ['br_hp', 'g2_hp', 'g2_atk', 'h2_mp', 'h2_hp', 'c1_chest_u', 'u1_hp', 'u2_atk', 't1_mp', 'v2_atk', 'v3_mp', 'g4_mp', 'w1_hp', 'w2_mp', 'w3_atk', 'bu_vb', 'bu_wb', 'got_djump', 'got_dash', 'got_ember', 'got_thunder'];
@@ -743,7 +744,7 @@ export class Game {
   }
   stepChase() {
     const c = this.chase, p = this.player, fx = this.fx, r = this.room; if (!c || !c.on || !r) return; c.t++;
-    if (c.t > 140 && c.y > c.cap) c.y -= 0.38;          // (a moment to get moving, then slowly up)
+    if (c.t > CHASE_DELAY && c.y > c.cap) c.y -= 0.38;          // (a moment to get moving - 140 steps, and 3 seconds more (180) since the user asked for it - then slowly up; the fire burns at the foot of the tower all that time)
     const cam = this.camera;
     if (this.frame % 3 === 0 && c.y < cam.y + H + 30) for (let x = Math.max(6, Math.floor((cam.x - 20) / 34) * 34); x < Math.min(r.pw, cam.x + W + 20); x += 34) fx.fire(x + rand(-8, 8), c.y + rand(4, 16), { scale: 0.7 + rand(0, 0.6), n: 1 });          // (a few real flames and glows over the hero, from the effects layer)
     if (this.frame % 2 === 0 && c.y < cam.y + H + 30) { const ex = cam.x + rand(0, W); fx.emit({ x: ex, y: c.y - rand(0, 24), vx: rand(-0.35, 0.35), vy: -rand(0.9, 2.2), drag: 0.992, life: rand(34, 80), s0: 2.4, s1: 0.5, c0: [1, 0.78, 0.3], c1: [1, 0.3, 0.06], a0: 1, a1: 0, kind: 1 }); }          // sparks climb out of it
