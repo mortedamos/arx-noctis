@@ -54,14 +54,17 @@ const FOG_COL = { default: [0.64, 0.7, 0.8], graveyard: [0.66, 0.72, 0.84], swam
 // Monsters get tougher the deeper you go (you keep gaining sword power as you climb): their hit points are multiplied by their zone's number, and so is what they are worth.
 // Zone ids are not in story order (6 = the village, the first; 5 = the throne, the last).
 const hsl2rgb = h => { const k = h / 60, i = Math.floor(k) % 6, f = k - Math.floor(k); return [[1, f, 0], [1 - f, 1, 0], [0, 1, f], [0, 1 - f, 1], [f, 0, 1], [1, 0, 1 - f]][i]; };          // a full-strength colour from a hue in degrees (the disco lights)
-const ZONE_HP = { 6: 1, 1: 1.15, 7: 1.4, 9: 1.7, 2: 1.95, 3: 2.35, 4: 2.9, 11: 3.2, 8: 3.4, 10: 3.5, 5: 4.2 };          // (how much tougher the ordinary monsters are in each zone: it climbs through the game)
+// DIFFICULTY follows the path a player is expected to take: Prague, the Graveyard, the Mire, the Great Hall (its master gives the dash), the Cistern (entered from under Karluv Bridge: it needs the double jump AND the dash), the Chapel (its door waits for the
+// Hall and the Flooded Gate; its master gives fire), the Crypts, the Frozen Caverns (beyond the Cistern, through an ice wall: fire), the Clockwork Dungeon (the Key of Tin lies in the Crypts), the Library (the Rimewyrm holds its key), the Throne.
+// Both tables below climb in that order: when the order of the castle changes, change them with it (and the 'abilities' of the zone's rooms in levelgen.js).
+const ZONE_HP = { 6: 1, 1: 1.15, 7: 1.4, 2: 1.95, 9: 2.15, 3: 2.35, 4: 2.9, 11: 3.2, 8: 3.4, 10: 3.5, 5: 4.2 };          // (how much tougher the ordinary monsters are in each zone: it climbs through the game)
 // BOSSES have far more life than the monsters of their zone, and hit harder, and both grow the later the zone: [life factor, damage factor]
-const BOSS_K = { 6: [2.0, 1.25], 1: [2.3, 1.3], 7: [2.6, 1.4], 9: [2.9, 1.5], 2: [3.2, 1.55], 3: [3.6, 1.65], 4: [4.0, 1.75], 11: [4.3, 1.85], 8: [4.5, 1.9], 10: [4.7, 1.95], 5: [5.2, 2.15] };
+const BOSS_K = { 6: [2.0, 1.25], 1: [2.3, 1.3], 7: [2.6, 1.4], 2: [3.2, 1.55], 9: [3.4, 1.6], 3: [3.6, 1.65], 4: [4.0, 1.75], 11: [4.3, 1.85], 8: [4.5, 1.9], 10: [4.7, 1.95], 5: [5.2, 2.15] };
 
 // the boss flags a sealed door asks for -> where that master is to be found (the door's dialogue lists the ones that still live)
 const LOCK_HINTS = {
   boss_h4: 'THE PHANTOM STEED STILL RIDES THE GREAT HALL, THROUGH THE WOODEN DOOR AT THE GATE OF ARX NOCTIS.',
-  boss_qb: 'THE DROWNED WARDEN STILL KEEPS THE FLOODED GATE. IT LIES DEEP IN THE CISTERN, BEYOND THE WEEPING MIRE AND ITS MOTHER: TAKE THE HIGH DOOR ON THE MIRE ROAD.',
+  boss_qb: 'THE DROWNED WARDEN STILL KEEPS THE FLOODED GATE, DEEP IN THE CISTERN UNDER KARLUV BRIDGE: DROP THROUGH THE PLANKS IN THE DECK, AND BREAK YOUR FALL WITH A DOUBLE JUMP AND A DASH.',
   boss_u3: 'THE CRIMSON COUNT STILL WAITS IN THE CRYPTS: BURN THE BARRICADE IN THE BARRICADED GALLERY.',
   boss_og: 'THE BOILER GOLEM STILL KEEPS THE FIRES, IN THE LOFT AT THE TOP OF THE ORLOJ TOWER.',
   boss_kb: 'THE BRAZEN HIEROPHANT STILL WORKS THE CLOCKWORK DUNGEON. ITS ENTRANCE IS IN PRAGUE: A LOCKED DOOR HIGH IN SMOULDERING LANE LEADS UP THE ORLOJ TOWER. YOU NEED THE KEY OF TIN.',

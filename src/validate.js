@@ -176,7 +176,7 @@ export function validateRoom(def0, opts = {}) {
   const start = node(startP, 'start'), seen = start >= 0 ? reach(room, S, [start], base) : new Set();
   const must = [];
   if (entries.L && entries.R) must.push(['entry R', node(entries.R, 'entry R')], ['entry L', node(entries.L, 'entry L')]);
-  for (const d of def.doors) if (!d.gated && !(d.needs && !base.includes(d.needs))) must.push(['door', at(d.x, d.gy)]);              // (a door sealed in a cell is proved reachable by its gate item instead - and so is a door that needs an ability this room does not assume, like the one high above Smouldering Lane)
+  for (const d of def.doors) if (!d.gated && !d.reqs && !(d.needs && !base.includes(d.needs))) must.push(['door', at(d.x, d.gy)]);              // (a door sealed in a cell is proved reachable by its gate item instead - and so is a door that needs an ability this room does not assume, like the one high above Smouldering Lane, or abilities used together, like the door under Karluv Bridge: its door_ item below proves that one)
   for (const p of meta.must || []) must.push([p.name || 'target', node(p, p.name || 'target')]);
   for (const [name, id] of must) if (id >= 0 && !seen.has(id)) errs.push(`${name} unreachable from start with [${base}]`);
   // coming back the other way

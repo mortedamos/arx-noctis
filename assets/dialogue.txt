@@ -7,7 +7,7 @@
 ;  If a section is missing, the game uses the words built into it, so you can delete one to put it back.
 ;
 ;    [tablet <id>]            a gravestone or tablet (her voice).  Written in mixed case; she has no colons (they turn into dashes).
-;    [sign <door>]            a signpost, by the door it points to (hall, mire, chapel, crypts, orloj, clockwork, ice, library, throne, or a room id for THE KEEPER's door)
+;    [sign <door>]            a signpost, by the door it points to (hall, mire, chapel, crypts, orloj, clockwork, library, throne, or a room id for THE KEEPER's door)
 ;    [convo <id>]             a spoken exchange at a gravestone.  One line per speaker:  WHO: what they say.   "HER VOICE" speaks in her own handwriting.
 ;    [boss <NAME> before]     what is said before a boss fight (once), one line per speaker  WHO: words.   [boss <NAME> after] is said as it dies.   NAME is the name over the boss's health bar.
 ;    [npc <room>]             a person indoors, by the id of their room:   TITLE: ...   TEXT: what they say the first time   AGAIN: what they say after
@@ -271,7 +271,7 @@ The clock still keeps Prague's hour. The apostles still walk in their windows, a
 
 ; in room br
 [tablet tab19]
-Thirty saints stand watch on this bridge, and not one of them could stop the fire. The river takes what falls. Not everything that falls is lost, though: the toll-keepers kept a cellar under these stones, and I have always wondered about the planks in the deck.
+Thirty saints stand watch on this bridge, and not one of them could stop the fire. The river takes what falls. Not everything that falls is lost, though: the toll-keepers kept a cellar under these stones, where the old waterworks begin, and I have always wondered about the planks in the deck.
 
 ; in room vs (the Stone Bridge Tower; nothing in it is later than 1541, the year of the game)
 [tablet tab23]
@@ -297,20 +297,20 @@ THE COLD CAME UP FROM THE FOUNDATIONS THE DAY THE SUN WAS TAKEN. NOTHING THAT FE
 THE ORLOJ TOWER - THE DOOR IS HIGH, AND LOCKED. IT NEEDS THE KEY OF TIN.
 
 [sign mire]
-THE WEEPING MIRE - THE DOOR IS HIGH. ONLY A WINGED LEAP WILL REACH IT. THE MIRE LEADS ON TO THE CISTERN, WHERE THE FLOODED GATE IS.
+THE WEEPING MIRE - THE DOOR IS HIGH. ONLY A WINGED LEAP WILL REACH IT. THE MIRE ENDS WHERE ITS MOTHER WAITS.
 
 [sign hall]
 ARX NOCTIS: THE GREAT HALL - THE GATE OF THE KEEP. EVERYTHING BEYOND IT BELONGS TO THE LORD.
 
 [sign chapel]
-ARX NOCTIS: THE MOONLIT CHAPEL - A SECOND GATE INTO THE KEEP. IT OPENS ONLY WHEN THE MASTERS OF THE GREAT HALL AND OF THE FLOODED GATE ARE DEAD. THE FLOODED GATE IS IN THE CISTERN, BEYOND THE MIRE.
+ARX NOCTIS: THE MOONLIT CHAPEL - A SECOND GATE INTO THE KEEP. IT OPENS ONLY WHEN THE MASTERS OF THE GREAT HALL AND OF THE FLOODED GATE ARE DEAD. THE FLOODED GATE IS IN THE CISTERN, UNDER KARLUV BRIDGE IN PRAGUE.
 
 ; (the sign before the Keeper's door)
 [sign shc]
 THE KEEPER - SOMETHING IN THE DARK SELLS WHAT THE DEAD NO LONGER NEED.
 
 [sign library]
-ARX NOCTIS: THE LIBRARY OF AGES - LOCKED. THE KEY LIES IN THE FROZEN CAVERNS. THE LIBRARIAN KEEPS THE KEY TO THE THRONE.
+ARX NOCTIS: THE LIBRARY OF AGES - LOCKED. THE KEY LIES IN THE FROZEN CAVERNS, BEYOND THE CISTERN AND A WALL OF ICE THAT FIRE WILL MELT. THE LIBRARIAN KEEPS THE KEY TO THE THRONE.
 
 [sign crypts]
 THE CRYPTS - THE WAY IS BARRICADED. FIRE WILL CLEAR IT.
@@ -497,7 +497,7 @@ A SIGIL HAS BEEN UNLOCKED UPON A SEALED DOOR.
 THE PHANTOM STEED STILL RIDES THE GREAT HALL, THROUGH THE WOODEN DOOR AT THE GATE OF ARX NOCTIS.
 
 [lockhint boss_qb]
-THE DROWNED WARDEN STILL KEEPS THE FLOODED GATE. IT LIES DEEP IN THE CISTERN, BEYOND THE WEEPING MIRE AND ITS MOTHER: TAKE THE HIGH DOOR ON THE MIRE ROAD.
+THE DROWNED WARDEN STILL KEEPS THE FLOODED GATE, DEEP IN THE CISTERN UNDER KARLUV BRIDGE: DROP THROUGH THE PLANKS IN THE DECK, AND BREAK YOUR FALL WITH A DOUBLE JUMP AND A DASH.
 
 [lockhint boss_u3]
 THE CRIMSON COUNT STILL WAITS IN THE CRYPTS: BURN THE BARRICADE IN THE BARRICADED GALLERY.

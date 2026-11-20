@@ -14,7 +14,7 @@ import { moverAt } from './movers.js';
 import { validateRoom, checkSpawns, roomOf, surfaces, reach, simulateChain } from './validate.js';
 import { mulberry32 } from './util.js';
 
-export const GEN_VERSION = 16;
+export const GEN_VERSION = 17;          // (17: the Cistern is entered from under Karluv Bridge, and the Frozen Caverns lie beyond it)
 const MAX_TRY = 60;
 
 // ------------------------------------------------------------------------------------------------ seeded random helpers
@@ -31,7 +31,8 @@ function makeRng(seed, id, attempt) {
 // (ids, zones, secrets and the order of everything are fixed; sizes and layouts are randomised)
 //
 // The castle has seven zones, each with ONE look (so a level never mixes tilesets):
-//   6 Prague  ->  1 Graveyard  ->  (the Waystone Glade, the Mire Road, the Gate of Arx Noctis, the Quiet Corner) [7 Weeping Swamp -> 9 Cistern | 2 Great Hall | 3 Moonlit Chapel]  ->  (the Crossing Waystone, the Barricaded Gallery, the Archive Passage, the Throne Approach) [4 Crypts | 8 Clockwork Dungeon | 5 Shadow Throne]   (see CHAINS / PAIRS below)
+//   6 Prague  ->  1 Graveyard  ->  (the Waystone Glade, the Mire Road, the Gate of Arx Noctis, the Quiet Corner) [7 Weeping Swamp | 2 Great Hall | 3 Moonlit Chapel]  ->  (the Crossing Waystone, the Barricaded Gallery, the Archive Passage, the Throne Approach) [4 Crypts | 8 Clockwork Dungeon | 5 Shadow Throne]   (see CHAINS / PAIRS below)
+//   and, under Prague's Karluv Bridge (a door in the river-side pier, reached by a fall and a dash): 9 Cistern -> (an ice wall that only fire melts) -> 11 Frozen Caverns
 // Every zone opens with a WAYSTONE chamber (the teleport room), has a boss at its far end, and a sanctuary (save room) off one of its corridors.
 const T1 = 'ARX NOCTIS SWALLOWED THE SUN LONG AGO. ONLY A STRANGER FOOLISH ENOUGH TO ENTER WILL SEE IT RISE AGAIN.';
 // how each zone's weather / light looks (shared by all its rooms, including the waystone chamber)
@@ -73,7 +74,7 @@ const SPEC = {
   // stepping stones over the river (a fall is the river: spikes under the water), saints on the parapet, and a cracked wall hiding a prize.  Entered by a hero with only a single jump.
   br: { kind: 'corridor', zone: 6, name: 'Karluv Bridge', areaLabel: 'Karluv Bridge', bridge: true, under: 18, w: [96, 112], outdoor: true, opts: { ...LOOK[6], weather: 'mist', fog: 0.4, ambient: 0.4 },          // (no drifting embers on the bridge: a river mist)
    
-    mods: [{ t: 'cell', gate: 'crack', kind: 'hpup', id: 'br_hp' }, { t: 'tablet', id: 'tab19', near: 'start', text: 'THIRTY SAINTS STAND WATCH ON THIS BRIDGE, AND NOT ONE COULD STOP THE FIRE. THE VLTAVA TAKES WHAT FALLS. THE TOLL-KEEPERS KEPT A CELLAR UNDER THE STONES, AND I HAVE ALWAYS WONDERED ABOUT THE PLANKS IN THE DECK.' }],
+    mods: [{ t: 'cell', gate: 'crack', kind: 'hpup', id: 'br_hp' }, { t: 'tablet', id: 'tab19', near: 'start', text: 'THIRTY SAINTS STAND WATCH ON THIS BRIDGE, AND NOT ONE COULD STOP THE FIRE. THE VLTAVA TAKES WHAT FALLS. THE TOLL-KEEPERS KEPT A CELLAR UNDER THE STONES, WHERE THE OLD WATERWORKS BEGIN, AND I HAVE ALWAYS WONDERED ABOUT THE PLANKS IN THE DECK.' }],
     candles: [3, 4], mix: { zombie: [1, 2], skeleton: [2, 3], hound: [1, 1], bat: [2, 3], fireskull: [2, 2] } },
   sv: { kind: 'sanctuary', zone: 6, name: 'Chapel Cellar', parent: 'v2' },
   // the houses of the village can be entered (UP at the door): calm people inside, who give you something for listening
@@ -118,7 +119,7 @@ const SPEC = {
   w3: { kind: 'corridor', zone: 7, name: 'Drowned Boardwalk', w: [80, 94], outdoor: true, abilities: ['djump'], deck: true, pools: [0, 3], opts: { ...LOOK[7], fog: 0.8 },
     mods: [{ t: 'cell', gate: 'crack', kind: 'atkup', id: 'w3_atk' }, { t: 'deckDoor', to: 'wa', kind: 'wood' }, { t: 'tablet', id: 'tab13', text: 'SOMETHING SINGS BENEATH THE WATER. IT KNOWS YOUR NAME.' }],
     candles: [4, 5], barrels: [2, 3], mix: { swampthing: [2, 3], swampspider: [2, 3], zombie: [1, 2], bat: [2, 2], wyrm: [1, 1] } },
-  wb: { kind: 'arena', zone: 7, name: "The Mother's Hollow", w: [40, 46], outdoor: true, abilities: ['djump'], boss: 'bramble', reward: 'lantern', plats: 3, rise: 3, seal: 'both', flyRow: 6, candles: [3, 3], decor: 'swamp',
+  wb: { kind: 'arena', zone: 7, name: "The Mother's Hollow", w: [40, 46], outdoor: true, abilities: ['djump'], boss: 'bramble', reward: 'lantern', plats: 3, rise: 3, seal: 'left', flyRow: 6, candles: [3, 3], decor: 'swamp',
     opts: { ...LOOK[7], boss: 'bramble', music: 'boss', fog: 0.45 } },
   sw: { kind: 'sanctuary', zone: 7, name: 'Boardwalk Chapel', parent: 'w2' },
   vw: { kind: 'interior', zone: 7, name: "The Ferryman's Vault", parent: 'w2', look: 'vault', theme: 'hall', ambient: 0.42, tint: [0.0, 0.06, 0.03], npcs: [0, 0], chest: { kind: 'mpup', id: 'vw_chest' } },
@@ -160,18 +161,20 @@ const SPEC = {
 
   // the disco: a joke room off the Nave's upper floor.  A door at one end, the Magic Shoes at the other; skeletons dance in the background until you reach the middle of the floor
   dc: { kind: 'disco', lair: true, zone: 3, name: 'The Disco', parent: 'c1', w: [42, 48] },
-  // ======== ZONE 9 - THE CISTERN (the flooded waterworks under the mire, reached through the Mire Mother's hollow: the water flows and carries you; the Drowned Warden keeps the gate)
+  // ======== ZONE 9 - THE CISTERN (the flooded waterworks under Prague, reached by a door in a pier of Karluv Bridge, where the river runs in: the water flows and carries you; the Drowned Warden keeps the gate; beyond the gate, a wall of ice
+  // that only fire melts leads on to the Frozen Caverns).  It is entered with the double jump AND the dash (the fall under the bridge), so its rooms are built for a hero who has both.
   tq: { kind: 'teleport', zone: 9, name: 'Waystone Culvert', opts: LOOK[9] },
-  q1: { kind: 'corridor', zone: 9, name: 'The Sluice', w: [92, 106], opts: { ...LOOK[9], fog: 0.3 }, abilities: ['djump'], streams: [2, 3],
+  q1: { kind: 'corridor', zone: 9, name: 'The Sluice', w: [92, 106], opts: { ...LOOK[9], fog: 0.3 }, abilities: ['djump', 'dash'], streams: [2, 3],
     mods: [{ t: 'skull', id: 'skull5' }, { t: 'door', to: 'sq', kind: 'wood' }, { t: 'djLedge', kind: 'mpup', id: 'q1_mp' }, { t: 'tablet', id: 'tab14', near: 'start', text: 'THE OLD CITY DREW ITS WATER FROM THESE VAULTS. NOW THE WATER DRAWS WHAT IT LIKES. DO NOT STAND STILL.' }],
     candles: [2, 3], barrels: [2, 3], mix: { zombie: [2, 3], swampthing: [1, 2], ghost: [1, 2], bat: [1, 2], frostwyrm: [1, 1], wraith: [1, 1] } },
-  q2: { kind: 'tower', zone: 9, name: 'The Cascade Shaft', w: [28, 32], h: [36, 42], top: [9, 11], opts: { ...LOOK[9], ambient: 0.4 }, abilities: ['djump'], falls: [2, 3],
+  q2: { kind: 'tower', zone: 9, name: 'The Cascade Shaft', w: [28, 32], h: [36, 42], top: [9, 11], opts: { ...LOOK[9], ambient: 0.4 }, abilities: ['djump', 'dash'], falls: [2, 3],
     topItem: { kind: 'atkup', id: 'q2_atk' }, candles: [2, 3], barrels: [1, 2], mix: { zombie: [1, 2], ghost: [2, 2], wraith: [1, 1], bat: [2, 3], frostwyrm: [1, 1] } },
-  q3: { kind: 'corridor', zone: 9, name: 'The Drowned Aqueduct', w: [84, 98], opts: { ...LOOK[9], fog: 0.3 }, abilities: ['djump'], streams: [2, 3],
+  q3: { kind: 'corridor', zone: 9, name: 'The Drowned Aqueduct', w: [84, 98], opts: { ...LOOK[9], fog: 0.3 }, abilities: ['djump', 'dash'], streams: [2, 3],
     mods: [{ t: 'tablet', id: 'tab15', near: 'start', text: 'BEYOND THE LAST SLUICE STANDS THE GATE THE WATER WAS MADE TO KEEP. SOMETHING OLDER THAN THE CITY KEEPS IT NOW.' }],
     candles: [2, 3], barrels: [2, 3], mix: { zombie: [2, 3], swampthing: [1, 2], ghost: [1, 2], bat: [1, 2], frostwyrm: [1, 2], swampspider: [1, 2] } },
-  qb: { kind: 'arena', zone: 9, name: 'The Flooded Gate', w: [44, 50], h: 16, boss: 'drowned', reward: 'tide', plats: 2, rise: 3, seal: 'left', flyRow: 7, abilities: ['djump'], decor: 'cistern', candles: [2, 2],
+  qb: { kind: 'arena', zone: 9, name: 'The Flooded Gate', w: [44, 50], h: 16, boss: 'drowned', reward: 'tide', plats: 2, rise: 3, seal: 'both', flyRow: 7, abilities: ['djump', 'dash'], decor: 'cistern', candles: [2, 2],
     opts: { ...LOOK[9], ambient: 0.28, boss: 'drowned', music: 'boss' } },
+  tf: { kind: 'teleport', zone: 9, name: 'Waystone Floodgate', exitGate: 'ice', opts: LOOK[9] },          // (past the Flooded Gate, in front of the wall of ice that fire melts: a second waystone, so the way back to the wall - once the Chapel has given fire - is one jump)
   sq: { kind: 'sanctuary', zone: 9, name: 'Dry Sanctuary', parent: 'q1' },
   // ======== ZONE 8 - THE CLOCKWORK DUNGEON (the Brazen Hierophant's works: brass, pipes and steam, with gears behind gears)
   tk: { kind: 'teleport', zone: 8, name: 'Cogwheel Landing', areaLabel: 'The Clockwork Dungeon', opts: LOOK[8] },
@@ -198,7 +201,7 @@ const SPEC = {
   lb: { kind: 'arena', zone: 10, name: "The Librarian's Study", w: [44, 50], h: 16, boss: 'librarian', reward: 'goldkey', plats: 3, rise: 3, seal: 'left', flyRow: 6, abilities: ['djump'], decor: 'column', candles: [2, 2],
     opts: { ...LOOK[10], ambient: 0.3, boss: 'librarian', music: 'boss' } },
   sl: { kind: 'sanctuary', zone: 10, name: 'Reading Nook', parent: 'l1' },
-  // ======== ZONE 11 - THE FROZEN CAVERNS (off the Crossing Hall behind a wall of ice that only fire melts; the ice floors are slippery; walls of ice bar the way and hide treasure; at the far end the RIMEWYRM guards the KEY OF ANTIMONY, which opens the Library; the Glacier Road hides the OUROBOROS)
+  // ======== ZONE 11 - THE FROZEN CAVERNS (beyond the Cistern, behind a wall of ice that only fire melts; the ice floors are slippery; walls of ice bar the way and hide treasure; at the far end the RIMEWYRM guards the KEY OF ANTIMONY, which opens the Library; the Glacier Road hides the OUROBOROS)
   ti: { kind: 'teleport', zone: 11, name: 'Waystone Rime Hollow', opts: LOOK[11], abilities: ['djump', 'dash', 'ember'] },
   i1: { kind: 'corridor', zone: 11, name: 'The Frozen Gallery', w: [102, 116], leverCell: true, opts: { ...LOOK[11], fog: 0.15 }, abilities: ['djump', 'dash', 'ember'],
     mods: [{ t: 'iceWall' }, { t: 'door', to: 'si', kind: 'wood' }, { t: 'cell', gate: 'ice', kind: 'hpup', id: 'i1_hp' }, { t: 'tablet', id: 'tab22', near: 'start', text: 'THE COLD CAME UP FROM THE FOUNDATIONS THE DAY THE SUN WAS TAKEN. NOTHING THAT FELL IN HAS THAWED. NOTHING THAT WALKS HERE FEELS IT.' }],
@@ -210,7 +213,7 @@ const SPEC = {
     candles: [3, 4], barrels: [1, 2], mix: { frostwyrm: [1, 2], hound: [2, 2], wraith: [1, 2], ghost: [1, 1], bat: [1, 2] } },
   ib: { kind: 'arena', zone: 11, name: "The Rimewyrm's Heart", w: [46, 52], h: 16, boss: 'rimewyrm', reward: 'well', plats: 3, rise: 3, seal: 'left', flyRow: 8, abilities: ['djump', 'dash', 'ember'], decor: 'ice',          // (the end of the Frozen Caverns: when the Rimewyrm falls the floor shatters and the hero drops into the FROZEN WELL, where its treasure waits in chests)
     opts: { ...LOOK[11], ambient: 0.4, wisps: 9, fog: 0.08, boss: 'rimewyrm', music: 'boss' } },
-  ic: { kind: 'well', zone: 11, name: 'The Frozen Well', parent: 'ib', opts: { ...LOOK[11], ambient: 0.34, wisps: 9, fog: 0.1, music: 'zone11' } },          // (reached only by falling from the Rimewyrm's arena; a door leads out, to the Bridge)
+  ic: { kind: 'well', zone: 11, name: 'The Frozen Well', parent: 'ib', opts: { ...LOOK[11], ambient: 0.34, wisps: 9, fog: 0.1, music: 'zone11' } },          // (reached only by falling from the Rimewyrm's arena; a door leads out, to Karluv Bridge)
   si: { kind: 'sanctuary', zone: 11, name: 'Rime Sanctuary', parent: 'i1' },
   // ======== THE KEEPER'S STALLS: a hooded figure in a small dark room off a corridor in the later zones sells things for the gold you have gathered (see shop.js)
   shc: { kind: 'shop', zone: 3, name: 'The Hooded Stall', parent: 'c2', tier: 0 },
@@ -255,31 +258,33 @@ const SPEC = {
   s4: { kind: 'sanctuary', zone: 5, name: 'Last Sanctuary', parent: 't1' },
   ta: { kind: 'interior', zone: 5, name: 'The Hidden Study', parent: 't1', look: 'study', theme: 'hall', ambient: 0.5, tint: [0.03, 0.0, 0.05], npc: { kind: 'oldman', title: 'THE LORD\'S SCRIBE', text: 'I WROTE DOWN EVERYTHING HE DID, AND NEVER ONCE LOOKED UP. NOW I CANNOT STOP LOOKING. HE IS ABOVE US. TAKE THIS, STRANGER - AND WHEN YOU MEET HIM, DO NOT LET HIM SPEAK.', again: 'I HAVE NO MORE PAGES. ONLY THE ONES I CANNOT BURN.', gifts: ['it_holy', 'it_holy', 'heart'], sells: { item: 'holy', price: 50 } } },
 };
-const ORDER = ['v0', 'vq', 'v1', 'tv', 'v2', 'v3', 'vb', 'vs', 'br', 'ot', 'og', 'sv', 'tg', 'g1', 'g2', 'g4', 'vg', 'g3', 'pd', 'ls', 's1', 'hw', 'hub1', 'hk', 'hr', 'sr', 'tw', 'w1', 'w2', 'vw', 'w3', 'wb', 'sw', 'tq', 'q1', 'q2', 'q3', 'qb', 'sq', 'th', 'h1', 'h2', 'vh', 'h4', 'h3', 's2', 'tc', 'c1', 'c2', 'vc', 'c3', 's3', 'dc', 'hx', 'hub2', 'hl', 'ht', 'tu', 'u1', 'vu', 'u2', 'u3', 's5', 'tk', 'k1', 'vk', 'k2', 'k3', 'kb', 'sk', 'tl', 'l1', 'l2', 'l3', 'lb', 'sl', 'ti', 'i1', 'i2', 'i3', 'ib', 'ic', 'si', 'shc', 'shu', 'shl', 'sht', 'tt', 't1', 'tp', 't2', 's4', 'hv1', 'hv2', 'hv3', 'hv4', 'hc', 'shk', 'ga', 'wa', 'ha', 'ta', 'mr'];
+const ORDER = ['v0', 'vq', 'v1', 'tv', 'v2', 'v3', 'vb', 'vs', 'br', 'ot', 'og', 'sv', 'tg', 'g1', 'g2', 'g4', 'vg', 'g3', 'pd', 'ls', 's1', 'hw', 'hub1', 'hk', 'hr', 'sr', 'tw', 'w1', 'w2', 'vw', 'w3', 'wb', 'sw', 'tq', 'q1', 'q2', 'q3', 'qb', 'tf', 'sq', 'th', 'h1', 'h2', 'vh', 'h4', 'h3', 's2', 'tc', 'c1', 'c2', 'vc', 'c3', 's3', 'dc', 'hx', 'hub2', 'hl', 'ht', 'tu', 'u1', 'vu', 'u2', 'u3', 's5', 'tk', 'k1', 'vk', 'k2', 'k3', 'kb', 'sk', 'tl', 'l1', 'l2', 'l3', 'lb', 'sl', 'ti', 'i1', 'i2', 'i3', 'ib', 'ic', 'si', 'shc', 'shu', 'shl', 'sht', 'tt', 't1', 'tp', 't2', 's4', 'hv1', 'hv2', 'hv3', 'hv4', 'hc', 'shk', 'ga', 'wa', 'ha', 'ta', 'mr'];
 // The castle is a GRAPH, not a road.  Each chain is a run of rooms joined edge to edge (a's right end opens into b's left end); the chains meet at two crossroads (hub1, hub2), whose doors are signed:
-//   village - graveyard - hub1 -+- the Mire (a door high on a ledge: needs the double jump) ---------+
-//                               +- the Great Hall ------------------------------------------------+-- back to hub1; the Chapel door has two sigils: the Hall's and the Mire's boss
+//   village - graveyard - hub1 -+- the Mire (a door high on a ledge: needs the double jump) - the Mother's Hollow (a dead end: its return door drops you back at hub1)
+//                               +- the Great Hall ------------------------------------------------+-- back to hub1; the Chapel door has two sigils: the Hall's and the Flooded Gate's boss
 //                               +- the Chapel - hub2 -+- the Crypts (their door is barricaded: burn it) ---+
 //                                                     +- (the Clockwork Dungeon: its door is over a gulf) -+-- back to hub2; the Throne door has two sigils and a crystal wall (thunder)
 //                                                     +- the Throne
 // Every branch ends in a return door (RETURNS) that drops you at its crossroads, so you can always come back.
+// Off the main row, Karluv Bridge has a door of its own (the 'cistern' pair): in a pier under the deck, reached by a fall through the planks and then the double jump and the dash.  It leads into the Cistern, the Flooded Gate, a waystone room (tf)
+// and a wall of ice that only fire melts, and so on into the Frozen Caverns, whose far end drops you back on the bridge.
 const CHAINS = [
   ['v0', 'v1', 'tv', 'v2', 'v3', 'vb', 'vs', 'br', 'tg', 'g1', 'g2', 'g4', 'g3', 'pd', 'hw', 'hub1', 'hk', 'hr'],
-  ['tw', 'w1', 'w2', 'w3', 'wb', 'tq', 'q1', 'q2', 'q3', 'qb'],
+  ['tw', 'w1', 'w2', 'w3', 'wb'],
   ['th', 'h1', 'h2', 'h4', 'h3'],
   ['tc', 'c1', 'c2', 'c3', 'hx', 'hub2', 'hl', 'ht'],
   ['tu', 'u1', 'u2', 'u3'],
   ['tt', 't1', 'tp', 't2'],
   ['tk', 'k1', 'k2', 'k3', 'kb'],
   ['tl', 'l1', 'l2', 'l3', 'lb'],
-  ['ti', 'i1', 'i2', 'i3', 'ib'],
+  ['tq', 'q1', 'q2', 'q3', 'qb', 'tf', 'ti', 'i1', 'i2', 'i3', 'ib'],          // (the Cistern, then - through the ice wall at the end of the waystone room 'tf' - the Frozen Caverns)
 ];
 const LINKS = CHAINS.flatMap(c => c.slice(1).map((id, i) => [c[i], 'R', id, 'L'])).concat([['vq', 'R', 'v0', 'L']]);          // (the secret hollow joins the hill's left edge)
 // the crossroads' doors (two-way): hub a, its door tag ta, the first room of the branch b, the tag of that room's door tb; mod = how the door is built (see genCorridor), lock = boss flags it needs
 const PAIRS = [
   { a: 'hk', ta: 'hall', b: 'th', tb: 'in', kind: 'wood', mod: 'door', label: 'ARX NOCTIS: THE GREAT HALL', hint: 'THE GATE OF THE KEEP. EVERYTHING BEYOND IT BELONGS TO THE LORD.' },
-  { a: 'hub1', ta: 'mire', b: 'tw', tb: 'in', kind: 'crypt', mod: 'djDoor', label: 'THE WEEPING MIRE', hint: 'THE DOOR IS HIGH. ONLY A WINGED LEAP WILL REACH IT. THE MIRE LEADS ON TO THE CISTERN, WHERE THE FLOODED GATE IS.' },
-  { a: 'hk', ta: 'chapel', b: 'tc', tb: 'in', kind: 'crypt', mod: 'door', label: 'ARX NOCTIS: THE MOONLIT CHAPEL', hint: 'A SECOND GATE INTO THE KEEP. IT OPENS ONLY WHEN THE MASTERS OF THE GREAT HALL AND OF THE FLOODED GATE ARE DEAD. THE FLOODED GATE IS IN THE CISTERN, BEYOND THE MIRE.', lock: ['boss_h4', 'boss_qb'] },
+  { a: 'hub1', ta: 'mire', b: 'tw', tb: 'in', kind: 'crypt', mod: 'djDoor', label: 'THE WEEPING MIRE', hint: 'THE DOOR IS HIGH. ONLY A WINGED LEAP WILL REACH IT. THE MIRE ENDS WHERE ITS MOTHER WAITS.' },
+  { a: 'hk', ta: 'chapel', b: 'tc', tb: 'in', kind: 'crypt', mod: 'door', label: 'ARX NOCTIS: THE MOONLIT CHAPEL', hint: 'A SECOND GATE INTO THE KEEP. IT OPENS ONLY WHEN THE MASTERS OF THE GREAT HALL AND OF THE FLOODED GATE ARE DEAD. THE FLOODED GATE IS IN THE CISTERN, UNDER KARLUV BRIDGE IN PRAGUE.', lock: ['boss_h4', 'boss_qb'] },
   { a: 'hub2', ta: 'crypts', b: 'tu', tb: 'in', kind: 'crypt', mod: 'cellDoor', gate: 'barricade', label: 'THE CRYPTS', hint: 'THE WAY IS BARRICADED. FIRE WILL CLEAR IT.' },
   // the Clockwork Dungeon is entered through the Orloj Tower, in PRAGUE: a locked door high on a ledge (a double jump) in Smouldering Lane...
   { a: 'v2', ta: 'orloj', b: 'ot', tb: 'in', kind: 'crypt', mod: 'djDoor', key: 'key_crypt', wide: true, label: 'THE ORLOJ TOWER', hint: 'THE DOOR IS HIGH, AND LOCKED. IT NEEDS THE KEY OF TIN.' },
@@ -287,22 +292,22 @@ const PAIRS = [
   { a: 'ot', ta: 'clockwork', b: 'og', tb: 'in', kind: 'crypt', side: 'R' },
   // ...which opens into the Boiler Loft, whose far door (sealed by the golem's sigil) is the way on into the Clockwork Dungeon
   { a: 'og', ta: 'forge', b: 'tk', tb: 'in', kind: 'crypt', side: 'R', lock: ['boss_og'], hint: 'THE BOILER GOLEM STILL BARS THE WAY ON.' },
-  // the Frozen Caverns: a door in a cell of ice (fire melts it); the Library: a locked door, its key (the KEY OF ANTIMONY) is held by the Rimewyrm at the far end of the Frozen Caverns
-  { a: 'br', ta: 'ice', b: 'ti', tb: 'in', kind: 'crypt', mod: 'vaultDoor', gate: 'ice' },
+  // the Cistern: a door in the pier under Karluv Bridge (a fall through the planks, then the double jump and the dash, to its ledge; no gate: the way in is the fall).  Beyond the Flooded Gate, past a second waystone, a wall of ice (fire melts it) is the way on into the Frozen Caverns.  The Library: a locked door, its key (the KEY OF ANTIMONY) is held by the Rimewyrm at the far end of the Frozen Caverns
+  { a: 'br', ta: 'cistern', b: 'tq', tb: 'in', kind: 'crypt', mod: 'vaultDoor' },
   { a: 'hl', ta: 'library', b: 'tl', tb: 'in', kind: 'crypt', mod: 'door', key: 'key_frost', label: 'ARX NOCTIS: THE LIBRARY OF AGES', hint: 'LOCKED. THE KEY LIES IN THE FROZEN CAVERNS. THE LIBRARIAN KEEPS THE KEY TO THE THRONE.' },
   { a: 'ht', ta: 'throne', b: 'tt', tb: 'in', kind: 'crypt', mod: 'cellDoor', gate: 'crystal', key: 'key_gold', label: 'THE SHADOW THRONE', hint: 'CRYSTAL SEALS THE WAY, TWO SIGILS MUST BURN (THE COUNT OF THE CRYPTS AND THE LORD OF THE CLOCKWORK DUNGEON), AND THE DOOR IS LOCKED: THE LIBRARIAN KEEPS THE KEY.', lock: ['boss_u3', 'boss_kb'] },
 ];
 // one-way doors: the far end of a branch drops you at its crossroads' door  [room, its door tag, hub, the hub door it arrives at]
-const RETURNS = [['qb', 'out', 'hub1', 'mire'], ['h3', 'out', 'hk', 'hall'], ['u3', 'out', 'hub2', 'crypts'], ['kb', 'out', 'ot', 'clockwork'], ['lb', 'out', 'hl', 'library'], ['ic', 'out', 'br', 'ice'], ['ls', 'out', 'pd', undefined]];
+const RETURNS = [['wb', 'out', 'hub1', 'mire'], ['h3', 'out', 'hk', 'hall'], ['u3', 'out', 'hub2', 'crypts'], ['kb', 'out', 'ot', 'clockwork'], ['lb', 'out', 'hl', 'library'], ['ic', 'out', 'br', 'cistern'], ['ls', 'out', 'pd', undefined]];
 // what each boss gives (and what each door asks for): the order in which things can be done.  tools/test-world.mjs proves from this table that every castle can be finished.
 export const PROGRESS = {
   gives: { g3: 'djump', h4: 'dash', c3: 'ember', u3: 'thunder', t2: 'dawn', qb: 'tide' },
-  doors: { mire: { needs: ['djump'] }, hall: {}, chapel: { bosses: ['h4', 'qb'] }, crypts: { needs: ['ember'] }, orloj: { needs: ['djump'], key: 'key_crypt' }, clockwork: {}, forge: { bosses: ['og'] }, ice: { needs: ['djump', 'dash', 'ember'] }, library: { key: 'key_frost' }, throne: { needs: ['thunder'], bosses: ['u3', 'kb'], key: 'key_gold' } },
+  doors: { mire: { needs: ['djump'] }, hall: {}, chapel: { bosses: ['h4', 'qb'] }, crypts: { needs: ['ember'] }, orloj: { needs: ['djump'], key: 'key_crypt' }, clockwork: {}, forge: { bosses: ['og'] }, cistern: { needs: ['djump', 'dash'] }, library: { key: 'key_frost' }, throne: { needs: ['thunder'], bosses: ['u3', 'kb'], key: 'key_gold' } },
 };
 // some neighbouring areas are joined by a DOOR at each end (UP) instead of an open edge: 'a>b' = a's far-right door leads to b's far-left door.  (Only when both are generated rooms: the hand-built classic ones keep their open edges.)
 const DOOR_LINK = { 'tp>t2': 'crypt', 'v2>v3': 'wood', 'g1>g2': 'crypt', 'w1>w2': 'wood', 'h1>h2': 'wood', 'c1>c2': 'wood', 'u1>u2': 'wood', 'k1>k2': 'wood', 'q1>q2': 'wood' };          // (consecutive rooms of a chain that are joined by doors instead)
 // abilities the player owns when coming BACK through a zone (they've beaten that zone's boss by then)
-const BACK = { 10: ['djump', 'dash', 'ember'], 11: ['djump', 'dash', 'ember'], 9: ['djump'], 8: ['djump', 'dash', 'ember'], 6: [], 1: ['djump'], 7: ['djump'], 2: ['djump', 'dash'], 3: ['djump', 'dash', 'ember'], 4: ['djump', 'dash', 'ember', 'thunder'], 5: ['djump', 'dash', 'ember', 'thunder', 'dawn'] };
+const BACK = { 10: ['djump', 'dash', 'ember'], 11: ['djump', 'dash', 'ember'], 9: ['djump', 'dash'], 8: ['djump', 'dash', 'ember'], 6: [], 1: ['djump'], 7: ['djump'], 2: ['djump', 'dash'], 3: ['djump', 'dash', 'ember'], 4: ['djump', 'dash', 'ember', 'thunder'], 5: ['djump', 'dash', 'ember', 'thunder', 'dawn'] };
 // Everything after Baelphegaz (who gives the double jump) is built for a hero who HAS it - Prague and the Graveyard (zones 6 and 1) are not.  Such a room's baseline abilities include the double jump.
 const hasDJ = spec => (spec.abilities || []).includes('djump') || ![6, 1].includes(spec.zone);
 const GATE = { barricade: TILE.BARRICADE, crystal: TILE.CRYSTAL, crack: TILE.CRACK, ice: TILE.ICE, lever: TILE.GATE };
@@ -588,7 +593,7 @@ function genCorridor(id, spec, r) {
       for (let c = a0; c <= a1; c++) { if (g[c] < 0) continue; const top = g[c] + 3 + (c === a0 || c === a1 ? 1 : 0); b.rect(c, top, 1, H0 - top, E); }          // (the arch's shoulders are one stone lower than its crown)
       cx = a1 + 1;
     }
-    for (const v of vaults) {          // the toll-house pier (solid stone from the deck's underside down, with the cell in it: see the cells below), the ledge in front of the ice, the open arch beside it, and the planks in the deck
+    for (const v of vaults) {          // the toll-house pier (solid stone from the deck's underside down, with the cell in it: see the cells below), the ledge in front of the cell's door, the open arch beside it, and the planks in the deck
       const e0 = v.e0, LY = BASE + 10, P0 = e0 + 3, P1 = e0 + 13, L0 = P1 + 1, LW = 6, T0 = L0 + LW + 7, PWd = 4, B1 = T0 + PWd + 3, under = H0 - (BASE + 3);
       b.rect(P0, BASE + 3, P1 - P0 + 1, under, TILE.SOLID);                                              // the pier
       b.rect(L0, BASE + 3, B1 - L0 + 1, under, TILE.EMPTY); b.rect(B1 + 1, BASE + 3, 3, under, TILE.SOLID);          // the open arch (down to the bottom of the room) and the pier that ends it
@@ -663,8 +668,8 @@ function genCorridor(id, spec, r) {
   }
   for (const it of items) { b.e('upgrade', it.tx, it.gy, { kind: it.kind, id: it.id }); meta.items.push({ id: it.id, tx: it.tx, gy: it.gy, needs: 'djump' }); }
   for (const c of cells) {
-    const cx = b.cell(c.xs, 7, GATE[c.gate], c.gy), gate = [[c.xs + 6, c.gy - 3], [c.xs + 6, c.gy - 2], [c.xs + 6, c.gy - 1]];
-    if (c.door) { b.door(cx, c.gy, c.to, 3, 12, c.kind || 'crypt'); patchDoor(b, { ...c, gated: true, ...(c.vault ? { reqs: ['djump', 'dash'], arrive: { x: cx, gy: c.arriveAt } } : {}) }); meta.items.push({ id: 'door_' + c.tag, tx: cx, gy: c.gy, gate, ...(c.vault ? { needs: ['djump', 'dash'] } : {}) }); if (c.lock) b.d('sigils', cx, c.gy, { flags: c.lock }); if (c.key) b.d('padlock', cx, c.gy, { key: c.key }); continue; }          // (a door in a sealed cell)
+    const cx = b.cell(c.xs, 7, c.gate ? GATE[c.gate] : TILE.EMPTY, c.gy), gate = [[c.xs + 6, c.gy - 3], [c.xs + 6, c.gy - 2], [c.xs + 6, c.gy - 1]];
+    if (c.door) { b.door(cx, c.gy, c.to, 3, 12, c.kind || 'crypt'); patchDoor(b, { ...c, gated: !!c.gate, ...(c.vault ? { reqs: ['djump', 'dash'], arrive: { x: cx, gy: c.arriveAt } } : {}) }); meta.items.push({ id: 'door_' + c.tag, tx: cx, gy: c.gy, ...(c.gate ? { gate } : {}), ...(c.vault ? { needs: ['djump', 'dash'] } : {}) }); if (c.lock) b.d('sigils', cx, c.gy, { flags: c.lock }); if (c.key) b.d('padlock', cx, c.gy, { key: c.key }); continue; }          // (a door in a sealed cell)
     if (c.skull) b.e('skull', cx, c.gy, { id: c.id }); else if (c.page) b.e('upgrade', cx, c.gy, { kind: 'page', n: c.page, id: c.id, secret: true }); else if (c.chest) b.e('chest', cx, c.gy, { contents: c.kind, id: c.id, ...(c.secret ? { secret: true } : {}) }); else b.e('upgrade', cx, c.gy, { kind: c.kind, id: c.id, ...(c.secret ? { secret: true } : {}) });
     if (c.hollow) for (const [hx, hy] of gate) (b.def.hollow ||= []).push(hx + ',' + hy);          // (a hollow wall: it looks like any other, and gives under the sword)
     if (c.gate === 'lever') {          // the alcove is shut by a portcullis, raised by a lever (or a candle puzzle) elsewhere in the room
@@ -887,7 +892,8 @@ function genTeleport(id, spec, r) {
   const b = new B(id, spec.name, spec.zone, W, H, { ...spec.opts, music: 'save', theme: spec.theme });
   b.floor(0, W, BASE); if (!outdoor) b.ceil(0, W, 2);
   b.e('waystone', cx, BASE, { id: 'tp_' + id }); if (ZONES[spec.zone].theme !== 'ice') b.d('brazier', cx - 7, BASE).d('brazier', cx + 7, BASE);          // (no fires in the wilderness of the Frozen Caverns: ghostly wisps light it)
-  const meta = { abilities: [...(spec.abilities || [])], back: BACK[spec.zone], entry: { L: spec.doorL ? null : { tx: 1, gy: BASE }, R: { tx: W - 2, gy: BASE } }, must: [{ tx: cx, gy: BASE, name: 'waystone' }], items: [], start: { tx: 3, gy: BASE } };
+  const meta = { abilities: [...(spec.abilities || [])], back: BACK[spec.zone], entry: { L: spec.doorL ? null : { tx: 1, gy: BASE }, R: { tx: spec.exitGate ? W - 4 : W - 2, gy: BASE } }, must: [{ tx: cx, gy: BASE, name: 'waystone' }], items: [], start: { tx: 3, gy: BASE } };
+  if (spec.exitGate) b.rect(W - 1, BASE - 3, 1, 3, GATE[spec.exitGate]);                                                              // (a wall across the way on - ice, that only fire melts - at the far end)
   if (spec.doorL) { b.door(4, BASE, spec.doorL.to, 3, BASE, spec.doorL.kind || 'crypt'); patchDoor(b, spec.doorL); }                   // (a branch's first room is entered by a door from the crossroads)
   b.def.meta = meta; b.def.entries = { L: meta.entry.L, R: meta.entry.R };
   const g = new Array(W).fill(BASE), flatCols = []; for (let x = 3; x < W - 3; x++) if (Math.abs(x - cx) > 6) flatCols.push(x);
