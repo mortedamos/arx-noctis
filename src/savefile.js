@@ -1,4 +1,4 @@
-// SAVE FILES: the saved game written to a file (named "ArxN Save <date> <time>", with NO extension of our own: some systems decide a file's extension themselves) to keep anywhere, and read back from one.
+// SAVE FILES: the saved game written to a file (named "ArxN Save <date> <time>.bin") to keep anywhere, and read back from one.
 // Why: the quick save lives in the browser's own storage, and Safari on an iPhone or iPad erases a website's storage after about a week without a visit (a game added to the Home Screen is spared,
 // but it starts with storage of its own, apart from Safari's).  A file carries a game across any of those gaps, and from one device to another.
 // The file is the save's JSON, gzipped (CompressionStream), nothing else - so it also opens in any tool that reads .gz when renamed.  A browser that cannot gzip writes the JSON as it is;
@@ -33,8 +33,9 @@ export function describeSave(s) {
   const slain = Object.keys(s.flags).filter(k => k.startsWith('boss_') && s.flags[k]).length;
   return `seed ${s.seed}, level ${s.level || 1}, ${slain} ${slain === 1 ? 'master' : 'masters'} slain, ${fmtTime(s.time || 0)} played`;
 }
-// "ArxN Save 2026-11-19 20.30": the local date and time the file is made (a colon may not be used in a file name, so the time has a dot).  No extension: whatever the system adds, it adds; reading a file never looks at its name.
-export const saveFileName = (s, now = new Date()) => { const p = n => String(n).padStart(2, '0'); return `ArxN Save ${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())} ${p(now.getHours())}.${p(now.getMinutes())}`; };
+// "ArxN Save 2026-11-19 20.30.bin": the local date and time the file is made (a colon may not be used in a file name, so the time has a dot), then .bin (plain "binary data": a system that
+// decides a file's extension itself leaves a known one alone, and a name with none was saved with none at all).  Reading a file never looks at its name.
+export const saveFileName = (s, now = new Date()) => { const p = n => String(n).padStart(2, '0'); return `ArxN Save ${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())} ${p(now.getHours())}.${p(now.getMinutes())}.bin`; };
 
 const CSS = `
 #arxfile { position: fixed; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; box-sizing: border-box; background: rgba(4,2,7,0.86);
@@ -87,7 +88,7 @@ export function openSavePanel(g, save, onClose, note = '') {
   const P = makePanel('SAVE GAME', () => onClose());
   P.el('p', 'now', 'Saved: ' + describeSave(save) + '.');
   if (note) P.el('p', 'warn', note);
-  P.el('p', '', 'This writes your game to a file named ArxN Save, with today\'s date and time. Keep it anywhere you like: LOAD GAME (on the title screen, or in the pause menu) brings the game back, here or on another device.');
+  P.el('p', '', 'This writes your game to a file named ArxN Save, with today\'s date and time, ending in .bin. Keep it anywhere you like: LOAD GAME (on the title screen, or in the pause menu) brings the game back, here or on another device.');
   if (isIOS() && !isStandalone()) P.el('p', 'warn', 'On an iPhone or iPad, Safari erases a website\'s quick saves after about a week without a visit. A save file is safe. A game added to your Home Screen (Share, then Add to Home Screen) keeps its saves, but they are kept apart from Safari\'s: carry a game across with a save file.');
   const row = P.row(); let file = null;
   const preferShare = isIOS() && isStandalone();          // (a Home Screen game on an iPhone cannot be trusted to download a file: the share sheet has Save to Files)
@@ -103,7 +104,7 @@ export function openSavePanel(g, save, onClose, note = '') {
   P.btn(row, 'CLOSE', () => P.close(false));
   saveB.disabled = true;
   packSave(JSON.stringify(save)).then(bytes => {
-    file = new File([bytes], saveFileName(save), { type: 'application/octet-stream' });          // (octet-stream: the browser has no reason to add .txt or .gz to the name)
+    file = new File([bytes], saveFileName(save), { type: 'application/octet-stream' });          // (octet-stream goes with .bin: the browser has no reason to add .txt or .gz to the name)
     saveB.disabled = false; if (shareB && navigator.canShare && navigator.canShare({ files: [file] })) shareB.hidden = false;
     (preferShare && !shareB.hidden ? shareB : saveB).focus({ preventScroll: true });
   });
