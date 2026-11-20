@@ -178,7 +178,7 @@ void main(){
     if(w.x < r.x-6.0 || w.x > r.z+6.0 || w.y < r.y-30.0 || w.y > r.w+30.0) continue;
     float wd=r.z-r.x, ht=r.w-r.y, px=w.x-r.x, py=w.y-r.y, v=q.y; vec3 col=vec3(0.0); float a=0.0;
     if(q.x < 0.5){
-      float xs = w.x - v*uTime;                                                    // the water's own x: everything below moves with it
+      float xs = w.x - q.w;                                                        // the water's own x: everything below moves with it (q.w: how far it has flowed so far - added up on the CPU, so a change of speed or of direction never makes the pattern jump)
       float surf = 1.1*sin(xs*0.23 + q.z) + 0.8*sin(xs*0.51 + q.z*2.0 + uTime*1.3);
       float inside = smoothstep(-0.6, 0.9, py - surf) * step(py, ht + 0.5) * step(0.0, px) * step(px, wd);
       float dpt = clamp((py - surf)/ht, 0.0, 1.0);
@@ -193,7 +193,7 @@ void main(){
     } else {
       float edge = smoothstep(0.0,2.5,px)*smoothstep(0.0,2.5,wd-px);
       float inside = edge*step(0.0,py)*step(py,ht);
-      float ys = w.y - v*uTime;                                                    // falling with the water
+      float ys = w.y - q.w;                                                        // falling with the water
       float s1 = fbm(vec2(px*0.5 + q.z, ys*0.05));
       float s2 = fbm(vec2(px*1.25 + q.z*3.0, ys*0.1));
       float streak = smoothstep(0.34, 0.8, s1*0.6 + s2*0.5);
@@ -382,6 +382,8 @@ export class FX {
     for (let i = 0; i < n; i++) { const o = list[i]; u.uR.value[i].set(o.x0, o.y0, o.x1, o.y1); u.uQ.value[i].set(o.type, o.v, (Math.abs(o.x0 * 0.137) % 6.28), 0); }
     this.waterMesh.visible = n > 0;
   }
+  // change the speed of the water already set (px/s, one per entry of the list, in the same order): used while a boss heaves the flood one way or the other
+  setFlows(vs) { const u = this.waterU, n = u.uN.value; for (let i = 0; i < n && i < vs.length; i++) u.uQ.value[i].y = vs[i]; }
   setCamera(x, y) { this.camX = x; this.camY = y; this.cam.position.x = x + this.shakeX; this.cam.position.y = y + this.shakeY; this.darkMesh.position.set(x + W / 2 + this.shakeX, y + H / 2 + this.shakeY, -1); this.fogMesh.position.set(x + W / 2 + this.shakeX, y + H / 2 + this.shakeY, -1); this.waterMesh.position.set(x + W / 2 + this.shakeX, y + H / 2 + this.shakeY, -1); this.rainMesh.position.set(x + W / 2 + this.shakeX, y + H / 2 + this.shakeY, 1); this.flashMesh.position.set(x + W / 2, y + H / 2, 0); }
   setShake(sx, sy) { this.shakeX = sx; this.shakeY = sy; }
 
@@ -577,6 +579,7 @@ export class FX {
   // ------------------------------------------------------------ per-step update
   update(dt = 1) {
     this.time += dt / 60;
+    { const u = this.waterU, n = u.uN.value; for (let i = 0; i < n; i++) { const q = u.uQ.value[i]; q.w += q.y * dt / 60; } }          // (each stream's pattern flows on at its own speed: see the water shader)
     this.add.update(dt); this.alpha.update(dt);
     for (let i = this.gusts.length - 1; i >= 0; i--) {
       const g = this.gusts[i]; g.life += dt; if (g.life > g.max) { this.gusts.splice(i, 1); continue; }

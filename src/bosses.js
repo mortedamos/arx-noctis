@@ -54,6 +54,7 @@ const ATTACKS = {
   tideorbs: { label: 'WATER ORBS', rgb: [120, 200, 255], icon: 'orb' },
   geysers: { label: 'GEYSERS', rgb: [140, 205, 255], glyph: 'bars' },
   submerge: { label: 'SUBMERGE', rgb: [150, 210, 255], glyph: 'diag' },
+  tide: { label: 'TIDE SURGE', rgb: [110, 195, 255], glyph: 'chevrons' },          // (the Drowned Warden heaves the flood one way: the lane shows which)
   bandage: { label: 'PANACEA', rgb: [180, 255, 190], icon: 'bandage' },
   pages: { label: 'TORN PAGES', rgb: [255, 232, 170], icon: 'scroll' },
   shelves: { label: 'FALLING SHELVES', rgb: [255, 200, 110], glyph: 'bars' },
@@ -1268,21 +1269,32 @@ export class BossMirror extends Boss {
 export class BossDrowned extends Boss {
   constructor(g, x, y, o) {
     super(g, x, y + 39, 40, 78, o); this.hp = this.maxHp = 320; this.dmg = 13; this.xp = 170; this.bossName = 'THE DROWNED WARDEN'; this.voice = 'drowned'; this.sub = 'WHO KEEPS THE FLOODED GATE'; this.scale = 1.75; this.gravity = false; this.dir = -1;
-    this.deathFx = COLORS.blue; this.ice = { w: 80, h: 112 }; this.tx = x; this.under = false;
+    this.deathFx = COLORS.blue; this.ice = { w: 80, h: 112 }; this.tx = x; this.under = false; this.surge = null;
   }
   get spd() { return this.phase === 2 ? 1.25 : 1; }
+  // THE TIDE: the arena's floor is a sheet of shallow water that lies still.  A 'tide' move sets this.surge, and for a few seconds the whole flood runs one way (or the other, at random): the current of the room
+  // (room.currents[0], which the hero's body feels - see Player.waterAt and the drift in Player.update - and the water shader shows) swells, holds, and dies away again.
+  stepTide(g) {
+    const s = this.surge, cur = g.room.currents && g.room.currents[0]; if (!s || !cur) return;
+    s.t++; const k = Math.max(0, Math.min(1, s.t / 40, (s.dur - s.t) / 60)), e = k * k * (3 - 2 * k);          // (swells in over 40 steps, dies away over the last 60)
+    cur.vx = s.dir * s.peak * e; g.syncFlow();
+    if (s.t % 5 === 0) g.fx.burst(s.dir > 0 ? cur.x0 + 6 : cur.x1 - 6, cur.y - 4, 2, [[0.7, 0.9, 1], [0.3, 0.55, 0.9]], { speed: 1.2 + e, s0: 7, up: 0.6 });          // (spray where the water comes in)
+    if (s.t >= s.dur) { cur.vx = 0; this.surge = null; g.syncFlow(); this.nextTideAt = this.t + 540 + rand(0, 240); }          // (it is a rare thing: nine to thirteen seconds of still water before the next one can be chosen)
+  }
+  die() { const cur = this.g.room.currents && this.g.room.currents[0]; this.surge = null; if (cur) { cur.vx = 0; this.g.syncFlow(); } super.die(); }          // (the flood is still again once it has fallen)
   intro(g) { if (this.st === 8) { this.cry(); g.shake(4, 40); g.fx.flash([0.4, 0.8, 1], 0.4); g.fx.ring(this.x, this.cy, 130, [0.4, 0.8, 1], 40, 0.1); } g.fx.glow(this.x, this.cy, 70, [0.4, 0.8, 1], 0.35); this.faceP(); }
   physics() { this.x += this.vx; this.y += this.vy; const r = this.g.room; this.x = clamp(this.x, 40, r.pw - 40); this.y = clamp(this.y, 80, r.ph - 20); if (this.flashT > 0) this.flashT--; }
   moveTo(tx, ty, k = 0.04, max = 2.2) { this.vx = clamp((tx - this.x) * k, -max, max); this.vy = clamp((ty - this.cy) * k, -max, max); }
   groundY() { return this.g.room.ph - 32; }
   ai(g) {
-    const p = g.player, spd = this.spd, gy = this.groundY();
+    const p = g.player, spd = this.spd, gy = this.groundY(); this.stepTide(g);
     if (!this.under) { g.fx.glow(this.x, this.cy, 50 + Math.sin(this.t * 0.09) * 6, [0.4, 0.8, 1], 0.2); g.fx.light(this.x, this.cy, 100, 0.7, [0.4, 0.8, 1]); }
     if (this.t % 8 === 0 && !this.under) g.fx.emit({ x: this.x + rand(-26, 26), y: this.cy + rand(10, 40), vx: rand(-0.1, 0.1), vy: rand(0.4, 1.1), gy: 0.04, life: 30, s0: 3, s1: 1, c0: [0.6, 0.85, 1], c1: [0.3, 0.5, 0.9], a0: 0.85, a1: 0, kind: 1 });      // drips
     switch (this.state) {
       case 'idle':
         this.alpha = 1; this.under = false; this.faceP(); this.moveTo(clamp(p.x + Math.sin(this.t * 0.02) * 90, 70, g.room.pw - 70), 92 + Math.sin(this.t * 0.05) * 12, 0.03);
-        this.planNext(this.phase === 2 ? ['slam', 'tideorbs', 'geysers', 'submerge', 'slam'] : ['slam', 'tideorbs', 'geysers', 'submerge'], Math.round(92 / spd)); break;
+        { const moves = this.phase === 2 ? ['slam', 'tideorbs', 'geysers', 'submerge', 'slam'] : ['slam', 'tideorbs', 'geysers', 'submerge']; this.planNext(this.surge || this.t < (this.nextTideAt ?? 480) ? moves : [...moves, 'tide'], Math.round(92 / spd)); }          // (the tide is only an option while the water is still, a while after the last one, and not in the fight's first eight seconds)
+        break;
       case 'slam': {
         const T0 = Math.round(34 / spd);
         if (this.st < T0) { this.moveTo(this.x, 76, 0.06); this.faceP(); this.tell('slam', this.st / T0, [{ type: 'ring', x: this.x, y: gy, r: 46 }]); this.vx *= 0.5; }
@@ -1302,6 +1314,18 @@ export class BossDrowned extends Boss {
         this.moveTo(this.x, 84, 0.05); this.faceP(); if (this.st < 24) this.tell('geysers', this.st / 24);
         if (this.st === 24) { A.sfx('steam'); const n = this.phase === 2 ? 4 : 3; for (let i = 0; i < n; i++) { const x = clamp(i === 0 ? p.x : p.x + rand(-150, 150), 30, g.room.pw - 30); g.addProjectile(new Column(x, gy, 'steam', { warn: 54 + i * 12, active: 38, dmg: 12, w: 26, h: 110 })); } }
         if (this.st > (this.phase === 2 ? 150 : 128)) { this.state = 'idle'; this.st = -16; } break; }
+      case 'tide': {
+        const T0 = Math.round(50 / spd), cur = g.room.currents && g.room.currents[0];
+        if (!cur) { this.state = 'idle'; this.st = -10; break; }
+        if (this.st === 1) this.tideDir = Math.random() < 0.5 ? -1 : 1;          // (either way)
+        const dir = this.tideDir || 1; this.moveTo(this.x, 84, 0.05); this.faceP();
+        if (this.st < T0) this.tell('tide', this.st / T0, [{ type: 'lane', x0: dir > 0 ? cur.x0 : cur.x1, x1: dir > 0 ? cur.x1 : cur.x0, y: gy }]);          // (the lane on the water runs the way the flood is about to)
+        else if (this.st === T0) {
+          A.sfx('boom'); A.sfx('steam'); g.shake(4, 24); g.fx.ring(this.x, gy - 4, 110, [0.4, 0.8, 1], 28, 0.15); g.fx.burst(this.x, gy - 6, 16, [[0.7, 0.9, 1], [0.3, 0.55, 0.9]], { speed: 2.6, s0: 12, up: 1 });
+          this.surge = { dir, t: 0, dur: this.phase === 2 ? 330 : 270, peak: this.phase === 2 ? 0.95 : 0.8 };
+        }
+        if (this.st > T0 + 26) { this.state = 'idle'; this.st = -16; }
+        break; }
       case 'submerge': {
         const T0 = 36;
         if (this.st === 1) { this.tx = clamp(p.x + (p.x > g.room.pw / 2 ? -1 : 1) * rand(130, 200), 60, g.room.pw - 60); }

@@ -106,6 +106,7 @@ ability      length 1.5-3.0 s       A great power is won (double jump, dash, emb
 door         length 0.6-1.2 s       A heavy door opens, or you pass through one: wood or stone grinding, creaking.
 seal         length 0.5-1.0 s       A boss room's doors SEAL shut behind you: a grinding slam plus a magical hum.
 unseal       length 0.5-1.0 s       The seals are lifted when a boss falls: a release - the hum fading, the doors unlocking.
+splash       length 0.2-0.6 s       The hero steps into water or leaps out of it: a short wet splash, a few drops.
 save         length 1.5-3.0 s       The sanctuary / altar saves your game: soft bells, calm and holy.
 toll         length 2.5-4.5 s       A single deep church BELL tolling (the opening scene and story beats).  Low and resonant;
                                     let it ring out.

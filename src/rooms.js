@@ -198,7 +198,7 @@ export function tidyRoom(def) {
 }
 
 const STATIC_SPAWNS = new Set(['statue', 'barrel', 'tablet', 'altar', 'chest', 'waystone', 'itemspawn', 'upgrade', 'lever', 'skull', 'bell', 'litcandle']);
-const BLOCK_DECOS = new Set(['brazier', 'column', 'pool', 'door', 'gate', 'hatch']);          // (a hatch in the floor: nothing may stand on it - it slides away)
+const BLOCK_DECOS = new Set(['brazier', 'column', 'door', 'gate', 'hatch']);          // (a hatch in the floor: nothing may stand on it - it slides away)
 const OUTDOOR_THEMES = new Set(['swamp', 'graveyard', 'ice']);                                       // open country: no candelabras (a mire or a glacier has no use for them - the ice caves are lit by ghostly wisps), whatever the builder asked for
 export function arrangeCandelabras(def) {
   if (def.cdlDone) return; def.cdlDone = true;                                                          // (hand-built rooms are shared between worlds: do it once)
@@ -220,7 +220,7 @@ export function arrangeCandelabras(def) {
   const block = [];                                                                                  // [tile x, standing row, how close is too close]
   for (const s of def.spawns) if (STATIC_SPAWNS.has(s.type)) block.push([s.x, s.y, s.type === 'tablet' || s.type === 'waystone' || s.type === 'altar' ? 2.2 : 1.8]);
   for (const d of def.doors) block.push([d.x, d.gy, 2.6]);
-  for (const d of def.decos) if (BLOCK_DECOS.has(d.t) || (d.t === 'img' && !d.back) || (d.t === 'cdl')) block.push([(d.x - 8) / 16, d.y / 16, d.t === 'pool' || d.t === 'hatch' ? Math.max(2, (d.w || 48) / 32) : d.t === 'img' ? 2.2 : 1.8]);
+  for (const d of def.decos) if (BLOCK_DECOS.has(d.t) || (d.t === 'img' && !d.back) || (d.t === 'cdl')) block.push([(d.x - 8) / 16, d.y / 16, d.t === 'hatch' ? Math.max(2, (d.w || 48) / 32) : d.t === 'img' ? 2.2 : 1.8]);
   const placed = [], clear = (s, gap) => !block.some(([bx, by, hw]) => Math.abs(s.x - bx) < hw && Math.abs(s.y - by) <= 3) && !placed.some(p => Math.abs(p.x - s.x) < gap && Math.abs(p.y - s.y) <= 3);
   const put = (s, gap) => { if (s && clear(s, gap)) { placed.push(s); return true; } return false; };
   const near = (x, y, tol = 1.6) => { let best = null, bd = 1e9; for (const s of spots) { const d = Math.abs(s.x - x) + (y === undefined ? 0 : Math.abs(s.y - y) * 3); if (d < bd && Math.abs(s.x - x) <= tol) { bd = d; best = s; } } return best; };
@@ -280,7 +280,6 @@ export function arrangeCandelabras(def) {
   b.d('img', 22, 12, { img: 'town_lamp' }).d('img', 40, 12, { img: 'town_lamp' }).d('img', 59, 12, { img: 'town_lamp' }).d('img', 3, 12, { img: 'town_cart' }).d('img', 36, 12, { img: 'town_well' }).d('img', 57, 12, { img: 'town_crates' });
   b.e('barrel', 61, 12, { drop: 'coin' });                                  // (a breakable one: barrels and crates you can smash look like this, and nothing else does)
   b.d('brazier', 28, 12).d('brazier', 46, 12).d('brazier', 65, 12);          // (the first one used to stand at 26, hidden behind the stone block at 24-26)
-  b.d('pool', 17, 12, { w: 80 });                                             // a puddle in the street (water washes the white cloak)
   b.tablet(6, 12, 'THE BELLS RANG AT DUSK. THEN THE THINGS CAME DOWN FROM THE HILL. PRAGUE HAS NOT WALKED ITS OWN STREETS WITHOUT FEAR SINCE. THE KEEP IS BEYOND THE GATE.', 'tab0');
   b.candle(16, 12, 'heart').candle(38, 12, 'coin').e('statue', 55, 12, { drop: 'mana' }).candle(77, 12, 'heart');
   b.many('zombie', [20, 34, 58, 72], 12).e('skeleton', 46, 12).e('hound', 66, 12).e('fireskull', 40, 5).e('bat', 28, 3).e('bat', 60, 4);

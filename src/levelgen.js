@@ -109,13 +109,13 @@ const SPEC = {
 
   // ======== ZONE 7 - THE WEEPING SWAMP (Gothicvania Swamp) - you arrive with the Raven Feather
   tw: { kind: 'teleport', zone: 7, name: 'Waystone Boardwalk', outdoor: true, abilities: ['djump'], opts: LOOK[7] },
-  w1: { kind: 'corridor', zone: 7, name: 'Mire Edge', w: [88, 102], outdoor: true, abilities: ['djump'], opts: { ...LOOK[7], fog: 0.75 },
+  w1: { kind: 'corridor', zone: 7, name: 'Mire Edge', w: [88, 102], outdoor: true, abilities: ['djump'], pools: [0, 3], opts: { ...LOOK[7], fog: 0.75 },
     mods: [{ t: 'skull', id: 'skull2' }, { t: 'djLedge', kind: 'hpup', id: 'w1_hp' }, { t: 'cell', gate: 'crack', chest: true, kind: 'key', id: 'key_mire' }, { t: 'tablet', id: 'tab12', near: 'start', text: 'THE MIRE TAKES WHAT THE GRAVE REFUSES. DO NOT STAND STILL.' }],
     candles: [3, 5], barrels: [2, 3], mix: { zombie: [1, 2], skeleton: [1, 2], bat: [1, 2], swampspider: [2, 3], swampthing: [1, 1] } },
-  w2: { kind: 'corridor', zone: 7, name: 'Weeping Hollow', w: [80, 94], outdoor: true, abilities: ['djump'], deck: true, opts: { ...LOOK[7], fog: 0.9 },
+  w2: { kind: 'corridor', zone: 7, name: 'Weeping Hollow', w: [80, 94], outdoor: true, abilities: ['djump'], deck: true, pools: [0, 3], opts: { ...LOOK[7], fog: 0.9 },
     mods: [{ t: 'door', to: 'sw', kind: 'wood' }, { t: 'door', to: 'vw', kind: 'crypt', key: 'key_mire' }, { t: 'cell', gate: 'crystal', kind: 'mpup', id: 'w2_mp' }],
     candles: [4, 6], barrels: [2, 3], mix: { swampspider: [2, 3], swampthing: [2, 2], hound: [1, 2], bat: [2, 2], skeleton: [1, 2] } },
-  w3: { kind: 'corridor', zone: 7, name: 'Drowned Boardwalk', w: [80, 94], outdoor: true, abilities: ['djump'], deck: true, opts: { ...LOOK[7], fog: 0.8 },
+  w3: { kind: 'corridor', zone: 7, name: 'Drowned Boardwalk', w: [80, 94], outdoor: true, abilities: ['djump'], deck: true, pools: [0, 3], opts: { ...LOOK[7], fog: 0.8 },
     mods: [{ t: 'cell', gate: 'crack', kind: 'atkup', id: 'w3_atk' }, { t: 'deckDoor', to: 'wa', kind: 'wood' }, { t: 'tablet', id: 'tab13', text: 'SOMETHING SINGS BENEATH THE WATER. IT KNOWS YOUR NAME.' }],
     candles: [4, 5], barrels: [2, 3], mix: { swampthing: [2, 3], swampspider: [2, 3], zombie: [1, 2], bat: [2, 2], wyrm: [1, 1] } },
   wb: { kind: 'arena', zone: 7, name: "The Mother's Hollow", w: [40, 46], outdoor: true, abilities: ['djump'], boss: 'bramble', reward: 'lantern', plats: 3, rise: 3, seal: 'both', flyRow: 6, candles: [3, 3], decor: 'swamp',
@@ -371,14 +371,7 @@ function decorate(b, W, spec, r, g, ceilRows, flatCols) {
   if (th === 'swamp') {          // Gothicvania Swamp: huge twisted trees behind, ferns and vines on the ground, the odd headstone
     let last = -99; for (let i = 0; i < Math.round(W / 9) && flatCols.length; i++) { const x = r.pick(flatCols); if (Math.abs(x - last) < 14) continue; last = x; b.d('img', x, g[x], { img: 'swamp_trees', back: true, sink: 3 }); }
     last = -9; for (let i = 0; i < Math.round(W / 4) && flatCols.length; i++) { const x = r.pick(flatCols); if (Math.abs(x - last) < 6) continue; last = x; const im = r.chance(0.6) ? 'swamp_props' : r.pick(['cemetery_stone-1', 'cemetery_stone-3', 'cemetery_bush-small']); b.d('img', x, g[x], { img: im, back: false, sink: im === 'swamp_props' ? 4 : 1 }); }          // (the vine sheet's pictures end 1-4px above the bottom of the image: sunk so they stand IN the ground)
-    // shallow pools on flat ground (clear stretches only: no pits, steps or spikes): wading through one washes the white cloak
-    const placed = [];
-    for (let tries = 0, pools = 0; tries < 60 && pools < Math.max(1, Math.round(W / 30)) && flatCols.length; tries++) {
-      const x = r.pick(flatCols), half = 3; let ok = x - half >= 3 && x + half < W - 3 && placed.every(q => Math.abs(q - x) > 14);
-      for (let k = -half; ok && k <= half; k++) if (g[x + k] !== g[x] || b.def.tiles[(g[x + k] - 1) * W + x + k] !== 0) ok = false;
-      if (ok) { b.d('pool', x, g[x], { w: (half * 2 + 1) * 16 }); placed.push(x); pools++; }
-    }
-    return;
+    return;          // (the shallow pools that used to lie on the swamp's floor are gone: they made no sense there)
   }
   if (th === 'clockwork') {       // braziers for light, and the gears turning behind (the steampunk pack's boilers, valves and clocks were taken out: they did not suit the place)
     for (let i = 0, n = r.i(2, 3); i < n && flatCols.length; i++) { const x = r.pick(flatCols); b.d('brazier', x, g[x]); }
@@ -615,7 +608,8 @@ function genCorridor(id, spec, r) {
     if (len < 14) return { ok: false, errs: ['upper floor too short'] };
     for (let k = 0; k < 3; k++) { b.plat(L.x0 + 1 + k * 4, 4, BASE - 3 - 3 * k); b.plat(R.x0 + 9 - k * 4, 4, BASE - 3 - 3 * k); }          // a staircase of one-way platforms up each end
     b.rect(da, DK, len, 2);
-    const feats = r.shuffle(['hole', 'block', 'hole', 'block', 'plat']).slice(0, r.i(2, 4)), nf = Math.min(feats.length, Math.floor((len - 10) / 8)), keepOut = ferries.map(f => [f.x0 - 3, f.x0 + f.P + 3]), holes = [];          // (nothing on the upper floor above a ferry: a fall from it would land in the spikes)
+    // (the swamp's upper floor is rolling country, not a plank: more features, and hills and dips as well as holes, blocks and floating platforms)
+    const rolling = (spec.theme || ZONES[spec.zone].theme) === 'swamp', feats = rolling ? Array.from({ length: Math.max(6, Math.round(len / 9)) }, () => r.wpick([['hole', 3], ['hill', 4], ['dip', 3], ['block', 1], ['plat', 1]])) : r.shuffle(['hole', 'block', 'hole', 'block', 'plat']).slice(0, r.i(2, 4)), nf = Math.min(feats.length, Math.floor((len - 10) / (rolling ? 6.5 : 8))), keepOut = ferries.map(f => [f.x0 - 3, f.x0 + f.P + 3]), holes = [];          // (nothing on the upper floor above a ferry: a fall from it would land in the spikes)
     // A DIVIDER: a wall that runs from above the upper floor right down through it, leaving only a low tunnel along the lower floor.  OVER it by a platform halfway up, or UNDER it: drop through a hole, walk the tunnel, and climb back
     // through a second hole on a staircase of one-way platforms.  (It needs a flat, clear stretch of the lower floor, and no door on it.)
     if (len >= 46 && r.chance(0.65)) {
@@ -635,8 +629,10 @@ function genCorridor(id, spec, r) {
     for (let k = 0; k < nf; k++) {
       const cx = da + 5 + Math.round((len - 10) * (k + 0.5) / nf), f = feats[k];
       if (keepOut.some(([a, z]) => cx >= a - 4 && cx <= z + 2)) continue;          // (clear of the divider)
-      if (f === 'hole') { const w = r.i(2, 3); b.rect(cx, DK, w, 2, TILE.EMPTY); keepOut.push([cx - 2, cx + w + 1]); holes.push([cx, w]); }                   // a gap to jump (fall and you land on the lower floor)
+      if (f === 'hole') { const w = rolling ? r.i(2, 4) : r.i(2, 3); b.rect(cx, DK, w, 2, TILE.EMPTY); keepOut.push([cx - 2, cx + w + 1]); holes.push([cx, w]); }                   // a gap to jump (fall and you land on the lower floor)
       else if (f === 'block') { const w = r.i(3, 4), h = r.i(1, 2); b.rect(cx, DK - h, w, h); keepOut.push([cx - 2, cx + w + 1]); }
+      else if (f === 'hill') { const w0 = r.i(5, 9), n = w0 >= 7 ? 3 : 2; for (let i = 0; i < n; i++) b.rect(cx + i, DK - 1 - i, w0 - 2 * i, 1); keepOut.push([cx - 2, cx + w0 + 1]); }          // a mound: each layer one tile narrower each side and one row higher, so it climbs as a flight of steps and comes down as one
+      else if (f === 'dip') { const w = r.i(4, 6); b.rect(cx, DK, w, 1, TILE.EMPTY); keepOut.push([cx - 2, cx + w + 1]); }          // a hollow one row deep in the slab (the slab is two rows thick: the hollow floor is its lower row)
       else { b.plat(cx, 4, DK - 3); keepOut.push([cx - 1, cx + 5]); }
     }
     if ((spec.theme || ZONES[spec.zone].theme) === 'swamp') {                                          // a tall mire room has WATERFALLS: through every hole in the upper floor, from the sky to the lower floor, and a couple of cascades that seep through the slab
@@ -716,7 +712,7 @@ function genCorridor(id, spec, r) {
     for (const [s0, e0] of r.shuffle(runs)) { if (picked.length >= want) break; const len = Math.min(e0 - s0 + 1, r.i(10, 22)), st = s0 + r.i(0, e0 - s0 + 1 - len); if (picked.some(q => st < q[1] + 6 && st + len > q[0] - 6)) continue; const e1 = st + len - 1, pitBeyond = d => { for (let k = 1; k <= 7; k++) { const q = d > 0 ? e1 + k : st - k; if (g[q] !== undefined && g[q] < 0) return true; } return false; }, dir0 = r.chance(0.5) ? 1 : -1, dir = !pitBeyond(dir0) ? dir0 : !pitBeyond(-dir0) ? -dir0 : 0;          // (never into a pit: the water is pushing you AWAY from one, or the stretch is not used)
       if (!dir) continue; picked.push([st, e1, dir]); }
     for (const [s0, e0] of picked) { b.put(s0, g[s0] - 1, TILE.SOLID); b.put(e0, g[e0] - 1, TILE.SOLID); }          // a stone sill at each end: the water is held in a trough, it never runs on into nothing
-    const list = picked.map(([s0, e0, dir]) => ({ x0: (s0 + 1) * 16, x1: e0 * 16, y: g[s0] * 16, vx: dir * (0.55 + 0.3 * r.f()) }));
+    const list = picked.map(([s0, e0, dir]) => ({ x0: (s0 + 1) * 16, x1: e0 * 16, y: g[s0] * 16, vx: dir * (0.30 + 0.2 * r.f()) }));
     if (!list.length) return { ok: false, errs: ['no place for a stream'] };
     for (const c of list) { const up = c.vx > 0 ? Math.floor(c.x0 / 16) + 1 : Math.floor(c.x1 / 16) - 2; b.d('waterfall', up, Math.round(c.y / 16), { top: -80, w: 20 }); }          // (it pours in from the ceiling at the upstream end)
     b.def.currents = list;
@@ -737,12 +733,31 @@ function genCorridor(id, spec, r) {
     b.def.jets = jetList.map(({ cx, ...j }) => j);
     for (let i = flatCols.length - 1; i >= 0; i--) if (jetList.some(j => Math.abs(j.cx - flatCols[i]) < 3)) flatCols.splice(i, 1);          // (no brazier or candelabra on a vent)
   }
+  const poolList = [];
+  if (spec.pools) {                                                                                      // POOLS (the Weeping Swamp): now and then a ONE-TILE HOLLOW in the level ground, three to five tiles wide, with a step down and a step up, and water in it (drawn by the water shader; see Player.waterAt)
+    const near = new Set(), mark = (x0, rad) => { for (let k = -rad; k <= rad; k++) near.add(x0 + k); };
+    for (const d of doors) mark(d.x, 3); for (const s of signs) mark(s.x, 2); for (const c of cells) mark(c.xs + 3, 6); for (const c of climbs) mark(c.x0 + 7, 7);          // (a pool is harmless: it only keeps clear of what the hero uses)
+    for (const f of ferries) for (let q = f.x0 - 2; q <= f.x0 + f.P + 2; q++) near.add(q); for (const w of iceWalls) mark(w.x, 3); for (const pz of puzzles) for (let q = pz.x0 - 3; q <= pz.x0 + 17; q++) near.add(q);
+    for (const lv of leverDefs) { mark(lv.x, 3); mark(lv.gx, 3); } if (gapStart >= 0) for (let q = gapStart - 4; q <= gapEnd + 4; q++) near.add(q); for (const j of jetList) mark(j.cx, 3);
+    for (const s of b.def.spawns) if (['tablet', 'waystone', 'upgrade', 'chest', 'statue', 'barrel', 'altar', 'lever', 'skull', 'bell', 'litcandle'].includes(s.type)) mark(s.x, 2);
+    const T0 = (cx, row) => (cx < 0 || cx >= W || row < 0 || row >= H ? -1 : b.def.tiles[row * W + cx]);
+    const okc = cx => cx >= PAD + 2 && cx < W - PAD - 2 && g[cx] >= 5 && !near.has(cx) && T0(cx, g[cx]) === TILE.SOLID && T0(cx, g[cx] + 1) === TILE.SOLID && [1, 2, 3].every(k => T0(cx, g[cx] - k) === 0);          // (plain solid ground, thick enough, clear air above)
+    const want = r.i(spec.pools[0], spec.pools[1]);
+    for (let tries = 0; tries < 40 && poolList.length < want; tries++) {
+      const w = r.i(3, 5), s = r.i(PAD + 3, Math.max(PAD + 3, W - PAD - 4 - w)), e = s + w - 1; let ok = okc(s - 1) && okc(e + 1) && g[s - 1] === g[s] && g[e + 1] === g[s];          // (the ground on both sides is the same height: the hollow is bounded by a step up at each end)
+      for (let cx = s; ok && cx <= e; cx++) ok = okc(cx) && g[cx] === g[s];
+      if (!ok || poolList.some(q => s < q[1] + 8 && e > q[0] - 8)) continue; poolList.push([s, e, g[s]]);
+    }
+    for (const [s, e, row] of poolList) for (let cx = s; cx <= e; cx++) { b.put(cx, row, TILE.EMPTY); g[cx] = row + 1; }
+    if (poolList.length) b.def.pools = poolList.map(([s, e, row]) => ({ x0: s * 16, x1: (e + 1) * 16, y: row * 16, yb: (row + 1) * 16 }));
+    for (let i = flatCols.length - 1; i >= 0; i--) if (poolList.some(([s, e]) => flatCols[i] >= s - 1 && flatCols[i] <= e + 1)) flatCols.splice(i, 1);          // (no scenery standing in the water)
+  }
   const closedRight = !!spec.hub || !!spec.closedRight; if (closedRight && gapStart < 0) meta.entry.R = null;          // (a crossroads has no way on at its right end)
   b.def.meta = meta; b.def.entries = { L: meta.entry.L, R: closedRight ? null : meta.entry.R };
   // (the walls of ice are proved with the ice melted: the room is checked as it will be once the Ember has cleared the way, and a wall may not stand in a doorway)
   let vbase = b.def; if (iceTiles.length) { const t2 = Uint8Array.from(b.def.tiles); for (const [tx, ty] of iceTiles) t2[ty * W + tx] = 0; vbase = { ...b.def, tiles: t2 }; }
   const v = validateFerries(vbase, ferries, movers, meta.abilities); if (!v.ok) return { ok: false, errs: v.errs, def: b.def };
-  populate(b, W, H, spec, r, v.S, v.seen, g, !outdoor, [1, W - 2], ferries.map(f => [f.x0 - 1, f.x0 + f.P]).concat(jetList.map(j => [j.cx - 2, j.cx + 2])).concat(vaults.map(v => [v.e0 + 22, v.e0 + 38])).concat(iceWalls.map(w => [w.x - 1, w.x + 2])).concat(leverDefs.map(lv => lv.puzzle ? [lv.puzzle.x0 - 1, lv.puzzle.x0 + 15] : [lv.x - 3, lv.x + 3])).concat(leverDefs.map(lv => [lv.gx - 2, lv.gx + 3])));          // (nothing is placed over a pit)
+  populate(b, W, H, spec, r, v.S, v.seen, g, !outdoor, [1, W - 2], ferries.map(f => [f.x0 - 1, f.x0 + f.P]).concat(jetList.map(j => [j.cx - 2, j.cx + 2])).concat(vaults.map(v => [v.e0 + 22, v.e0 + 38])).concat(iceWalls.map(w => [w.x - 1, w.x + 2])).concat(leverDefs.map(lv => lv.puzzle ? [lv.puzzle.x0 - 1, lv.puzzle.x0 + 15] : [lv.x - 3, lv.x + 3])).concat(leverDefs.map(lv => [lv.gx - 2, lv.gx + 3])).concat(poolList.map(([s, e]) => [s - 1, e + 1])));          // (nothing is placed over a pit, or in a pool)
   decorate(b, W, spec, r, g, ceil, flatCols);
   const sp = checkSpawns(b.def); if (sp.length) return { ok: false, errs: sp, def: b.def };
   return { ok: true, def: b.def };
@@ -842,9 +857,9 @@ function genArena(id, spec, r) {
   else if (th === 'ice') {                                                                          // a cavern of blue ice: crystals along the floor, icicles hanging from the roof (the wisps and the boss light it)
     spread0(r.i(4, 6), 6, x => b.d('icicles', x, 2, { n: r.i(2, 3) })); spread0(r.i(3, 4), 9, x => b.d('crystals', x, BASE, { n: r.i(2, 4) }));
   }
-  else if (th === 'cistern') {                                                                      // falls pour down the back wall, and the whole floor is awash, flowing gently away from the boss
+  else if (th === 'cistern') {                                                                      // falls pour down the back wall, and the whole floor is awash (shallow water the hero wades through, slowly): still until the Drowned Warden heaves the tide one way or the other (BossDrowned 'tide')
     b.d('brazier', 4, BASE).d('brazier', W - 5, BASE); b.d('waterfall', 10, BASE, { top: -80, w: 26 }).d('waterfall', W - 12, BASE, { top: -80, w: 26 });
-    b.def.currents = [{ x0: 7 * 16, x1: (W - 7) * 16, y: BASE * 16, vx: -0.42 }];
+    b.def.currents = [{ x0: 7 * 16, x1: (W - 7) * 16, y: BASE * 16, vx: 0 }];
   }
   else if (spec.loft) {          // the Boiler Loft: the clock's great cogs turn behind the fight, and braziers light it
     b.d('cog', Math.round(W * 0.3), 5.5, { r: 36, n: 13, spin: 0.012, a: 0.75 }).d('cog', Math.round(W * 0.58), 6.5, { r: 26, n: 9, spin: -0.016, phase: 0.5, a: 0.75 }).d('cog', W - 9, 5, { r: 20, n: 8, spin: 0.022, a: 0.75 }).d('brazier', 4, BASE).d('brazier', W - 12, BASE);

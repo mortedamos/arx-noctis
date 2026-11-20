@@ -140,11 +140,6 @@ export function drawDeco(g, d, cx, cy, t, room) {
       g.fillStyle = '#3a3a4c'; g.fillRect(x0, top + 14, w, 2); g.fillStyle = '#6a647a'; g.fillRect(x0 - 3, y, w + 6, 2); break;
     }
     case 'column': { const im = room.theme === 'throne' ? extra().throne_col : IMG.church_column; g.drawImage(im, Math.round(x - im.width / 2), y - im.height + 6); break; }
-    case 'pool': {            // a shallow pool lying on the floor: standing in it washes the cloak
-      const w = d.w, x0 = Math.round(x - w / 2); g.fillStyle = 'rgba(28,64,82,0.62)'; g.fillRect(x0, y - 3, w, 3); g.fillStyle = 'rgba(110,170,190,0.55)'; g.fillRect(x0, y - 3, w, 1);
-      g.fillStyle = 'rgba(190,230,240,0.55)'; for (let i = 0; i < Math.floor(w / 24); i++) g.fillRect(x0 + Math.round(((t * 0.35 + i * 24 + d.x * 0.37) % (w - 6))), y - 2, 5, 1);
-      g.fillStyle = 'rgba(28,64,82,0.62)'; g.fillRect(x0 + 1, y - 4, w - 2, 1); break;
-    }
     case 'torch': drawSheet(g, 'torch', 0, x, y); break;
     case 'cdl': { const im = IMG[cdlOf(d).img]; if (im) g.drawImage(im, Math.round(x - im.width / 2), Math.round(y - im.height) + CDL_DROP); else drawSheet(g, 'candelabra', 0, x, y); break; }
     case 'brazier': drawSheet(g, 'brazier', 0, x, y); break;

@@ -9,7 +9,7 @@ import { T, clamp, approach, rand, TAU } from './util.js';
 import { TILE } from './world.js';
 import { Fireball, SwordFire } from './projectiles.js';
 import { ENCH, TUNE } from './enchant.js';
-import { STAINS, STAIN_KEYS, RAIN_WASH, POOL_WASH, stainSource } from './stain.js';
+import { STAINS, STAIN_KEYS, RAIN_WASH, stainSource } from './stain.js';
 import { ITEM_ORDER, itemCount, canUseItem, releaseItem } from './items.js';
 
 import { RUN, GRAV, MAXFALL, JUMP, DJUMP, ACC, FRIC, AIRACC, DASH_V, DASH_T, PW, PH } from './physics.js';
@@ -28,6 +28,7 @@ const ATTACKS = [
 const AIR_ATTACK = seq({ sheet: 'hero_jump_attack', air: true, durs: [3, 3, 3, 3, 4, 4], active: [3, 4], dmg: 1.0, reach: 42, kb: 1.6 });
 // ducking (hold Down): a low, quick slash that skims the ground - it hits what a standing swing sails over
 const CROUCH_ATTACK = seq({ sheet: 'hero_crouch_slash', crouch: true, durs: [4, 4, 4, 4], active: [1, 2], dmg: 1.0, reach: 40, kb: 1.4 });
+const WET_RUN = 0.5, WET_JUMP = Math.SQRT1_2;          // standing in water: half the running speed, and a jump half as HIGH (the height of a jump goes with the square of its speed, so the speed is 0.707 of the usual)
 const CROUCH_H = 22;                         // hitbox height while ducking (standing is PH)
 const JUMP_CY = [56, 46, 31, 24.5, 31.5];      // vertical centre of each hero_jump frame (the art bakes the jump arc into the cell)
 const JATK_CY = [59, 49, 34, 27.5, 22.5, 29.5];
@@ -153,6 +154,9 @@ export class Player extends Entity {
     if (!this.atk && this.comboT > 0) this.comboT--;
     const locked = this.hurtT > 0 || g.cutscene || g.playerFrozen;
     const was = this.onGround;
+    const wet = this.onGround && !!this.waterAt(room);          // (standing in water: see waterAt)
+    if (wet !== !!this.wet) { this.wet = wet; this.splash(wet ? 9 : 6); }
+    else if (wet && Math.abs(this.vx) > 0.25 && this.t % 5 === 0) g.fx.burst(this.x - this.dir * 3, this.y - 2, 2, [[0.6, 0.8, 0.9], [0.3, 0.5, 0.65]], { speed: 0.8, s0: 4, s1: 1, up: 0.8 });          // (wading: a few drops)
     if (this.ride) { if (room.movers && this.ride.active) { this.x += this.ride.dx; this.y += this.ride.dy; } else this.ride = null; }          // (standing on a moving platform: carried with it)
     let dx = locked ? 0 : I.horiz;
 
@@ -198,7 +202,7 @@ export class Player extends Entity {
         else this.jumpBuf = 7;
       }
       if (this.jumpBuf > 0 && !this.crouch) {
-        if (this.coyote > 0 || this.onGround) { this.vy = JUMP; this.jumpBuf = 0; this.coyote = 0; this.onGround = false; A.sfx('jump'); g.fx.burst(this.x, this.y - 1, 4, [[0.7, 0.7, 0.8], [0.4, 0.4, 0.5]], { speed: 0.8, s0: 7, s1: 2, l0: 10, l1: 18 }); }
+        if (this.coyote > 0 || this.onGround) { this.vy = JUMP * (this.wet ? WET_JUMP : 1); this.jumpBuf = 0; this.coyote = 0; this.onGround = false; A.sfx('jump'); g.fx.burst(this.x, this.y - 1, 4, [[0.7, 0.7, 0.8], [0.4, 0.4, 0.5]], { speed: 0.8, s0: 7, s1: 2, l0: 10, l1: 18 }); }
         else if (this.airJump && S.flags.got_ouroboros) {          // THE OUROBOROS: after a dash in the air, a whole jump again (it even cuts the dash short), and with it the double jump and the dash come back - jump, double jump, dash, jump, double jump, dash ... and never a need to land
           this.airJump = false; this.dashT = 0; this.vy = JUMP; this.canDouble = true; this.canAirDash = true; this.jumpBuf = 0; this.djumpT = 0; A.sfx('jump');
           g.fx.ring(this.x, this.y - 8, 20, [0.5, 0.95, 0.5], 18, 0.22, 4); g.fx.burst(this.x, this.y - 6, 8, [[0.6, 1, 0.6], [0.2, 0.6, 0.3]], { speed: 1.4, s0: 8, s1: 1, up: -0.5 });
@@ -230,7 +234,7 @@ export class Player extends Entity {
     if (this.attackActive()) g.swordHit(this);
 
     // ---- horizontal motion
-    const RUNV = RUN * (S.flags.got_shoes ? 1.1 : 1) * (this.chillT > 0 ? this.chillK() : 1);                       // the Magic Shoes: 10% faster; the cold: a good deal slower
+    const RUNV = RUN * (S.flags.got_shoes ? 1.1 : 1) * (this.chillT > 0 ? this.chillK() : 1) * (this.wet ? WET_RUN : 1);                       // the Magic Shoes: 10% faster; the cold: a good deal slower
     const groundLock = (this.atk && this.onGround) || this.castT || this.crouch;
     if (this.crouch && dx && !this.atk) this.dir = dx;
     const slip = this.onGround && !this.ride && !this.S.flags.got_crampons && room.theme === 'ice' && room.get(Math.floor(this.x / T), Math.floor((this.y + 2) / T)) === TILE.SOLID, kA = slip ? 0.4 : 1, kF = slip ? 0.16 : 1; this.onIce = slip;
@@ -322,14 +326,16 @@ export class Player extends Entity {
     else if (el === 'mud') g.fx.burst(x, y, 6, [[0.43, 0.3, 0.17], [0.25, 0.17, 0.1]], { speed: 1.4, s0: 6, s1: 2 });
     else g.fx.burst(x, y, 7, [[0.75, 0.05, 0.08], [0.45, 0.03, 0.06]], { speed: 1.8, s0: 5, s1: 1.5 });
   }
-  inWater() {              // standing in a pool?
-    if (!this.onGround) return false;
-    for (const d of this.g.room.decos) if (d.t === 'pool' && Math.abs(this.x - d.x) < d.w / 2 && Math.abs(this.y - d.y) < 3) return true;
-    return false;
+  // Is the hero standing IN water?  The water of the room is its currents (the Cistern's streams, the floor of the Drowned Warden's arena: feet on the floor under the sheet) and its pools (a one-tile hollow
+  // in the swamp's ground: feet on the bottom of it).  Returns the water he stands in, or null.  (A pool's rectangle is { x0, x1, y: its surface, yb: its bottom }, in px.)
+  waterAt(room) {
+    if (room.currents) for (const c of room.currents) if (this.x >= c.x0 && this.x <= c.x1 && Math.abs(this.y - c.y) <= 4) return c;
+    if (room.pools) for (const p of room.pools) if (this.x >= p.x0 + 2 && this.x <= p.x1 - 2 && Math.abs(this.y - p.yb) <= 4) return p;
+    return null;
   }
+  splash(n) { const g = this.g; A.sfx('splash'); g.fx.burst(this.x, this.y - 2, n, [[0.7, 0.88, 0.95], [0.3, 0.55, 0.7]], { speed: 1.5, s0: 5, s1: 1, up: 1.1 }); }
   updateStains() {
-    const g = this.g, st = this.stain, inPool = this.inWater(), rain = g.room.weather === 'rain' || g.room.weather === 'snow', wash = inPool ? POOL_WASH : rain ? RAIN_WASH : 0;          // (snow, like rain, washes the cloak clean)
-    if (inPool && Math.abs(this.vx) > 0.2 && this.t % 4 === 0) g.fx.burst(this.x - this.dir * 3, this.y - 2, 3, [[0.6, 0.8, 0.9], [0.3, 0.5, 0.65]], { speed: 0.9, s0: 4, s1: 1, up: 0.8 });     // splashes
+    const g = this.g, st = this.stain, rain = g.room.weather === 'rain' || g.room.weather === 'snow', wash = rain ? RAIN_WASH : 0;          // (snow, like rain, washes the cloak clean)
     let top = null, worst = 0.01;
     for (const k of STAIN_KEYS) { if (st[k] <= 0) continue; st[k] = Math.max(0, st[k] - STAINS[k].fade - wash); if (st[k] > worst) { worst = st[k]; top = k; } }   // they fade by themselves, and water takes them off quickly
     if (wash && top && this.t % 5 === 0) {                  // grubby drips off the hem while it washes

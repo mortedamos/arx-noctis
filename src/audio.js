@@ -249,6 +249,7 @@ export const Audio_ = {
     pickup() { this.tone(660, 990, 0.1, 'triangle', 0.1); },
     levelup() { [392, 494, 587, 784, 988].forEach((f, i) => this.tone(f, f, 0.18, 'square', 0.08, i * 0.07)); },
     ghost() { this.tone(300, 220, 0.5, 'sine', 0.07); this.tone(305, 215, 0.5, 'sine', 0.07); },
+    splash() { this.noise(0.22, 2400, 700, 0.1, 'bandpass', 1.2); this.tone(520, 300, 0.1, 'sine', 0.04); },          // (the hero steps into water, or out of it)
   },
 };
 // each boss's own cry and death (boss_<id>, boss_<id>_die): until a recording is added to assets/sfx/, the shared roar or shriek stands in for it

@@ -147,8 +147,12 @@ A gamepad also works (A jump, X attack, B dash, Y use selected, bumpers move the
 * **A different castle every game:** the rooms are generated from a seed (see below), but every room is *proven*
   beatable before you ever see it.
 * **The white cloak remembers.** Fire singes it grey-black, filth (zombies, swamp things, thrown bones) dirties it brown, and teeth, claws and spikes
-  splash it red - a little per hit, patchiest at the hem. Stains fade by themselves over a minute or two, and **water washes them off**: stand in the
-  rain (the graveyard) or wade through a shallow pool (the village street, the swamp) and they run off in seconds.
+  splash it red - a little per hit, patchiest at the hem. Stains fade by themselves over a minute or two, and **rain washes them off**: stand out in
+  the rain (the graveyard) or the snow (the frozen caverns) and they run off in seconds.
+* **Water.** Standing in water, the hero runs at **half speed** and jumps **half as high**. There is water in the Weeping Swamp's corridors (now and then a **pool**: a one-tile hollow in the
+  ground, three to five tiles wide, with a step down and a step up), in the Cistern's flowing channels (which also **push you along** the way they run) and on the floor of the Drowned Warden's arena,
+  a sheet of still shallow water until the Warden heaves the **tide**: for a few seconds the whole flood runs one way, or the other (a lane on the water shows which way, just before). Water is drawn by the
+  three.js water shader (`fx.js`); the physics are in `Player.waterAt` (`player.js`).
 * **Save altars** (candle shrines in small sanctuary rooms) heal you and save to the browser's localStorage.
   Dying returns you to your last altar.
 

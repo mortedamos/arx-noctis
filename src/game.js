@@ -36,6 +36,7 @@ import { keepStorage } from './pwa.js';
 import { openSavePanel } from './savefile.js';
 
 const SAVE_KEY = 'shadowkeep.save.v1';
+const POOL_DEPTH = 8;          // px of water in a swamp pool (the hollow it lies in is 16 deep: the water stays below the ground's edge, whatever its waves do)
 const CHASE_DELAY = 140 + 180;          // steps (60 a second) from the Bell Tower's flames igniting to their first step upward: 140 to get moving, plus 3 seconds
 const DOOR_CLEAR = 200;          // px: no enemy starts within this distance of a door you have just come through (about half a screen)
 const FLYERS = new Set(['bat', 'ghost', 'wraith', 'fireskull', 'wyrm', 'frostwyrm', 'emberwyrm', 'tome', 'grimoire']);
@@ -131,8 +132,11 @@ export class Game {
     for (const c of r.currents || []) out.push({ type: 0, x0: c.x0, y0: c.y - 15, x1: c.x1, y1: c.y + 1, v: c.vx * 60 });
     for (const c of r.rivers || []) out.push({ type: 0, x0: c.x0, y0: c.y, x1: c.x1, y1: r.ph, v: c.vx * 60 });
     for (const d of r.decos) if (d.t === 'waterfall') out.push({ type: 1, x0: d.x - d.w / 2, y0: d.top, x1: d.x + d.w / 2, y1: d.y, v: 95 });
+    for (const p of r.pools || []) out.push({ type: 0, x0: p.x0, y0: p.yb - POOL_DEPTH, x1: p.x1, y1: p.yb, v: 0 });          // (a pool: a still sheet of shallow water lying on the bottom of a one-tile hollow of the ground: its surface is well below the lip, not level with it)
     return out;
   }
+  // the flow of the room's water has changed (a boss heaves the tide): hand the new speeds to the water shader
+  syncFlow() { this.fx.setFlows(this.waterList().map(o => o.v)); }
   // a page of the story has been found: kept in the save and in the browser's own storage (the LETTERS book on the title screen), then read at once
   // the six hidden skulls: how many are broken, and what the sixth does
   skullsBroken() { let n = 0; for (let i = 1; i <= SKULL_COUNT; i++) if (this.save.flags['skull' + i]) n++; return n; }
@@ -285,7 +289,7 @@ export class Game {
     for (let ty = 0; ty < def.h; ty++) for (let tx = 0; tx < def.w; tx++) { const v = tiles[ty * def.w + tx]; if ((v === 4 || v === 5 || v === 6 || v === 8) && S.flags[`b_${id}_${tx}_${ty}`]) tiles[ty * def.w + tx] = 0; }
     for (const lv of def.levers || []) if (S.flags[lv.id]) for (const [gx, gy] of lv.gate) tiles[gy * def.w + gx] = 0;          // (a gate whose lever has been thrown stays raised)
     if (id === 'ib' && S.flags.boss_ib) for (let ty = def.h - 2; ty < def.h; ty++) for (let tx = 5; tx <= def.w - 6; tx++) tiles[ty * def.w + tx] = 0;          // (the Rimewyrm's floor stays shattered: a way down into the Frozen Well)
-    const prevZone = this.zone; this.room = new Room({ ...def, tiles }); this.room.flags = S.flags; this.room.ignited = new Set(); this.room.fireOut = def.zone === 6 && !!S.flags.boss_vb; if (S.flags.boss_vb) S.flags.village_fire = true; S.visited[id] = true; this.zone = def.zone;          // (the room can see the save's flags: scenery such as the sigils over a locked door reads them)
+    const prevZone = this.zone; this.room = new Room({ ...def, tiles, ...(def.currents ? { currents: def.currents.map(c => ({ ...c })) } : {}) }); this.room.flags = S.flags;          // (the room gets its OWN copy of the currents: a boss may change their speed, and the castle's blueprint must not remember it) this.room.ignited = new Set(); this.room.fireOut = def.zone === 6 && !!S.flags.boss_vb; if (S.flags.boss_vb) S.flags.village_fire = true; S.visited[id] = true; this.zone = def.zone;          // (the room can see the save's flags: scenery such as the sigils over a locked door reads them)
     { const spk = []; for (let ty = 0; ty < def.h; ty++) for (let tx = 0; tx < def.w; tx++) if (tiles[ty * def.w + tx] === TILE.SPIKE) spk.push([tx, ty]); if (spk.length) this.room.decos = def.decos.filter(d => !decoCoversHazard(d, spk)); }          // nothing may stand in front of a hazard
     if (this.gaze) { this.gaze = null; this.playerFrozen = false; } this.gateAnims = []; this.hatchAnim = null; for (const d of this.room.decos) if (d.t === 'hatch') d.p = S.flags[d.lever] ? 1 : 0;          // (a hatch whose lever has been thrown stays drawn back: p = how far it has slid, 0..1)
     this.blackout = null; this.well = null; this.enemies = []; this.projectiles = []; this.pickups = []; this.props = []; this.popups = []; this.boss = null; this.delayed = []; this.fx.reset(); this.fx.setWisps(def.wisps || 0); this.flames = roomFlames(this.room); this.smokeSpots = this.room.fireOut ? this.room.decos.filter(d => d.t === 'blaze' && !d.small).map(d => ({ x: d.x, y: d.y })) : []; this.falls = this.room.decos.filter(d => d.t === 'waterfall'); this.fx.setWater(this.waterList()); this.mirrorView = def.mirror ? new MirrorView(def.mirror, !!S.flags['boss_' + id]) : null;          // (the Mirror Room: a great mirror - whole until you walk up to it)
