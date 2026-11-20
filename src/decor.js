@@ -41,15 +41,18 @@ function drawCog(g, x, y, r, n, ang, a) {
   g.restore();
 }
 
-// ALCHEMICAL SYMBOLS for the sigils on a sealed door (each boss that must fall has its own): sulphur, mercury, salt, iron, and for the Reliquary the skull.  Strokes only, about 12 px tall, centred on (x, y).
-const SIGIL_OF = { boss_h4: 'sulphur', boss_qb: 'mercury', boss_u3: 'salt', boss_kb: 'iron', skulls_done: 'skull', boss_og: 'earth' };
-const SIGILS_BY_ORDER = ['sulphur', 'mercury', 'salt', 'iron'];
+// ALCHEMICAL SYMBOLS for the sigils on a sealed door (each boss that must fall has its own): sulphur, water, salt, air, earth, and for the Reliquary the skull.  Strokes only, about 12 px tall, centred on (x, y).
+// NEVER draw the signs traditionally used for male and female (Mars, a circle with an arrow, which is also iron; Venus, a circle on a cross, which is also copper) or anything that reads like them: the user asked for them
+// to be avoided.  The Clockwork Lord's sigil was Mars's sign and the Mire Mother's was Mercury's (a circle on a cross, which reads as Venus's), so they are now AIR (a triangle with a bar) and WATER (a triangle
+// pointing down).  The names of the metals stay in the game's TEXT (the Keys of Iron, Copper and Mercury); only the pictures are avoided.
+const SIGIL_OF = { boss_h4: 'sulphur', boss_qb: 'water', boss_u3: 'salt', boss_kb: 'air', skulls_done: 'skull', boss_og: 'earth' };
+const SIGILS_BY_ORDER = ['sulphur', 'water', 'salt', 'air'];
 function glyph(g, name, x, y) {
   g.beginPath();
   if (name === 'sulphur') { g.moveTo(x, y - 6); g.lineTo(x + 4.6, y + 1); g.lineTo(x - 4.6, y + 1); g.closePath(); g.moveTo(x, y + 1); g.lineTo(x, y + 6.5); g.moveTo(x - 2.6, y + 3); g.lineTo(x + 2.6, y + 3); g.moveTo(x - 2.6, y + 5.4); g.lineTo(x + 2.6, y + 5.4); }          // a triangle on a double cross
-  else if (name === 'mercury') { g.arc(x, y - 0.5, 2.8, 0, Math.PI * 2); g.moveTo(x - 3, y - 5.6); g.arc(x, y - 4.6, 3, Math.PI * 0.8, Math.PI * 0.2, true); g.moveTo(x - 2.2, y - 6.4); g.arc(x, y - 4.2, 3, Math.PI * 1.15, Math.PI * 1.85); g.moveTo(x, y + 2.3); g.lineTo(x, y + 6.6); g.moveTo(x - 2.2, y + 4.6); g.lineTo(x + 2.2, y + 4.6); }          // a circle with horns above and a cross below
+  else if (name === 'water') { g.moveTo(x - 5.2, y - 4.4); g.lineTo(x + 5.2, y - 4.4); g.lineTo(x, y + 5.4); g.closePath(); }          // a triangle pointing down: water (the Mire Mother's swamp)
   else if (name === 'salt') { g.arc(x, y, 4.6, 0, Math.PI * 2); g.moveTo(x - 6, y); g.lineTo(x + 6, y); }          // a circle cut by a bar
-  else if (name === 'iron') { g.arc(x - 1.6, y + 1.8, 3.4, 0, Math.PI * 2); g.moveTo(x + 0.9, y - 0.7); g.lineTo(x + 5.4, y - 5.2); g.moveTo(x + 1.6, y - 5.4); g.lineTo(x + 5.6, y - 5.4); g.lineTo(x + 5.6, y - 1.4); }          // a circle with an arrow
+  else if (name === 'air') { g.moveTo(x, y - 5.6); g.lineTo(x + 5.2, y + 4.4); g.lineTo(x - 5.2, y + 4.4); g.closePath(); g.moveTo(x - 3.4, y + 0.8); g.lineTo(x + 3.4, y + 0.8); }          // a triangle pointing up with a bar across it: air (the Clockwork Lord)
   else if (name === 'earth') { g.moveTo(x - 5.2, y - 4.4); g.lineTo(x + 5.2, y - 4.4); g.lineTo(x, y + 5.4); g.closePath(); g.moveTo(x - 3, y - 0.6); g.lineTo(x + 3, y - 0.6); }          // a triangle pointing down with a bar across it: earth (the golem)
   else if (name === 'skull') { g.arc(x, y - 1, 4.4, Math.PI * 0.82, Math.PI * 0.18, false); g.lineTo(x + 2.2, y + 4.8); g.lineTo(x - 2.2, y + 4.8); g.closePath(); g.moveTo(x - 2, y - 1); g.lineTo(x - 0.8, y - 1); g.moveTo(x + 0.8, y - 1); g.lineTo(x + 2, y - 1); g.moveTo(x - 1, y + 4.8); g.lineTo(x - 1, y + 3); g.moveTo(x + 1, y + 4.8); g.lineTo(x + 1, y + 3); }          // the death's-head, for the door the six skulls open
   else { g.arc(x, y, 4.2, 0, Math.PI * 2); g.moveTo(x, y); g.lineTo(x + 0.01, y); }
