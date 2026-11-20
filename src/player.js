@@ -76,7 +76,7 @@ export class Player extends Entity {
     if (S.hp <= 0) { S.hp = 0; this.die(); }
     return true;
   }
-  die() { this.dead = true; this.deathT = 0; this.vx = 0; this.clearEnchant(false); A.sfx('gameover'); this.g.onPlayerDeath(); }
+  die() { this.dead = true; this.deathT = 0; this.vx = 0; this.clearEnchant(false); this.g.onPlayerDeath(); }
   heal(n) { const S = this.S; const b = S.hp; S.hp = Math.min(S.maxHp, S.hp + n); if (S.hp > b) { this.g.popup(this.x, this.y - 40, '+' + Math.round(S.hp - b), '#7dff8a'); this.g.fx.souls(this.x, this.y - 16, 5, COLORS.green); } }
   gainMp(n) { const S = this.S; S.mp = Math.min(S.maxMp, S.mp + n); }
   gainXp(n) {

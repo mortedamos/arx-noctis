@@ -43,13 +43,12 @@ CC BY and OGA-BY ask for the creator's name, the title, a link to the source and
 | [The Sidescroller's Dungeon Tileset \[32x32\]](https://inr-1ko.itch.io/the-sidescrollers-dungeon) | [Icko](https://inr-1ko.itch.io/) | the licence field says [CC BY-ND 4.0](https://creativecommons.org/licenses/by-nd/4.0/), which asks for credit; the author's description allows commercial use and changes | cut out of the sheet, some drawn at half size |
 | [Animated Gears - Pixel Art Steampunk Machinery](https://heosphorus.itch.io/animated-gears) | heosphorus | free to use with credit (confirmed by the project owner) | five of the ten animations packed into strips |
 
-Six sound effects are by Free Sounds Library ([freesoundslibrary.com](https://www.freesoundslibrary.com/)), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Each was trimmed, level-matched and re-encoded as a mono mp3.
+Five sound effects are by Free Sounds Library ([freesoundslibrary.com](https://www.freesoundslibrary.com/)), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Each was trimmed, level-matched and re-encoded as a mono mp3.
 
 | File | Title |
 |---|---|
 | `shatter_2.mp3` | [Glass Shattering Sound Effect](https://www.freesoundslibrary.com/glass-shattering-sound-effect/) |
 | `levelup.mp3` | [Ding Level Up](https://www.freesoundslibrary.com/ding-level-up-sound-effect/) |
-| `gameover.mp3` | [Game Over Piano Sound Effect](https://www.freesoundslibrary.com/game-over-piano-sound-effect/) |
 | `kill_rot_4.mp3` | [Zombie Noise](https://www.freesoundslibrary.com/zombie-noise/) |
 | `boss_nightmare.mp3` | [Horse Whinny Sound Effect](https://www.freesoundslibrary.com/horse-whinny-sound-effect/) |
 | `boss_nightmare_2.mp3` | [Horse Neighing Sound Effect](https://www.freesoundslibrary.com/horse-neighing-sound-effect/) |
@@ -150,7 +149,7 @@ Blackletter ExtraBold was rebuilt from the original `BLACEB__.TTF` so that brows
 Only the recorded sounds are listed here; every other sound is synthesized in code. Each recording was trimmed, level-matched and re-encoded as a mono 96 kbps mp3. Pixabay sounds are under the [Pixabay Content License](https://pixabay.com/service/license-summary/): free for commercial use, no credit required, not to be resold or passed on as a sound pack. The table is sorted by file name.
 
 <!-- sfx-table:start -->
-136 recordings: 112 CC0, 18 Pixabay Content License, 6 CC BY 4.0.
+135 recordings: 112 CC0, 18 Pixabay Content License, 5 CC BY 4.0.
 
 | File | Sound | By | Source | Licence |
 |---|---|---|---|---|
@@ -213,7 +212,6 @@ Only the recorded sounds are listed here; every other sound is synthesized in co
 | `flap_3.mp3` | Bird Flap B 05.wav | deleted_user_2104797 | [Freesound](https://freesound.org/people/deleted_user_2104797/sounds/330967/) | CC0 |
 | `flap_4.mp3` | bat swoosh | MrGungus | [Freesound](https://freesound.org/people/MrGungus/sounds/766542/) | CC0 |
 | `freeze.mp3` | iceSpell.wav | Relenzo2 | [Freesound](https://freesound.org/people/Relenzo2/sounds/160420/) | CC0 |
-| `gameover.mp3` | Game Over Piano Sound Effect | Free Sounds Library | [freesoundslibrary.com](https://www.freesoundslibrary.com/game-over-piano-sound-effect/) | CC BY 4.0 |
 | `gear.mp3` | LightClunk1.wav | BMacZero | [Freesound](https://freesound.org/people/BMacZero/sounds/94129/) | CC0 |
 | `gear_2.mp3` | SqueakyClick1.wav | BMacZero | [Freesound](https://freesound.org/people/BMacZero/sounds/94133/) | CC0 |
 | `gear_3.mp3` | Mechanical1.wav | BMacZero | [Freesound](https://freesound.org/people/BMacZero/sounds/94120/) | CC0 |

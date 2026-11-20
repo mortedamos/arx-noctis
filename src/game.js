@@ -276,7 +276,7 @@ export class Game {
     this.state = 'play'; A.sfx('ability'); this.fx.flash([0.45, 0.85, 1], 0.5); this.fx.burst(this.player.x, this.player.y - 16, 18, COLORS.blue, { speed: 2 });
     this.changeRoom({ room: id, x: arrivalBesideStone(def, w), y: w.y * 16 }, -1);          // (beside the stone but on solid floor: never out over a pit)
   }
-  onPlayerDeath() { A.stop(0.8); this.slow = 90; this.boss && (this.boss.harmless = true); this.after(95, () => { this.state = 'dead'; this.gameOver = new GameOver(this); this.slow = 0; }); }
+  onPlayerDeath() { A.stop(0.8); A.sting('sting_gameover'); this.slow = 90; this.boss && (this.boss.harmless = true); this.after(95, () => { this.state = 'dead'; this.gameOver = new GameOver(this); this.slow = 0; }); }
 
   // -------------------------------------------------------------------------------- rooms
   loadRoom(id, pos, dir = 1) {
@@ -543,7 +543,7 @@ export class Game {
   bossDefeated(b) {
     const S = this.save, r = this.room; S.flags['boss_' + r.id] = true; for (const j of this.jets || []) j.disabled = true; this.slow = 0; this.player.invT = 90; this.boss = null;
     for (let ty = 0; ty < r.h; ty++) for (let tx = 0; tx < r.w; tx++) if (r.get(tx, ty) === TILE.SEAL) r.set(tx, ty, TILE.EMPTY);
-    A.sfx('unseal'); A.sting('sting_victory'); this.shake(5, 30);
+    A.sfx('unseal'); this.shake(5, 30);
     const sg = sigilOf('boss_' + r.id);          // a boss whose death lights a sigil on a sealed door: the sigil is shown first, before anything else (his dying words, the reward, the ending)
     if (sg) { const p = this.player; p.invT = 99999; p.vx = 0; this.playerFrozen = true; this.sigilCard = { name: sg, t: 0, dur: 240 }; A.sfx('item'); this.fx.flash([1, 0.8, 0.45], 0.25); this.after(240, () => { this.sigilCard = null; this.playerFrozen = false; p.invT = 90; this.bossAftermath(b); }); return; }
     this.bossAftermath(b);
@@ -590,7 +590,7 @@ export class Game {
   enterWell() { if (this.trans) return; this.player.invT = Math.max(this.player.invT, 600); this.player.vx = 0; this.changeRoom({ room: 'ic', x: 15 * 16 + 8, y: 3 * 16 }, 1); }
   gainAbility(kind, x, y) {
     const S = this.save, a = ABILITIES[kind]; S.abilities[kind] = true; S.flags['got_' + kind] = true; this.cutscene = { t: 0, kind, x, y }; this.playerFrozen = true; this.player.invT = 999;
-    A.sfx('ability'); A.sting('sting_ability'); A.play(ZONES[this.room.zone].music, { fade: 0.2 });
+    A.sfx('ability'); A.play(ZONES[this.room.zone].music, { fade: 0.2 });
     this.fx.flash(a.color, 0.9); this.fx.ring(x, y, 150, a.color, 60, 0.1); this.fx.quad({ kind: 'rays', x, y, w: 300, h: 300, color: a.color, life: 150, spin: 0.02, p: [0, 10], a0: 0.8, a1: 0 }); this.fx.sparks(x, y, 40, [[1, 1, 0.9], a.color], 5, { gy: -0.02 });
     this.banner(a.name, Input.hint(a.desc), 330, { y: 70, color: '#ffe9a0' });
     if (kind === 'ember' || kind === 'thunder') { this.player.spell = kind; }

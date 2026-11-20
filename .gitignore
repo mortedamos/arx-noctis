@@ -20,6 +20,8 @@ server.js
 play.bat
 play.ps1
 tools/
+# listening copies made by tools/humanize-music.mjs (the music with a little imperfection added); nothing here is used by the game until you copy a file into music/
+music-humanized/
 
 # --- editor / assistant settings, and general clutter ----------------------------------------------------------------------------
 .claude/

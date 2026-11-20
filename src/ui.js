@@ -603,8 +603,8 @@ export class IntroCrawl {
 }
 
 export class GameOver {
-  // the funeral sting (music/sting_game_over.mp3) rings as the screen comes down; it is cut short if the player moves on before it ends
-  constructor(g) { this.g = g; this.t = 0; A.sting('sting_gameover'); this.menu = new Menu([{ label: 'CONTINUE FROM LAST SAVE', action: () => { A.stopSting(); g.respawn(); } }, { label: 'QUIT TO TITLE', action: () => { A.stopSting(); g.toTitle(); } }]); }
+  // the funeral sting (music/sting_game_over.mp3) starts at the moment of death (Game.onPlayerDeath) and may still be ringing here: it is cut short if the player moves on before it ends
+  constructor(g) { this.g = g; this.t = 0; this.menu = new Menu([{ label: 'CONTINUE FROM LAST SAVE', action: () => { A.stopSting(); g.respawn(); } }, { label: 'QUIT TO TITLE', action: () => { A.stopSting(); g.toTitle(); } }]); }
   update() { this.t++; if (this.t > 80) this.menu.update(this.g); }
   draw(ctx) {
     const a = clamp(this.t / 70, 0, 1); ctx.fillStyle = `rgba(10,0,4,${a * 0.9})`; ctx.fillRect(0, 0, W, H);

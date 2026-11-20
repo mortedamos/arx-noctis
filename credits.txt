@@ -125,7 +125,7 @@ Recorded sounds by Freesound, OpenGameArt, Kenney and Pixabay creators. Every on
 
 ## CC BY 4.0 - Free Sounds Library
 freesoundslibrary.com - trimmed, level-matched and re-encoded
-Glass Shattering, Ding Level Up, Game Over Piano, Zombie Noise, Horse Whinny, Horse Neighing
+Glass Shattering, Ding Level Up, Zombie Noise, Horse Whinny, Horse Neighing
 
 ## CC0 (public domain)
 click, click 2 - 51 UI sound effects - gopherapps (OpenGameArt)

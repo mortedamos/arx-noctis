@@ -23,9 +23,11 @@ export const Audio_ = {
   async init() {
     try { const q = new URLSearchParams(location.search); this.forceMute = (q.has('nopause') || q.has('mute')) && !q.has('music'); } catch {}
     try { Object.assign(this.settings, JSON.parse(localStorage.getItem('shadowkeep.audio') || '{}')); } catch {}
+    const local = /^(localhost|127.|[::1]|::1)/.test(location.hostname);
     try {
-      // the list of tracks is music/TRACKLIST.txt (the author's own file, with the Suno prompts: it is NOT published); a published copy of it holds just the lines the game needs, music/tracks.txt (made by tools/music-manifest.mjs)
-      let res = await fetch('music/TRACKLIST.txt', { cache: 'no-cache' }).catch(() => null); if (!res || !res.ok) res = await fetch('music/tracks.txt', { cache: 'no-cache' });
+      // the list of tracks is music/TRACKLIST.txt (the author's own file, with the Suno prompts: it is NOT published, so it is looked for on the author's own machine only - a published game would only be asking for a file that is not there);
+      // a published copy of it holds just the lines the game needs, music/tracks.txt (made by tools/music-manifest.mjs)
+      let res = local ? await fetch('music/TRACKLIST.txt', { cache: 'no-cache' }).catch(() => null) : null; if (!res || !res.ok) res = await fetch('music/tracks.txt', { cache: 'no-cache' });
       const txt = await res.text();
       for (const raw of txt.split(/\r?\n/)) {
         const line = raw.trim(); if (!line || line.startsWith('#') || !line.includes('|')) continue;
@@ -36,7 +38,6 @@ export const Audio_ = {
     for (const g of GENERAL) this.tracks[g] ||= { file: g + '.mp3', type: 'LOOP' };          // (listed in TRACKLIST.txt too, but the files are found even if the lines are removed)
     // Which music files exist.  A local server can list them live (__music); a plain static host (GitHub Pages) has music/files.json, made by tools/music-manifest.mjs.
     // With neither, the names in TRACKLIST.txt are simply tried, and a file that is not there is skipped.
-    const local = /^(localhost|127.|[::1]|::1)/.test(location.hostname);
     for (const src of local ? ['__music', 'music/files.json'] : ['music/files.json']) {
       try { const r = await fetch(src, { cache: 'no-cache' }); if (!r.ok) continue; const names = await r.json(); if (Array.isArray(names)) { this.available = new Map(names.map(s => [s.toLowerCase(), s])); break; } } catch {}
     }
@@ -248,7 +249,6 @@ export const Audio_ = {
     pickup() { this.tone(660, 990, 0.1, 'triangle', 0.1); },
     levelup() { [392, 494, 587, 784, 988].forEach((f, i) => this.tone(f, f, 0.18, 'square', 0.08, i * 0.07)); },
     ghost() { this.tone(300, 220, 0.5, 'sine', 0.07); this.tone(305, 215, 0.5, 'sine', 0.07); },
-    gameover() { this.tone(220, 55, 1.6, 'sawtooth', 0.15); this.noise(1.6, 400, 60, 0.2, 'lowpass', 1); },
   },
 };
 // each boss's own cry and death (boss_<id>, boss_<id>_die): until a recording is added to assets/sfx/, the shared roar or shriek stands in for it

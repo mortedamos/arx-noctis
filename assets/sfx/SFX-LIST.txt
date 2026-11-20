@@ -109,7 +109,6 @@ unseal       length 0.5-1.0 s       The seals are lifted when a boss falls: a re
 save         length 1.5-3.0 s       The sanctuary / altar saves your game: soft bells, calm and holy.
 toll         length 2.5-4.5 s       A single deep church BELL tolling (the opening scene and story beats).  Low and resonant;
                                     let it ring out.
-gameover     length 1.5-3.0 s       The hero dies: a sinking, mournful drone or a low descending toll.
 
 
 ---------- 4. THE BOSSES' VOICES ----------

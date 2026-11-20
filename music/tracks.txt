@@ -21,8 +21,5 @@ general_track_2 | general_track_2.mp3 | LOOP
 general_track_3 | general_track_3.mp3 | LOOP
 general_track_4 | general_track_4.mp3 | LOOP
 boss_final | boss_shadow_lord.mp3 | LOOP
-sting_item | sting_item_get.mp3 | STING
-sting_ability | sting_ability_get.mp3 | STING
-sting_victory | sting_boss_defeated.mp3 | STING
 sting_gameover | sting_game_over.mp3 | STING
 ending | ending_dawn.mp3 | LOOP
