@@ -246,10 +246,9 @@ export class TitleScreen {
     this.g = g; this.t = 0; this.mode = 'main'; this.padI = SEED_BEGIN; const has = g.hasSave();
     // NEW GAME and QUICK LOAD (the game saved in this browser) stand centred; the rest is a two-column table of smaller items (the rows below)
     this.main = new Menu([
-      { label: 'NEW GAME', action: () => g.newGame() }, { label: 'QUICK LOAD', disabled: !has, action: () => g.loadSlot() },
+      { label: 'NEW GAME', action: () => { this.mode = 'seed'; this.seed = ''; this.padI = SEED_BEGIN; Input.typed.length = 0; } }, { label: 'QUICK LOAD', disabled: !has, action: () => g.loadSlot() },          // (NEW GAME opens the seed keypad: BEGIN with nothing typed builds a random castle; a keypad of numbers is drawn in the game itself, on a phone and on a desktop: the game never opens a pop-up window)
       { label: 'LOAD GAME', small: true, action: () => { this.mode = 'file'; openLoadPanel(g, ok => { this.mode = 'main'; if (ok) g.loadSlot(); }); } },          // (a save file chosen and played: an HTML panel, see savefile.js)
       { label: 'SAVE GAME', small: true, disabled: !has, action: () => { const s = g.loadSave(); if (!s) return; this.mode = 'file'; openSavePanel(g, s, () => { this.mode = 'main'; }); } },          // (the game saved in this browser, written to a file)
-      { label: 'CHOOSE SEED', small: true, action: () => { this.mode = 'seed'; this.seed = ''; this.padI = SEED_BEGIN; Input.typed.length = 0; } },          // (a keypad of numbers is drawn in the game itself, on a phone and on a desktop: the game never opens a pop-up window)
       { label: 'CONTROLS', small: true, action: () => { this.mode = 'controls'; } }, { label: 'OPTIONS', small: true, action: () => { this.mode = 'options'; this.opts.i = 0; } }, { label: 'CREDITS', small: true, action: () => this.openCredits() },
     ], [[0], [1], [2, 3], [4, 5], [6, 7]]); if (has) this.main.i = 1;
     this.homeHint = isIOS() && !isStandalone();          // (an iPhone in Safari: the save is not safe there for long - see pwa.js)

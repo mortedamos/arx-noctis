@@ -237,7 +237,7 @@ export class Game {
     if (worldReady(seed)) { fn(); return; } if (this.loadingWorld) return; this.loadingWorld = { seed }; this.worldFrac = 0;
     this.ensureWorld(seed).then(() => { this.loadingWorld = null; if (this.state === 'title') fn(); }).catch(e => { this.loadingWorld = null; console.error(e); });
   }
-  // SECRET CODES, typed on the seed screen (CHOOSE SEED) instead of a seed: the castle is a random one, and ...
+  // SECRET CODES, typed on the seed screen (the one NEW GAME opens) instead of a seed: the castle is a random one, and ...
   //   02151979  everything is yours from the start: every power, every relic, every page, every key, a full satchel, every waystone attuned, the whole map charted, and your life, mana and sword as strong as if every upgrade lying in the castle had been taken
   //             (the bosses are all still there to be fought, and what they leave behind is still theirs to give)
   codeFor(text) { return { '02151979': 'all' }[text] || null; }
