@@ -488,9 +488,9 @@ function validateFerries(def, ferries, movers, abil) {
 }
 
 // ------------------------------------------------------------------------------------------------ SECRETS
-// A few corridors hide a SECRET: an alcove behind a cracked wall (cut it open with the sword).  What is inside is either a HOARD (a chest of gold) or one of the LADY'S LETTERS.  The Astrolabe does not mark them, and
-// the end of the game counts how many were found (see secrets.js).
-export const SECRETS = { g2: 'hoard', g4: 'letter', w2: 'hoard', w3: 'letter', h2: 'hoard', c2: 'letter', u1: 'hoard', q3: 'letter', k1: 'hoard', l1: 'hoard', l3: 'letter', i1: 'hoard', t1: 'letter' };
+// A few corridors hide a SECRET: an alcove behind a cracked wall (cut it open with the sword).  What is inside is a HOARD (a chest of 400 gold).  (Six of them used to hold one of the Lady's one-line letters - a flavour pickup
+// from before the story pages, which unlocked nothing and was not part of the Letters book; they hold hoards now: the story is told by the six pages.)  The Astrolabe does not mark them, and the end of the game counts how many were found (see secrets.js).
+export const SECRETS = { g2: 'hoard', g4: 'hoard', w2: 'hoard', w3: 'hoard', h2: 'hoard', c2: 'hoard', u1: 'hoard', q3: 'hoard', k1: 'hoard', l1: 'hoard', l3: 'hoard', i1: 'hoard', t1: 'hoard' };
 // ------------------------------------------------------------------------------------------------ CORRIDOR
 function genCorridor(id, spec, r) {
   // DECK: a tall room with TWO floors - a staircase of one-way platforms climbs to an upper floor over the middle of the room (its standing row is DK) and another staircase comes down at the far end

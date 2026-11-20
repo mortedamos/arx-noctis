@@ -35,22 +35,10 @@ export const UPGRADES = {
   frostkey: { name: 'KEY OF ANTIMONY', desc: 'IT OPENS THE LIBRARY OF AGES, DEEP IN ARX NOCTIS.', icon: 'key', color: KEYS.find(k => k.id === 'key_frost').rgb.map(v => v / 255) },          // (the Rimewyrm's: its id is the flag 'has_key_frost')
   ouroboros: { name: 'OUROBOROS', desc: 'THE SERPENT THAT EATS ITS OWN TAIL. DASH IN THE AIR AND A JUMP IS GIVEN BACK TO YOU, AND A DOUBLE JUMP, AND ANOTHER DASH: FOR AS LONG AS YOU CARE TO KEEP GOING.', icon: 'ouroboros', color: [0.55, 0.9, 0.5] },          // (its id is the flag 'got_crampons': the Player reads it)
   hoard: { name: 'A HOARD', desc: 'SOMEONE HID THIS AWAY LONG AGO: GOLD, A GREAT DEAL OF IT.', icon: 'coin', color: [1, 0.85, 0.3] },
-  letter: { name: "THE LADY'S LETTER", desc: '', icon: 'scroll', color: [0.95, 0.9, 0.75] },          // (its words come from LETTERS, chosen by its id)
   shoes: { name: 'SHOES OF HERMES', desc: 'MOVE 10% FASTER', icon: 'shoes', color: [1, 0.45, 0.95] },          // (its id is the flag 'got_shoes': the Player reads it)
 };
 export const iconFrame = name => ICON.indexOf(name);
-// the Lady's letters: hidden in the castle for him to find, one by one (she knew him: she never calls him a stranger)
-export const LETTERS = [
-  'MY DEAREST. IF YOU READ THIS I AM ALREADY LIGHT AND DUST. DO NOT GRIEVE. THE DAWN WILL BE WORTH THE WAITING.',
-  'HE WAS KIND ONCE, THE LORD. HE ONLY WANTED THE NIGHT TO STOP HURTING. HE DID NOT KNOW IT WOULD NEVER END.',
-  'I HID THESE WHERE ONLY A PATIENT HAND WOULD FIND THEM. I HOPED THAT HAND WOULD BE YOURS.',
-  'THE LIBRARIAN WAS ASKED TO KEEP THE KEYS. HE KEEPS EVERYTHING NOW. BE GENTLE WITH HIM, IF YOU CAN.',
-  'THE COLD CAME UP FROM THE FOUNDATIONS THE DAY THE SUN WAS TAKEN. IT IS ONLY LONELY. IT WANTS A WARM HAND.',
-  'THE ENGINEER BUILT A MACHINE TO HOLD THE SUN. HE NEVER ASKED IF THE SUN WISHED TO BE HELD.',
-  'WHEN IT IS OVER, GO UP TO THE HILL ABOVE PRAGUE. I WILL BE THERE. I HAVE ALWAYS BEEN THERE.',
-];
 const pageUpgrade = n => ({ name: 'A PAGE: ' + letterTitle(n), desc: 'A LETTER, FOLDED SMALL. IT IS KEPT IN THE LETTERS ON THE TITLE SCREEN.', icon: 'scroll', color: [0.95, 0.9, 0.75] });
-function letterUpgrade(id) { let h = 0; for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return { ...UPGRADES.letter, desc: LETTERS[h % LETTERS.length] }; }
 // a key picked up from a chest, a ledge or the top of a tower (its id, with or without the chest's '_u', names it - see KEYS)
 const keyBase = id => String(id).replace(/_u$/, '');
 function keyUpgrade(id) { const K = KEYS.find(k => k.id === keyBase(id)); return { name: K ? K.name : 'IRON KEY', desc: 'OPENS A LOCKED DOOR', icon: 'key', color: K ? K.rgb.map(v => v / 255) : [1, 0.85, 0.4] }; }
@@ -382,7 +370,7 @@ export class Lever {
 
 // ------------------------------------------------------------------------------------------------ permanent upgrade (floating item)
 export class Upgrade {
-  constructor(x, y, o) { this.x = x; this.y = y; this.kind = o.kind; this.id = o.id; this.n = o.n; this.t = 0; this.dead = false; this.U = o.kind === 'page' ? pageUpgrade(o.n) : o.kind === 'key' ? keyUpgrade(o.id) : o.kind === 'letter' ? letterUpgrade(o.id) : UPGRADES[o.kind]; }
+  constructor(x, y, o) { this.x = x; this.y = y; this.kind = o.kind; this.id = o.id; this.n = o.n; this.t = 0; this.dead = false; this.U = o.kind === 'page' ? pageUpgrade(o.n) : o.kind === 'key' ? keyUpgrade(o.id) : UPGRADES[o.kind]; }
   get box() { return { x: this.x - 8, y: this.y - 16, w: 16, h: 16 }; }
   update(g) {
     this.t++; const bob = Math.sin(this.t * 0.07) * 2, p = g.player; this.by = bob;
