@@ -8,6 +8,10 @@
 // Nothing is downloaded in advance: the background loader (src/loader.js) still decides what to fetch and when, so a phone on mobile data fetches no more than before.
 const CACHE = 'arx-noctis-1';          // (change the number to throw away everything stored, on every player's device)
 const AUDIO = /\.(mp3|ogg|wav|m4a|flac|opus)$/i;
+// The page, the code, the lists and the text files: asked about EVERY time (a tiny "unchanged" answer when they are), because GitHub Pages tells the browser to keep any file for ten minutes
+// (Cache-Control: max-age=600), and a plain fetch() here obeys that - so a returning player kept the old build (and the old build date on the title screen) for up to ten minutes after a publish.
+// Pictures and fonts are left to the browser's own cache: they change rarely, and there are hundreds of them.
+const REVALIDATE = /(\.(html|js|mjs|css|json|txt|webmanifest)|\/)$/i;
 const RECHECK = 12 * 3600e3;          // ms between two checks of the same sound
 const LISTS = [[/\/(music\/files\.json|__music)$/, 'music/'], [/\/(assets\/sfx\/files\.json|__sfx)$/, 'assets/sfx/']];          // (a list of files -> the folder it lists)
 
@@ -27,7 +31,7 @@ self.addEventListener('fetch', e => {
 // the network first; the stored copy when the network fails
 async function fresh(e, req, key, url) {
   try {
-    const res = await fetch(req);
+    const res = await fetch(req, REVALIDATE.test(url.pathname) ? { cache: 'no-cache' } : undefined);          // ('no-cache' = check with the server first, whatever max-age says)
     if (res.status === 200 && res.type === 'basic') {
       keep(e, store(key, res.clone()));
       const list = LISTS.find(([re]) => re.test(url.pathname)); if (list) keep(e, prune(res.clone(), list[1]));
