@@ -480,11 +480,21 @@ function layerScaled(g, img, sc, scroll, y) {
   const list = Array.isArray(img) ? img : [img], ws = list.map(m => Math.round(m.width * sc)), total = ws.reduce((a, b) => a + b, 0); let x = -(((scroll % total) + total) % total), i = 0;
   while (x < W) { const m = list[i % list.length], w = ws[i % list.length]; if (x + w > 0) { if (y > 0 && topOpaque(m)) fadeUp(g, m, Math.round(x), w, Math.round(y)); g.drawImage(m, Math.round(x), Math.round(y), w, Math.round(m.height * sc)); } x += w; i++; }
 }
-// the top row of a picture, stretched up from its top edge and fading away over FADE pixels: the sky above a layer blends in instead of ending in a straight line (tall rooms show a lot of it)
+// the top row of a picture, stretched up from its top edge and fading away over FADE pixels: the sky above a layer blends in instead of ending in a straight line (tall rooms show a lot of it).  The row is SOFTENED first
+// (softTop): the raw row of a cloudy sky has a few lighter pixels, and stretched upward each became a hard, banded column - "a tower" - standing in the sky of the Graveyard's upper levels.
 function fadeUp(g, img, x, w, y) {
-  const FADE = 80, y0 = Math.max(0, y - FADE), n = 10, h = (y - y0) / n, a0 = g.globalAlpha; if (y <= 0) return;
-  for (let i = 0; i < n; i++) { g.globalAlpha = a0 * Math.pow((i + 1) / n, 1.6); g.drawImage(img, 0, 0, img.width, 1, x, Math.round(y0 + i * h), w, Math.ceil(h) + 1); }
+  const FADE = 80, y0 = Math.max(0, y - FADE), n = 10, h = (y - y0) / n, a0 = g.globalAlpha, strip = softTop(img); if (y <= 0) return;
+  for (let i = 0; i < n; i++) { g.globalAlpha = a0 * Math.pow((i + 1) / n, 1.6); g.drawImage(strip, 0, 0, img.width, 1, x, Math.round(y0 + i * h), w, Math.ceil(h) + 1); }
   g.globalAlpha = a0;
+}
+const SOFTTOP = new WeakMap();
+function softTop(img) {          // the picture's top row with every pixel averaged with the ones round it (SOFT_R either side): the same colours, but no narrow features left to be stretched into streaks
+  let s = SOFTTOP.get(img); if (s) return s;
+  const w = img.width, R = 64, src = canvasOf(w, 1), sg = src.getContext('2d'); sg.drawImage(img, 0, 0, w, 1, 0, 0, w, 1); const p = sg.getImageData(0, 0, w, 1).data;
+  s = canvasOf(w, 1); const og = s.getContext('2d'), o = og.createImageData(w, 1), pre = new Float64Array((w + 1) * 3);
+  for (let i = 0; i < w; i++) for (let k = 0; k < 3; k++) pre[(i + 1) * 3 + k] = pre[i * 3 + k] + p[i * 4 + k];          // (running sums, so each average costs three subtractions)
+  for (let i = 0; i < w; i++) { const a = Math.max(0, i - R), b = Math.min(w, i + R + 1), n = b - a; for (let k = 0; k < 3; k++) o.data[i * 4 + k] = (pre[b * 3 + k] - pre[a * 3 + k]) / n; o.data[i * 4 + 3] = 255; }
+  og.putImageData(o, 0, 0); SOFTTOP.set(img, s); return s;
 }
 function layerRepeat(g, img, scroll, y, gap) {
   const w = img.width + gap, off = -(((scroll % w) + w) % w), ext = y > 0 && topOpaque(img);
