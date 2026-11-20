@@ -1,2 +1,2 @@
 // (written by update-build.mjs before each commit - do not edit)
-export const BUILD = { n: 73, when: '2026-11-20' };
+export const BUILD = { n: 74, when: '2026-11-20' };

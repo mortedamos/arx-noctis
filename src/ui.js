@@ -16,6 +16,7 @@ import { BUILD } from './build.js';
 import { secretStats } from './secrets.js';
 import { BestiaryScreen } from './bestiary.js';
 import { LetterBook, savePages, PAGE_COUNT } from './letters.js';
+import { mapCells } from './maplayout.js';
 import { openSavePanel, openLoadPanel } from './savefile.js';
 import { isIOS, isStandalone } from './pwa.js';
 
@@ -250,7 +251,7 @@ export class TitleScreen {
       { label: 'LOAD GAME', small: true, action: () => { this.mode = 'file'; openLoadPanel(g, ok => { this.mode = 'main'; if (ok) g.loadSlot(); }); } },          // (a save file chosen and played: an HTML panel, see savefile.js)
       { label: 'SAVE GAME', small: true, disabled: !has, action: () => { const s = g.loadSave(); if (!s) return; this.mode = 'file'; openSavePanel(g, s, () => { this.mode = 'main'; }); } },          // (the game saved in this browser, written to a file)
       { label: 'CONTROLS', small: true, action: () => { this.mode = 'controls'; } }, { label: 'OPTIONS', small: true, action: () => { this.mode = 'options'; this.opts.i = 0; } }, { label: 'CREDITS', small: true, action: () => this.openCredits() },
-    ], [[0], [1], [2, 3], [4, 5], [6, 7]]); if (has) this.main.i = 1;
+    ], [[0], [1], [2, 3], [4, 5], [6]]); if (has) this.main.i = 1;
     this.homeHint = isIOS() && !isStandalone();          // (an iPhone in Safari: the save is not safe there for long - see pwa.js)
     this.opts = optionsMenu(() => { this.mode = 'main'; });
   }
@@ -438,37 +439,47 @@ export class PauseMenu {
 //   1. A strip of the castle that only scrolls shows no whole: now there are two views - DETAIL (the rooms as blocks of cells, centred on the room you have selected) and the WHOLE CASTLE (X switches).
 //   2. A web of lines between the rooms (channels, doors, one-way routes) was the worst of it, and it is gone.  A room shows its doors as small marks INSIDE it, where they really are.  Only the room you
 //      have selected shows where it leads: gold lines to its neighbours, and their names in the panel below.
-//   3. Everything was the same blue.  Each zone now has its own colour, and its name is written over it.
+//   3. Everything was the same blue.  Each zone now has its own colour (and the name of the selected room's zone is written over that room).
 //   4. You had to nudge the map about with the arrows.  Now the arrows MOVE A CURSOR from room to room (the map follows), and a panel names what it rests on and what is in it.
 //   5. The whole room flashed white to say 'you are here'.  Now a small pulsing pip stands exactly where you stand in your room.
-// The rooms keep the castle's layout (each chain of rooms is a row, side rooms hang below), and each takes as many cells as it needs: one per screen of the room.
+//   6. (2026-11-20) The map is PACKED, and has no lines at all: rooms touch their parent zones and the zones touch each other, with no space between areas (the layout is in maplayout.js), and the cursor's room shows where it
+//      leads only in the panel below.  It zooms: the mouse wheel, + / - (or the page keys, or a controller's shoulder buttons), the two buttons at the corner of the map, or X for the whole castle.
+// Each room takes as many cells as it needs: one per screen of the room.
 const ZCOL = { 1: '#4a6a3a', 2: '#8a6a2a', 3: '#6a4a9a', 4: '#4a7a7a', 5: '#9a2a3a', 6: '#a8542a', 7: '#3a7a5a', 8: '#9a7a3a', 9: '#3a6a9a', 10: '#8a5a2a', 11: '#5aa8d0' };
-const CELL_W = 10, CELL_H = 8, GAP_X = 6, GAP_Y = 8, CELLS_W = 24, CELLS_H = 14;          // (a cell is 10 x 8 px on the map; a room is one cell per 24 tiles across and per 14 tiles up)
-const cellsOf = (n, per, max) => clamp(Math.round(n / per), 1, max);
+const CELL_W = 10, CELL_H = 8, ZOOM_MAX = 3.2;          // (a cell is 10 x 8 px on the map; a room is one cell per 24 tiles across and per 14 tiles up: see mapCells)
 const rgbOf = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
 const shade = (hex, k) => { const c = rgbOf(hex).map(v => Math.round(v * k)); return `rgb(${c[0]},${c[1]},${c[2]})`; };
-function mapLayout(ROOMS) {
-  const list = Object.values(ROOMS), nx = Math.max(...list.map(r => r.map.x)) + 1, ny = Math.max(...list.map(r => r.map.y)) + 1, colW = Array(nx).fill(CELL_W), rowH = Array(ny).fill(CELL_H);
-  for (const r of list) { colW[r.map.x] = Math.max(colW[r.map.x], cellsOf(r.w, CELLS_W, 7) * CELL_W); rowH[r.map.y] = Math.max(rowH[r.map.y], cellsOf(r.h, CELLS_H, 4) * CELL_H); }
-  const colX = [], rowTop = [], rowBot = []; let x = 0, y = 0;
-  for (let i = 0; i < nx; i++) { colX[i] = x; x += colW[i] + GAP_X; } for (let j = 0; j < ny; j++) { rowTop[j] = y; rowBot[j] = y + rowH[j]; y += rowH[j] + GAP_Y; }
-  return { colX, colW, rowTop, rowBot, w: x, h: y };
+function mapLayout(ROOMS) {          // (the size of the whole map: the rooms are placed, in cells, by maplayout.js)
+  let x1 = 0, y1 = 0; for (const r of Object.values(ROOMS)) { const { cw, ch } = mapCells(r); x1 = Math.max(x1, r.map.x + cw); y1 = Math.max(y1, r.map.y + ch); }
+  return { w: x1 * CELL_W, h: y1 * CELL_H };
 }
 const VIEW_Y0 = 24, VIEW_Y1 = 130;          // the map's window on the screen (the panel is beneath it)
 export class MapScreen {
   // o.teleport = id of the waystone room we are standing in: the map becomes a destination picker for every attuned waystone
   constructor(g, o = {}) {
-    this.g = g; this.t = 0; this.here = o.teleport || null; this.tele = !!o.teleport; this.whole = false; this.sc = 1; this.rep = 0; this.left = 0;
+    this.g = g; this.t = 0; this.here = o.teleport || null; this.tele = !!o.teleport; this.zoom = 1; this.lastZoom = 1; this.sc = 1; this.rep = 0; this.zh = 0; this.left = 0;
     const S = g.save; this.stones = (g.world.stones || []).filter(id => S.flags['tp_' + id]);
     if (this.tele) { const i = this.stones.indexOf(this.here); this.sel = i > 0 ? i - 1 : Math.min(1, this.stones.length - 1); if (this.sel < 0) this.sel = 0; }
     this.R = Object.fromEntries(Object.entries(g.world.rooms).filter(([, r]) => !r.hidden));          // (the map knows nothing of the secret rooms)
-    this.lay = mapLayout(this.R); this.selId = this.R[g.room.id] ? g.room.id : (g.room.exits.map(e => e.room).find(id => this.R[id]) || 'v0');
+    this.lay = mapLayout(this.R); this.zoom = this.sc = this.lastZoom = clamp(1, this.fitScale(), ZOOM_MAX); this.selId = this.R[g.room.id] ? g.room.id : (g.room.exits.map(e => e.room).find(id => this.R[id]) || 'v0');
     const c = this.centre(this.focusRoom()); this.cam = { x: c.x, y: c.y };
   }
-  rectOf(r) { const L = this.lay, cw = cellsOf(r.w, CELLS_W, 7), ch = cellsOf(r.h, CELLS_H, 4), w = cw * CELL_W, h = ch * CELL_H; return { x: L.colX[r.map.x], y: L.rowBot[r.map.y] - h, w, h, cw, ch }; }
+  rectOf(r) { const { cw, ch } = mapCells(r); return { x: r.map.x * CELL_W, y: r.map.y * CELL_H, w: cw * CELL_W, h: ch * CELL_H, cw, ch }; }
   centre(r) { const q = this.rectOf(r); return { x: q.x + q.w / 2, y: q.y + q.h / 2 }; }
   focusRoom() { const g = this.g; return this.tele ? this.R[this.stones[this.sel]] : this.R[this.selId] || this.R.v0; }
-  targetScale() { if (!this.whole) return 1; const L = this.lay; return Math.min(1, 0.97 * W / L.w, (VIEW_Y1 - VIEW_Y0 - 4) / L.h); }
+  // ZOOM: this.zoom is how many screen pixels one map pixel is; it runs from the whole castle (fitScale) up to ZOOM_MAX
+  fitScale() { const L = this.lay; return Math.min(1, 0.97 * W / L.w, (VIEW_Y1 - VIEW_Y0 - 4) / L.h); }
+  get whole() { return this.zoom <= this.fitScale() * 1.04; }
+  zoomBy(k) { this.zoom = clamp(this.zoom * k, this.fitScale(), ZOOM_MAX); }
+  zoomRects() { return [{ k: 1.4, x: W - 24, y: VIEW_Y0 + 3, w: 20, h: 15, label: '+' }, { k: 1 / 1.4, x: W - 24, y: VIEW_Y0 + 21, w: 20, h: 15, label: '-' }]; }          // (the two buttons at the corner of the map: a click or a tap)
+  targetScale() { return this.zoom; }
+  stepZoom() {
+    const wheel = Input.wheel; if (wheel) this.zoomBy(Math.exp(-wheel * 0.0016));
+    if (Input.pressed.zoomIn) { this.zoomBy(1.25); this.zh = 0; A.sfx('click'); } else if (Input.pressed.zoomOut) { this.zoomBy(1 / 1.25); this.zh = 0; A.sfx('click'); }
+    else if (Input.held.zoomIn && ++this.zh > 12) this.zoomBy(1.03); else if (Input.held.zoomOut && ++this.zh > 12) this.zoomBy(1 / 1.03); else if (!Input.held.zoomIn && !Input.held.zoomOut) this.zh = 0;
+    for (const tp of [...Input.taps, ...Input.clicks]) for (const b of this.zoomRects()) if (tp.x >= b.x && tp.x < b.x + b.w && tp.y >= b.y && tp.y < b.y + b.h) { this.zoomBy(b.k); A.sfx('click'); }
+  }
+  toggleWhole() { if (this.whole) this.zoom = clamp(this.lastZoom > this.fitScale() * 1.04 ? this.lastZoom : 1, this.fitScale(), ZOOM_MAX); else { this.lastZoom = this.zoom; this.zoom = this.fitScale(); } A.sfx('select'); }
   // the visited room nearest to the cursor in a direction (a room straight ahead beats one off to the side)
   hop(dx, dy) {
     const S = this.g.save, R = this.R, cur = this.centre(R[this.selId]); let best = null, bs = 1e9;
@@ -488,11 +499,13 @@ export class MapScreen {
       const dirs = [['left', -1, 0], ['right', 1, 0], ['up', 0, -1], ['down', 0, 1]]; let any = false;
       for (const [k, dx, dy] of dirs) { if (Input.pressed[k]) { this.hop(dx, dy); this.rep = 0; } else if (Input.held[k]) { any = true; if (++this.rep > 16 && this.rep % 7 === 0) this.hop(dx, dy); } }
       if (!any) this.rep = 0;
-      if (Input.pressed.attack || Input.pressed.jump) { this.whole = !this.whole; A.sfx('select'); }
+      if (Input.pressed.attack || Input.pressed.jump) this.toggleWhole();
       if (Input.pressed.map || Input.pressed.back || Input.pressed.pause || Input.pressed.confirm) g.resume();
     }
-    this.sc += (this.targetScale() - this.sc) * 0.25; const f = this.focusRoom(), fc = this.centre(f), L = this.lay;
-    const wantX = this.whole && !this.tele ? L.w / 2 : fc.x, wantY = this.whole && !this.tele ? L.h / 2 : fc.y; this.cam.x += (wantX - this.cam.x) * 0.25; this.cam.y += (wantY - this.cam.y) * 0.25;
+    this.stepZoom(); this.sc += (this.targetScale() - this.sc) * 0.25; const f = this.focusRoom(), fc = this.centre(f), L = this.lay;
+    // the camera follows the cursor, but never shows more than the map: a view wider than the map is centred on it
+    const hx = W / 2 / this.sc, hy = (VIEW_Y1 - VIEW_Y0) / 2 / this.sc, keep = (v, lo, hi) => (lo > hi ? (lo + hi) / 2 : clamp(v, lo, hi));
+    const wantX = keep(this.whole && !this.tele ? L.w / 2 : fc.x, hx, L.w - hx), wantY = keep(this.whole && !this.tele ? L.h / 2 : fc.y, hy, L.h - hy); this.cam.x += (wantX - this.cam.x) * 0.25; this.cam.y += (wantY - this.cam.y) * 0.25;
   }
   draw(ctx) {
     const g = this.g, S = g.save, ROOMS = this.R, sc = this.sc, rect = r => this.rectOf(r), flash = Math.floor(this.t / 14) % 2;
@@ -529,26 +542,31 @@ export class MapScreen {
         const mx = Math.round(q.x + (sp.x + 0.5) / r.w * q.w), my = Math.round(q.y + (sp.y - 0.5) / r.h * q.h), pulse = Math.floor(this.t / 14) % 2;
         ctx.fillStyle = '#05030a'; ctx.fillRect(mx - 3, my - 1, 7, 3); ctx.fillRect(mx - 1, my - 3, 3, 7); ctx.fillStyle = pulse ? '#ffe9a0' : '#e8b84a'; ctx.fillRect(mx - 2, my, 5, 1); ctx.fillRect(mx, my - 2, 1, 5); ctx.fillRect(mx - 1, my - 1, 3, 3); } }
     this.left = left;
-    // the selected room: a bright frame, and gold lines to where its doors and openings lead
+    // the selected room: a bright frame (no lines to its neighbours: the rooms touch, and the panel below says where it leads)
     const links = [];
     if (sel && !this.tele) {
-      const sq = rect(sel), a = (q, rm, row) => q.y + Math.floor(clamp(row / rm.h, 0, 0.999) * q.ch) * CELL_H + (CELL_H >> 1);
-      for (const e of sel.exits) { const t = ROOMS[e.room]; if (!t) continue; const tq = rect(t), right = e.side === 'R', seen = !!S.visited[t.id]; links.push({ id: t.id, seen, x0: right ? sq.x + sq.w : sq.x, y0: a(sq, sel, (e.from + e.to) / 2), x1: right ? tq.x : tq.x + tq.w, y1: seen ? tq.y + tq.h / 2 : a(sq, sel, (e.from + e.to) / 2), kind: 'open' }); }
-      for (const d of sel.doors) { const t = ROOMS[d.room]; if (!t) continue; const tq = rect(t), seen = !!S.visited[t.id], tx = sq.x + clamp((d.x + 0.5) / sel.w, 0.04, 0.96) * sq.w, ty = sq.y + clamp(d.gy / sel.h, 0.1, 0.96) * sq.h - 1; links.push({ id: t.id, seen, x0: tx, y0: ty, x1: tq.x + tq.w / 2, y1: tq.y + tq.h / 2, kind: d.tag === 'out' ? 'oneway' : 'door' }); }
-      for (const l of links) { ctx.strokeStyle = l.kind === 'oneway' ? '#7fd8ff' : '#ffd860'; ctx.lineWidth = 1 / Math.max(sc, 0.5); ctx.setLineDash(l.seen ? [] : [2, 2]); ctx.beginPath(); ctx.moveTo(l.x0, l.y0); ctx.lineTo(l.x1, l.y1); ctx.stroke(); ctx.setLineDash([]);
-        if (l.seen) { const tq = rect(ROOMS[l.id]); ctx.strokeStyle = l.kind === 'oneway' ? '#7fd8ff' : '#ffd860'; ctx.strokeRect(tq.x - 1.5, tq.y - 1.5, tq.w + 3, tq.h + 3); } }
-      const pulse = 0.6 + 0.4 * Math.sin(this.t * 0.2); ctx.strokeStyle = `rgba(255,255,255,${pulse.toFixed(2)})`; ctx.lineWidth = 1.5 / Math.max(sc, 0.5); ctx.strokeRect(sq.x - 2, sq.y - 2, sq.w + 4, sq.h + 4);
+      for (const e of sel.exits) { const t = ROOMS[e.room]; if (t) links.push({ id: t.id, seen: !!S.visited[t.id] }); }
+      for (const d of sel.doors) { const t = ROOMS[d.room]; if (t) links.push({ id: t.id, seen: !!S.visited[t.id] }); }
+      const sq = rect(sel), pulse = 0.6 + 0.4 * Math.sin(this.t * 0.2); ctx.strokeStyle = `rgba(255,255,255,${pulse.toFixed(2)})`; ctx.lineWidth = 1.5 / Math.max(sc, 0.5); ctx.strokeRect(sq.x - 2, sq.y - 2, sq.w + 4, sq.h + 4);
     }
     if (this.tele) for (let i = 0; i < this.stones.length; i++) {       // brackets round every attuned waystone; the chosen one pulses
       const r = ROOMS[this.stones[i]]; if (!r) continue; const q = rect(r), on = i === this.sel, pad = on ? 3 + (Math.floor(this.t / 8) % 2) : 2;
       ctx.strokeStyle = on ? '#bff4ff' : (r.id === this.here ? '#ffffff' : '#4aa8c8'); ctx.lineWidth = on ? 2 : 1; ctx.strokeRect(q.x - pad + 0.5, q.y - pad + 0.5, q.w + pad * 2 - 1, q.h + pad * 2 - 1);
     }
     ctx.restore();
-    // the zones' names, written over their rooms (in screen space, so they stay readable at any zoom)
+    // the name of the zone the selected room is in, written over that room (in screen space, so it stays readable at any zoom).  No other zone is named: the map shows the names only for the cursor's room
     ctx.save(); ctx.beginPath(); ctx.rect(0, VIEW_Y0, W, VIEW_Y1 - VIEW_Y0); ctx.clip();
-    const zb = {}; for (const r of rooms) { const q = rect(r), z = zb[r.zone] || (zb[r.zone] = { x0: 1e9, y0: 1e9, x1: -1e9 }); z.x0 = Math.min(z.x0, q.x); z.y0 = Math.min(z.y0, q.y); z.x1 = Math.max(z.x1, q.x + q.w); }
-    for (const [z, b] of Object.entries(zb)) { const name = ZONES[z] ? ZONES[z].name.toUpperCase() : ''; const x = Math.round(sx((b.x0 + b.x1) / 2)), y = Math.round(sy(b.y0)) - 9; if (x < -80 || x > W + 80 || y < VIEW_Y0 - 8 || y > VIEW_Y1) continue; drawText(ctx, name, x, y, { align: 'center', color: ZCOL[z] ? shade(ZCOL[z], 1.7) : '#aaa', outline: '#000' }); }
+    if (sel && ZONES[sel.zone]) {
+      const q = rect(sel), name = ZONES[sel.zone].name.toUpperCase(), tw = textWidth(name, 1), mid = sx(q.x + q.w / 2); let y = Math.round(sy(q.y)) - 10; if (y < VIEW_Y0 + 1) y = Math.round(sy(q.y + q.h)) + 3;          // (above the room; below it when there is no room above, at the top of the map)
+      drawText(ctx, name, Math.round(clamp(mid, 4 + tw / 2, W - 4 - tw / 2)), y, { align: 'center', color: ZCOL[sel.zone] ? shade(ZCOL[sel.zone], 1.7) : '#aaa', outline: '#000' });
+    }
     ctx.restore();
+    for (const b of this.zoomRects()) {          // the zoom buttons, and how far in the map is
+      const off = (b.label === '+' && this.zoom >= ZOOM_MAX - 0.01) || (b.label === '-' && this.whole);
+      ctx.fillStyle = 'rgba(14,9,28,0.9)'; ctx.fillRect(b.x, b.y, b.w, b.h); ctx.strokeStyle = off ? '#3a3248' : '#b8913f'; ctx.lineWidth = 1; ctx.strokeRect(b.x + 0.5, b.y + 0.5, b.w - 1, b.h - 1);
+      drawText(ctx, b.label, b.x + b.w / 2, b.y + 3, { align: 'center', scale: 1.5, color: off ? '#4a4258' : GOLD });
+    }
+    drawText(ctx, Math.round(this.sc * 100) + '%', W - 14, VIEW_Y0 + 39, { align: 'center', color: DIM });
     if (this.tele) {
       const id = this.stones[this.sel], r = id && ROOMS[id];
       if (this.stones.length < 2) drawText(ctx, 'NO OTHER WAYSTONE IS ATTUNED YET', W / 2, H - 38, { align: 'center', color: PALE });
@@ -570,7 +588,7 @@ export class MapScreen {
     if (astro) drawText(ctx, left ? `ASTROLABE: ${left} TREASURE${left === 1 ? '' : 'S'} LEFT (GOLD DIAMONDS)` : 'ASTROLABE: NO TREASURE LEFT IN ROOMS YOU HAVE SEEN', W / 2, 15, { align: 'center', color: '#e8c872' });
     drawText(ctx, `ROOMS ${Object.keys(S.visited).filter(id => ROOMS[id]).length}/${Object.keys(ROOMS).length}   SECRETS ${sec.found}/${sec.total}`, W - 8, VIEW_Y1 + 5, { align: 'right', color: PALE });
     drawText(ctx, 'GOLD DOOR   BLUE ONE-WAY   VIOLET KEEPER   RED SAVE   CYAN WAYSTONE', W / 2, H - 20, { align: 'center', color: '#6a6078' });
-    drawText(ctx, Input.touchOn ? 'PAD MOVES THE CURSOR     JUMP: WHOLE CASTLE / DETAIL     MAP CLOSES' : 'ARROWS MOVE THE CURSOR     X: WHOLE CASTLE / DETAIL     M OR ESC CLOSES', W / 2, H - 10, { align: 'center', color: DIM });
+    drawText(ctx, Input.touchOn ? 'PAD MOVES THE CURSOR     + -: ZOOM     JUMP: WHOLE CASTLE     MAP CLOSES' : 'ARROWS: CURSOR     WHEEL OR + -: ZOOM     X: WHOLE CASTLE     M OR ESC CLOSES', W / 2, H - 10, { align: 'center', color: DIM });
   }
 }
 

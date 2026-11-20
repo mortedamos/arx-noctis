@@ -6,9 +6,10 @@ const KEYMAP = {
   map: ['KeyM', 'Tab'], pause: ['Escape', 'KeyP', 'Enter'],
   confirm: ['Enter', 'Space', 'KeyZ', 'KeyJ'], back: ['Escape', 'Backspace', 'KeyX'],
   mute: ['KeyN'], pkey: ['KeyP'], esc: ['Escape'],
+  zoomIn: ['Equal', 'NumpadAdd', 'PageUp'], zoomOut: ['Minus', 'NumpadSubtract', 'PageDown'],          // (the map screen's zoom; the shoulder buttons of a controller do the same: see PAD)
 };
 const PAD = { // standard gamepad mapping -> action
-  jump: [0], attack: [2], dash: [1, 7], spell: [3, 6], itemPrev: [4], itemNext: [5], pause: [9], map: [8], confirm: [0, 9], back: [1],
+  jump: [0], attack: [2], dash: [1, 7], spell: [3, 6], itemPrev: [4], itemNext: [5], zoomOut: [4], zoomIn: [5], pause: [9], map: [8], confirm: [0, 9], back: [1],
   up: [12], down: [13], left: [14], right: [15], interact: [12],
 };
 const actions = Object.keys(KEYMAP);
@@ -25,6 +26,8 @@ export const Input = {
   _touch: {}, touchOn: false, taps: [], _taps: [],
   // the mouse on a desktop (touch.js; game pixels again): clicks = where it was clicked, hovered = where it moved to (null if it did not) - only the screens that ask for them (the seed keypad) look
   clicks: [], _clicks: [], hovered: null, _hover: null,
+  // the mouse wheel: wheel = how far it turned since the last step (up is negative), for the screens that zoom (the map)
+  wheel: 0, _wheel: 0,
   click(x, y) { this._clicks.push({ x, y }); },
   hover(x, y) { this._hover = { x, y }; },
   touchHold(a) { this._touch[a] = (this._touch[a] || 0) + 1; this._pend.add(a); this._anyPend = true; },
@@ -50,6 +53,7 @@ export const Input = {
       for (const a of codeToActions[e.code] || []) this._pendRel.add(a);
     });
     addEventListener('blur', () => { this._keys.clear(); });
+    addEventListener('wheel', e => { if (!ownKeys(e)) this._wheel += e.deltaY * (e.deltaMode === 1 ? 33 : 1); }, { passive: true });
   },
 
   // call once at the start of each logic step
@@ -77,7 +81,7 @@ export const Input = {
     }
     this.anyKey = this._anyPend || Object.values(padNow).some(Boolean) && !this._padAny;
     this._padAny = Object.values(padNow).some(Boolean);
-    this._anyPend = false; this.taps = this._taps; this._taps = []; this.clicks = this._clicks; this._clicks = []; this.hovered = this._hover; this._hover = null;
+    this._anyPend = false; this.taps = this._taps; this._taps = []; this.clicks = this._clicks; this._clicks = []; this.hovered = this._hover; this._hover = null; this.wheel = this._wheel; this._wheel = 0;
     this._pend.clear(); this._pendRel.clear();
   },
   get horiz() { return (this.held.right ? 1 : 0) - (this.held.left ? 1 : 0); },

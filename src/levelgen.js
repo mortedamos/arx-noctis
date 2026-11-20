@@ -13,6 +13,7 @@ import { TILE } from './world.js';
 import { moverAt } from './movers.js';
 import { validateRoom, checkSpawns, roomOf, surfaces, reach, simulateChain } from './validate.js';
 import { mulberry32 } from './util.js';
+import { packMap, mapCells } from './maplayout.js';
 
 export const GEN_VERSION = 17;          // (17: the Cistern is entered from under Karluv Bridge, and the Frozen Caverns lie beyond it)
 const MAX_TRY = 60;
@@ -1164,14 +1165,16 @@ function checkLinks(rooms) {
 }
 
 // ------------------------------------------------------------------------------------------------ the map
-// Every chain of the castle is a row of rooms running left to right; a chain starts just right of the crossroads its door leaves from, so the branches fan out above and below the main row.
-// Side rooms (sanctuaries, houses, lairs) hang below their parent.  The map screen draws the lines from where each doorway really is.
-const CHAIN_AT = [[3, 0], [1, 18], [5, 18], [3, 18], [0, 29], [3, 29], [7, 4], [9, 18], [11, 18]];                 // [row, first column] of each chain
+// The map is PACKED: rooms are blocks of cells that touch, with no space and no line between areas.  Every chain of rooms is a strip hung from the room its first room is entered from, on the side it prefers;
+// side rooms (sanctuaries, houses, lairs) sit against their parent.  The packing itself is in maplayout.js; the map screen (MapScreen, ui.js) draws what it is given.
+const MAP_SIDES = [[], ['right'], ['right'], ['above'], ['above'], ['right'], ['above'], ['above'], ['below']];          // where each chain (in the order of CHAINS) prefers to sit against its anchor: the Cistern below the bridge (required), the others wherever the whole map comes out biggest on the screen (found by trying every combination, on several seeds, among the layouts where every room touches another and every zone is one piece)
+const MAP_FIRST = [8];          // (the Cistern and the Frozen Caverns are set against the bridge before the main row's side rooms: the Cistern lies UNDER Karluv Bridge on the map, as it does in the castle)
 function layoutMap(rooms) {
-  const pos = {}, taken = new Set(), key = (x, y) => x + ',' + y;
-  CHAINS.forEach((c, ci) => { const [row, col0] = CHAIN_AT[ci]; c.forEach((id, i) => { pos[id] = { x: col0 + i, y: row }; taken.add(key(col0 + i, row)); }); });
-  for (const id of ORDER) if (rooms[id] && !pos[id]) { const P = pos[SPEC[id].parent]; let y = P.y + 1; while (taken.has(key(P.x, y))) y++; pos[id] = { x: P.x, y }; taken.add(key(P.x, y)); }
-  for (const id of ORDER) if (rooms[id]) rooms[id].map = pos[id];
+  const ids = ORDER.filter(id => rooms[id] && !rooms[id].hidden), size = {}, zone = {}, parent = {}, anchor = {};
+  for (const id of ids) { size[id] = mapCells(rooms[id]); zone[id] = rooms[id].zone; if (SPEC[id].parent) parent[id] = SPEC[id].parent; }
+  CHAINS.forEach((c, ci) => { if (ci) { const p = PAIRS.find(q => q.b === c[0]); if (p) anchor[ci] = p.a; } });
+  const pos = packMap({ ids, size, zone, chains: CHAINS, anchor, parent, sides: MAP_SIDES, first: MAP_FIRST });
+  for (const id of ORDER) if (rooms[id]) rooms[id].map = pos[id] || (SPEC[id].parent && pos[SPEC[id].parent]) || { x: 0, y: 0 };          // (a secret room is not on the map: it takes its parent's place)
 }
 
 // ------------------------------------------------------------------------------------------------ the world
@@ -1247,4 +1250,4 @@ export function ascii(def) {
   for (const d of def.doors) if (rows[d.gy - 1]) rows[d.gy - 1] = rows[d.gy - 1].slice(0, d.x) + 'D' + rows[d.gy - 1].slice(d.x + 1);
   return rows.join('\n');
 }
-export const _dbg = { GEN, SPEC, makeRng, validateMoving };
+export const _dbg = { GEN, SPEC, makeRng, validateMoving, CHAINS, PAIRS, ORDER, MAP_SIDES };
