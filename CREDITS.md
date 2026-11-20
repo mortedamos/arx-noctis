@@ -5,7 +5,7 @@ Everything in ARX NOCTIS that was not made for it: who made it, the licence it c
 * **In the game.** The title screen's CREDITS option shows [`credits.txt`](credits.txt), the short version. This file is the full record.
 * **Licence texts** as supplied by the authors are in [`assets/credits/`](assets/credits/).
 * **Source packs.** The art packs as downloaded are kept in `assets/sprites/source/`, `assets/source/` and `assets/archive/`. They are **not published** (several licences forbid passing a pack on); the game ships only the pieces cut out of them into `assets/env/` and `assets/sprites/`.
-* **Links** were last checked on 2026-11-17, and the ones added since on 2026-11-18. All were reachable except the Pixabay pages, which refuse automated requests.
+* **Links** were last checked on 2026-11-17, and the ones added since on 2026-11-18 and 2026-11-20 (the CraftPix and Free Game Assets pages). All were reachable except the Pixabay pages, which refuse automated requests.
 * Licences are given as the authors' own pages and files state them. Where a page and a file disagree, or nothing is stated, the item is listed under [Open items before publishing](#open-items-before-publishing). Two itch.io packs (Icko, CaptainSkolot) have a licence field that is stricter than the author's own description; this project follows the descriptions, and the table row says so.
 
 ## Contents
@@ -18,7 +18,7 @@ Everything in ARX NOCTIS that was not made for it: who made it, the licence it c
 |---|---|---|
 | CC0 / public domain | most of the art (Ansimuz, ETTiNGRiNDER, FreeGameSprites, Szadi art) and most sound effects | nothing; credit is given anyway |
 | CC BY 4.0, CC BY 3.0, OGA-BY 3.0 | three art packs and six sounds | credit the creator, link the licence, say what was changed (see [Attribution required](#attribution-required)) |
-| Free for commercial use, on the author's own terms | Anokolisa, Eddie's Workshop, assets2D, Icko, CaptainSkolot, Worlds Without End, heosphorus; the fonts Blackletter, Eroded Motta and Livingstone; the Pixabay sounds | follow each author's note (see [Free for commercial use](#free-for-commercial-use)) |
+| Free for commercial use, on the author's own terms | Anokolisa, Eddie's Workshop, assets2D, Icko, CaptainSkolot, Worlds Without End, heosphorus, CraftPix; the fonts Blackletter, Eroded Motta and Livingstone; the Pixabay sounds | follow each author's note (see [Free for commercial use](#free-for-commercial-use)) |
 | SIL Open Font License 1.1 | Pirata One, Almendra, Elementary Gothic Bookhand | keep the licence text with the font (done) |
 | MIT | three.js | keep the licence notice (`lib/three/LICENSE`, done) |
 | **Not confirmed** | the music | see [Open items before publishing](#open-items-before-publishing) |
@@ -30,6 +30,7 @@ These are the things to settle before the game goes on a store or is sold. Each 
 | # | Item | The problem | Used for | What to do |
 |---|---|---|---|---|
 | 1 | **The music** | Made with Suno. Whether the tracks may be used commercially depends on the plan they were generated on. | all the music | Keep the plan and Suno's terms at the time on file. |
+| 2 | **The Keeper's sprites came by a mirror** | They are a CraftPix freebie, but were downloaded from the Free Game Assets page on itch.io, which has no licence text. CraftPix's licence page does not mention third-party copies; the zip's own `Licens.txt` points to that same page, and this project follows it. | the Keeper in every shop | Before a store release, download the same pack from [craftpix.net/freebies](https://craftpix.net/freebies/) and re-read the licence. |
 
 ## Attribution required
 
@@ -65,7 +66,7 @@ Some stores ask developers to say which shipped content was made with AI. This i
 | [Graveyard 400 Assets](https://worldswithoutend.itch.io/graveyard-2d-game-assets), Worlds Without End | the itch.io page says "AI Assisted" | headstones, flowers, fences and statues |
 | [Gothic Vampire Undead Horde](https://assets2d.itch.io/gothic-vampire-horde-pixel-art-2d-character-sprites), assets2D | the itch.io page says "AI Assisted" | the Crimson Count |
 
-The pages of the other itch.io packs (Icko, Anokolisa, Eddie's Workshop, heosphorus, Szadi art) carry no AI disclosure. Checked on 2026-11-18.
+The pages of the other itch.io packs (Icko, Anokolisa, Eddie's Workshop, heosphorus, Szadi art) carry no AI disclosure. Checked on 2026-11-18. The page of the [Free City Trader](https://free-game-assets.itch.io/free-city-trader-character-sprite-sheets-pixel-art) pack (the Keeper) is tagged "No generative AI was used". Checked on 2026-11-20.
 
 ## Art
 
@@ -113,6 +114,7 @@ On the authors' own terms, as stated on their pages or in their downloads.
 | [The Sidescroller's Dungeon Tileset \[32x32\]](https://inr-1ko.itch.io/the-sidescrollers-dungeon) (`The Sidescroller's Dungeon - Tileset [32x32].zip`) | [Icko](https://inr-1ko.itch.io/) | the author's description: "You may use these assets for both free and commercial projects", "You may modify this asset pack to suit the needs of your projects", "You may not repackage, redistribute, or resell these assets whether they have been modified or not". The page's licence field says CC BY-ND 4.0, which would forbid changes; this project follows the description, as the author's own statement of what is allowed (`assets/credits/license-sidescrollers-dungeon-note.txt`) | pillars, banners, urns, crates, the stone arch, the wooden door and the animated torches |
 | [Magic Book pack](https://captainskolot.itch.io/magic-books-pixelart-pixel-art-sprite-grimoire-pack-for-rpg-fantasy) (32 grimoires; `Magic Book by CaptainSkeleto.zip` and `Magic Books interface.zip`) | [CaptainSkolot](https://captainskolot.itch.io/) | the author's description: "We want you to have the freedom to use this asset pack in both your free and commercial projects", "Feel free to modify the assets to suit your unique needs. While credit is not required, we genuinely appreciate any attribution given", "You may not redistribute or resell the assets on their own, that includes NFT/images asset compilations". The page's licence field says CC BY-NC-SA 4.0, which would forbid commercial use; this project follows the description, as the author's own statement of what is allowed (`assets/credits/license-magic-books-note.txt`) | the flying books of the Library of Ages (`assets/sprites/magicbooks.png`), and the open pages they show as they cast (`assets/sprites/bookpages.png`, cut from the interface pack and drawn translucent) |
 | [Animated Gears](https://heosphorus.itch.io/animated-gears) | heosphorus | free to use **with credit** (see [Attribution required](#attribution-required)) | five of its ten gear animations (`assets/env/gear_*.png`), faded and slowly turning behind the generated gears of the Orloj Tower and the Clockwork Dungeon |
+| [Free City Trader Character Sprite Sheets](https://free-game-assets.itch.io/free-city-trader-character-sprite-sheets-pixel-art) (`Free-City-Trader-Character-Sprite-Sheets-Pixel-Art.zip`), a freebie of [CraftPix.net](https://craftpix.net/freebies/) shared by [Free Game Assets](https://free-game-assets.itch.io/) | CraftPix.net | CraftPix's [file licences](https://craftpix.net/file-licenses/), section 2 "Freebie Products" (the pack's own `Licens.txt` points to that page; read in full on 2026-11-20): may be used "in any number of personal and commercial projects", may be modified, "No attribution or link back to this site is required, however any credit will be highly appreciated"; the art files may not be resold or redistributed for others to use, and may not be used to train AI (`assets/credits/license-craftpix-freebie-note.txt`). The itch.io page says "No generative AI was used". See open item 2 | the **Keeper** of the shops (all five): the cloaked vendor with the pack on his back ("Trader_1", 128x128 cells), five of its animations (idle, wave, folded arms, opening his cloak, nodding) cut to one box and shrunk to two thirds by `tools/cut-trader.ps1` into `assets/sprites/trader_*.png`. The other two traders and the PSD files are not used |
 
 ### Made for this project
 

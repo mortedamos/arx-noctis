@@ -19,18 +19,35 @@ const kl = (k, d) => D.lines('keeper ' + k) || d, pickOf = a => a[Math.floor(Mat
 const POOR = ['YOUR POCKETS ARE AS EMPTY AS THIS CASTLE.', 'COME BACK WITH MORE. I AM PATIENT.', 'I TAKE GOLD. ONLY GOLD. NOT PROMISES.'];
 const PRICE_CUT = 0.8;          // every Keeper's prices are this fraction of the list below (a fifth off), taken after the zone's mark-up and rounded to the nearest 5 gold
 
+// THE KEEPER'S POSES (the cloaked vendor of CraftPix's "Free City Trader" set: see CREDITS.md).  He idles; now and then he waves, or folds his arms; when he speaks he opens his cloak on what he sells
+// (the 'talk' strip: frames 0-11 open it, 12-15 close it again), and when he has been paid he nods with it open.  A sequence is a list of [sheet, frame], one every POSE_TICKS ticks.
+const rng = (sheet, a, b) => Array.from({ length: b - a + 1 }, (_, i) => [sheet, a + i]);
+const SEQ_GREET = rng('trader_talk', 0, 15), SEQ_THANKS = [...rng('trader_talk', 0, 11), ...rng('trader_nod', 0, 7), ...rng('trader_talk', 12, 15)], SEQ_IDLE = [rng('trader_wave', 0, 10), rng('trader_arms', 0, 6)];
+const POSE_TICKS = 7;
+class Pose {
+  constructor() { this.seq = null; this.i = 0; this.k = 0; this.t = Math.floor(Math.random() * 72); this.rest = 240 + Math.floor(Math.random() * 240); }
+  play(seq) { this.seq = seq; this.i = this.k = 0; }
+  update() {
+    this.t++;
+    if (this.seq) { if (++this.k >= POSE_TICKS) { this.k = 0; if (++this.i >= this.seq.length) this.seq = null; } return; }
+    if (--this.rest <= 0) { this.rest = 420 + Math.floor(Math.random() * 420); this.play(SEQ_IDLE[Math.random() < 0.55 ? 0 : 1]); }
+  }
+  get cell() { return this.seq ? this.seq[this.i] : ['trader_idle', Math.floor(this.t / 12) % 6]; }
+}
+
 export class Shopkeeper {
-  constructor(x, y, o) { this.x = x; this.y = y; this.id = o.id; this.tier = o.tier || 0; this.t = 0; this.dead = false; this.dir = -1; }
+  constructor(x, y, o) { this.x = x; this.y = y; this.id = o.id; this.tier = o.tier || 0; this.t = 0; this.dead = false; this.dir = -1; this.pose = new Pose(); this.greeted = false; }
   get box() { return { x: this.x - 26, y: this.y - 50, w: 52, h: 50 }; }
   update(g) {
-    this.t++; this.dir = g.player.x >= this.x ? 1 : -1;
+    this.t++; this.dir = g.player.x >= this.x ? 1 : -1; this.pose.update();
+    if (!this.greeted && Math.abs(g.player.x - this.x) < 130) { this.greeted = true; this.pose.play(SEQ_GREET); }          // (as the hero comes near he opens his cloak on his wares, once)
     g.fx.light(this.x, this.y - 30, 100, 0.7, [0.7, 0.4, 1]); g.fx.glow(this.x + this.dir * 4, this.y - 36, 9 + Math.sin(this.t * 0.07) * 2, [1, 0.35, 0.9], 0.5);
     if (this.t % 12 === 0) g.fx.emit({ x: this.x + rand(-14, 14), y: this.y - rand(4, 20), vx: 0, vy: -rand(0.2, 0.6), life: 60, s0: 6, s1: 1, c0: [0.7, 0.45, 1], c1: [0.3, 0.15, 0.6], a0: 0.7, a1: 0, kind: 6 });
   }
   interact(g) { g.openShop(this); return true; }
   draw(ctx, cx, cy) {
     const x = Math.round(this.x - cx), y = Math.round(this.y - cy);
-    drawSheet(ctx, 'keeper_r0', Math.floor(this.t / 12) % 4, x, y + 1, { ay: 1, scale: 0.85, dir: this.dir });
+    const [sheet, fr] = this.pose.cell; drawSheet(ctx, sheet, fr, x, y + 1, { ay: 1, dir: this.dir });
     ctx.fillStyle = '#1a0f26'; ctx.fillRect(x - 24, y - 12, 48, 12); ctx.fillStyle = '#3a2250'; ctx.fillRect(x - 24, y - 12, 48, 2); ctx.fillStyle = '#0a0612'; ctx.fillRect(x - 24, y - 1, 48, 1);          // the counter
     for (const [dx, c] of [[-16, '#c8a0ff'], [-6, '#ffd860'], [6, '#7fd8ff'], [16, '#ff8a9a']]) { ctx.fillStyle = '#0a0612'; ctx.fillRect(x + dx - 2, y - 17, 5, 5); ctx.fillStyle = c; ctx.fillRect(x + dx - 1, y - 16, 3, 3); }          // wares on it
   }
@@ -39,6 +56,7 @@ export class Shopkeeper {
 export class ShopScreen {
   constructor(g, keeper) {
     this.g = g; this.keeper = keeper; this.t = 0; this.sel = 0; this.top = 0; this.hit = []; this.say = pickOf(kl('greet', GREET)); this.sayT = 0;
+    this.pose = new Pose(); this.pose.play(SEQ_GREET);          // (he opens his cloak on his wares as he greets you)
     this.stock = this.build();
   }
   flag(key) { return 'shop_' + this.keeper.id + '_' + key; }
@@ -63,12 +81,12 @@ export class ShopScreen {
     const g = this.g, S = g.save, e = this.stock[this.sel], why = e.can();
     if (why) { A.sfx('back'); this.speak(why === 'SOLD' ? 'THAT, I HAVE ALREADY SOLD YOU.' : 'YOU HAVE ALL YOU CAN CARRY OF THAT.'); return; }
     if (S.gold < e.price) { A.sfx('back'); this.speak(pickOf(kl('poor', POOR))); return; }
-    S.gold -= e.price; e.buy(); A.sfx('coin'); A.sfx('item'); this.speak(pickOf(kl('thanks', THANKS))); this.stock = this.build();
+    S.gold -= e.price; e.buy(); A.sfx('coin'); A.sfx('item'); this.speak(pickOf(kl('thanks', THANKS))); this.pose.play(SEQ_THANKS); this.stock = this.build();
     this.sel = Math.min(this.sel, this.stock.length - 1);          // (a ware that is gone once bought - the folded page - leaves the list a row shorter: the cursor must not be left below its end, or the next frame draws a ware that is not there and the screen freezes)
   }
   speak(s) { this.say = s; this.sayT = 0; }
   update() {
-    this.t++; this.sayT++; const n = this.stock.length;
+    this.t++; this.sayT++; this.pose.update(); const n = this.stock.length;
     for (const tp of Input.taps || []) {
       if (tp.x < 112 || tp.x > W - 6 || tp.y < 8 || tp.y > H - 6) { this.close(); return; }
       for (let k = 0; k < this.hit.length; k++) { const r = this.hit[k]; if (r && tp.x >= r.x0 && tp.x <= r.x1 && tp.y >= r.y0 && tp.y <= r.y1) { if (this.sel === r.i) this.buy(); else { this.sel = r.i; A.sfx('click'); } return; } }
@@ -83,7 +101,7 @@ export class ShopScreen {
     ctx.fillStyle = 'rgba(6,2,12,0.9)'; ctx.fillRect(0, 0, W, H);
     // the Keeper, large, at the left, with what it says beneath
     const kx = 54, ky = 142; const gl = ctx.createRadialGradient(kx, ky - 40, 4, kx, ky - 40, 70); gl.addColorStop(0, 'rgba(150,80,220,0.35)'); gl.addColorStop(1, 'rgba(60,20,110,0)'); ctx.fillStyle = gl; ctx.fillRect(0, 40, 112, 130);
-    drawSheet(ctx, 'keeper_r0', Math.floor(this.t / 12) % 4, kx, ky, { ay: 1, scale: 1.5, dir: 1 }); ctx.fillStyle = 'rgba(255,90,200,' + (0.6 + 0.3 * Math.sin(this.t * 0.1)).toFixed(2) + ')'; ctx.fillRect(kx + 4, ky - 64, 2, 2); ctx.fillRect(kx + 9, ky - 64, 2, 2);
+    const [ksheet, kfr] = this.pose.cell; drawSheet(ctx, ksheet, kfr, kx, ky, { ay: 1, scale: 2, dir: 1 });
     const words = this.say.slice(0, Math.floor(this.sayT / 1.2)), sf = hasFace('npc') ? 'npc' : 'mixed'; wrapText(words, 100, 1, sf).forEach((ln, i) => drawText(ctx, ln, 8, 148 + i * 10, { color: VIOLET, font: sf }));
     drawText(ctx, 'THE KEEPER', 8, 12, { color: VIOLET, scale: 1.3, outline: '#000' });
     // the wares

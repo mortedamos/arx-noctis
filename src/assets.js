@@ -49,7 +49,8 @@ Object.assign(META, Object.fromEntries(['idle', 'walk', 'attack', 'attack2', 'sp
 // (an entry here replaces the "Ars sheets face left" default, so each says face: -1 itself)
 Object.assign(META, { ars_gnu_r0: { face: 1, dy: 11 }, ars_gnu_r1: { face: 1, dy: 11 }, ars_gnu_r2: { face: -1, dy: 10 }, ars_gnu_r3: { face: -1, dy: 9 }, ars_mage2_r0: { face: -1, dy: 9 }, ars_mage2_r1: { face: -1, dy: 9 } });
 // the bronze-robed, silver-masked mage (mage 1) fills its whole 85x94 cell: the hem of the robe is the bottom row
-Object.assign(META, { ars_mage1_r0: { face: -1, dy: 2 }, ars_mage1_r1: { face: -1, dy: 2 }, libr_r0: { face: -1, dy: 9 }, keeper_r0: { face: -1, dy: 9 }, libr_r1: { face: -1, dy: 9 }, shade_r1: { face: -1, dy: 2 }, shade_r2: { face: -1, dy: 2 }, shade_r3: { face: -1, dy: 2 }, shade_r4: { face: -1, dy: 2 } });
+Object.assign(META, { ars_mage1_r0: { face: -1, dy: 2 }, ars_mage1_r1: { face: -1, dy: 2 }, libr_r0: { face: -1, dy: 9 }, libr_r1: { face: -1, dy: 9 }, shade_r1: { face: -1, dy: 2 }, shade_r2: { face: -1, dy: 2 }, shade_r3: { face: -1, dy: 2 }, shade_r4: { face: -1, dy: 2 } });
+// the Keeper (the cloaked vendor of CraftPix's "Free City Trader" set, cut and shrunk by tools/cut-trader.ps1: trader_idle / wave / arms / talk / nod, 42x54 cells): faces RIGHT, feet on the bottom row, so no entry is needed
 // the Gothic Hero (Ansimuz): feet on the bottom row of each cell, faces right.  hero_attack's body sits a little left of the cell centre.
 Object.assign(META, { hero_idle: { ax: 0.5 }, hero_run: { ax: 0.5 }, hero_attack: { ax: 0.47 }, hero_jump: { ay: 1 }, hero_jump_attack: {}, hero_crouch: {}, hero_hurt: {} });
 
@@ -198,7 +199,7 @@ function buildRecolors() {
   recolor('wraith', 'wraith_g', (h, s, l) => [0.45, s, l * 1.05]);
   // the Rime Shade: the (until now unused) shadow that rises out of the floor, turned cold blue; the Librarian: the Archmage's robes in ink and old gold
   for (const k of [1, 2, 3, 4]) recolor('ars_shadow_r' + k, 'shade_r' + k, (h, s, l) => [0.55, Math.min(1, s * 1.1 + 0.15), Math.min(0.9, l * 1.4 + 0.08)]);
-  recolor('ars_mage2_r0', 'keeper_r0', (h, s, l) => [0.76, Math.min(1, s * 0.8 + 0.1), l * 0.62]); recolor('ars_mage2_r0', 'libr_r0', (h, s, l) => [0.09, Math.min(1, s * 1.1), Math.min(0.9, l * 1.2 + 0.04)]); recolor('ars_mage2_r1', 'libr_r1', (h, s, l) => [0.09, Math.min(1, s * 1.1), Math.min(0.9, l * 1.2 + 0.04)]);
+  recolor('ars_mage2_r0', 'libr_r0', (h, s, l) => [0.09, Math.min(1, s * 1.1), Math.min(0.9, l * 1.2 + 0.04)]); recolor('ars_mage2_r1', 'libr_r1', (h, s, l) => [0.09, Math.min(1, s * 1.1), Math.min(0.9, l * 1.2 + 0.04)]);
 }
 
 // ---------- the mirror twin, as <sheet>_evil ----------

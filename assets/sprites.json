@@ -533,6 +533,36 @@
   "w": 144,
   "h": 144
  },
+ "trader_idle": {
+  "file": "sprites/trader_idle.png",
+  "n": 6,
+  "w": 42,
+  "h": 54
+ },
+ "trader_wave": {
+  "file": "sprites/trader_wave.png",
+  "n": 11,
+  "w": 42,
+  "h": 54
+ },
+ "trader_arms": {
+  "file": "sprites/trader_arms.png",
+  "n": 7,
+  "w": 42,
+  "h": 54
+ },
+ "trader_talk": {
+  "file": "sprites/trader_talk.png",
+  "n": 16,
+  "w": 42,
+  "h": 54
+ },
+ "trader_nod": {
+  "file": "sprites/trader_nod.png",
+  "n": 8,
+  "w": 42,
+  "h": 54
+ },
  "magicbooks": {
   "file": "sprites/magicbooks.png",
   "n": 32,

@@ -53,6 +53,12 @@ The haunted tomes and grimoires of the Library of Ages: all 32 covers, drawn hal
 Also the open pages they show as they cast (Magic Books interface pack).
 ; (the page's licence field says CC BY-NC-SA 4.0, but the author's description allows commercial use and modification, which is what this game follows - see CREDITS.md)
 
+## CraftPix.net - free asset (shared by Free Game Assets, itch.io)
+Free City Trader Character Sprite Sheets
+craftpix.net/freebies and free-game-assets.itch.io/free-city-trader-character-sprite-sheets-pixel-art
+The Keeper of the shops: the cloaked vendor with the pack on his back.
+Cut out and shrunk for use in the game.
+
 ## Anokolisa
 The moonlit graveyard set.
 
