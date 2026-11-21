@@ -9,6 +9,7 @@ import { Enemy } from './enemies.js';
 import { drawSheet } from './assets.js';
 import { ICON } from './procart.js';
 import * as D from './dialogue.js';
+import { isHer, voice } from './story.js';
 import { Audio_ as A } from './audio.js';
 import { COLORS } from './fx.js';
 import { Projectile, Shockwave, FirePatch, RollingGear } from './projectiles.js';
@@ -757,10 +758,10 @@ export class BossShadow extends Boss {
     g.after(90, () => { g.blackout = { a: 0, aT: 1, r: 0, rT: 0 }; });                                                                                 // ...and goes to black
     g.after(165, () => {
       g.fx.wisps.set(0); g.fx.setDark(1.05); g.fx.setStorm(false); this.cry(); A.sfx('ghost');
-      const rv = D.convo('shadowlord revive') || [['THE SHADOW LORD', 'HA HA HA HA HA... DID YOU THINK THE LIGHT WOULD COME SO EASILY, LITTLE SPARK? I AM THE LORD OF DARKNESS.'], ['THE SHADOW LORD', 'I STOLE THE LIGHT FROM THE WORLD, AND I WILL TAKE IT FROM YOU AS WELL. THERE IS ONLY THE DARK NOW. THERE HAS ONLY EVER BEEN THE DARK.']], hv = rv.find(([w]) => w === 'HER VOICE');          // (his words and hers are read from assets/dialogue.txt)
-      g.talk(rv.filter(([w]) => w !== 'HER VOICE'), () => {
+      const rv = D.convo('shadowlord revive') || [['THE SHADOW LORD', 'HA HA HA HA HA... DID YOU THINK THE LIGHT WOULD COME SO EASILY, LITTLE SPARK? I AM THE LORD OF DARKNESS.'], ['THE SHADOW LORD', 'I STOLE THE LIGHT FROM THE WORLD, AND I WILL TAKE IT FROM YOU AS WELL. THERE IS ONLY THE DARK NOW. THERE HAS ONLY EVER BEEN THE DARK.']], hv = rv.find(([w]) => isHer(w));          // (his words and hers are read from assets/dialogue.txt)
+      g.talk(rv.filter(([w]) => !isHer(w)), () => {
         g.blackout.wisp = true; g.blackout.rT = 96; g.blackout.aT = 0.78; A.sfx('cast'); A.sfx('heal');                                                // the wisp's light comes in, round the hero
-        g.after(100, () => g.showDialog(hv ? hv[1] : 'I AM HERE. I NEVER LEFT YOU. LET HIM KEEP HIS DARKNESS - I WILL BE THE LIGHT TO GUIDE OUR WAY.', { name: 'HER VOICE', font: 'hand', onClose: () => this.rise() }));
+        g.after(100, () => g.showDialog(hv ? hv[1] : 'I AM HERE. I NEVER LEFT YOU. LET HIM KEEP HIS DARKNESS - I WILL BE THE LIGHT TO GUIDE OUR WAY.', { name: hv ? voice(hv[0]).name : 'HER VOICE', font: 'hand', onClose: () => this.rise() }));
       });
     });
   }

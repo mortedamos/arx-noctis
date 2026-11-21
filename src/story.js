@@ -23,3 +23,21 @@ export const STORY = {
   chase: '', bell: [], lantern: [], convos: {}, tablets: {}, talk: {},
   ending: { title: '', lines: [] },
 };
+
+// WHO IS SPEAKING, in any of the words of the game ([convo], [boss ...], [bell], [lantern], [chase]): she is HER VOICE or THE LADY (whatever the capitals), and her words are drawn in her own handwriting;
+// anyone else is drawn like a person speaking (the Stranger in his own face).  voice(name) -> { name, font }: the name for the tag over the box (as written, but HER VOICE is always spelt the same) and the font, if she.
+export const isHer = name => { const u = String(name || '').trim().toUpperCase(); return u === STORY.speaker.toUpperCase() || u === 'THE LADY'; };
+export function voice(name) {
+  const n = String(name || '').trim();
+  if (!isHer(n)) return { name: n };
+  return { name: n.toUpperCase() === STORY.speaker.toUpperCase() ? STORY.speaker : n, font: 'hand' };
+}
+// [who, words, font] as Game.talk wants a line, from a speaker's name and what they say
+export const spoken = (name, words) => { const v = voice(name); return v.font ? [v.name, words, v.font] : [v.name, words]; };
+
+// One spoken line of the story scenes ([bell], [lantern] and [chase] in dialogue.txt), as the [who, words, font] that Game.talk wants.  "Who: words" is said by that speaker (the same rule as a [convo]);
+// a line with no name before a colon is HER VOICE, in her own handwriting.
+export function voiced(line) {
+  const s = String(line).trim(), m = /^([^:]{1,40}):\s+(.*)$/.exec(s);
+  return m ? spoken(m[1], m[2]) : spoken(STORY.speaker, s);
+}

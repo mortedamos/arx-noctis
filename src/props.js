@@ -1,6 +1,6 @@
 // World objects: pickups, breakable candles, save altar, lore tablets, chests, upgrades, ability relics.
 import { KEYS } from './itemdata.js';
-import { STORY } from './story.js';
+import { STORY, voiced } from './story.js';
 import { text as dtext } from './dialogue.js';
 import { Entity, moveX, moveY } from './entity.js';
 import { drawSheet, drawKey, IMG, SHEET } from './assets.js';
@@ -230,7 +230,7 @@ export class Bell {
     if (!g.save.flags[this.id]) {
       g.save.flags[this.id] = true; markPage(5); g.after(150, () => {
         if (g.state !== 'play') return; g.ghost.reveal(420); A.sfx('ghost'); g.fx.ring(this.x, this.y - 20, 50, [0.55, 0.78, 1], 30, 0.1);
-        g.showDialog(STORY.bell[0], { name: STORY.speaker, font: 'hand', onClose: () => g.showDialog(STORY.bell[1], { name: STORY.speaker, font: 'hand', onClose: () => { A.sfx('item'); } }) });          // (the page is given without a banner, and not opened)
+        g.talk(STORY.bell.map(voiced), () => A.sfx('item'));          // (one box per line of [bell], said by HER VOICE unless a line names someone else; the page is given without a banner, and not opened)
       });
     }
     return true;
@@ -306,8 +306,8 @@ export class Tablet {
   get box() { return this.narr ? { x: this.x - 20, y: this.y - 30, w: 40, h: 30 } : { x: this.x - 12, y: this.y - 26, w: 24, h: 26 }; }          // (a narr stone is only a place to read: the picture is the grave scenery already there, and the words are the game speaking, not her)
   update(g) { this.t++; if (!this.sign && !this.narr) { const unread = !g.save.flags['read_' + this.id]; g.fx.glow(this.x, this.y - 13, 22 + 2 * Math.sin(this.t * 0.05), [0.6, 0.8, 1], (unread ? 0.3 : 0.14) + 0.04 * Math.sin(this.t * 0.04)); }          // (her stones glow faintly, softly: that is what tells them from the headstones that are only scenery, and from signs)
     if (this.t % 10 === 0 && !g.save.flags['read_' + this.id]) g.fx.emit({ x: this.x + rand(-5, 5), y: this.y - 18, vx: 0, vy: -rand(0.2, 0.5), life: 40, s0: 5, s1: 1, c0: [0.7, 0.85, 1], a0: 0.8, a1: 0, kind: 6 }); }
-  interact(g) { g.save.flags['read_' + this.id] = true; if (this.convo) { if (g.save.flags.got_lantern) g.player.lanFlare = 260; else g.ghost.reveal(900); const c = this.convo, run = i => { if (i >= c.length) return; const her = c[i][0] === 'H'; g.showDialog(c[i][1], her ? { name: STORY.speaker, font: 'hand', onClose: () => run(i + 1) } : { name: c[i][0], onClose: () => run(i + 1) }); }; run(0); A.sfx('select'); return true; }          // (a talking gravestone: two voices)
-    if (this.narr) { g.showDialog(this.text, { font: 'mixed' }); A.sfx('select'); return true; } if (!this.sign) { if (g.save.flags.got_lantern) g.player.lanFlare = 260; else g.ghost.reveal(280); } g.showDialog(this.text, this.sign ? {} : { name: STORY.speaker, font: 'hand' });          A.sfx('select'); return true; }          // (her words are in her own handwriting)
+  interact(g) { g.save.flags['read_' + this.id] = true; if (this.convo) { if (g.save.flags.got_lantern) g.player.lanFlare = 260; else g.ghost.reveal(900); const c = this.convo, run = i => { if (i >= c.length) return; const [who, words, font] = c[i]; g.showDialog(words, font ? { name: who, font, onClose: () => run(i + 1) } : { name: who, onClose: () => run(i + 1) }); }; run(0); A.sfx('select'); return true; }          // (a talking gravestone: two voices)
+    if (this.narr) { g.showDialog(this.text, { font: 'mixed' }); A.sfx('select'); return true; } if (!this.sign) { if (g.save.flags.got_lantern) g.player.lanFlare = 260; else g.ghost.reveal(280); } if (this.sign) g.showDialog(this.text, {}); else { const [who, words, font] = voiced(this.text); g.showDialog(words, font ? { name: who, font } : { name: who }); }          A.sfx('select'); return true; }          // (her words are in her own handwriting)
   draw(ctx, cx, cy) {
     if (this.narr) return;
     const x = this.x - cx, y = this.y - cy;

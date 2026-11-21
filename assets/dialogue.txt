@@ -6,9 +6,9 @@
 ;  A line in [square brackets] starts a SECTION; the lines under it, down to the next bracket, are its words.  Blank lines are ignored, and so is any line that starts with ;
 ;  If a section is missing, the game uses the words built into it, so you can delete one to put it back.
 ;
-;    [tablet <id>]            a gravestone or tablet (her voice).  Written in mixed case; she has no colons (they turn into dashes).
+;    [tablet <id>]            a gravestone or tablet (her voice).  Written in mixed case; she has no colons (they turn into dashes).  A line that starts "The Lady:" (or "Her Voice:") puts that name over the box; without it the box says HER VOICE.
 ;    [sign <door>]            a signpost, by the door it points to (hall, mire, chapel, crypts, orloj, clockwork, library, throne, or a room id for THE KEEPER's door)
-;    [convo <id>]             a spoken exchange at a gravestone.  One line per speaker:  WHO: what they say.   "HER VOICE" speaks in her own handwriting.
+;    [convo <id>]             a spoken exchange at a gravestone.  One line per speaker:  WHO: what they say.   "The Lady" and "HER VOICE" are her: in her own handwriting.
 ;    [boss <NAME> before]     what is said before a boss fight (once), one line per speaker  WHO: words.   [boss <NAME> after] is said as it dies.   NAME is the name over the boss's health bar.
 ;    [npc <room>]             a person indoors, by the id of their room:   TITLE: ...   TEXT: what they say the first time   AGAIN: what they say after
 ;    [villager <kind> street|home|again|shop|title]   the townsfolk (woman, bearded, hatman, oldman): every line is one alternative, picked at random
@@ -16,164 +16,169 @@
 ;    [door locked]            {KEY} is replaced by the name of the key        [door sigils]  {LIT} {TOTAL} {HINTS}        [lockhint <boss flag>]  where a boss that still lives is to be found
 ;    [opening] [ending] [intro] [bell] [lantern] [chase] [shadowlord revive]   the story scenes (see each)
 ;
-;  Most text is in capitals (the game's font); tablets are mixed case.  Keep the lines for boxes short enough to read.
+;  In [bell], [lantern] and [chase] each line is a box of its own ([chase] is one box) and is said by HER VOICE, in her handwriting.  Start a line with a name and a colon to give it to someone else, as in a [convo]:
+;      The Lady: Oh! It will hold me.        The Stranger: I will carry you.
+;  Wherever a speaker is named (a [convo], a [boss ...] talk, these scenes) THE LADY and HER VOICE, in any capitals, are her: her handwriting, and the name tag over the box says what you wrote.  Anyone else is drawn as a person speaking.
+;  So do not put a colon in the first words of a line that is meant to be plain speech: she has no colons anyway (in her handwriting they turn into dashes).
+;
+;  What people SAY (talks, villagers, the Keeper, the Lady, the tablets) is written in ordinary sentence case.  The intro, the opening and ending cards, the signs and the door messages are in capitals (the game's font).  Keep the lines for boxes short enough to read.
 ; =====================================================================================================================
 
 [opening]
 TITLE: PRAGUE  1541
-SUN: THE SUN HAS NOT RISEN SINCE ARX NOCTIS CAME OUT OF THE EARTH.
-FIRE: AND NOW THE CITY BURNS.
+SUN: THE SUN HAS NOT RISEN SINCE ARX NOCTIS ROSE FROM SHADOW.
+FIRE: AND NOW FIRES IN THE CITY...
 SWORD: SILBERZAHN: THE SILVER FANG. 
-SWORD: IT LIES ON THE RISE AHEAD
+SWORD: THE SWORD OF WOE.
 ;  (SWORD: the name of the sword, then the line under it)
 
 [intro]
 ; the words that come up one by one before a new game
 THE SUN HAS CEASED RISING OVER BOHEMIA.
 IT WAS TAKEN BY THE LORD OF ARX NOCTIS, WHO WALLED THE DAWN BEHIND HIS THRONE.
-THOSE WHO ENTERED NEVER RETURNED. THEIR PORTRAITS STILL WATCH THE HALLS.
-YOU HAVE NO NAME. ONLY A CLOAK, A BLADE, AND YOUR WOE.
-TONIGHT THE DEAD WALK AND MINIONS OF THE CITADEL OF SHADOWS ROAM.
+THOSE WHO ENTER NEVER RETURN.
+YOU LEFT YOUR NAME BEHIND, STRANGER, AND CARRY ONLY YOUR BLADE AND SORROW.
+TONIGHT THE DEAD WALK. THE MINIONS OF THE CITADEL OF SHADOWS ROAM.
 THEIR LORD AWAITS YOUR VENGEANCE.
 
 [ending]
 TITLE: THE SUN RISES OVER BOHEMIA
-LINE: ARX NOCTIS CRUMBLES.
+LINE: ARX NOCTIS FADES.
 LINE: THE STRANGER RETURNS TO HER GRAVE,
 LINE: AND THE SUN FALLS ON THE STONE.
-LINE: AT LAST HIS SORROW ABATES AS HE KNOWS
+LINE: FOR A MOMENT HIS SORROW ABATES AS HE KNOWS
 LINE: SHE STANDS BESIDE HIM.
 
 [chase]
-The flames are right behind you! Jump! Climb higher!
+The Lady: The flames are right behind you! Jump! Climb higher!
 
 [bell]
 ; she comes to the sound of the bell the first time it is rung
-You rang it. After everything, I wanted to hear that bell once more. It rang the day we came home.
-I wrote a letter on the road back to Prague, and never had the chance to give it to anyone. It is only happiness. Please read it. Someone should.
+The Lady: Even after everything, I wanted to hear that bell again. It rang the day we came home.
+The Lady: I wrote a letter on the road, and never had the chance to give it to anyone. Please read it. Remember our happiness.
 
 [lantern]
 ; she steps out of the wisp the first time the lantern is taken
-That light. It was waiting for you all along... I can feel it from here.
-Oh. It will hold me. A little of me, at least, the way a lantern holds a flame.
-With this talisman I do not have to stay where I fell. I can travel with you now. I will be the light at your shoulder.
+The Lady: That light... I can feel it...
+The Lady: Oh! It will hold me. A little of me, at least, the way a lantern holds a flame.
+The Lady: With this talisman I will be the light at your shoulder.
 
 [convo tabsix]
 The Stranger: In the war I killed six men. I never told you. I have carried them every day since.
-HER VOICE: I know. They are here with me. They have been here a long time.
+The Lady: I know. They are here with me. They have been here a long time.
 The Stranger: Do they hate me?
-HER VOICE: Death grants a perspective that the living lack, my love. They do not hate you.
+The Lady: Death grants a perspective that the living lack, my love. They do not hate you.
 
 [boss THE CINDER WARDEN before]
-THE CINDER WARDEN: BEHOLD THE MERCY OF FLAMES, TRAVELLER. WHAT CANNOT BE SAVED MUST BE SPARED THE SLOW DYING.
-THE STRANGER: YOU... YOU LIT THE CITY ON FIRE...
-THE CINDER WARDEN: BETTER THE INFERNO THAN THE DARKNESS.
-THE STRANGER: NO MORE! NO MORE DEATH!
+The Cinder Warden: Behold the mercy of flames, traveller. What cannot be saved must be spared the slow dying.
+The Stranger: You... You lit the city on fire...
+The Cinder Warden: Better the inferno than the darkness.
+The Stranger: No more! No more death!
 
 [boss THE CINDER WARDEN after]
-THE CINDER WARDEN: IT WAS... A KINDNESS... 
+The Cinder Warden: It was... mercy... ...mercy... 
 
 [boss BAELPHEGAZ before]
-BAELPHEGAZ: AH. A FRESH GRIEF, WALKING TO ME ON ITS OWN FEET. THE SHADOW LORD SENT ME UP TO HARVEST THE MISERY OF MANKIND, AND THE FIELDS HAVE BEEN SO GENEROUS.
-THE STRANGER: THE HARVEST ENDS HERE.
-BAELPHEGAZ: THE HARVEST NEVER ENDS, LITTLE SOUL. YOURS IS SIMPLY RIPE. I CAN TASTE IT FROM HERE: SALT, AND SNOW, AND ONE NAME YOU HAVE NOT SAID ALOUD IN YEARS.
-THE STRANGER: THEN YOU WILL NOT HEAR IT NOW.
+Baelphegaz: Ah! Such sorrow, walking to me on its own feet. The Shadow Lord sent me up to feast upon the misery of mankind.
+The Stranger: The feast ends here.
+Baelphegaz: Little soul, your sorrow is a feast. I can taste it from here: salty tears, and bitter snow, and a name...
+The Stranger: Keep her name out of your mouth!
 
 [boss BAELPHEGAZ after]
-BAELPHEGAZ: THE LORD... WILL HEAR OF THIS... THERE WAS SO MUCH SORROW... LEFT TO REAP...
+Baelphegaz: But there was so much sorrow... left to reap...
 
 [boss THE MIRE MOTHER before]
-THE MIRE MOTHER: THERE YOU ARE, LITTLE ONE. YOU HAVE BEEN AWAY SO LONG. THE WATER WAS WORRIED. YOU TASTE OF SALT: A GREAT RIVER WEPT, AND NONE OF IT HAS REACHED THE SEA.
-THE STRANGER: I AM NOT YOUR CHILD.
-THE MIRE MOTHER: THEN WHOSE? SOMEONE HAS MISSED YOU. I CAN HEAR IT IN THE REEDS.
-THE STRANGER: ...
+The Mire Mother: There you are, my child. You have been away so long. You taste of salt... a sea of tears...
+The Stranger: I am not your child.
+The Mire Mother: But you were missed. You are missed. The wisps whisper woe... woe...
+The Stranger: ...
 
 [boss THE MIRE MOTHER after]
-THE MIRE MOTHER: SLEEP, THEN. EVERYONE SLEEPS... EVENTUALLY.
+The Mire Mother: To sleep then, beneath... the murk... and the mire...
 
 [boss THE DROWNED WARDEN before]
-THE DROWNED WARDEN: THE WATER WAS PROMISED A KEEPER. THE KEEPER WAS PROMISED A WATER. WE HAVE KEPT OUR WORD.
-THE STRANGER: THE PROMISE IS OVER.
-THE DROWNED WARDEN: PROMISES ARE NOT SO EASILY DRAINED. AND THAT BLADE - IT IS OLDER THAN THIS CASTLE. WHEREVER IT IS DRAWN, SOMEONE IS ABOUT TO GRIEVE.
+The Drowned Warden: That blade! That silver blade! Where it goes, water becomes tears...
+The Stranger: Silberzahn? It came to me in a time of need.
+The Drowned Warden: Wherever it is found, only weeping! Return it to the water! 
 
 [boss THE DROWNED WARDEN after]
-THE DROWNED WARDEN: THE GATE... WILL NOT HOLD... WITHOUT ME...
+The Drowned Warden: Who is the weapon... and who is the wielder?
 
 [boss THE PHANTOM STEED before]
-THE PHANTOM STEED: RIDE WITH US, SOLDIER. THERE IS ALWAYS A PLACE FOR ONE MORE.
-THE STRANGER: I AM NO LONGER A SOLDIER.
-THE PHANTOM STEED: THEN WHY DO YOU STAND LIKE ONE? THERE ARE MEN WALKING BEHIND YOU IN THE SNOW. THEY HAVE BEEN FOLLOWING FOR YEARS.
+The Phantom Steed: Ride with us, soldier. There is always a place for one more.
+The Stranger: I am no longer a soldier.
+The Phantom Steed: Then why do you stand like one? 
 
 [boss THE PHANTOM STEED after]
-THE PHANTOM STEED: THE HUNT RIDES ON... A SADDLE EMPTY... AS ALWAYS...
+The Phantom Steed: There are men walking behind you in the snow. They have been following for years...
 
 [boss THE REFLECTION before]
-THE REFLECTION: WHO DO YOU TALK TO, WHEN NO ONE IS THERE?
-THE STRANGER: ...
-THE REFLECTION: I CAN SEE WHAT YOU CANNOT. SHE WOULD NOT KNOW YOU NOW.
-THE STRANGER: SHE KNOWS ME.
-THE REFLECTION: THEN SHE KNOWS WHAT YOU ARE BECOMING. I REMEMBER THE MAN WHO STOOD HERE BEFORE YOU. HE HAD ANOTHER NAME. HE USED TO LAUGH.
+The Reflection: Who do you talk to, when no one is there?
+The Stranger: What?!
+The Reflection: I can see what you cannot. She would not know you now.
+The Stranger: She knows me.
+The Reflection: Then she knows what you became. I remember the man who was. He had another name... We.... n...
 
 [boss THE REFLECTION after]
-THE REFLECTION: BREAK THE GLASS, AND YOU ONLY SEE YOURSELF IN PIECES.
+The Reflection: Break the glass, and you only see yourself in pieces.
 
 [boss THE SERAPH OF ASH before]
-THE SERAPH OF ASH: LAY DOWN YOUR SWORD, WANDERER. GRIEF IS HEAVIER THAN STEEL, AND THAT BLADE IS BOTH. I CAN TAKE IT FROM YOU.
-THE STRANGER: I DO NOT WANT IT TAKEN.
-THE SERAPH OF ASH: THEN YOU WILL CARRY IT INTO THE DARK, AND THE DARK WILL ASK FOR IT.
+The Seraph of Ash: Lay down your sword, Stranger. Grief is heavier than steel, and that blade is both. I can take it from you.
+The Stranger: I do not want it taken. I need it.
+The Seraph of Ash: Then you will carry it down into the dark!
 
 [boss THE SERAPH OF ASH after]
-THE SERAPH OF ASH: AT LEAST... YOU CARRY IT... HONESTLY.
+The Seraph of Ash: At least... you carry it... honestly.
 
 [boss THE CRIMSON COUNT before]
-THE CRIMSON COUNT: A GUEST! HOW DELIGHTFUL. IT HAS BEEN SO LONG SINCE ANYONE CAME TO MY TABLE WITH A PULSE.
-THE STRANGER: I AM NOT STAYING FOR DINNER.
-THE CRIMSON COUNT: NONSENSE. YOU ARE THE DINNER. A VINTAGE OF SORROW LIKE YOURS IS WASTED ON THE LIVING. DO TRY TO BE GRACIOUS ABOUT IT.
+The Crimson Count: A guest! How delightful. It has been so long since anyone came to my table.
+The Stranger: I am not staying for dinner.
+The Crimson Count: Nonsense, you are the dinner. A vintage of misery like yours cannot be wasted. Do try to be gracious about it.
 
 [boss THE CRIMSON COUNT after]
-THE CRIMSON COUNT: A MOST... UNMANNERLY... GUEST...
+The Crimson Count: A most... unmannerly... guest...
 
 [boss THE LIBRARIAN before]
-THE LIBRARIAN: SILENCE, PLEASE. I HAVE CATALOGUED EVERY KIND OF GRIEF IN THIS ARCHIVE, AND YOURS HAS NO SHELF. IT IS TOO RECENT. IT IS STILL BEING WRITTEN.
-THE STRANGER: THEN LET ME FINISH IT.
-THE LIBRARIAN: THEY ALL SAY THAT. I HAVE THEIR BOOKS.
+The Librarian: Oh? I thought I had catalogued every kind of misery. Yours... it is too recent. It is still being written.
+The Stranger: Then let me finish it.
+The Librarian: Silence! Silence in the library!
 
 [boss THE LIBRARIAN after]
-THE LIBRARIAN: A LAST BOOK... NO TITLE... NO LAST PAGE... HOW UNTIDY.
+The Librarian: Your book... no last page... how untidy.
 
 [boss THE RIMEWYRM before]
-THE RIMEWYRM: I HEARD THAT BLADE FROM THE DEEP ICE. IT HAS THE COLD OF A WINTER NO ONE WALKED OUT OF. YOU CARRY IT LIKE ONE WHO DID NOT WALK OUT, EITHER.
-THE STRANGER: I WALKED OUT.
-THE RIMEWYRM: THEN WHY DO YOUR EYES STILL BURN WITH IT?
+The Rimewyrm: I heard that blade from the deep ice. It has the cold of a winter that many did not walk out of.
+The Stranger: I walked out.
+The Rimewyrm: Did you?
 
 [boss THE RIMEWYRM after]
-THE RIMEWYRM: WARM... I AM WARM... AT LAST... THE SWORD IS KIND, AFTER ALL...
+The Rimewyrm: An end... The sword is kind, after all...
 
 [boss THE BRAZEN HIEROPHANT before]
-THE BRAZEN HIEROPHANT: NIGREDO, ALBEDO, CITRINITAS - AND NOW YOU, THE IMPURITY IN MY RUBEDO. YOU HAVE THE LOOK OF ONE WHO PAID FOR THE GREAT WORK WITH SOMETHING DEAR. EVERYONE DOES. I HAD ALMOST FINISHED IT.
-THE STRANGER: YOU STOPPED THE SUN.
-THE BRAZEN HIEROPHANT: I HELD IT. THAT IS WHAT A VESSEL DOES. A LITTLE LONGER, AND ALL OF TIME WOULD HAVE BEEN GOLD.
-THE STRANGER: THERE IS NO GOLD. THERE IS ONLY WHAT YOU DID TO PRAGUE.
+The Brazen Hierophant: Nigredo, Albedo, Citrinitas - and now you, the impurity in my Rubedo. The Great Work must be finished!
+The Stranger: You... you stopped the sun.
+The Brazen Hierophant: I held it. That is what a vessel does. A little longer, and time itself would have been mine.
+The Stranger: Your time is done.
 
 [boss THE BRAZEN HIEROPHANT after]
-THE BRAZEN HIEROPHANT: THE GEARS... THEY ARE STILL TURNING... WHO WILL WIND THEM NOW...
+The Brazen Hierophant: The gears... they are still turning... who will wind them now?
 
 [boss THE SHADOW LORD before]
-THE SHADOW LORD: SO. THE LAST SPARK OF THE OLD WORLD WALKS INTO MY ATHANOR. I HAVE WATCHED YOU CLIMB MY STAIRS, STRANGER.
-THE SHADOW LORD: THAT SWORD HAS SLEPT SINCE BEFORE MY CASTLE. IT WOKE FOR YOU. WHAT DID YOU PAY FOR IT?
-THE SHADOW LORD: I TOOK THE SUN TO FINISH THE WORK: A WORLD WITHOUT DECAY, WITHOUT GRIEF, WITHOUT ENDINGS.
-THE STRANGER: YOU TOOK HER.
-THE SHADOW LORD: I TOOK MANY. SHE WAS ONE OF MANY. I DO NOT EVEN KNOW HER NAME.
-THE STRANGER: GOOD. THEN YOU CANNOT SPEAK IT.
+The Shadow Lord: So. The last spark of the old world. I have watched you, Stranger.
+The Shadow Lord: The Silver Sword slept long before Arx Noctis, but it woke for you. I wonder, what did you pay for it?
+The Shadow Lord: The Great Work called me forth. Now I shall make a world without light.
+The Stranger: You took my light... 
+The Shadow Lord: I took many lights. She was one of many. I do not even know her name.
+The Stranger: Good. Then you cannot speak it.
 
 [boss THE SHADOW LORD after]
-THE SHADOW LORD: THE SUN... IT BURNS... IS THIS... WHAT I WAS KEEPING FROM THEM...
+The Shadow Lord: The sun... it burns... so terrible is the light. It reveals so much.
 
 [shadowlord revive]
 ; the Shadow Lord rises a second time
-THE SHADOW LORD: HA HA HA HA HA... DID YOU THINK THE LIGHT WOULD COME SO EASILY, LITTLE SPARK? I AM THE LORD OF DARKNESS.
-THE SHADOW LORD: I STOLE THE LIGHT FROM THE WORLD, AND I WILL TAKE IT FROM YOU AS WELL. THERE IS ONLY THE DARK NOW. THERE HAS ONLY EVER BEEN THE DARK.
-HER VOICE: I AM HERE. I NEVER LEFT YOU. LET HIM KEEP HIS DARKNESS - I WILL BE THE LIGHT TO GUIDE OUR WAY.
+The Shadow Lord: Ha ha ha ha... Did you think the light would come so easily? I am the Lord of Darkness.
+The Shadow Lord: I stole the light from the world, and I will take yours as well. There is only the dark now. There will only ever be the dark.
+The Lady: I am here. I never left you. Let me be the light to guide our way.
 
 ; ---------------------------------------------------------------------------------------------------------------------
 ;  GRAVESTONES AND TABLETS  (the comment above each says where it stands)
@@ -181,113 +186,113 @@ HER VOICE: I AM HERE. I NEVER LEFT YOU. LET HIM KEEP HIS DARKNESS - I WILL BE TH
 
 ; in room v0
 [tablet tabgrave]
-You cannot read this because of the tears in your eyes. You miss her terribly.
+YOU CANNOT READ THIS BECAUSE OF THE TEARS IN YOUR EYES. YOU MISS HER TERRIBLY.
 
 ; in room v0
 [tablet tabyew]
-A flat stone under an old yew, worn smooth, as if someone sat here a long time in the rain. A folded page lies under a smaller stone, kept dry.
+A FLAT STONE UNDER AN OLD YEW. A FOLDED PAGE LIES UNDERNEATH.
 
 [tablet tabdark]
-There is no floor in the dark ahead, and no wall to lean on. Only the serpent that eats its own tail can cross it: strike, and leap, and leap again, and do not come down. I left it in the ice of the Glacier Road, where you were in too much of a hurry to look. I will be your light.
+The Lady: There is no floor in the dark ahead, and no wall to lean on. Only the serpent that eats its own tail can cross it: strike, and leap, and leap again, and do not come down. I left it in the ice of the Glacier Road, where you were in too much of a hurry to look. I will be your light.
 
 [tablet tabv0]
-There was never a stone big enough for the two of us, was there? Go down to the city. I will follow where I can. Look for blue light: that is where I show.
+The Lady: Go down to the city. I will follow where I can. In arcane light, perhaps you can see me.
 
 ; in room v1
 [tablet tab0]
-The bells rang at dusk, and then the things came down from the hill. Prague has not walked its own streets without fear since. Do not stop to pray. No one is listening.
+The Lady: The bells rang at dusk, and then the things came down from the dark citadel.
 
 ; in room g1
 [tablet tab1]
-They say the keep swallowed the sun. I think it is stranger than that. Look at the gate: it is not locked. It is waiting for you.
+The Lady: They say the keep swallowed the sun. I think it is stranger than that.
 
 ; in room g2
 [tablet tab2]
-The dead here do not rest. I know the feeling. Strike them down - gently if you can, firmly if you must.
+The Lady: The dead here do not rest. I know the feeling.
 
 ; in room h1
 [tablet tab3]
-The hall rang with feasting once. Now the faces on the pillars watch you, and some of them watch back. I am not the only ghost here. I am just the only one who likes you.
+The Lady: The hall rang with feasting once. Be careful. I am not the only ghost here. I am just the only one who likes you.
 
 ; in room h3
 [tablet tab4]
-These stairs climb to the chapel. The bells have not rung since the lord came down. When you reach the top, look back at the city. Just once.
+The Lady:  These stairs climb to the chapel. The bells have not rung since the Lord of Darkness came.
 
 ; in room c1
 [tablet tab5]
-Here the faithful prayed, and here they were taken. I used to light candles in a church like this, and never asked for anything for myself. I should have.
+The Lady: Here the faithful prayed, and here they were taken. I used to light candles in a church like this, and never asked for anything for myself.
 
 ; in room c2
 [tablet tab6]
-The gulf is too wide for any leap. Only quicksilver crosses a gulf like this. Dash, and do not look down.
+The Lady: The gulf is too wide for any leap. Only quicksilver crosses a gulf like this. Dash, and do not look down.
 
 ; in room u1
 [tablet tab7]
-The lord laid his household to rest here and promised them sleep. Someone keeps waking them. I know what it is to be woken. They are not wicked. They are tired.
+The Lady: The lord laid his household to rest here and promised them sleep. Someone keeps waking them. I know what it is to be woken. They are not wicked. They are tired.
 
 ; in room t1
 [tablet tab8]
-He waits above, the one who took the sun. I will not ask you to turn back. I only ask that you come home afterward. It is a long way down from the hill.
+The Lady: He waits above, the one who took the sun. I will not ask you to turn back.
 
 ; in room v2
 [tablet tab9]
-I can still hear the bells. They were the first thing to go silent. The priest barred the chapel door and prayed, and I watched from the steps.
+The Lady: I can still hear the bells. They were the first thing to go silent. The priest barred the chapel door and prayed, and I watched from the steps.
 
 ; in room v3
 [tablet tab10]
-Mercy, he calls it: to burn what he cannot protect. He waits in the square below. You will not talk him down. You never could talk anyone down.
+The Lady: Mercy, he calls it: to burn what he cannot protect. He waits in the square below.
 
 ; in room g4
 [tablet tab11]
-They walk the field looking for their homes. I look for mine, too. No one warns you that a ghost can be homesick.
+The Lady: They walk the field looking for their homes. I look for mine, too. No one warns you that a ghost can be homesick.
 
 ; in room w1
 [tablet tab12]
-The mire takes what the grave refuses. Do not stand still. You hate wet boots, I remember. I will try not to laugh.
+The Lady: The mire takes what the grave refuses. 
 
 ; in room w3
 [tablet tab13]
-Something sings beneath the water, and it knows your name. I am almost sure I know it too. Almost. Is that what death is - almost?
+The Lady: Something sings beneath the water, and it knows your name. I think I know it, but my link to the world of the living wanes...
 
 ; in room q1
 [tablet tab14]
-The old city drew its water from these vaults. The Vltava remembers every flood. Do not fight the current - use it. You have the look of a man about to fight the current.
+The Lady: The old city drew its water from these vaults. You have the look of a man about to fight the current. Do not fight the current - use it.
 
 ; in room q3
 [tablet tab15]
-Beyond the last sluice is the gate the water was made to keep. Something older than Prague keeps it now. It will try to drown you. Please do not let it.
+The Lady: Beyond the last sluice is something older than Prague. It will try to drown you. I miss you... but it is not yet your time.
 
 ; in room k1
 [tablet tab16]
-An engineer built a machine to hold the sun below the hills. Listen to the gears: the only clock in Prague that still keeps time - and it is keeping the wrong hour.
+The Lady: An engineer built a machine to complete the Great Work, but listen to the gears: the great clock is keeping the wrong hour.
 
 ; in room u2
 [tablet tab17]
-It is very dark here. Do not be afraid of it. I will go ahead of you.
+The Lady: It is very dark here. Do not be afraid of it. I will go ahead of you.
 
 ; in room ot
 [tablet tab18]
-The clock still keeps Prague's hour. The apostles still walk in their windows, and the sun is still on its dial. It is the only sun left.
+The Lady: The clock still tries to keep the time. The apostles walk in their windows and the sun is still on its dial. It is the only sun left.
 
 ; in room br
 [tablet tab19]
-Thirty saints stand watch on this bridge, and not one of them could stop the fire. The river takes what falls. Not everything that falls is lost, though: the toll-keepers kept a cellar under these stones, where the old waterworks begin, and I have always wondered about the planks in the deck.
+The Lady: Thirty saints stand watch on this bridge, and not one of them could stop the fire. 
 
 ; in room vs (the Stone Bridge Tower; nothing in it is later than 1541, the year of the game)
 [tablet tab23]
-Charles the Fourth began this tower in 1357. Peter Parler drew it, and his masons carved its face. The kings of Bohemia rode under this arch on their way to be crowned. Saint Vitus stands between two of them, and I always thought he looked the most tired. Rest a while. The fire has not come into the passage.
+The Lady: Charles IV began this tower nearly two hundred years ago. The kings of Bohemia rode under this arch on their way to be crowned. Saint Vitus stands there... I always thought he looked tired. Rest here.
 
 ; in room l1
 [tablet tab20]
-THE LORD READ EVERY BOOK IN THE WORLD AND FOUND THE ENDING WRONG. HE HAS BEEN REWRITING IT EVER SINCE, AND THE BOOKS HAVE LEARNED TO FIGHT BACK.
+The Lady: The librarian keeps records of sadness and lamentation, hence the books are filled with regret and hate. 
 
 ; in room l3
 [tablet tab21]
-THE LIBRARIAN WAS ONLY EVER ASKED TO KEEP THE KEYS. HE KEPT EVERYTHING ELSE TOO, AND NOW NOTHING MAY BE BORROWED.
+The Lady: The librarian whispers and asks me for our tale, my love, but it's not done. The ending is not yet written.
 
 ; in room i1
 [tablet tab22]
-THE COLD CAME UP FROM THE FOUNDATIONS THE DAY THE SUN WAS TAKEN. NOTHING THAT FELL IN HAS THAWED. NOTHING THAT WALKS HERE FEELS IT.
+The Lady: The cold came up from the foundations the day the sun was taken, clawing forth from deep under the world. 
 
 ; ---------------------------------------------------------------------------------------------------------------------
 ;  SIGNPOSTS
@@ -300,39 +305,39 @@ THE ORLOJ TOWER - THE DOOR IS HIGH, AND LOCKED. IT NEEDS THE KEY OF TIN.
 THE WEEPING MIRE - THE DOOR IS HIGH. ONLY A WINGED LEAP WILL REACH IT. THE MIRE ENDS WHERE ITS MOTHER WAITS.
 
 [sign hall]
-ARX NOCTIS: THE GREAT HALL - THE GATE OF THE KEEP. EVERYTHING BEYOND IT BELONGS TO THE LORD.
+THE GREAT HALL OF ARX NOCTIS - THE GATE OF THE KEEP. THE DOMAIN OF THE LORD OF SHADOWS.
 
 [sign chapel]
-ARX NOCTIS: THE MOONLIT CHAPEL - A SECOND GATE INTO THE KEEP. IT OPENS ONLY WHEN THE MASTERS OF THE GREAT HALL AND OF THE FLOODED GATE ARE DEAD. THE FLOODED GATE IS IN THE CISTERN, UNDER KARLUV BRIDGE IN PRAGUE.
+THE MOONLIT CHAPEL OF ARX NOCTIS - THE 2ND GATE INTO THE KEEP. IT OPENS WHEN THE MASTERS OF THE GREAT HALL AND OF THE CISTERN UNDER KARLUV BRIDGE ARE DEAD.
 
 ; (the sign before the Keeper's door)
 [sign shc]
-THE KEEPER - SOMETHING IN THE DARK SELLS WHAT THE DEAD NO LONGER NEED.
+SOMETHING IN THE DARK SELLS WHAT THE DEAD NO LONGER NEED.
 
 [sign library]
-ARX NOCTIS: THE LIBRARY OF AGES - LOCKED. THE KEY LIES IN THE FROZEN CAVERNS, BEYOND THE CISTERN AND A WALL OF ICE THAT FIRE WILL MELT. THE LIBRARIAN KEEPS THE KEY TO THE THRONE.
+THE LIBRARY OF AGES - LOCKED. THE KEY LIES IN THE FROZEN CAVERNS, BEYOND THE CISTERN.
 
 [sign crypts]
-THE CRYPTS - THE WAY IS BARRICADED. FIRE WILL CLEAR IT.
+THE CRYPTS - THE WAY OPENS TO THE FIRE OF YOUR WILL.
 
 [sign throne]
-THE SHADOW THRONE - CRYSTAL SEALS THE WAY, TWO SIGILS MUST BURN (THE COUNT OF THE CRYPTS AND THE LORD OF THE CLOCKWORK DUNGEON), AND THE DOOR IS LOCKED: THE LIBRARIAN KEEPS THE KEY.
+THE SHADOW THRONE - A LIBRARIAN LOCKED DOOR BEYOND A CRYSTAL SEAL WHERE TWO SIGILS ALIGHT UPON THE DEATHS OF THE COUNT OF THE CRYPTS AND THE CLOCKWORK LORD.
 
 ; (the sign before the Keeper's door)
 [sign shu]
-THE KEEPER - SOMETHING IN THE DARK SELLS WHAT THE DEAD NO LONGER NEED.
+SOMETHING IN THE DARK SELLS WHAT THE DEAD NO LONGER NEED.
 
 ; (the sign before the Keeper's door)
 [sign shl]
-THE KEEPER - SOMETHING IN THE DARK SELLS WHAT THE DEAD NO LONGER NEED.
+SOMETHING IN THE DARK SELLS WHAT THE DEAD NO LONGER NEED.
 
 ; (the sign before the Keeper's door)
 [sign sht]
-THE KEEPER - SOMETHING IN THE DARK SELLS WHAT THE DEAD NO LONGER NEED.
+SOMETHING IN THE DARK SELLS WHAT THE DEAD NO LONGER NEED.
 
 ; (the sign before the Keeper's door in the Cooper's cellar, under the house in Smouldering Lane)
 [sign shk]
-THE KEEPER - SOMETHING IN THE DARK SELLS WHAT THE DEAD NO LONGER NEED.
+SOMETHING IN THE DARK SELLS WHAT THE DEAD NO LONGER NEED.
 
 ; (the sign by the way out of the Cooper's cellar)
 [sign cellarexit]
@@ -344,140 +349,140 @@ EXIT
 
 [npc ga]
 ; Gravedigger's Shed
-TITLE: GRAVEDIGGER
-TEXT: THEY WALK AGAIN, AND I HAVE RUN OUT OF GROUND TO PUT THEM IN. THE HOLLOW BEYOND IS WORSE THAN THE GATE. TAKE THIS - IT HAS CLEARED MORE GRAVES THAN I CAN COUNT.
-AGAIN: DIG DEEP. NEVER LOOK DOWN THE HOLE.
+TITLE: Gravedigger
+TEXT: They walk again! The graves must be cleared! Take this - it has cleared more graves than I can count.
+AGAIN: Dig deep. Never look down the hole.
 
 [npc wa]
 ; Fisherman's Hut
-TITLE: FISHERMAN
-TEXT: SOMETHING SINGS BENEATH THE BOARDS AT NIGHT. I STOPPED FISHING. I START COUNTING THE NOTES INSTEAD. TAKE THIS, AND KEEP MOVING.
-AGAIN: IT HAS NOT SUNG FOR TWO NIGHTS. I DO NOT LIKE THE QUIET.
+TITLE: Fisherman
+TEXT: Something sings beneath the boards at night, so I stopped fishing. Take this, and keep moving.
+AGAIN: It has not sung for two nights. I do not like the quiet.
 
 [npc ha]
 ; Servants' Quarters
-TITLE: LAST SERVANT
-TEXT: THE LORD DISMISSED US ALL AT DUSK, BUT THE PICTURES WOULD NOT STOP WATCHING. I HID. I AM VERY GOOD AT HIDING. HERE - IT IS NOT MUCH, BUT IT IS HONEST.
-AGAIN: THERE IS A MIRROR BEHIND THE OTHER DOOR UPSTAIRS. I DO NOT LOOK AT IT. NEITHER SHOULD YOU.
+TITLE: Last Servant
+TEXT: The lord dismissed us all at dusk, but the pictures would not stop watching. I hid. I am very good at hiding. Here - it is not much, but it is honest.
+AGAIN: There is a mirror behind the other door upstairs. I do not look at it.
 
 [npc ta]
 ; The Hidden Study
-TITLE: THE LORD'S SCRIBE
-TEXT: I WROTE DOWN EVERYTHING HE DID, AND NEVER ONCE LOOKED UP. NOW I CANNOT STOP LOOKING. HE IS ABOVE US. TAKE THIS, STRANGER - AND WHEN YOU MEET HIM, DO NOT LET HIM SPEAK.
-AGAIN: I HAVE NO MORE PAGES. ONLY THE ONES I CANNOT BURN.
+TITLE: The Lord's scribe
+TEXT: I wrote down everything he did, and never once looked up. Now I cannot stop looking. He is above us. Take this, Stranger - and when you meet him, do not let him speak.
+AGAIN: I have no more pages. Only the ones I cannot burn.
 
 ; ---------------------------------------------------------------------------------------------------------------------
 ;  THE TOWNSFOLK  (street = out in the burning streets, home = indoors the first time, again = after, shop = a merchant's greeting)
 ; ---------------------------------------------------------------------------------------------------------------------
 
 [villager woman title]
-WOMAN
+Woman
 
 [villager woman street]
-THE THINGS CAME DOWN FROM THE HILL AT DUSK. IF YOU ARE GOING UP TO THE KEEP, PLEASE - TAKE THIS. IT IS ALL I CAN SPARE.
-THE FIRE TOOK OUR HOUSE FIRST. DO NOT LET THEM CATCH ME, STRANGER. TAKE THIS FOR THE ROAD.
+If you are going up to the keep, please - take this. It is all I can spare.
+The fire took our house first. Do not let them catch me, Stranger. Take this for the road.
 
 [villager woman home]
-WE BARRED THE DOOR AND LIT EVERY CANDLE WE HAD. THE FIRE WILL NOT COME IN WHILE THEY BURN. HERE - YOU LOOK LIKE YOU NEED THIS.
+Here - you look like you need this.
 
 [villager woman again]
-BLESS YOU, STRANGER. BE CAREFUL OUT THERE.
-I PRAY FOR YOU EVERY TIME THE BELLS STAY SILENT.
+Bless you, Stranger. Be careful out there.
+I pray against the dark. I pray for you.
 
 [villager woman shop]
-WELCOME, STRANGER. I HAVE A LITTLE TO SPARE - FOR A PRICE.
-COME IN, COME IN. MIND THE FLOOR.
+Welcome, Stranger. I have a little to spare - for a price.
+Come in, come in. Mind the floor.
 
 [villager bearded title]
-BEARDED MAN
+Bearded man
 
 [villager bearded street]
-I HEARD THE BELLS STOP. THEN THE SCREAMING. KEEP YOUR BLADE UP, STRANGER, AND TAKE THIS FOR THE ROAD.
-I WAS A SOLDIER ONCE. THESE THINGS DO NOT BLEED RIGHT. HIT THEM TWICE. HERE - TAKE THIS.
+Keep your blade up, Stranger, and take this for the road.
+I was a soldier once, like you once were? Here - take this.
 
 [villager bearded home]
-I SHARPENED EVERY BLADE IN THE HOUSE AND STILL I HIDE. SHAME, THAT. YOU TAKE ONE - YOU WILL USE IT BETTER.
+I sharpened every blade in the house and still I hide. Shame, that. You take one - you will use it better.
 
 [villager bearded again]
-THE ROAD NORTH IS BAD. THE ROAD SOUTH IS WORSE.
-AIM LOW AT THE HOUNDS. THEY LEAP.
+The road north is bad. The road south is worse.
+Careful of the hounds. They leap.
 
 [villager bearded shop]
-YOU LOOK LIKE YOU CAN PAY. GOOD.
-I TRADE IN WHAT I CAN CARRY OUT OF THE FIRE.
+You look like you can pay. Good.
+I trade in what I can carry out of the fire.
 
 [villager hatman title]
-MAN IN A HAT
+Man in a hat
 
 [villager hatman street]
-NOBODY LEAVES THE VILLAGE. THE GATE IS SHUT FROM THE OTHER SIDE. DO YOU HEAR ME? FROM THE OTHER SIDE. TAKE THIS.
-I HAVE A COIN OR TWO AND NOWHERE TO SPEND THEM. THE MARKET IS ASH. TAKE IT.
+We are too afraid to leave. Take this.
+I have a coin or two and nowhere to spend them. The market is ash. Take it.
 
 [villager hatman home]
-MY CELLAR HAS HELD OUT THREE NIGHTS. IF YOU REACH THE KEEP, TELL THEM THE VILLAGE STILL STANDS. TAKE THIS FOR LUCK.
+My cellar has held out three nights! Take this for luck.
 
 [villager hatman again]
-TELL THEM THE VILLAGE STILL STANDS.
-KEEP YOUR HAT ON. IT IS LUCKY. MINE IS.
+Tell them the village still stands.
+Keep your hat on. It is lucky. Mine is.
 
 [villager hatman shop]
-A CUSTOMER! IN THESE TIMES!
-COIN IS COIN, EVEN NOW. LET US TALK.
+A customer! In these times!
+Coin is coin, even now. Let us talk.
 
 [villager oldman title]
-OLD MAN
+Old man
 
 [villager oldman street]
-I HAVE SEEN THIS FIRE BEFORE, WHEN I WAS A BOY. THE LORD OF THE KEEP DOES NOT FORGET A DEBT. GO ON - AND TAKE THIS.
-RUN? AT MY AGE? NO. BUT YOU, YOU CAN STILL RUN - OR FIGHT. TAKE THIS.
+Go on - and take this.
+Fight? At my age? No. But you can. Take this.
 
 [villager oldman home]
-MY KNEES ARE TOO OLD FOR RUNNING, AND MY HOUSE IS TOO OLD FOR BURNING. IT WILL HOLD. HERE, FOR THE LONG WALK.
+My knees are too old for running. Here, for the long walk.
 
 [villager oldman again]
-THE KEEP SWALLOWED THE SUN. SOMEONE MUST COAX IT BACK.
-STAY AND SIT A WHILE. NO? THEN GO WITH GOD.
+The keep swallowed the sun! Someone must bring it back.
+Stay and sit a while. No? Then go with God.
 
 [villager oldman shop]
-AH. A BUYER. SIT, IF YOU LIKE.
-I HAVE KEPT A FEW THINGS BACK FOR A RAINY DAY. IT IS RAINING.
+Ah, a buyer. Sit if you like.
+I have kept a few things for emergencies...
 
 [villager shouts]
-HELP!
-RUN!
-THEY COME!
-MERCY!
-THE FIRE!
-NO, NO!
-SAVE US!
-MONSTERS!
+Help!
+Run!
+They come!
+Mercy!
+The fire!
+No, no!
+Save us!
+Monsters!
 
 [villager thanks]
-THANK YOU!
-BLESS YOU!
-BRAVE ONE!
+Thank you!
+Bless you!
+Brave one!
 
 ; ---------------------------------------------------------------------------------------------------------------------
 ;  THE KEEPER (the merchant in the dark)
 ; ---------------------------------------------------------------------------------------------------------------------
 
 [keeper greet]
-COME CLOSER. EVERYTHING HERE HAS A PRICE. MOST OF IT IS PAID IN GOLD.
-THE DEAD HAVE NO USE FOR THESE. YOU, I THINK, DO.
-I WAS HERE BEFORE THE KEEP. I WILL BE HERE WHEN THE LAST CANDLE GOES OUT.
-DO NOT LOOK FOR MY FACE. LOOK AT MY WARES.
-GOLD IS ALL THE CASTLE LEAVES BEHIND. SPEND IT WELL.
+Come closer. Everything here has a price... most of it is paid in gold.
+The dead have no more use for these. You, I think, do.
+I was here before the keep. I will be here when the last candle goes out.
+Do not look for my face. Look at my wares.
+Gold is all the castle leaves behind. Spend it well.
 
 [keeper thanks]
-A FAIR TRADE.
-YES. THAT WILL SERVE YOU... FOR A WHILE.
-THE GOLD IS COLD. HOW PLEASANT.
-WE BOTH GO AWAY SATISFIED.
+A fair trade.
+Yes. That will serve you... For a while.
+The gold is cold. How pleasant.
+We both go away satisfied.
 
 [keeper poor]
-YOUR POCKETS ARE AS EMPTY AS THIS CASTLE.
-COME BACK WITH MORE. I AM PATIENT.
-I TAKE GOLD. ONLY GOLD. NOT PROMISES.
+Your pockets are as empty as this castle.
+Come back with more. I am patient.
+I take gold. Only gold. Not promises.
 
 ; ---------------------------------------------------------------------------------------------------------------------
 ;  DOORS
@@ -494,17 +499,17 @@ THE DOOR WILL NOT OPEN. {LIT} OF {TOTAL} SIGILS BURN. {HINTS}
 A SIGIL HAS BEEN UNLOCKED UPON A SEALED DOOR.
 
 [lockhint boss_h4]
-THE PHANTOM STEED STILL RIDES THE GREAT HALL, THROUGH THE WOODEN DOOR AT THE GATE OF ARX NOCTIS.
+THE PHANTOM STEED YET RIDES THE GREAT HALL, THROUGH THE GATE OF ARX NOCTIS.
 
 [lockhint boss_qb]
-THE DROWNED WARDEN STILL KEEPS THE FLOODED GATE, DEEP IN THE CISTERN UNDER KARLUV BRIDGE: DROP THROUGH THE PLANKS IN THE DECK, AND BREAK YOUR FALL WITH A DOUBLE JUMP AND A DASH.
+THE DROWNED WARDEN KEEPS THE FLOODED GATE, DEEP IN THE CISTERN UNDER KARLUV BRIDGE.
 
 [lockhint boss_u3]
-THE CRIMSON COUNT STILL WAITS IN THE CRYPTS: BURN THE BARRICADE IN THE BARRICADED GALLERY.
+THE CRIMSON COUNT WAITS IN THE CRYPTS: BURN THE BARRICADE IN THE GALLERY.
 
 [lockhint boss_og]
-THE BOILER GOLEM STILL KEEPS THE FIRES, IN THE LOFT AT THE TOP OF THE ORLOJ TOWER.
+THE BOILER GOLEM KEEPS THE FIRES AT THE TOP OF ORLOJ TOWER.
 
 [lockhint boss_kb]
-THE BRAZEN HIEROPHANT WORKS THE CLOCKWORK DUNGEON. ITS ENTRANCE IS IN PRAGUE: THE HIGH DOOR LEADS UP THE ORLOJ TOWER. YOU NEED THE KEY OF TIN.
+THE HIEROPHANT WORKS THE CLOCKWORK DUNGEON IN PRAGUE: THE HIGH DOOR LEADS UP ORLOJ TOWER WHERE YOU NEED THE KEY OF TIN.
 

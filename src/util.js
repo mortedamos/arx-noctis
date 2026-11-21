@@ -30,11 +30,12 @@ export function mulberry32(a) {
 
 export const fmtTime = s => { s = Math.floor(s); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return `${h}:${String(m).padStart(2, '0')}:${String(x).padStart(2, '0')}`; };
 
-// Speech is written in capitals in the source files (the game's font); characters (NPCs and bosses) are SPOKEN in sentence case: lower-case, a capital to begin each sentence, "I", and the proper names below.
-// (An ellipsis does not end a sentence: "NO... ONE... PASSES." reads "No... one... passes.")
+// Characters (NPCs and bosses) are SPOKEN in sentence case: words written in CAPITALS (the old way of writing speech, and the strings built in code) are lowered, with a capital to begin each sentence, "I", and the
+// proper names below.  Words that are already in proper case are left exactly as they were written, so text typed in sentence case in assets/dialogue.txt ("The Shadow Lord", "Lord of Darkness", a capital after an
+// ellipsis) shows as the author wrote it.  (An ellipsis does not end a sentence: "NO... ONE... PASSES." reads "No... one... passes.")
 const NAMES = ['Prague', 'Bohemia', 'God', 'Stranger', 'Arx Noctis', 'Silberzahn', 'Vltava', 'Nigredo', 'Albedo', 'Citrinitas', 'Rubedo', 'Athanor', 'Azoth', 'Great Work'];
 export function sentenceCase(str) {
-  let o = String(str).toLowerCase();
+  let o = String(str).replace(/[A-Za-z][A-Za-z']*/g, w => ((w.length > 1 && w === w.toUpperCase()) || w === 'A' ? w.toLowerCase() : w));          // (a lone capital A is the word "a" - a sentence's first letter gets its capital back just below; "I" stays)
   o = o.replace(/(^|[?!]\s+|(?<!\.)\.\s+)([a-z])/g, (m, a, b) => a + b.toUpperCase());
   o = o.replace(/\bi\b/g, "I");
   for (const n of NAMES) o = o.replace(new RegExp("\\b" + n.toLowerCase() + "\\b", "g"), n);

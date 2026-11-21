@@ -15,7 +15,7 @@ import { randomItemId, ITEMS, addItem } from './itemdata.js';
 import { BOSS_TYPES, Column } from './bosses.js';
 import { MirrorView } from './mirror.js';
 import { VillageScene, OpeningScene } from './scenes.js';
-import { STORY } from './story.js';
+import { STORY, voiced } from './story.js';
 import { Ghost } from './ghost.js';
 import { Movers } from './movers.js';
 import { Icicle } from './icicles.js';
@@ -615,7 +615,7 @@ export class Game {
     const go = () => {
       if (this.state !== 'play') { this.after(30, go); return; }
       const gh = this.ghost, p = this.player; this.bannerObj = null; gh.snapped = false; gh.scene = 900; gh.reveal(900); A.sfx('ghost'); this.fx.ring(p.x - p.dir * 22, p.y - 22, 60, [0.55, 0.78, 1], 40, 0.1); this.fx.flash([0.5, 0.75, 1], 0.25);
-      this.after(70, () => this.talk(STORY.lantern.map(t => [STORY.speaker, t, 'hand']), () => {
+      this.after(70, () => this.talk(STORY.lantern.map(voiced), () => {
         gh.scene = 40; A.sfx('item'); this.fx.ring(p.x, p.y - 30, 50, [0.55, 0.78, 1], 30, 0.1); this.fx.sparks(gh.x, gh.y - 22, 22, [[0.7, 0.85, 1], [1, 1, 1]], 3);
         this.banner('SHE TRAVELS WITH YOU', 'THE WISP IS HER LIGHT', 200, { y: 52, color: '#bcd8ff' });
       }));
@@ -751,7 +751,7 @@ export class Game {
     const go = () => {
       if (this.chase !== c) return; if (this.state !== 'play' || this.cutscene) { this.after(20, go); return; }
       const gh = this.ghost; gh.snapped = false; gh.scene = 240; gh.reveal(240); A.sfx('ghost'); this.fx.ring(this.player.x - this.player.dir * 22, this.player.y - 22, 50, [0.55, 0.78, 1], 30, 0.1);
-      if (!S.flags.bell_warned) { S.flags.bell_warned = true; this.after(30, () => { if (this.chase === c) this.talk([[STORY.speaker, STORY.chase, 'hand']], start); }); }
+      if (!S.flags.bell_warned) { S.flags.bell_warned = true; this.after(30, () => { if (this.chase === c) this.talk([voiced(STORY.chase)], start); }); }
       else { this.popup(this.player.x, this.player.y - 58, 'THE FLAMES ARE RIGHT BEHIND YOU!', '#bcd8ff'); this.after(70, start); }
     };
     this.after(40, go); return c;

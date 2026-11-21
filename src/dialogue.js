@@ -7,7 +7,7 @@
 //     [npc ga]                          a person indoors, by room:  TITLE: ...   TEXT: ...   AGAIN: ...
 //     [villager woman street]           a list: every line is one alternative, and one is picked at random
 // See the notes at the top of assets/dialogue.txt.  A section that is missing falls back on the words built into the game.
-import { STORY } from './story.js';
+import { STORY, spoken } from './story.js';
 
 const sections = new Map();          // 'tablet tab0' -> ['line', 'line', ...]
 const norm = s => String(s).trim().replace(/\s+/g, ' ');
@@ -40,7 +40,7 @@ export const field = (key, name) => { const f = fields(key); return f && f[name]
 
 // the STORY object (src/story.js) is what the rest of the game reads: fill it from the file
 function fillStory() {
-  const S = STORY, her = n => (n && n.toUpperCase() === (S.speaker || 'HER VOICE').toUpperCase() ? 'H' : n);
+  const S = STORY, says = ([w, t]) => spoken(w, t);          // (who speaks: her - HER VOICE or THE LADY - in her handwriting; see story.js)
   const op = fields('opening'); if (op) S.opening = { title: (op.TITLE || [''])[0], sun: (op.SUN || [''])[0], fire: (op.FIRE || [''])[0], sword: op.SWORD || ['', ''] };
   const en = fields('ending'); if (en) S.ending = { title: (en.TITLE || [''])[0], lines: en.LINE || [] };
   if (has('chase')) S.chase = text('chase');
@@ -50,8 +50,8 @@ function fillStory() {
   for (const [k, v] of sections) {
     let m;
     if ((m = /^tablet (.+)$/.exec(k))) S.tablets[m[1]] = v.join(' ');
-    else if ((m = /^convo (.+)$/.exec(k))) S.convos[m[1]] = convo(k).map(([w, t]) => [her(w), t]);
-    else if ((m = /^boss (.+) (before|after)$/.exec(k))) (S.talk[m[1]] ||= {})[m[2]] = convo(k);
+    else if ((m = /^convo (.+)$/.exec(k))) S.convos[m[1]] = convo(k).map(says);
+    else if ((m = /^boss (.+) (before|after)$/.exec(k))) (S.talk[m[1]] ||= {})[m[2]] = convo(k).map(says);
   }
 }
 
