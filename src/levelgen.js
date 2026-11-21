@@ -239,7 +239,7 @@ const SPEC = {
     mods: [{ t: 'door', to: 's5', kind: 'wood' }, { t: 'door', to: 'shu', kind: 'wood', label: 'THE KEEPER', hint: 'SOMETHING IN THE DARK SELLS WHAT THE DEAD NO LONGER NEED.' }, { t: 'door', to: 'vu', kind: 'crypt' }, { t: 'djLedge', kind: 'hpup', id: 'u1_hp' }, { t: 'tablet', id: 'tab7', near: 'start', text: 'HERE THE LORD LAID HIS HOUSEHOLD TO REST. THEY WERE PROMISED SLEEP. THE COUNT HAS BEEN WAKING THEM, ONE BY ONE.' }],
     candles: [3, 4], barrels: [2, 3], mix: { skeleton: [2, 2], ghost: [2, 3], wraith: [1, 2], fireskull: [1, 2], bat: [1, 2], wyrm: [1, 1] } },
   u2: { kind: 'tower', zone: 4, name: 'The Bone Stair', w: [28, 32], h: [36, 42], top: [9, 11], opts: { ...LOOK[4], ambient: 0.45, dark: true },          // (DARK: only the wisp shows the way)
-    mods: [{ t: 'tablet', id: 'tab17', text: 'IT IS VERY DARK HERE. DO NOT BE AFRAID OF IT. I WILL GO AHEAD OF YOU.' }],
+    mods: [{ t: 'tablet', id: 'tab17', near: 'start', text: 'IT IS VERY DARK HERE. DO NOT BE AFRAID OF IT. I WILL GO AHEAD OF YOU.' }],
     topItem: { kind: 'key', id: 'key_crypt' }, candles: [1, 1], barrels: [1, 2], mix: { skeleton: [1, 2], ghost: [2, 2], wraith: [1, 1], fireskull: [2, 3], bat: [2, 2], wyrm: [1, 1] } },
   u3: { kind: 'arena', zone: 4, name: "The Count's Crypt", w: [44, 50], boss: 'vampire', reward: 'thunder', plats: 2, rise: 3, seal: 'left', abilities: ['djump'], candles: [2, 2], decor: 'torch',
     opts: { ...LOOK[4], ambient: 0.22, tint: [0.07, 0, 0.04], vig: 0.6, boss: 'vampire', music: 'boss' } },
@@ -807,10 +807,14 @@ function genTower(id, spec, r) {
   if (spec.topItem) { b.e('upgrade', W - 7, top, { kind: spec.topItem.kind, id: spec.topItem.id }); meta.must.push({ tx: W - 7, gy: top, name: 'top item' }); }
   b.def.meta = meta; b.def.entries = { L: meta.entry.L, R: meta.entry.R };
   if (spec.chase) { b.def.chase = true; b.def.chaseTop = top; }          // (the Bell Tower is on fire: see Game.beginChase)
-  for (const t of (spec.mods || []).filter(m => m.t === 'tablet')) { b.tablet(W - 4, top, t.text, t.id); meta.must.push({ tx: W - 4, gy: top, name: 'tablet' }); }
+  const tabAvoid = [];          // (the ground a tablet stands on: nothing else is put there)
+  for (const t of (spec.mods || []).filter(m => m.t === 'tablet')) {          // (a tablet is up on the top landing - unless it is marked near: 'start': then it stands on the ground by the way in, just past the foot of the first step, so it is read before the climb.  No random numbers are drawn here)
+    const p0 = plats[0], tx = t.near === 'start' ? Math.min(W - 12, p0.x + p0.len + 1) : W - 4, gy = t.near === 'start' ? floor : top;
+    b.tablet(tx, gy, t.text, t.id); meta.must.push({ tx, gy, name: 'tablet' }); if (gy === floor) tabAvoid.push([tx - 2, tx + 2]);
+  }
   const v = validateMoving(b.def, movers); if (!v.ok) return { ok: false, errs: v.errs, def: b.def };
   const g = new Array(W).fill(floor);
-  populate(b, W, H, spec, r, v.S, v.seen, g, true, [1, W - 2]);
+  populate(b, W, H, spec, r, v.S, v.seen, g, true, [1, W - 2], tabAvoid);
   for (const rr of [floor - 6, floor - 14, floor - 22].filter(y => y > top)) b.torches([2, W - 3], rr);
   b.d('brazier', 4, floor).d('brazier', W - 5, floor);
   if (spec.falls) for (let i = 0, n = r.i(spec.falls[0], spec.falls[1]), used = []; i < n; i++) { const x = r.i(3, W - 4); if (used.some(u => Math.abs(u - x) < 8)) continue; used.push(x); b.d('waterfall', x, floor, { top: -80, w: 18 }); }          // water pours down the shaft
