@@ -2,7 +2,7 @@
 // if a physical key is pressed.  ?touch=1 forces them on (handy on a desktop for testing), ?touch=0 keeps them off; Options > TOUCH PAD switches them by hand.
 //   * the D-PAD is one round pad: slide a thumb round it to run, duck or go through a door (UP is also USE, like the arrow key);
 //   * JUMP and HIT are the two big buttons (and double as OK / BACK in the menus, as Z and X do);  DASH, ITEM (use what is selected) and the two small arrows that change it are on the right;
-//   * the buttons along the top: pause, map, full screen.  In menus only the D-pad, OK and BACK show; tapping a menu item picks it, and tapping the item box in the corner changes the item.
+//   * the buttons along the top: MAP, MENU (pause), full screen.  In menus only the D-pad, OK and BACK show; tapping a menu item picks it, and tapping the item box in the corner changes the item.
 // Every button holds the same named actions a key would (Input.touchHold / touchRelease), so the game does not know the difference.
 import { Input, ownKeys } from './input.js';
 
@@ -120,12 +120,12 @@ export const Touch = {
     button('‹', ['itemPrev'], { right: 3.2, bottom: 3.15 }, 0.62, ['play'], 'small');
     button('›', ['itemNext'], { right: 1.2, bottom: 3.15 }, 0.62, ['play'], 'small');
     // along the top, in the middle (the corners belong to the game's own bars and item box)
-    const top = (at, w, label, acts, modes) => button(label, acts, { top: 'calc(env(safe-area-inset-top, 0px) + 6px)', left: `calc(50% + var(--u) * ${at})` }, 0.74, modes, 'small', w);          // (centred as a row: MAP 1.15 wide, II and the full-screen square 0.8, 0.15 between)
-    top(-1.525, 1.15, 'MAP', ['map'], ['play']);
-    top(-0.225, 0.8, 'II', ['pause', 'back', 'esc'], ALL);
+    const top = (at, w, label, acts, modes) => button(label, acts, { top: 'calc(env(safe-area-inset-top, 0px) + 6px)', left: `calc(50% + var(--u) * ${at})` }, 0.74, modes, 'small', w);          // (centred as a row: MAP 1.15 wide, MENU 1.45, the full-screen square 0.8, 0.15 between)
+    top(-1.875, 1.15, 'MAP', ['map'], ['play']);
+    top(-0.575, 1.45, 'MENU', ['pause', 'back', 'esc'], ALL).style.fontSize = 'calc(var(--u) * 0.34)';          // (four letters, so a smaller size than MAP's: the word has to fit inside the button)
     const de = document.documentElement, reqFs = de.requestFullscreen || de.webkitRequestFullscreen, exitFs = document.exitFullscreen || document.webkitExitFullscreen;
     if (reqFs) {                                                                                                                       // (phones that have no full screen, such as the iPhone's Safari, get no button)
-      const fs = top(0.725, 0.8, '⛶', [], ALL); fs.addEventListener('pointerup', () => {
+      const fs = top(1.025, 0.8, '⛶', [], ALL); fs.addEventListener('pointerup', () => {
         try { if (document.fullscreenElement || document.webkitFullscreenElement) exitFs.call(document); else { const p = reqFs.call(de); if (p && p.then) p.then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {})).catch(() => {}); } } catch {}
       });
     }
