@@ -1,7 +1,7 @@
 // Static scenery drawn with the room (tombstones, torches, banners, doors ...) + the list of flames to light them.
 import { KEYS } from './itemdata.js';
 import { IMG, SHEET, drawSheet } from './assets.js';
-import { extra } from './world.js';
+import { extra, TILE } from './world.js';
 import { T } from './util.js';
 import { drawFramedPortrait, FH } from './portraitart.js';
 import { orlojTower, TOWER_W, TOWER_H } from './orlojtower.js';
@@ -25,6 +25,21 @@ const CDL_DROP = 4;          // (the candelabra pictures have a little perspecti
 const cdlOf = d => CDL[(((Math.round(d.x) * 2654435761) >>> 0) >>> 20) & 1];
 const SINK = { town_well: 6 };          // (pictures with a little perspective painted into their base: they are drawn lower, so they stand ON the ground instead of hovering over it)
 export const isBack = d => BACK_KINDS.has(d.t) || (d.back && (d.t === 'img' || d.t === 'bookcase' || d.t === 'barwin'));
+
+// The platform tiles that a piece of front scenery (a crate, a cart, a lamp, a well ...) stands across.  The scenery is drawn after the ground, so it would hide such a platform; the room paints these tiles again
+// over it (Room.drawPlatsOver), so a platform is always in front.  A piece that stands ON a platform is not counted: the bottom 7 pixels of its picture (its base, and the little perspective painted under it) are left out.
+export function platesOver(room) {
+  const found = new Map(), TP = 10;          // (a platform plank is about 10 pixels thick)
+  for (const d of room.decos || []) {
+    if (d.t !== 'img' || isBack(d) || d.fore) continue; const im = IMG[d.img]; if (!im) continue;
+    const sc = d.scale || 1, w = Math.round(im.width * sc), h = Math.round(im.height * sc), x0 = Math.round(d.x - w / 2), yb = d.y + (d.sink === undefined ? (SINK[d.img] || 0) : d.sink), y0 = yb - h, y1 = yb - 7;
+    for (let ty = Math.floor((y0 - TP) / T); ty <= Math.floor(y1 / T); ty++) for (let tx = Math.floor(x0 / T); tx <= Math.floor((x0 + w - 1) / T); tx++) {
+      if (room.get(tx, ty) !== TILE.PLAT) continue; const py = ty * T;
+      if (x0 < tx * T + T && x0 + w > tx * T && y0 < py + TP && y1 > py) found.set(tx + ',' + ty, [tx, ty]);
+    }
+  }
+  return [...found.values()];
+}
 
 // a turning brass cogwheel (the Orloj Tower's works): a toothed rim, six spokes and a hub.  r = radius, n = teeth, spin = radians a frame (the sign is the direction), a = its opacity
 function drawCog(g, x, y, r, n, ang, a) {

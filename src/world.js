@@ -535,7 +535,7 @@ export class Room {
         let depth = 0; while (depth < 3 && this.solid(tx, ty - 1 - depth) && ty - 1 - depth >= 0) depth++;
         // ceilings/overhangs: tile with air below and solid above shouldn't look like grass-top
         th.solid(g, tx, ty, { u: this.solid(tx, ty - 1), d: this.solid(tx, ty + 1), l: this.solid(tx - 1, ty), r: this.solid(tx + 1, ty) }, depth);
-      } else if (v === TILE.PLAT) th.plat(g, tx, ty);
+      } else if (v === TILE.PLAT) { if (!(this.platSet && this.platSet.has(tx + ',' + ty))) th.plat(g, tx, ty); }          // (a platform that some scenery overlaps is not painted into the room's picture: drawPlatsOver paints it over the scenery)
       else if (v === TILE.SPIKE) { if (!(this.rivers && this.rivers.some(c => ty * T >= c.y))) drawSheet(g, 'spikes', 0, tx * T, ty * T, { ax: 0, ay: 0 }); this.spikes.push([tx, ty]); }          // (under a river the spikes are unseen)
       else if (v === TILE.CRACK) { if (this.bookWall && this.bookWall.has(tx + ',' + ty)) bookTile(g, tx, ty); else drawSheet(g, 't_crack', 0, tx * T, ty * T, { ax: 0, ay: 0 }); this.brk.push([tx, ty, v]); }
       else if (v === TILE.BARRICADE) { drawSheet(g, 't_barricade', 0, tx * T, ty * T, { ax: 0, ay: 0 }); this.brk.push([tx, ty, v]); }
@@ -544,6 +544,14 @@ export class Room {
       else if (v === TILE.GATE) { if (!(this.gateRising && this.gateRising.has(tx + ',' + ty))) drawGateTile(g, tx * T, ty * T, this.theme, this.tiles[(ty - 1) * this.w + tx] !== TILE.GATE, ty); }          // (a gate that is rising is drawn by Game.draw, sliding up)
     }
     this.dirty = false;
+  }
+  // The platforms that crates, carts or lamps stand across (see decor.js platesOver): the room's picture leaves them out, and they are drawn here, after the scenery, so a platform is never hidden behind it.
+  setPlatOver(list) { this.platOver = list; this.platSet = new Set(list.map(([x, y]) => x + ',' + y)); this.dirty = true; }
+  drawPlatsOver(g, camX, camY) {
+    const L = this.platOver; if (!L || !L.length) return; const th = THEME[this.theme], cx = Math.floor(camX), cy = Math.floor(camY);
+    g.save(); g.translate(-cx, -cy);
+    for (const [tx, ty] of L) { const x = tx * T, y = ty * T; if (x < cx - T || x > cx + W || y < cy - 2 * T || y > cy + H) continue; if (this.tiles[ty * this.w + tx] === TILE.PLAT) th.plat(g, tx, ty); }
+    g.restore();
   }
   drawTiles(g, camX, camY, t) {
     if (this.dirty) this.prerender();

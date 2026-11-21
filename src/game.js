@@ -24,7 +24,7 @@ import { Shopkeeper, ShopScreen } from './shop.js';
 import { KEYS } from './itemdata.js';
 import { Projectile, Shockwave, FirePatch } from './projectiles.js';
 import { Skull, SKULL_COUNT, Bell, LitCandle, Statue, Barrel, Altar, Waystone, Tablet, Chest, Lever, Upgrade, Relic, Pickup, chestGift, ABILITIES, UPGRADES } from './props.js';
-import { drawDeco, isBack, roomFlames, drawFlames2D, drawFireWall, decoCoversHazard, sigilOf, drawSigilCard } from './decor.js';
+import { drawDeco, isBack, roomFlames, drawFlames2D, drawFireWall, decoCoversHazard, platesOver, sigilOf, drawSigilCard } from './decor.js';
 import { drawIce } from './enchant.js';
 import { drawSheet, IMG } from './assets.js';
 import { noteSeen, noteKill } from './bestiary.js';
@@ -306,6 +306,7 @@ export class Game {
     if (id === 'ib' && S.flags.boss_ib) for (let ty = def.h - 2; ty < def.h; ty++) for (let tx = 5; tx <= def.w - 6; tx++) tiles[ty * def.w + tx] = 0;          // (the Rimewyrm's floor stays shattered: a way down into the Frozen Well)
     const prevZone = this.zone; this.room = new Room({ ...def, tiles, ...(def.currents ? { currents: def.currents.map(c => ({ ...c })) } : {}) }); /* (the room gets its OWN copy of the currents: a boss may change their speed, and the castle's blueprint must not remember it) */ this.room.flags = S.flags; this.room.ignited = new Set(); this.room.fireOut = def.zone === 6 && !!S.flags.boss_vb; if (S.flags.boss_vb) S.flags.village_fire = true; S.visited[id] = true; this.zone = def.zone;          // (the room can see the save's flags: scenery such as the sigils over a locked door reads them)
     { const spk = []; for (let ty = 0; ty < def.h; ty++) for (let tx = 0; tx < def.w; tx++) if (tiles[ty * def.w + tx] === TILE.SPIKE) spk.push([tx, ty]); if (spk.length) this.room.decos = def.decos.filter(d => !decoCoversHazard(d, spk)); }          // nothing may stand in front of a hazard
+    this.room.setPlatOver(platesOver(this.room));          // (a platform a crate, cart or lamp stands across is drawn over it: see Room.drawPlatsOver)
     if (this.gaze) { this.gaze = null; this.playerFrozen = false; } this.gateAnims = []; this.hatchAnim = null; for (const d of this.room.decos) if (d.t === 'hatch') d.p = S.flags[d.lever] ? 1 : 0;          // (a hatch whose lever has been thrown stays drawn back: p = how far it has slid, 0..1)
     this.blackout = null; this.well = null; this.enemies = []; this.projectiles = []; this.pickups = []; this.props = []; this.popups = []; this.boss = null; this.delayed = []; this.fx.reset(); this.fx.setWisps(def.wisps || 0); this.flames = roomFlames(this.room); this.smokeSpots = this.room.fireOut ? this.room.decos.filter(d => d.t === 'blaze' && !d.small).map(d => ({ x: d.x, y: d.y })) : []; this.falls = this.room.decos.filter(d => d.t === 'waterfall'); this.fx.setWater(this.waterList()); this.mirrorView = def.mirror ? new MirrorView(def.mirror, !!S.flags['boss_' + id]) : null;          // (the Mirror Room: a great mirror - whole until you walk up to it)
     const dusk = def.zone === 6 && !S.flags.village_fire && !def.keepLook;          // Prague before the Cinder Warden's torches: a calm violet dusk, with golden dust in the air - the monsters are loose, but nothing burns yet
@@ -825,6 +826,7 @@ export class Game {
     if (this.mirrorView) this.mirrorView.draw(ctx, cx, cy);                                          // the mirror hangs on the back wall: frame and glass, behind the ground and the hero (the reflection is the boss's, drawn over the glass)
     r.drawTiles(ctx, cx, cy, t); if (this.gateAnims && this.gateAnims.length) this.drawGates(ctx, cx, cy);
     for (const d of r.decos) if (!isBack(d) && !d.fore) drawDeco(ctx, d, cx, cy, t, r);
+    r.drawPlatsOver(ctx, cx, cy);                                                                    // (the platforms that scenery stands across: in front of it)
     this.drawChase(ctx, cx, cy, t); this.drawHaze(ctx, cx, t);
     drawFlames2D(ctx, this.flames, cx, cy, t);                       // braziers, burning windows, candelabra flames: in the scene, behind the hero
     for (const o of this.props) o.draw(ctx, cx, cy);
