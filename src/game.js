@@ -72,7 +72,7 @@ const LOCK_HINTS = {
 export class Game {
   async init() {
     this.noAutoPause = new URLSearchParams(location.search).has('nopause');
-    this.canvas = document.getElementById('game'); this.ctx = this.canvas.getContext('2d', { willReadFrequently: !new URLSearchParams(location.search).has('gpu') }); this.ctx.imageSmoothingEnabled = false;          // (a CPU-backed canvas: the effects layer copies this picture into a WebGL texture every frame, and a GPU-accelerated 2D canvas can be caught half-drawn by that copy - black blocks and torn rows, esp. in Firefox.  ?gpu turns it off) this.K = 3;
+    this.canvas = document.getElementById('game'); this.ctx = this.canvas.getContext('2d', { willReadFrequently: !new URLSearchParams(location.search).has('gpu') }); this.ctx.imageSmoothingEnabled = false; this.K = 3;          // (a CPU-backed canvas: the effects layer copies this picture into a WebGL texture every frame, and a GPU-accelerated 2D canvas can be caught half-drawn by that copy - black blocks and torn rows, esp. in Firefox.  ?gpu turns it off)
     this.topCanvas = document.getElementById('top'); this.top = this.topCanvas.getContext('2d');       // a clear layer above the effects (fog, darkness): the arrows that say 'you can use this' / 'this way out' are drawn here so nothing hides them
     // The game is drawn in 384x216 'logical' pixels onto a K-times larger canvas (so the gothic text can be smooth and crisp);
     // sprites are snapped to the logical grid so pixel art looks exactly as before.
@@ -107,14 +107,26 @@ export class Game {
     let last = performance.now(), acc = 0; const STEP = 1000 / 60;
     const perf = { n: 0, slow: 0 }, fullfx = new URLSearchParams(location.search).has('fullfx');
     const loop = now => {
+      requestAnimationFrame(loop);                                        // (first of all: whatever goes wrong in this frame, the next one still comes - a thrown error used to end the loop for good, and the game sat frozen)
+      try { frame(now); } catch (e) { this.crashed(e); }
+    };
+    const frame = now => {
       const raw = now - last; acc += Math.min(100, raw); last = now; let n = 0;
       // a SPEED GOVERNOR: if, over three seconds of play, most frames come late (slower than about 50 per second), the dearest effect - the shadows the lights cast - is switched off for the rest of the visit
       if (!fullfx && this.state === 'play' && !document.hidden && !this.freeze && raw < 100 && this.fx.shadowK !== 0) { perf.n++; if (raw > 19.5) perf.slow++; if (perf.n >= 180) { if (perf.slow > perf.n * 0.55) { this.fx.shadowK = 0; this.fx.darkU.uShadow.value = 0; console.info('slow frames: shadows switched off (?fullfx keeps them)'); } perf.n = perf.slow = 0; } }
       if (this.freeze) acc = 0;                                           // test hook: game.freeze = true holds the current frame
       while (acc >= STEP && n < 5) { this.step(); acc -= STEP; n++; } if (n === 5) acc = 0;
-      this.draw(); requestAnimationFrame(loop);
+      this.draw();
     };
     requestAnimationFrame(loop);
+  }
+  // a frame threw an error: say so (once per kind), and let go of whatever might be holding the hero - a scene or a talk that can no longer go on - so the game carries on instead of freezing
+  crashed(e) {
+    const key = String(e && e.message); this.errors = this.errors || new Map(); const n = (this.errors.get(key) || 0) + 1; this.errors.set(key, n);
+    if (n === 1) console.error('frame error (the game carries on):', e);
+    const sc = this.cutscene && this.cutscene.scene; if (sc && sc.finish) { try { sc.finish(); } catch {} }          // (a scene is ended the proper way, so it does not start over: its own finish() sets the flag that says it has been played)
+    if (this.cutscene) { this.cutscene = null; this.playerFrozen = false; if (this.player) this.player.invT = Math.max(this.player.invT || 0, 60); }
+    if (this.dialog && n > 3) this.dialog = null;
   }
 
   // -------------------------------------------------------------------------------- helpers used by entities
@@ -292,7 +304,7 @@ export class Game {
     for (let ty = 0; ty < def.h; ty++) for (let tx = 0; tx < def.w; tx++) { const v = tiles[ty * def.w + tx]; if ((v === 4 || v === 5 || v === 6 || v === 8) && S.flags[`b_${id}_${tx}_${ty}`]) tiles[ty * def.w + tx] = 0; }
     for (const lv of def.levers || []) if (S.flags[lv.id]) for (const [gx, gy] of lv.gate) tiles[gy * def.w + gx] = 0;          // (a gate whose lever has been thrown stays raised)
     if (id === 'ib' && S.flags.boss_ib) for (let ty = def.h - 2; ty < def.h; ty++) for (let tx = 5; tx <= def.w - 6; tx++) tiles[ty * def.w + tx] = 0;          // (the Rimewyrm's floor stays shattered: a way down into the Frozen Well)
-    const prevZone = this.zone; this.room = new Room({ ...def, tiles, ...(def.currents ? { currents: def.currents.map(c => ({ ...c })) } : {}) }); this.room.flags = S.flags;          // (the room gets its OWN copy of the currents: a boss may change their speed, and the castle's blueprint must not remember it) this.room.ignited = new Set(); this.room.fireOut = def.zone === 6 && !!S.flags.boss_vb; if (S.flags.boss_vb) S.flags.village_fire = true; S.visited[id] = true; this.zone = def.zone;          // (the room can see the save's flags: scenery such as the sigils over a locked door reads them)
+    const prevZone = this.zone; this.room = new Room({ ...def, tiles, ...(def.currents ? { currents: def.currents.map(c => ({ ...c })) } : {}) }); /* (the room gets its OWN copy of the currents: a boss may change their speed, and the castle's blueprint must not remember it) */ this.room.flags = S.flags; this.room.ignited = new Set(); this.room.fireOut = def.zone === 6 && !!S.flags.boss_vb; if (S.flags.boss_vb) S.flags.village_fire = true; S.visited[id] = true; this.zone = def.zone;          // (the room can see the save's flags: scenery such as the sigils over a locked door reads them)
     { const spk = []; for (let ty = 0; ty < def.h; ty++) for (let tx = 0; tx < def.w; tx++) if (tiles[ty * def.w + tx] === TILE.SPIKE) spk.push([tx, ty]); if (spk.length) this.room.decos = def.decos.filter(d => !decoCoversHazard(d, spk)); }          // nothing may stand in front of a hazard
     if (this.gaze) { this.gaze = null; this.playerFrozen = false; } this.gateAnims = []; this.hatchAnim = null; for (const d of this.room.decos) if (d.t === 'hatch') d.p = S.flags[d.lever] ? 1 : 0;          // (a hatch whose lever has been thrown stays drawn back: p = how far it has slid, 0..1)
     this.blackout = null; this.well = null; this.enemies = []; this.projectiles = []; this.pickups = []; this.props = []; this.popups = []; this.boss = null; this.delayed = []; this.fx.reset(); this.fx.setWisps(def.wisps || 0); this.flames = roomFlames(this.room); this.smokeSpots = this.room.fireOut ? this.room.decos.filter(d => d.t === 'blaze' && !d.small).map(d => ({ x: d.x, y: d.y })) : []; this.falls = this.room.decos.filter(d => d.t === 'waterfall'); this.fx.setWater(this.waterList()); this.mirrorView = def.mirror ? new MirrorView(def.mirror, !!S.flags['boss_' + id]) : null;          // (the Mirror Room: a great mirror - whole until you walk up to it)

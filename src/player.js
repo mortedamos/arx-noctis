@@ -193,7 +193,7 @@ export class Player extends Entity {
       // ---- dash
       if (I.pressed.dash && S.abilities.dash && this.dashCd === 0 && !this.dashT && (this.onGround || this.canAirDash) && (!this.crouch || this.canStand(room))) {
         if (this.crouch) { this.crouch = false; this.h = PH; }
-        this.dashT = DASH_T; this.dashCd = S.flags.got_spring ? 15 : 34; this.atk = 0; this.atkBuf = 0; this.castT = 0; if (dx) this.dir = dx; if (!this.onGround) { this.canAirDash = false; if (S.flags.got_ouroboros) this.airJump = true; } this.invT = Math.max(this.invT, DASH_T + 3);          // (the Ouroboros: a dash in the air gives a jump back) this.dashAtkId = ++g.attackCounter; this.dashHitDone = false;
+        this.dashT = DASH_T; this.dashCd = S.flags.got_spring ? 15 : 34; this.atk = 0; this.atkBuf = 0; this.castT = 0; if (dx) this.dir = dx; if (!this.onGround) { this.canAirDash = false; if (S.flags.got_ouroboros) this.airJump = true; } this.invT = Math.max(this.invT, DASH_T + 3); this.dashAtkId = ++g.attackCounter; this.dashHitDone = false;          // (the Ouroboros: a dash in the air gives a jump back)
         A.sfx('dash'); g.fx.burst(this.x, this.y - 18, 8, COLORS.purple, { speed: 1.5, s0: 10, s1: 2 });
       }
       // ---- jump
