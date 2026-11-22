@@ -20,7 +20,7 @@ No install step, no dependencies - three.js is vendored in `lib/three/`, so it a
 
 1. Push the game folder to a GitHub repository (the `.gitignore` already keeps the downloaded art packs in `assets/sprites/source/` out - their licences do not allow redistributing them).
 2. In the repository: **Settings > Pages > Deploy from a branch**, branch `main`, folder `/ (root)`.
-3. Open the address Pages gives you. Nothing else is needed: every path in the game is relative, so it also works from a sub-folder address like `https://you.github.io/shadowkeep/`.
+3. Open the address Pages gives you. Nothing else is needed: every path in the game is relative, so it also works from a sub-folder address like `https://you.github.io/arx-noctis/`.
 
 Before you publish:
 * `node tools/music-manifest.mjs` - rewrites `music/files.json` (a static host cannot list a folder; the game reads this file instead). Run it again whenever you add, remove or rename a track.
