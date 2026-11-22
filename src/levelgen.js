@@ -199,10 +199,10 @@ const SPEC = {
   l3: { kind: 'corridor', zone: 10, name: 'The Reading Gallery', w: [78, 90], levers: 1, opts: { ...LOOK[10], ambient: 0.32 }, abilities: ['djump', 'dash', 'ember'],
     mods: [{ t: 'door', to: 'shl', kind: 'wood', label: 'THE KEEPER', hint: 'SOMETHING IN THE DARK SELLS WHAT THE DEAD NO LONGER NEED.' }, { t: 'cell', gate: 'crystal', kind: 'atkup', id: 'l3_atk' }, { t: 'tablet', id: 'tab21', near: 'start', text: 'THE LIBRARIAN WAS ONLY EVER ASKED TO KEEP THE KEYS. HE KEPT EVERYTHING ELSE TOO, AND NOW NOTHING MAY BE BORROWED.' }],
     candles: [3, 4], barrels: [1, 2], mix: { tome: [3, 4], grimoire: [1, 2], wraith: [1, 1], ghost: [1, 1], archmage: [1, 1] } },
-  lb: { kind: 'arena', zone: 10, name: "The Librarian's Study", w: [44, 50], h: 16, boss: 'librarian', reward: 'goldkey', plats: 3, rise: 3, seal: 'left', flyRow: 6, abilities: ['djump'], decor: 'column', candles: [2, 2],
+  lb: { kind: 'arena', zone: 10, name: "The Librarian's Study", w: [44, 50], h: 16, boss: 'librarian', reward: 'goldkey', reward2: 'ouroboros', plats: 3, rise: 3, seal: 'left', flyRow: 6, abilities: ['djump'], decor: 'column', candles: [2, 2],
     opts: { ...LOOK[10], ambient: 0.3, boss: 'librarian', music: 'boss' } },
   sl: { kind: 'sanctuary', zone: 10, name: 'Reading Nook', parent: 'l1' },
-  // ======== ZONE 11 - THE FROZEN CAVERNS (beyond the Cistern, behind a wall of ice that only fire melts; the ice floors are slippery; walls of ice bar the way and hide treasure; at the far end the RIMEWYRM guards the KEY OF ANTIMONY, which opens the Library; the Glacier Road hides the OUROBOROS)
+  // ======== ZONE 11 - THE FROZEN CAVERNS (beyond the Cistern, behind a wall of ice that only fire melts; the ice floors are slippery; walls of ice bar the way and hide treasure; at the far end the RIMEWYRM guards the KEY OF ANTIMONY, which opens the Library)
   ti: { kind: 'teleport', zone: 11, name: 'Waystone Rime Hollow', opts: LOOK[11], abilities: ['djump', 'dash', 'ember'] },
   i1: { kind: 'corridor', zone: 11, name: 'The Frozen Gallery', w: [102, 116], leverCell: true, opts: { ...LOOK[11], fog: 0.15 }, abilities: ['djump', 'dash', 'ember'],
     mods: [{ t: 'iceWall' }, { t: 'door', to: 'si', kind: 'wood' }, { t: 'cell', gate: 'ice', kind: 'hpup', id: 'i1_hp' }, { t: 'tablet', id: 'tab22', near: 'start', text: 'THE COLD CAME UP FROM THE FOUNDATIONS THE DAY THE SUN WAS TAKEN. NOTHING THAT FELL IN HAS THAWED. NOTHING THAT WALKS HERE FEELS IT.' }],
@@ -210,7 +210,7 @@ const SPEC = {
   i2: { kind: 'tower', zone: 11, name: 'The Icefall', w: [28, 32], h: [36, 42], top: [9, 11], opts: { ...LOOK[11], ambient: 0.45 }, abilities: ['djump', 'dash', 'ember'],
     topItem: { kind: 'mpup', id: 'i2_mp' }, candles: [1, 2], barrels: [1, 1], mix: { frostwyrm: [1, 2], ghost: [1, 2], wraith: [1, 1], bat: [2, 3] } },
   i3: { kind: 'corridor', zone: 11, name: 'The Glacier Road', w: [100, 114], opts: { ...LOOK[11], fog: 0.15, dark: true, wisps: 12 }, abilities: ['djump', 'dash', 'ember'],          // (DARK: only the hero's wisp, the ghostly blue wisps that drift here and the glare of the ice show the way - the ice throws every light back)
-    mods: [{ t: 'skull', id: 'skull6' }, { t: 'iceWall' }, { t: 'iceWall' }, { t: 'cell', gate: 'ice', kind: 'ouroboros', id: 'i3_ouroboros' }, { t: 'cell', gate: 'crack', kind: 'atkup', id: 'i3_atk' }],
+    mods: [{ t: 'skull', id: 'skull6' }, { t: 'iceWall' }, { t: 'iceWall' }, { t: 'cell', gate: 'ice', kind: 'hpup', id: 'i3_hp' }, { t: 'cell', gate: 'crack', kind: 'atkup', id: 'i3_atk' }],
     candles: [3, 4], barrels: [1, 2], mix: { frostwyrm: [1, 2], hound: [2, 2], wraith: [1, 2], ghost: [1, 1], bat: [1, 2] } },
   ib: { kind: 'arena', zone: 11, name: "The Rimewyrm's Heart", w: [46, 52], h: 16, boss: 'rimewyrm', reward: 'well', plats: 3, rise: 3, seal: 'left', flyRow: 8, abilities: ['djump', 'dash', 'ember'], decor: 'ice',          // (the end of the Frozen Caverns: when the Rimewyrm falls the floor shatters and the hero drops into the FROZEN WELL, where its treasure waits in chests)
     opts: { ...LOOK[11], ambient: 0.4, wisps: 9, fog: 0.08, boss: 'rimewyrm', music: 'boss' } },
@@ -302,7 +302,7 @@ const PAIRS = [
 const RETURNS = [['wb', 'out', 'hub1', 'mire'], ['h3', 'out', 'hk', 'hall'], ['u3', 'out', 'hub2', 'crypts'], ['kb', 'out', 'ot', 'clockwork'], ['lb', 'out', 'hl', 'library'], ['ic', 'out', 'br', 'cistern'], ['ls', 'out', 'pd', undefined]];
 // what each boss gives (and what each door asks for): the order in which things can be done.  tools/test-world.mjs proves from this table that every castle can be finished.
 export const PROGRESS = {
-  gives: { g3: 'djump', h4: 'dash', qb: 'ember', u3: 'thunder', t2: 'dawn', c3: 'tide' },          // (qb, the Drowned Warden, gives fire; c3, the Seraph of Ash, leaves the Tide Blade)
+  gives: { g3: 'djump', h4: 'dash', qb: 'ember', u3: 'thunder', t2: 'dawn', c3: 'tide', lb: 'ouroboros' },          // (qb, the Drowned Warden, gives fire; c3, the Seraph of Ash, leaves the Tide Blade)
   doors: { mire: { needs: ['djump'] }, hall: {}, chapel: { bosses: ['h4', 'ib'] }, crypts: { needs: ['ember'] }, orloj: { needs: ['djump'], key: 'key_crypt' }, clockwork: {}, forge: { bosses: ['og'] }, cistern: { needs: ['djump', 'dash'] }, library: { key: 'key_frost' }, throne: { needs: ['thunder'], bosses: ['u3', 'kb'], key: 'key_gold' } },
 };
 // some neighbouring areas are joined by a DOOR at each end (UP) instead of an open edge: 'a>b' = a's far-right door leads to b's far-left door.  (Only when both are generated rooms: the hand-built classic ones keep their open edges.)
@@ -837,7 +837,7 @@ function genArena(id, spec, r) {
   const must = [{ tx: L + 1, gy: BASE - rise, name: 'left platform' }, { tx: Rr + 1, gy: BASE - rise, name: 'right platform' }];
   if (spec.plats >= 3) { const ml = r.i(5, 7), mx = Math.round(W / 2 - ml / 2) + r.i(-2, 2), mr = BASE - rise - 2; b.plat(mx, ml, mr); must.push({ tx: mx + 2, gy: mr, name: 'middle platform' }); }
   const bossX = mirror ? mc : Math.round(W * 0.7) + r.i(-3, 2), flying = FLYING_BOSS.has(spec.boss), brow = flying ? BASE - (spec.flyRow || 6) : BASE;
-  b.e(BOSS_TYPE[spec.boss], bossX, brow, { reward: spec.reward, ...(spec.page ? { page: spec.page } : {}) });
+  b.e(BOSS_TYPE[spec.boss], bossX, brow, { reward: spec.reward, ...(spec.reward2 ? { reward2: spec.reward2 } : {}), ...(spec.page ? { page: spec.page } : {}) });          // (reward2: a second gift that falls beside the first - the Librarian leaves the Key of Gold AND the Ouroboros)
   const lair = !!spec.lair, gated = lair || !!spec.doorL, closedR = lair || spec.seal === 'left' || !!spec.doorR;                    // a lair is entered by a door (at x=3), has no other way out, and needs no seals
   const seals = gated ? [] : [{ x: 0, y0: BASE - 3, y1: BASE - 1 }];
   if (!gated && spec.seal === 'both' && !spec.doorR) seals.push({ x: spec.exitGate ? W - 2 : W - 1, y0: BASE - 3, y1: BASE - 1 });
@@ -1110,7 +1110,7 @@ function genChasm(id, spec, r) {
   b.floor(0, P0, BASE).floor(P1 + 1, W, BASE).ceil(0, W, 2).pit(P0, P1 + 1);                           // two cliffs, and between them a pit with spikes at the bottom of it (unseen: the dark hides them)
   b.d('voidpit', (P0 + P1 + 1) / 2 - 0.5, BASE, { w: PW * 16 });                                       // (the scenery fades into black below the banks: see decor voidpit)
   b.d('brazier', 4, BASE).d('brazier', P0 - 4, BASE); b.torches([2, 8, P0 - 2], 6);
-  b.tablet(10, BASE, 'There is no floor in the dark ahead, and no wall to lean on. Only the serpent that eats its own tail can cross it: strike, and leap, and leap again, and do not come down. I left it in the ice of the Glacier Road, where you were in too much of a hurry to look. I will be your light.', 'tabdark');                                                           // (her voice: it tells him what will carry him over, and where she left it)
+  b.tablet(10, BASE, 'There is no floor in the dark ahead, and no wall to lean on. Only the serpent that eats its own tail can cross it: strike, and leap, and leap again, and do not come down. I left it with the Librarian, among the books he never lends. I will be your light.', 'tabdark');                                                           // (her voice: it tells him what will carry him over, and where she left it)
   if (spec.doorR) { b.door(W - 5, BASE, spec.doorR.to, 3, BASE, spec.doorR.kind || 'crypt'); patchDoor(b, { ...spec.doorR, needs: 'ouroboros' }); }          // the way on to the Throne (the validator knows the door needs the Ouroboros)
   const meta = { abilities: ['djump', 'dash'], back: ['djump', 'dash'], entry: { L: { tx: 1, gy: BASE }, R: null }, must: [{ tx: 10, gy: BASE, name: 'tablet' }], items: [], start: { tx: 3, gy: BASE } };
   b.def.meta = meta; b.def.entries = { L: meta.entry.L, R: null };
