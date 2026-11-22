@@ -18,8 +18,18 @@ A gothic adventure
 ## A message from ArxNWorks
 This is my first game.
 As an individual developer, I have immense gratitude to the community of creators who chose to author and share their resources - the artists, the sound designers, the type designers and the programmers. They have made Arx Noctis possible.
+
 Thank you.
-ArxNWorks
+
+- ArxNWorks
+
+---
+
+## AI disclaimer
+Arx Noctis is the work of one developer, and AI tools were part of the process.
+The music was made with Suno, an AI music generator, for this game.
+The fifteen portraits on the castle walls were made by the project owner with Google Gemini.
+The game's code was written with the help of an AI assistant (Claude, by Anthropic), directed and edited by the project owner.
 
 ---
 
@@ -42,9 +52,6 @@ opengameart.org/content/gothicvania-bridge-expansion-pack-1
 opengameart.org/content/mountain-at-dusk-background
 More from the author - pixelgameart.org and patreon.com/cw/ansimuz
 
-The hero, the monsters, the castle and the village.
-The Reflection (the boss in the Mirror Room) is the Hero again, recoloured at load time.
-
 ## ETTiNGRiNDER - CC0
 Haunted Forest Trees
 opengameart.org/content/haunted-forest-trees
@@ -52,42 +59,31 @@ opengameart.org/content/haunted-forest-trees
 ## Chloe Wolfe - CC BY 4.0
 Castlevania-esque Tilemap (Stone and Bricks)
 opengameart.org/content/castlevania-esque-tilemap-stone-and-bricks
-The village streets and brickwork.
-Cropped and rearranged for use in the game.
 
 ## Balmer, with Redshrike - CC BY 3.0
 Bosses and Monsters Spritesheets (Ars Notoria)
 opengameart.org/content/bosses-and-monsters-spritesheets-ars-notoria
-The acolyte, the archmage, the brass sorcerer, the Cinder Warden, the Brazen Hierophant and the Mire Mother.
-Cropped and rearranged for use in the game.
 
 ## Emcee Flesher - OGA-BY 3.0
 Super Dead Gunner: Cyber-tooth
 opengameart.org/content/super-dead-gunner-cyber-tooth-enemy
-The bone, frost and ember wyrms.
-Sliced and re-assembled in code.
 
 ## CaptainSkolot - Magic Books pack (itch.io)
 Magic Book pixel-art grimoires, captainskolot.itch.io/magic-books-pixelart-pixel-art-sprite-grimoire-pack-for-rpg-fantasy
 More from the author - captainskolot.itch.io
-The haunted tomes and grimoires of the Library of Ages: all 32 covers, drawn half-seen.
-Also the open pages they show as they cast (Magic Books interface pack).
 ; (the page's licence field says CC BY-NC-SA 4.0, but the author's description allows commercial use and modification, which is what this game follows - see CREDITS.md)
 
 ## CraftPix.net - free asset (shared by Free Game Assets, itch.io)
 Free City Trader Character Sprite Sheets
 craftpix.net/freebies and free-game-assets.itch.io/free-city-trader-character-sprite-sheets-pixel-art
-The Keeper of the shops: the cloaked vendor with the pack on his back.
-Cut out and shrunk for use in the game.
 
 ## Anokolisa
 Hero's Journey - Moon Graveyard
 anokolisa.itch.io/moon-graveyard
-The moonlit graveyard set.
 
-## Photographs
-The Prague Orloj and its tower - taken by the project owner in Prague
-Pixelated for the Orloj Tower: the clock and its calendar dial.
+## ArxNWorks
+The Prague Orloj - photo
+15 portraits, made by the project owner with Google Gemini, originally for our other game, The Kingdom Marches.
 
 ## heosphorus
 Animated Gears - Pixel Art Steampunk Machinery (turning gear accents in the Orloj Tower and the Clockwork Dungeon) - heosphorus.itch.io/animated-gears
@@ -102,27 +98,16 @@ More from the author - worldswithoutend.itch.io
 ## assets2D
 Gothic Vampire Undead Horde (the free download) - assets2d.itch.io/gothic-vampire-horde-pixel-art-2d-character-sprites
 More from the author - assets2d.itch.io
-The Crimson Count, the vampire lord.
-Cut into strips and scaled down for the game.
-
-## Portraits
-The framed pictures on the castle walls: fifteen painted faces, five moods each.
-Made by the project owner with Google Gemini, first for The Kingdom Marches. Pixelated for the game.
 
 ## Eddie's Workshop (itch.io)
 Old Golem - eddies-workshop.itch.io/old-golem
-The Boiler Golem.
 
 ## Szadi art - public domain
 Pixel Platformer Set 1 - szadiart.itch.io/pixel-platformer-castle
-The sickle-fighting zealot and the sparkling gem.
 
 ## Icko (itch.io)
 The Sidescroller's Dungeon - Tileset 32x32 - inr-1ko.itch.io/the-sidescrollers-dungeon
-Pillars, banners, urns, crates, doors and torches.
 ; (the page's licence field says CC BY-ND 4.0, but the author's description allows commercial use and modification, which is what this game follows - see CREDITS.md)
-
-Some sprites are recoloured while the game loads.
 
 ---
 
@@ -147,25 +132,408 @@ Eroded Motta - the gravestones and tablets - 1001fonts.com/erodedmotta-font.html
 
 # CODE
 three.js - MIT licence (threejs.org)
-Game code, shaders and level generation were written for this project.
+Game code, shaders and level generation were written for this project, with an AI assistant (see the AI disclaimer above).
 Some sound effects are made in code; the recorded ones are credited under SOUND EFFECTS.
 Some creatures, props and projectiles are drawn in code.
 
 ---
 
 # SOUND EFFECTS
-Recorded sounds by Freesound, OpenGameArt, Kenney and Pixabay creators. Every one is named in CREDITS.md.
-Published at freesound.org, opengameart.org, kenney.nl, pixabay.com and freesoundslibrary.com
+Every recorded sound in the game, with its author and the address of the author, or of the page the sound was published on.  The other sounds are made in code.
+freesound.org, opengameart.org, kenney.nl, pixabay.com and freesoundslibrary.com
 
-## CC BY 4.0 - Free Sounds Library
-freesoundslibrary.com - trimmed, level-matched and re-encoded
-Glass Shattering, Ding Level Up, Zombie Noise, Horse Whinny, Horse Neighing
+## CC BY 4.0 - Free Sounds Library (credit asked for)
+Trimmed, level-matched and re-encoded for the game.
 
-## CC0 (public domain)
-click, click 2 - 51 UI sound effects - gopherapps - opengameart.org/content/51-ui-sound-effects-buttons-switches-and-clicks
+Ding Level Up - Free Sounds Library
+freesoundslibrary.com/ding-level-up-sound-effect
+
+Glass Shattering Sound Effect - Free Sounds Library
+freesoundslibrary.com/glass-shattering-sound-effect
+
+Horse Neighing Sound Effect - Free Sounds Library
+freesoundslibrary.com/horse-neighing-sound-effect
+
+Horse Whinny Sound Effect - Free Sounds Library
+freesoundslibrary.com/horse-whinny-sound-effect
+
+Zombie Noise - Free Sounds Library
+freesoundslibrary.com/zombie-noise
+
+## CC0 - public domain
+Freesound, OpenGameArt and Kenney creators.  Trimmed, level-matched and re-encoded for the game.
+
+3 Melee sounds / animal melee sound.wav - Dream2Reality
+opengameart.org/content/3-melee-sounds
+
+3 Melee sounds / melee sound.wav - Dream2Reality
+opengameart.org/content/3-melee-sounds
+
+3 Melee sounds / sword sound.wav - Dream2Reality
+opengameart.org/content/3-melee-sounds
+
+16_Raton_chillando.wav - JoseAgudelo
+freesound.org/people/JoseAgudelo
+
+36 Bar Chimes Sweep Ascend 01 - loganzsound
+freesound.org/people/loganzsound
+
+50 RPG sound effects / handleCoins.ogg - LunaVR
+opengameart.org/content/50-rpg-sound-effects
+
+51 UI sound effects (buttons, switches and clicks) / click4.wav - gopherapps
+opengameart.org/content/51-ui-sound-effects-buttons-switches-and-clicks
+
+51 UI sound effects (buttons, switches and clicks) / click5.wav - gopherapps
+opengameart.org/content/51-ui-sound-effects-buttons-switches-and-clicks
+
+75 CC0 breaking / falling / hit sfx / bfh1_hit_01.ogg - frances
+opengameart.org/content/75-cc0-breaking-falling-hit-sfx
+
+80 CC0 creature SFX / hurt_01.ogg - Chasersgaming
+opengameart.org/content/80-cc0-creature-sfx
+
+angels02.ogg - pennyhatemachine
+freesound.org/people/pennyhatemachine
+
+Barrel Break 4.wav - kevinkace
+freesound.org/people/kevinkace
+
+bat swoosh - MrGungus
+freesound.org/people/MrGungus
+
+Bird Flap B 05.wav - deleted_user_2104797
+freesound.org/people/deleted_user_2104797/sounds/330967
+
+Bone Crack - cb9382
+freesound.org/people/cb9382
+
+Bone Cracking.wav - bewareofkites20
+freesound.org/people/bewareofkites20
+
+Bones Crack 2.wav - Kane53126
+freesound.org/people/Kane53126
+
+Boom Explosion - BennettFilmTeacher
+freesound.org/people/BennettFilmTeacher
+
+Bycicle grears in reverse.wav - MichelleGrobler
+freesound.org/people/MichelleGrobler
+
+Cancel or No Button Sound - el_boss
+freesound.org/people/el_boss
+
+Cello harmonics glissando - NikoletB
+freesound.org/people/NikoletB
+
+Church Bell.wav - MVMTech
+freesound.org/people/MVMTech
+
+clock.wav - Narjara
+freesound.org/people/Narjara
+
+Coin Dropped - kermite607
+freesound.org/people/kermite607
+
+Combust.wav - GrimGrum
+freesound.org/people/GrimGrum
+
+creaturechitter.wav - j1987
+freesound.org/people/j1987
+
+Creepy Whispering - RaspberryTickle
+freesound.org/people/RaspberryTickle
+
+Cthulhu - qubodup
+freesound.org/people/qubodup
+
+Deep Evil Laugh - DRFX
+freesound.org/people/DRFX
+
+Deep Monster Growl - uagadugu
+freesound.org/people/uagadugu
+
+Demon_Ghost Growling 1.wav - Osiruswaltz
+freesound.org/people/Osiruswaltz
+
+Dragon roar 1.wav - AMWD_Mortsel-Edegem-Kontich
+freesound.org/people/AMWD_Mortsel-Edegem-Kontich
+
+DRAGON_ROAR.wav - JoelAudio
+freesound.org/people/JoelAudio
+
+Dragons Dying Breath - MickBoere
+freesound.org/people/MickBoere
+
+Evil Presence 01.wav - LilMati
+freesound.org/people/LilMati
+
+Fast Page Turn - 5 - SpaceJoe
+freesound.org/people/SpaceJoe
+
+Fire Burst Flash - Za-Games
+freesound.org/people/Za-Games
+
+Fire.wav - danielpodlovics
+freesound.org/people/danielpodlovics
+
+Gates of Hell 2 (Gate Slam 2) - magnuswaker
+freesound.org/people/magnuswaker
+
+Ghostly Whoosh - Horror Game UI - TommasoMotteran
+freesound.org/people/TommasoMotteran
+
+Glass Break - unfa
+freesound.org/people/unfa
+
+Glass Shatter 4.wav - Greg_Surr
+freesound.org/people/Greg_Surr
+
+Hard Glass Impact - deleted_user_3656686
+freesound.org/people/deleted_user_3656686/sounds/418194
+
+Horse steps on grass - Luisa_Sanchez
+freesound.org/people/Luisa_Sanchez
+
+Horse_neighing.wav - Lydmakeren
+freesound.org/people/Lydmakeren
+
+Ice Magic Arrow_type 01 - lotteria001
+freesound.org/people/lotteria001
+
+ICEBrk_Break04_InMotionAudio_FREESampleSunday - InMotionAudio
+freesound.org/people/InMotionAudio
+
+iceSpell.wav - Relenzo2
+freesound.org/people/Relenzo2
+
+Impact Sounds / footstep_concrete_000.ogg - Kenney
+kenney.nl/assets/impact-sounds
+
+Impact Sounds / impactPunch_heavy_000.ogg - Kenney
+kenney.nl/assets/impact-sounds
+
+Impact Sounds / impactSoft_medium_000.ogg - Kenney
+kenney.nl/assets/impact-sounds
+
+Impact Sounds / impactSoft_medium_001.ogg - Kenney
+kenney.nl/assets/impact-sounds
+
+Impact Sounds / impactSoft_medium_002.ogg - Kenney
+kenney.nl/assets/impact-sounds
+
+Item Get - Qvantor
+freesound.org/people/Qvantor
+
+Jacket/Cloth Rustle 9 - brandondelehoy
+freesound.org/people/brandondelehoy
+
+LightClunk1.wav - BMacZero
+freesound.org/people/BMacZero
+
+LongWhisper - EvaMusik
+freesound.org/people/EvaMusik
+
+Magic Spell - qubodup
+freesound.org/people/qubodup
+
+male_hurt9.ogg - micahlg
+freesound.org/people/micahlg
+
+Mechanical1.wav - BMacZero
+freesound.org/people/BMacZero
+
+Metallic Whoosh.wav - MissCellany
+freesound.org/people/MissCellany
+
+Monster sound 02 based on plants - rubberduck9999
+freesound.org/people/rubberduck9999
+
+mouse squek.mp3 - FairCashew
+freesound.org/people/FairCashew
+
+Necksnap_build.wav - danielrutterfilms
+freesound.org/people/danielrutterfilms
+
+Quiet Page Turn - 8 - SpaceJoe
+freesound.org/people/SpaceJoe
+
+Rat.ogg - egomassive
+freesound.org/people/egomassive
+
+record_scratch.wav - simkiott
+freesound.org/people/simkiott
+
+Release me - Whispering ROUGH Latin - JoelMcDaniel
+freesound.org/people/JoelMcDaniel
+
+RPG Audio / bookFlip1.ogg - Kenney
+kenney.nl/assets/rpg-audio
+
+RPG Audio / cloth2.ogg - Kenney
+kenney.nl/assets/rpg-audio
+
+RPG Audio / cloth3.ogg - Kenney
+kenney.nl/assets/rpg-audio
+
+RPG Audio / doorOpen_1.ogg - Kenney
+kenney.nl/assets/rpg-audio
+
+RPG Audio / doorOpen_2.ogg - Kenney
+kenney.nl/assets/rpg-audio
+
+Skeleton bones (game).wav - cribbler
+freesound.org/people/cribbler
+
+Sleeping Monster - szegvari
+freesound.org/people/szegvari
+
+Smash.ogg - egomassive
+freesound.org/people/egomassive
+
+snd_box_smash.wav - gristi
+freesound.org/people/gristi
+
+Spectral Ghost Whisper Breeze Whoosh - brktkrgll
+freesound.org/people/brktkrgll
+
+Splat 3 - sebastientate
+freesound.org/people/sebastientate
+
+SqueakyClick1.wav - BMacZero
+freesound.org/people/BMacZero
+
+Steam release sounds / steam hisses - Marker #1.wav - XilliX
+opengameart.org/content/steam-release-sounds
+
+Steam release sounds / steam hisses - Marker #3.wav - XilliX
+opengameart.org/content/steam-release-sounds
+
+Steam release sounds / steam hisses - Marker #4.wav - XilliX
+opengameart.org/content/steam-release-sounds
+
+Steam release sounds / steam hisses - Marker #5.wav - XilliX
+opengameart.org/content/steam-release-sounds
+
+steam_burst.wav - pengo_au
+freesound.org/people/pengo_au
+
+strike 3 sec.wav - Littlebrojay
+freesound.org/people/Littlebrojay
+
+Swishes Sound Pack / swish-1.wav - qubodup
+opengameart.org/content/swishes-sound-pack
+
+Swishes Sound Pack / swish-10.wav - qubodup
+opengameart.org/content/swishes-sound-pack
+
+Swishes Sound Pack / swish-11.wav - qubodup
+opengameart.org/content/swishes-sound-pack
+
+swoosh.wav - vacuumfan7072
+freesound.org/people/vacuumfan7072
+
+Sword Movement Single 1 - deleted_user_6479820
+freesound.org/people/deleted_user_6479820/sounds/395266
+
+Sword Movement Single 2 - deleted_user_6479820
+freesound.org/people/deleted_user_6479820/sounds/395265
+
+Sword Movement Single 4 - deleted_user_6479820
+freesound.org/people/deleted_user_6479820/sounds/395263
+
+Sword_Clash (7).wav - JohnBuhr
+freesound.org/people/JohnBuhr
+
+Thunder (Krakow, Poland, 20.05.2013) - vonz
+freesound.org/people/vonz
+
+thunder1.wav - nednednerb
+freesound.org/people/nednednerb
+
+Trap Springing Shut - qubodup
+freesound.org/people/qubodup
+
+Wet Splat 1.mp3 - nebulasnails
+freesound.org/people/nebulasnails
+
+Wet Splat 2.mp3 - nebulasnails
+freesound.org/people/nebulasnails
+
+Wing Flap (Flag Flapping) 5a - ani_music
+freesound.org/people/ani_music
+
+Wing Flap 2.wav - _stubb
+freesound.org/people/_stubb
+
+Woosh - Plastic perforated steak spatula 7 - Sadiquecat
+freesound.org/people/Sadiquecat
+
+Yeti Roar - Skiing Game - Roar SFX Remix (2 of 2) - el_boss
+freesound.org/people/el_boss
+
+You Are Lost - Hoody468
+freesound.org/people/Hoody468
+
+zombie death - dreggsome
+freesound.org/people/dreggsome
 
 ## Pixabay Content License
-select - Game UI Confirm Selection Sound #2 - Vadim_Makes_Sound - pixabay.com/sound-effects/technology-game-ui-confirm-selection-sound-2-547852
+Free for commercial use, no credit required.
+
+Bone Breaking Effect - DRAGON-STUDIO
+pixabay.com/sound-effects/film-special-effects-bone-breaking-effect-393836
+
+Break the glass - spinopel
+pixabay.com/sound-effects/break-the-glass-456388
+
+Coin Collect (3) - Yodguard
+pixabay.com/sound-effects/film-special-effects-coin-collect-3-540190
+
+Crumble #2 - freesound_community
+pixabay.com/sound-effects/film-special-effects-crumble-2-82156
+
+Game UI Confirm Selection Sound #2 - Vadim_Makes_Sound
+pixabay.com/sound-effects/technology-game-ui-confirm-selection-sound-2-547852
+
+Holy Spell Cast - DRAGON-STUDIO
+pixabay.com/sound-effects/musical-holy-spell-cast-450460
+
+Item Pickup (1) - Yodguard
+pixabay.com/sound-effects/film-special-effects-item-pickup-1-540174
+
+Item Pickup (3) - Yodguard
+pixabay.com/sound-effects/film-special-effects-item-pickup-3-540193
+
+Magic charge mana 2 - FxProSound
+pixabay.com/sound-effects/film-special-effects-magic-charge-mana-2-186628
+
+Magic Twinkle - Universfield
+pixabay.com/sound-effects/film-special-effects-magic-twinkle-244951
+
+Monster Growl - DRAGON-STUDIO
+pixabay.com/sound-effects/horror-monster-growl-390285
+
+One page book flip - freesound_community
+pixabay.com/sound-effects/film-special-effects-one-page-book-flip-101928
+
+Page flip 1 - OxidVideos
+pixabay.com/sound-effects/film-special-effects-page-flip-1-178322
+
+Page flip2 - OxidVideos
+pixabay.com/sound-effects/film-special-effects-page-flip2-178323
+
+Sound Effect: Twinkle/Sparkle - ShidenBeatsMusic
+pixabay.com/sound-effects/film-special-effects-sound-effect-twinklesparkle-115095
+
+Steam Hissing - DRAGON-STUDIO
+pixabay.com/sound-effects/film-special-effects-steam-hissing-386157
+
+Unlock stinger - Sunovia
+pixabay.com/sound-effects/film-special-effects-unlock-stinger-289722
+
+Wet Squelch - Universfield
+pixabay.com/sound-effects/film-special-effects-wet-squelch-276679
 
 ---
 
