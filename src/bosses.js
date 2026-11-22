@@ -313,15 +313,13 @@ export class Boss extends Enemy {
 }
 
 
-// FIRE BREATH is a crescent, not a cone: an arc OVERHEAD.  Two curves ([forward distance from the boss's centre, height above the floor]) leave the mouth
-// together and meet again on the floor ~200px away.  The OUTER curve is a tall round arch (up to ~140px); the INNER curve drops from the mouth to just
-// above head height (~29px) and hangs there before sweeping down to the floor.  The fire fills the moon between them, so:
-//   * right under the mouth (f < ~55) you are below the flames,  * in the pocket beside the boss (f ~57-90) a standing hero (34px) is burned but a DUCKING one (20px) is not,
-//   * the hollow under the crown of the arch (f ~95-150) is simply tall enough to stand in,  * beyond ~150 the arc comes down on the floor, and past ~200 it can't reach you.
-// (The numbers above and below are for the creature at full size.  Baelphegaz is drawn at 85% of that - the fire leaves his mouth, so the whole arc is scaled with him: BEAST_K.)
-const BEAST_K = 0.85, kScale = P => P.map(([f, h]) => [f * BEAST_K, h * BEAST_K]);
-const CURVE_OUT = kScale([[46, 70], [55, 95], [72, 122], [100, 140], [132, 134], [160, 108], [180, 66], [193, 26], [200, 0]]);
-const CURVE_IN = kScale([[46, 70], [51, 52], [57, 33], [68, 29], [88, 33], [112, 50], [136, 56], [156, 40], [174, 21], [190, 7], [200, 0]]);
+// FIRE BREATH is a plain ARC: a band of flame that leaves his head, rises, curves over the top and comes down on the floor.  The centre line of the band ([forward distance from the boss's centre, height above the
+// floor]) starts at his mouth, crowns about 105px up and lands ~170px away; the band is a fairly even 8-26px thick (a thin tongue at the mouth, widest where it strikes the ground).  So:
+//   * under the arch (f ~40-145) there is room to stand: the fire is overhead, well above a standing hero's 36px,  * where the arch comes down (f ~150-185) the band reaches the floor, and that is the part that burns you,
+//   * past ~185 it cannot reach you.  The flame travels along the arc from the mouth to the floor, and the whole arc is painted as the warning before it fires.
+// (Baelphegaz is drawn at 85% of his first size, BEAST_K; the arc was drawn for the smaller creature.)
+const BEAST_K = 0.85;
+const ARC = [[32, 64], [48, 84], [74, 101], [104, 105], [132, 92], [153, 64], [166, 32], [172, 0]], ARC_W = [8, 13, 19, 22, 23, 25, 26, 26];
 const resample = (P, n) => {        // Catmull-Rom through the control points -> n evenly-spaced-in-parameter points
   const out = [];
   for (let k = 0; k < n; k++) {
@@ -331,8 +329,17 @@ const resample = (P, n) => {        // Catmull-Rom through the control points ->
   }
   return out;
 };
-export const BREATH = { out: resample(CURVE_OUT, 40), inn: resample(CURVE_IN, 40) };
-// world-space corners of the slice of the crescent between samples i and i+1 (a quad: outer i, outer i+1, inner i+1, inner i)
+// the band: 40 points along the centre line, and at each one the outer and inner edge (the centre line moved half the band's width along its normal, up / outward and down / inward)
+function arcBand(P, W, n = 40) {
+  const C = resample(P, n), T = resample(W.map((w, i) => [i, w]), n).map(p => p[1]), out = [], inn = [];
+  for (let i = 0; i < n; i++) {
+    const a = C[Math.max(0, i - 1)], b = C[Math.min(n - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L, h = T[i] / 2;
+    out.push([C[i][0] + nx * h, Math.max(0, C[i][1] + ny * h)]); inn.push([C[i][0] - nx * h, Math.max(0, C[i][1] - ny * h)]);
+  }
+  return { out, inn };
+}
+export const BREATH = arcBand(ARC, ARC_W);
+// world-space corners of the slice of the arc between samples i and i+1 (a quad: outer i, outer i+1, inner i+1, inner i)
 const breathQuad = (i, x, y, D) => [BREATH.out[i], BREATH.out[i + 1], BREATH.inn[i + 1], BREATH.inn[i]].map(([f, h]) => [x + D * f, y - h]);
 function breathOutline(x, y, D) { return BREATH.out.map(([f, h]) => [x + D * f, y - h]).concat(BREATH.inn.slice().reverse().map(([f, h]) => [x + D * f, y - h])); }
 const inTri = (px, py, a, b, c) => { const d1 = (px - b[0]) * (a[1] - b[1]) - (a[0] - b[0]) * (py - b[1]), d2 = (px - c[0]) * (b[1] - c[1]) - (b[0] - c[0]) * (py - c[1]), d3 = (px - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (py - a[1]); return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0)); };
@@ -346,7 +353,7 @@ function breathHits(i0, i1, x, y, D, r) {
   return false;
 }
 // ============================================================================================== 1. BAELPHEGAZ (hell beast - a demon in the Shadow Lord's service)
-// Plenty of warning, generous openings:  CHARGE (stuns itself on the wall), FIRE BREATH (a crescent of flame - duck beneath it, right next to the boss),
+// Plenty of warning, generous openings:  CHARGE (stuns itself on the wall), FIRE BREATH (an arch of flame from his head to the floor - stand under it or clear of where it lands),
 // LEAP SLAM (landing spot is marked), and in phase 2 FLAME PILLARS.
 export class BossBeast extends Boss {
   constructor(g, x, y, o) { super(g, x, y, Math.round(46 * BEAST_K), Math.round(84 * BEAST_K), o); this.hp = this.maxHp = 210; this.dmg = 12; this.xp = 120; this.bossName = 'BAELPHEGAZ'; this.voice = 'beast'; this.sub = 'HARVESTER OF MISERY'; this.scale = 2 * BEAST_K; this.dir = -1; this.deathFx = COLORS.fire; this.stunDur = 100; this.tx = x; this.ice = { w: Math.round(94 * BEAST_K), h: Math.round(124 * BEAST_K) }; }          // (85% of his old size: picture, hit box, frozen block and the spots his fire comes from)
@@ -374,7 +381,7 @@ export class BossBeast extends Boss {
       case 'stun':      // OPEN: free hits while it's dizzy
         this.vx = 0; if (this.st % 8 === 0) g.fx.sparks(this.x + rand(-12, 12), this.y - this.h - 4, 2, COLORS.gold, 1.2, { kind: 6, size: 6 });
         if (this.st > this.stunDur) { this.state = 'idle'; this.st = -10; } break;
-      case 'breath': {      // an arc of fire overhead: arches high from the mouth and comes down on the floor - the pocket under it (duck!) is the safe spot
+      case 'breath': {      // an arch of fire from his head: it rises, curves over and comes down on the floor - stand under it, or clear of where it lands
         const T0 = this.tele('breath'), SW = 86, D = this.dir; this.vx = 0;
         if (this.st < T0) {
           if (this.st < T0 - 24) this.faceP();
