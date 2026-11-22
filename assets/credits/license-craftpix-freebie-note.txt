@@ -2,6 +2,7 @@ Free City Trader Character Sprite Sheets - pixel art (CraftPix.net freebie, shar
 Page the pack was downloaded from: https://free-game-assets.itch.io/free-city-trader-character-sprite-sheets-pixel-art   (Free Game Assets: https://free-game-assets.itch.io/)
 Maker of the art, and owner of the licence: CraftPix.net   (https://craftpix.net/ ; its free assets: https://craftpix.net/freebies/)
 Downloaded as "Free-City-Trader-Character-Sprite-Sheets-Pixel-Art.zip" (2026-11-20; kept, not published, in assets/sprites/source/).
+Downloaded again from CraftPix on 2026-11-21 as "craftpix-net-922426-free-city-trader-character-sprite-sheets-pixel-art.zip" (identical, see below).
 
 The download holds three traders (Trader_1, Trader_2, Trader_3: Idle, Idle_2, Idle_3, Dialogue and Approval sheets of 128x128 cells), three PSD files, a coupon, Font.txt (the font "Digital Disco",
 https://www.dafont.com/digital-disco.font - not used in the game), a shortcut to https://craftpix.net/freebies/, and Licens.txt, which says only:
@@ -17,8 +18,11 @@ https://craftpix.net/file-licenses/ . Read in full on 2026-11-20 (the page shows
     - The art source files may not be resold, nor redistributed (original or modified) so that others can use the files themselves (2.2.1); an app that uses the art as part of play is fine.
     - Section 3 ("Using for AI"): the assets may not be used to train, fine-tune or test any AI or machine-learning system. They are not.
 
-The page does not mention assets obtained from a third-party mirror such as the Free Game Assets page on itch.io; the pack's own Licens.txt points to the same terms, so this project follows them.
-If certainty is wanted before a commercial release, the same pack can be fetched from https://craftpix.net/freebies/ and this note re-checked.
+The page does not mention assets obtained from a third-party mirror such as the Free Game Assets page on itch.io.  So, on 2026-11-21 the same pack was downloaded again from CraftPix:
+    craftpix-net-922426-free-city-trader-character-sprite-sheets-pixel-art.zip
+    SHA-256 34355955EC96A6C205D3B9C57C183725977A2535674BA117A665CE6F4C45C955
+It is byte-for-byte the same file as the copy from the itch.io page that the game was made from (same SHA-256, same 27 entries, 759,358 bytes), and its Licens.txt again says only https://craftpix.net/file-licenses/ .
+The licence page was read again the same day and says the same as above.  The licence is therefore the one on that page, as followed here.
 
 What the game uses: only the first trader, the cloaked vendor ("Trader_1"), as the Keeper of the dark shops. Five of its animations (Idle, Idle_2, Idle_3, Dialogue, Approval) are cut to one shared box and shrunk to
 about two thirds of their size by tools/cut-trader.ps1 (assets/sprites/trader_*.png); the other two traders and the PSD files are not used and are not published.
