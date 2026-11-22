@@ -1,9 +1,11 @@
-// Text for the game.  Two free (SIL OFL) gothic fonts are drawn as real vector text on the high-resolution game canvas:
-//   * Pirata One   - blackletter-flavoured display face for titles, banners and the logo   (assets/fonts/PirataOne-Regular.ttf)
-//   * Almendra Bold - calligraphic medieval face for menus, HUD, dialogue                     (assets/fonts/Almendra-Bold.ttf)
+// Text for the game, drawn as real vector text on the high-resolution game canvas:
+//   * Morris Roman - William Morris's 1893 Golden Type, digitised by Dieter Steffmann: the display face for menus, the HUD, banners and floating text   (assets/fonts/MorrisRomanBlack.ttf)
+//     It is written in Title Case (or sentence case for longer lines) rather than capitals: see displayCase() and DISPLAY_CASE below.  (Pirata One, the old display face, is still used by privacy.html and terms.html.)
+//   * Almendra Bold - calligraphic medieval face for dialogue and descriptive text         (assets/fonts/Almendra-Bold.ttf, SIL OFL)
 // If the font files can't be loaded the old 5x7 bitmap font below is used instead, so the game never breaks.
 // Public API (unchanged): drawText(ctx, str, x, y, opts), textWidth(str, scale), wrapText(str, maxW, scale)  -  y is the top of a 7*scale-px cap box.
 // opts: color, scale, align ('left'|'center'|'right'), outline (color), shadow (color), alpha, font ('display'|'body')
+import { sentenceCase } from './util.js';
 const GLYPHS = {
   A: '.###./#...#/#...#/#####/#...#/#...#/#...#', B: '####./#...#/#...#/####./#...#/#...#/####.',
   C: '.###./#...#/#..../#..../#..../#...#/.###.', D: '####./#...#/#...#/#...#/#...#/#...#/####.',
@@ -90,7 +92,7 @@ function bmDraw(ctx, str, x, y, o = {}) {
 
 // ---------------------------------------------------------------------------------------------- gothic vector text
 let vec = null;                                   // { body, display } once the fonts are loaded
-const FONT_FILES = [['body', 'SK Almendra', '../assets/fonts/Almendra-Bold.ttf', 1.06], ['display', 'SK Pirata', '../assets/fonts/PirataOne-Regular.ttf', 1.12]];
+const FONT_FILES = [['body', 'SK Almendra', '../assets/fonts/Almendra-Bold.ttf', 1.06], ['display', 'SK Morris', '../assets/fonts/MorrisRomanBlack.ttf', 1.15]];
 const HAND_FONT = ['hand', 'SK Eroded', '../assets/fonts/erodedmotta.regular.ttf', 1.0];        // "Eroded Motta" (lirkiv AC): the lettering on the gravestones and tablets (font: 'hand'), in mixed case
 const STRANGER_FONT = ['stranger', 'SK Bookhand', '../assets/fonts/Elementary_Gothic_Bookhand.ttf', 0.87];        // "Elementary Gothic Bookhand" (Bill Roach, SIL OFL): the Stranger's own voice (font: 'stranger'), in mixed case
 const NPC_FONT = ['npc', 'SK Livingstone', '../assets/fonts/livingstone/Livingst.ttf', 1.12];        // "Livingstone" (PrimaFont, American Collection - free to pass on unchanged, see assets/fonts/livingstone/LIVINGST.TXT): what everyone else says - villagers, the Keeper, the bosses (font: 'npc'), in mixed case
@@ -128,7 +130,7 @@ export async function loadFonts() {
   } catch (e) { console.warn('Gothic fonts unavailable - using the bitmap font.', e); vec = null; return false; }
 }
 const measureCtx = document.createElement('canvas').getContext('2d'), widths = new Map();
-// Pirata One (display) for big text and anything outlined (HUD, menus, banners, floating text); Almendra (body) for dialogue and descriptive text.
+// Morris Roman (display) for big text and anything outlined (HUD, menus, banners, floating text); Almendra (body) for dialogue and descriptive text.
 const pick = (scale, o) => { let k = (o && o.font) || (scale >= 2 || (o && o.outline) ? 'display' : 'body'); if (k === 'mixed') k = 'body'; return vec[k] || (k === 'hand' || k === 'stranger' || k === 'npc' ? vec.body : vec.display); };          // ('mixed' = the body face, but keeping the text's own upper and lower case)
 const sizeOf = (F, scale) => 7 * scale * F.fit / F.cap;                       // font-size that gives caps ~7*fit px tall
 function vecWidth(str, scale, o) {
@@ -140,11 +142,22 @@ function vecWidth(str, scale, o) {
 export const handText = str => vec && vec.hand ? String(str).replace(/\s*:\s*/g, ' - ').replace(/\s*;\s*/g, ', ') : String(str);
 export const hasFace = k => !!(vec && vec[k]);
 const casing = (str, font) => font === 'title' || font === 'mixed' || ((font === 'hand' || font === 'stranger' || font === 'npc') && vec && vec[font]) ? String(str) : String(str).toUpperCase();      // (the game draws capitals - except the blackletter title and the handwriting, which read far better in mixed case)
-export function textWidth(str, scale = 1, font) { const f = typeof font === 'object' ? font : { font }; str = casing(str, f.font); return vec ? vecWidth(str, scale, f) : bmWidth(str.toUpperCase(), scale); }
+// DISPLAY_CASE: how the display face (menus, HUD, banners, floating text) is written.  The strings in the code are all capitals, and capitals in a decorative face are slow to read, so a short label becomes
+// Title Case ("Quick Save", "The Graveyard Approach") and a longer line becomes a sentence ("Press again: anything unsaved is lost").  'caps' leaves everything in capitals, as it was.
+const DISPLAY_CASE = 'title';
+const SMALL_WORDS = /(?<=\S\s)(Of|The|And|To|In|On|At|For|A|An|Or|By|With|From)(?=\s)/g, KEEP_CAPS = /\b(hp|mp|lv|xp|ii|ok)\b/gi;
+function displayCase(str) {
+  if (DISPLAY_CASE !== 'title') return str; const s = String(str); if (!/[A-Z]{2}/.test(s)) return s;          // (nothing in capitals: it was written by hand, so leave it)
+  const sentence = s.trim().split(/\s+/).length > 4 || /[.!?]\s+\S/.test(s);
+  const o = sentence ? sentenceCase(s) : s.toLowerCase().replace(/(^|[\s(\/"-])([a-z])/g, (m, a, b) => a + b.toUpperCase()).replace(SMALL_WORDS, w => w.toLowerCase());
+  return o.replace(KEEP_CAPS, x => x.toUpperCase());          // (HP, MP, LV and XP stay as they are)
+}
+const shape = (str, scale, o) => { str = casing(str, o.font); return vec && pick(scale, o) === vec.display ? displayCase(str) : str; };
+export function textWidth(str, scale = 1, font) { const f = typeof font === 'object' ? font : { font }; str = shape(str, scale, f); return vec ? vecWidth(str, scale, f) : bmWidth(str.toUpperCase(), scale); }
 
 export function drawText(ctx, str, x, y, o = {}) {
   if (!vec) return bmDraw(ctx, str, x, y, o);
-  str = casing(str, o.font);
+  str = shape(str, o.scale || 1, o);
   const scale = o.scale || 1, color = o.color || '#e8dcc0', F = pick(scale, o), size = sizeOf(F, scale), w = vecWidth(str, scale, o);
   if (o.align === 'center') x -= w / 2; else if (o.align === 'right') x -= w;
   const base = y + 3.5 * scale + F.cap * size / 2;                            // caps are centred in the 7*scale box

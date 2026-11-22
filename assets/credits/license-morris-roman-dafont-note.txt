@@ -1,0 +1,20 @@
+Morris Roman (assets/fonts/MorrisRomanBlack.ttf)
+
+Source: https://www.dafont.com/morris-roman.font  - "Morris Roman" by Dieter Steffmann (https://www.dafont.com/dieter-steffmann.d253), category Gothic > Celtic,
+        licence label "100% Free", first seen on dafont on July 12, 2006, 720,621 downloads when it was fetched.
+        Fetched on 2026-11-21 as morris_roman.zip (109,504 bytes) at the request of the project owner.
+        The download holds four files - MorrisRomanBlack.ttf, MorrisRomanBlackAlt.ttf and the same two as OpenType - and no readme or licence text.
+        The game uses MorrisRomanBlack.ttf, unchanged (browsers accept it as it is).
+
+What the font file itself says (its name table):
+    Copyright:    "Copyright (c) Typographer Mediengestaltung, 2002. All rights reserved. Designed by William Morris in 1893. Digitized and hinted by Dieter Steffmann, Kreuztal."
+    Trademark:    "Morris Roman Black is a trademark of Typographer Mediengestaltung."
+    Designer:     Dieter Steffmann        Website: http://www.steffmann.de
+    Licence field: "have fun and enjoy"
+
+The file's copyright line says "All rights reserved" while dafont's label says "100% Free".  dafont's FAQ (https://www.dafont.com/faq.php) says the licence shown above a download is only an
+indication, and that the readme in the archive or the author's website is the place to check; this archive has no readme.  This project follows dafont's "100% Free" label and the
+author's own "have fun and enjoy", as it does for Blackletter ExtraBold (also by Dieter Steffmann, see license-blackletter-dafont-note.txt).  If certainty is wanted before a commercial
+release, ask the author through http://www.steffmann.de.
+
+What the game uses it for: the display face - the menus, the HUD, the banners, the names over dialogue boxes and floating text - written in Title Case or sentence case (src/font.js).

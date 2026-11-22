@@ -43,10 +43,11 @@ export const HUD = {
     const S = g.save, p = g.player; if (!S) return;
     const hpW = clamp(50 + S.maxHp * 0.45, 70, 150), mpW = clamp(36 + S.maxMp * 0.8, 50, 110);
     const hf = S.hp / S.maxHp; this.lagHp += (hf - this.lagHp) * (hf < this.lagHp ? 0.04 : 1);
-    drawText(ctx, 'HP', 7, 6.5, { color: '#ff8a8a', outline: '#000', scale: 1.15 }); bar(ctx, 24, 7, hpW, 6, hf, '#ff4a4a', '#9a1a2a', this.lagHp);
-    drawText(ctx, 'MP', 7, 16.5, { color: '#8ab4ff', outline: '#000', scale: 1.15 }); bar(ctx, 24, 17, mpW, 5, S.mp / S.maxMp, '#5a9aff', '#2a4ab0');
-    drawText(ctx, 'LV ' + S.level, 7, 25.5, { color: GOLD, outline: '#000', scale: 1.15 });
-    const xf = p.xpNext ? S.xp / p.xpNext() : 0; ctx.fillStyle = '#000'; ctx.fillRect(34, 28, 40, 3); ctx.fillStyle = '#6a5a1a'; ctx.fillRect(35, 29, 38, 1); ctx.fillStyle = GOLD; ctx.fillRect(35, 29, Math.round(38 * clamp(xf, 0, 1)), 1);
+    drawText(ctx, 'HP', 7, 6.5, { color: '#ff8a8a', outline: '#000', scale: 1.15, font: 'body' }); bar(ctx, 28, 7, hpW, 6, hf, '#ff4a4a', '#9a1a2a', this.lagHp);          // (HP, MP and LV are drawn in the body face: in Morris Roman a capital P looks like a D, and these labels have no word around them to say which it is)
+    drawText(ctx, 'MP', 7, 16.5, { color: '#8ab4ff', outline: '#000', scale: 1.15, font: 'body' }); bar(ctx, 28, 17, mpW, 5, S.mp / S.maxMp, '#5a9aff', '#2a4ab0');
+    const lv = 'LV ' + S.level; drawText(ctx, lv, 7, 25.5, { color: GOLD, outline: '#000', scale: 1.15, font: 'body' });
+    const xf = p.xpNext ? S.xp / p.xpNext() : 0, xb = Math.round(7 + textWidth(lv, 1.15, { outline: '#000', font: 'body' }) + 3);          // (the XP bar sits just after the level, however many digits it has)
+    ctx.fillStyle = '#000'; ctx.fillRect(xb, 28, 40, 3); ctx.fillStyle = '#6a5a1a'; ctx.fillRect(xb + 1, 29, 38, 1); ctx.fillStyle = GOLD; ctx.fillRect(xb + 1, 29, Math.round(38 * clamp(xf, 0, 1)), 1);
     // active sword enchantment: icon, name, time left
     const E = p.ench;
     if (E) {
@@ -588,7 +589,7 @@ export class MapScreen {
     if (astro) drawText(ctx, left ? `ASTROLABE: ${left} TREASURE${left === 1 ? '' : 'S'} LEFT (GOLD DIAMONDS)` : 'ASTROLABE: NO TREASURE LEFT IN ROOMS YOU HAVE SEEN', W / 2, 15, { align: 'center', color: '#e8c872' });
     drawText(ctx, `ROOMS ${Object.keys(S.visited).filter(id => ROOMS[id]).length}/${Object.keys(ROOMS).length}   SECRETS ${sec.found}/${sec.total}`, W - 8, VIEW_Y1 + 5, { align: 'right', color: PALE });
     drawText(ctx, 'GOLD DOOR   BLUE ONE-WAY   VIOLET KEEPER   RED SAVE   CYAN WAYSTONE', W / 2, H - 20, { align: 'center', color: '#6a6078' });
-    drawText(ctx, Input.touchOn ? 'PAD MOVES THE CURSOR     + -: ZOOM     JUMP: WHOLE CASTLE     MAP CLOSES' : 'ARROWS: CURSOR     WHEEL OR + -: ZOOM     X: WHOLE CASTLE     M OR ESC CLOSES', W / 2, H - 10, { align: 'center', color: DIM });
+    drawText(ctx, Input.touchOn ? 'PAD MOVES THE CURSOR     + -: ZOOM     JUMP: WHOLE CASTLE     MAP CLOSES' : 'ARROWS: CURSOR    WHEEL, + -: ZOOM    X: WHOLE CASTLE    M OR ESC: CLOSE', W / 2, H - 10, { align: 'center', color: DIM });
   }
 }
 

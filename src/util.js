@@ -38,6 +38,6 @@ export function sentenceCase(str) {
   let o = String(str).replace(/[A-Za-z][A-Za-z']*/g, w => ((w.length > 1 && w === w.toUpperCase()) || w === 'A' ? w.toLowerCase() : w));          // (a lone capital A is the word "a" - a sentence's first letter gets its capital back just below; "I" stays)
   o = o.replace(/(^|[?!]\s+|(?<!\.)\.\s+)([a-z])/g, (m, a, b) => a + b.toUpperCase());
   o = o.replace(/\bi\b/g, "I");
-  for (const n of NAMES) o = o.replace(new RegExp("\\b" + n.toLowerCase() + "\\b", "g"), n);
+  for (const n of NAMES) o = o.replace(new RegExp("\\b" + n + "\\b", "gi"), n);          // (any case: the first word of a sentence has just been capitalised, and "Arx Noctis" must still be both words)
   return o;
 }

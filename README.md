@@ -3,7 +3,7 @@
 A gothic-fantasy, side-scrolling action-adventure for the browser, in the spirit of *Castlevania* and *Bloodstained*.
 You are a nameless cloaked stranger with a sword, exploring a haunted castle: platforming, secrets, power-ups,
 nine zones laid out as a branching map, ten bosses (one of them optional), throwable items, waystone travel, and a three.js effects layer (fire, flickering candles, lightning, auras, mist). Text is set in two
-free gothic typefaces (Pirata One and Almendra, with Blackletter ExtraBold for the title and Eroded Motta for the gravestones) rather than a pixel font. The hero is Ansimuz's Gothic Hero (the hooded-warrior set is archived in `assets/archive/`), draped in an
+free gothic typefaces (Morris Roman and Almendra, with Blackletter ExtraBold for the title and Eroded Motta for the gravestones) rather than a pixel font. The hero is Ansimuz's Gothic Hero (the hooded-warrior set is archived in `assets/archive/`), draped in an
 experimental animated **white cloak** (a cloth hung from both shoulders that drapes behind him; Options > White Cloak turns it off, or start with `?cloak=0`).
 
 ## Play it
@@ -212,7 +212,7 @@ src/
   audio.js          music manager + synthesized sound effects      ui.js   HUD, menus, map, story screens
   touch.js          the on-screen controls for phones and tablets (HTML buttons that hold the same actions as the keys)
   savefile.js pwa.js   SAVE GAME / LOAD GAME (the save as a gzipped file named ArxN Save <date> <time>.bin, written and read by HTML panels) / the service worker, persistent storage, install and iPhone checks
-  font.js           gothic text: Pirata One + Almendra (+ Blackletter for the title, Eroded Motta for her gravestones) drawn as vector text on the hi-res canvas (bitmap fallback if the fonts are missing)
+  font.js           gothic text: Morris Roman + Almendra (+ Blackletter for the title, Eroded Motta for her gravestones) drawn as vector text on the hi-res canvas (bitmap fallback if the fonts are missing)
   assets.js input.js util.js decor.js viewer.js     decor.js also draws the bookcases and barred windows in code, and animates the torches
 assets/             sprites + environment art (+ sprites.json frame manifest, original licenses), fonts/ (the two gothic TTFs)
                     (assets/sprites/source/ holds the art packs as downloaded - keep that folder out of anything you publish, see CREDITS.md)
