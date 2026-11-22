@@ -318,8 +318,10 @@ export class Boss extends Enemy {
 // above head height (~29px) and hangs there before sweeping down to the floor.  The fire fills the moon between them, so:
 //   * right under the mouth (f < ~55) you are below the flames,  * in the pocket beside the boss (f ~57-90) a standing hero (34px) is burned but a DUCKING one (20px) is not,
 //   * the hollow under the crown of the arch (f ~95-150) is simply tall enough to stand in,  * beyond ~150 the arc comes down on the floor, and past ~200 it can't reach you.
-const CURVE_OUT = [[46, 70], [55, 95], [72, 122], [100, 140], [132, 134], [160, 108], [180, 66], [193, 26], [200, 0]];
-const CURVE_IN = [[46, 70], [51, 52], [57, 33], [68, 29], [88, 33], [112, 50], [136, 56], [156, 40], [174, 21], [190, 7], [200, 0]];
+// (The numbers above and below are for the creature at full size.  Baelphegaz is drawn at 85% of that - the fire leaves his mouth, so the whole arc is scaled with him: BEAST_K.)
+const BEAST_K = 0.85, kScale = P => P.map(([f, h]) => [f * BEAST_K, h * BEAST_K]);
+const CURVE_OUT = kScale([[46, 70], [55, 95], [72, 122], [100, 140], [132, 134], [160, 108], [180, 66], [193, 26], [200, 0]]);
+const CURVE_IN = kScale([[46, 70], [51, 52], [57, 33], [68, 29], [88, 33], [112, 50], [136, 56], [156, 40], [174, 21], [190, 7], [200, 0]]);
 const resample = (P, n) => {        // Catmull-Rom through the control points -> n evenly-spaced-in-parameter points
   const out = [];
   for (let k = 0; k < n; k++) {
@@ -347,11 +349,11 @@ function breathHits(i0, i1, x, y, D, r) {
 // Plenty of warning, generous openings:  CHARGE (stuns itself on the wall), FIRE BREATH (a crescent of flame - duck beneath it, right next to the boss),
 // LEAP SLAM (landing spot is marked), and in phase 2 FLAME PILLARS.
 export class BossBeast extends Boss {
-  constructor(g, x, y, o) { super(g, x, y, 46, 84, o); this.hp = this.maxHp = 210; this.dmg = 12; this.xp = 120; this.bossName = 'BAELPHEGAZ'; this.voice = 'beast'; this.sub = 'HARVESTER OF MISERY'; this.scale = 2; this.dir = -1; this.deathFx = COLORS.fire; this.stunDur = 100; this.tx = x; this.ice = { w: 94, h: 124 }; }
+  constructor(g, x, y, o) { super(g, x, y, Math.round(46 * BEAST_K), Math.round(84 * BEAST_K), o); this.hp = this.maxHp = 210; this.dmg = 12; this.xp = 120; this.bossName = 'BAELPHEGAZ'; this.voice = 'beast'; this.sub = 'HARVESTER OF MISERY'; this.scale = 2 * BEAST_K; this.dir = -1; this.deathFx = COLORS.fire; this.stunDur = 100; this.tx = x; this.ice = { w: Math.round(94 * BEAST_K), h: Math.round(124 * BEAST_K) }; }          // (85% of his old size: picture, hit box, frozen block and the spots his fire comes from)
   get spd() { return this.phase === 2 ? 1.2 : 1; }
   tele(k) { return Math.round({ charge: 60, breath: 48, leap: 50 }[k] / this.spd); }
   dangerous() { return (this.state === 'charge' && this.st >= this.tele('charge')) || (this.state === 'leap' && this.st >= this.tele('leap')); }
-  intro(g) { if (this.st === 8) { this.cry(); g.shake(4, 40); g.fx.flash([1, 0.5, 0.2], 0.3); g.fx.ring(this.x, this.cy, 120, [1, 0.5, 0.2], 40, 0.1); } if (this.st % 4 === 0) g.fx.fire(this.x + rand(-20, 20), this.y - 20, { scale: 1.2, n: 1 }); this.faceP(); }
+  intro(g) { if (this.st === 8) { this.cry(); g.shake(4, 40); g.fx.flash([1, 0.5, 0.2], 0.3); g.fx.ring(this.x, this.cy, 120, [1, 0.5, 0.2], 40, 0.1); } if (this.st % 4 === 0) g.fx.fire(this.x + rand(-17, 17), this.y - 17, { scale: 1.0, n: 1 }); this.faceP(); }
   ai(g) {
     const p = g.player, spd = this.spd, d = Math.abs(this.dx());
     switch (this.state) {
@@ -363,14 +365,14 @@ export class BossBeast extends Boss {
         if (this.st < T0) {
           this.vx = 0; if (this.st < T0 - 24) this.faceP();                                  // direction locks 24 frames before it runs
           const x1 = this.dir > 0 ? g.room.pw - 24 : 24; this.tell('charge', this.st / T0, [{ type: 'lane', x0: this.x, x1, y: this.y }]);
-          if (this.st === 2) this.cry(); if (this.st % 5 === 0) { g.fx.fire(this.x + this.dir * 18, this.y - 70, { scale: 0.7, n: 1 }); g.fx.burst(this.x - this.dir * 20, this.y - 2, 2, [[0.6, 0.55, 0.5], [0.2, 0.2, 0.25]], { speed: 1, s0: 8, up: 0.5 }); }
+          if (this.st === 2) this.cry(); if (this.st % 5 === 0) { g.fx.fire(this.x + this.dir * 15, this.y - 60, { scale: 0.6, n: 1 }); g.fx.burst(this.x - this.dir * 17, this.y - 2, 2, [[0.6, 0.55, 0.5], [0.2, 0.2, 0.25]], { speed: 1, s0: 8, up: 0.5 }); }
         } else {
-          this.vx = this.dir * 3.1 * spd; if (this.st % 3 === 0) g.fx.fire(this.x - this.dir * 20, this.y - 4, { scale: 1.1, n: 1 }); if (this.st % 12 === 0) A.sfx('step');
-          if (this.hitX) { this.vx = 0; this.state = 'stun'; this.st = 0; this.stunDur = 110; g.shake(5, 20); A.sfx('boom'); g.fx.burst(this.x + this.dir * 24, this.y - 40, 16, [[0.7, 0.65, 0.6], [0.3, 0.3, 0.35]], { speed: 3, s0: 14, up: 1 }); g.fx.ring(this.x + this.dir * 24, this.y - 40, 50, [1, 0.8, 0.5], 18); }
+          this.vx = this.dir * 3.1 * spd; if (this.st % 3 === 0) g.fx.fire(this.x - this.dir * 17, this.y - 4, { scale: 0.95, n: 1 }); if (this.st % 12 === 0) A.sfx('step');
+          if (this.hitX) { this.vx = 0; this.state = 'stun'; this.st = 0; this.stunDur = 110; g.shake(5, 20); A.sfx('boom'); g.fx.burst(this.x + this.dir * 20, this.y - 34, 16, [[0.7, 0.65, 0.6], [0.3, 0.3, 0.35]], { speed: 3, s0: 14, up: 1 }); g.fx.ring(this.x + this.dir * 20, this.y - 34, 50, [1, 0.8, 0.5], 18); }
           else if (this.st > T0 + 110) { this.vx = 0; this.state = 'stun'; this.st = 0; this.stunDur = 50; }
         } break; }
       case 'stun':      // OPEN: free hits while it's dizzy
-        this.vx = 0; if (this.st % 8 === 0) g.fx.sparks(this.x + rand(-14, 14), this.y - this.h - 4, 2, COLORS.gold, 1.2, { kind: 6, size: 6 });
+        this.vx = 0; if (this.st % 8 === 0) g.fx.sparks(this.x + rand(-12, 12), this.y - this.h - 4, 2, COLORS.gold, 1.2, { kind: 6, size: 6 });
         if (this.st > this.stunDur) { this.state = 'idle'; this.st = -10; } break;
       case 'breath': {      // an arc of fire overhead: arches high from the mouth and comes down on the floor - the pocket under it (duck!) is the safe spot
         const T0 = this.tele('breath'), SW = 86, D = this.dir; this.vx = 0;
@@ -396,7 +398,7 @@ export class BossBeast extends Boss {
         else if (this.st === T0) { this.vy = -6.6; this.vx = clamp((this.tx - this.x) / 62.9, -3.8, 3.8); this.onGround = false; A.sfx('jump'); }
         else if (this.st > T0 + 8 && this.onGround) {
           this.vx = 0; g.shake(6, 20); A.sfx('boom'); g.fx.ring(this.x, this.y - 4, 90, [1, 0.6, 0.2], 26, 0.15);
-          g.addProjectile(new Shockwave(this.x - 20, this.y, -1, { dmg: 9, speed: 2.0, life: 70, big: true })); g.addProjectile(new Shockwave(this.x + 20, this.y, 1, { dmg: 9, speed: 2.0, life: 70, big: true }));
+          g.addProjectile(new Shockwave(this.x - 17, this.y, -1, { dmg: 9, speed: 2.0, life: 70, big: true })); g.addProjectile(new Shockwave(this.x + 17, this.y, 1, { dmg: 9, speed: 2.0, life: 70, big: true }));
           this.state = 'idle'; this.st = -24;
         } else this.warns = [{ type: 'ring', x: this.tx, y: this.y, r: 38 }]; break; }
       case 'pillars':
@@ -414,8 +416,8 @@ export class BossBeast extends Boss {
     else if (st === 'stun') { id = 'beast_breath'; f = 3; }
     if (this.dying) { id = 'beast_burn'; f = 1 + Math.min(2, Math.floor(this.dying / 25)); }
     this.spr(ctx, id, f, cx + ox, cy, { flash: this.flashT > 0 });
-    if (this.phase === 2 && !this.dying) this.g.fx.glow(this.x + this.dir * -6, this.y - 70, 16, [1, 0.2, 0.1], 0.5);
-    this.g.fx.light(this.x, this.y - 50, 80, 0.6);
+    if (this.phase === 2 && !this.dying) this.g.fx.glow(this.x + this.dir * -5, this.y - 60, 14, [1, 0.2, 0.1], 0.5);
+    this.g.fx.light(this.x, this.y - 43, 70, 0.6);
   }
 }
 
