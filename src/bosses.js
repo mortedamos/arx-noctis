@@ -668,11 +668,11 @@ export class BossRimewyrm extends Boss {
         this.steerSoft(this.x, r.ph - 64, 1.6); if (this.t % 6 === 0) g.fx.smoke(this.x, this.cy - 6, 1, { c0: [0.9, 0.95, 1], c1: [0.6, 0.7, 0.85], s0: 5, s1: 16, l: 0.5 });
         if (this.st > 190) { this.harmless = false; this.state = 'idle'; this.st = -30; this.plan = null; } break; }
       case 'frostbreath': {                                                       // it hangs back and rears up, the whole sweep of the breath shown on the ground; then a cone of killing cold sweeps across it.  A hit CHILLS you: a few seconds at half speed.  (A dash goes through it.)
-        const W = Math.round(52 / spd), N = this.phase === 2 ? 72 : 58, L = this.phase === 2 ? 250 : 220, SW = 0.45;
+        const W0 = Math.round(52 / spd), W = W0 + 120, N = this.phase === 2 ? 72 : 58, L = this.phase === 2 ? 250 : 220, SW = 0.45;          // (the rear-up before the breath: +120 frames = a flat 2 seconds longer, however fast it is.  It still follows you for the first W0 - 14 frames, then the aim LOCKS and the wyrm hangs still, so the cone on the floor shows where the breath will land for the whole of the extra time)
         if (this.st === 1) { this.fbSide = p.x < pw / 2 ? 1 : -1; this.fbSweep = Math.random() < 0.5 ? -1 : 1; }
         if (this.st < W) {
-          this.steerSoft(clamp(p.x + this.fbSide * 210, 90, pw - 90), 108, 1.8 * spd); this.dir = p.x >= this.x ? 1 : -1; this.ang = this.dir > 0 ? 0 : Math.PI;
-          if (this.st < W - 14) this.lock = { x: p.x, y: p.y - 16 };
+          if (this.st < W0 - 14) { this.steerSoft(clamp(p.x + this.fbSide * 210, 90, pw - 90), 108, 1.8 * spd); this.dir = p.x >= this.x ? 1 : -1; this.ang = this.dir > 0 ? 0 : Math.PI; this.lock = { x: p.x, y: p.y - 16 }; }
+          else { this.vx *= 0.7; this.vy *= 0.7; }          // (locked: it brakes and hangs where it is, so the cone does not slide about)
           const m = this.mouth(), a0 = Math.atan2(this.lock.y - m.y, this.lock.x - m.x), pt = a => [m.x + Math.cos(a) * L, m.y + Math.sin(a) * L];
           this.fbA = a0; this.tell('frostbreath', this.st / W, [{ type: 'poly', pts: [[m.x, m.y], pt(a0 - SW - 0.12), pt(a0 - SW / 2), pt(a0), pt(a0 + SW / 2), pt(a0 + SW + 0.12)] }]);
         } else if (this.st < W + N) {
