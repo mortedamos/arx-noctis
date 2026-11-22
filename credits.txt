@@ -16,12 +16,15 @@ A gothic adventure
 ---
 
 ## A message from ArxNWorks
+
 This is my first game.
-As an individual developer, I have immense gratitude to the community of creators who chose to author and share their resources - the artists, the sound designers, the type designers and the programmers. They have made Arx Noctis possible.
+
+As an individual developer, I have immense gratitude to the community of creators who chose to author and share their resources - the artists, sound designers, type designers, and programmers. They have made Arx Noctis possible.
 
 Thank you.
 
 - ArxNWorks
+  2026-11-21
 
 ---
 

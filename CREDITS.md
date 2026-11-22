@@ -63,7 +63,7 @@ Some stores ask developers to say which shipped content was made with AI. This i
 |---|---|---|
 | The fifteen portraits | made by the project owner with Google Gemini | the framed pictures and haunted portraits |
 | The music | made with Suno (open item 1) | all the music |
-| The game's code and the first drafts of much of its story text | written with the help of an AI assistant (Claude, by Anthropic), directed and edited by the project owner | the code, the level generator, the dialogue, tablets and letters (stated on the credits screen under "AI disclaimer") |
+| The game's code | written with the help of an AI assistant (Claude, by Anthropic), directed and edited by the project owner | the code, including the level generator and the shaders (stated on the credits screen under "AI disclaimer") |
 | [Magic Books](https://captainskolot.itch.io/magic-books-pixelart-pixel-art-sprite-grimoire-pack-for-rpg-fantasy), CaptainSkolot | the itch.io page says "AI Assisted" | the flying books and their pages |
 | [Graveyard 400 Assets](https://worldswithoutend.itch.io/graveyard-2d-game-assets), Worlds Without End | the itch.io page says "AI Assisted" | headstones, flowers, fences and statues |
 | [Gothic Vampire Undead Horde](https://assets2d.itch.io/gothic-vampire-horde-pixel-art-2d-character-sprites), assets2D | the itch.io page says "AI Assisted" | the Crimson Count |
