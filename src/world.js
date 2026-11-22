@@ -105,6 +105,13 @@ const THEME = {
       else if (depth === 1) blit(g, im, x0 + col * 16, 184, 16, 16, tx * T, ty * T);
       else { blit(g, im, 16, 80, 16, 16, tx * T, ty * T); if (hash1(tx * 9.1 + ty * 3.3) < 0.25) blit(g, im, 24, 124, 16, 16, tx * T, ty * T); }
     },
+    // the divider wall of a two-floor room (two tiles wide, twelve rows tall): great slabs of the chapel's own purple masonry - the church tileset's two 32x32 stone blocks, one on top of the other,
+    // the two cuts taking turns.  Each slab has a pale top edge and a dark foot, so the wall's top and bottom are finished.  The deep fill (a flat dark tile with purple patches thrown on it at
+    // random) turned a wall twelve rows tall into a column of random dark spots and blocks.
+    wall(g, tx, ty, nb, depth, wy, wx, im = IMG.church_tileset) {
+      const k = wy >> 1, cut = (k + (k >> 1)) & 1;          // (the slab, counted from the top; the cuts take turns, with a repeat every third slab so it is not a plain stripe)
+      blit(g, im, (cut ? 64 : 16) + wx * 16, 112 + (wy & 1) * 16, 16, 16, tx * T, ty * T);
+    },
     // The even platform tile's art leaves its top 6 rows EMPTY (the stone starts half way down the tile), so those platforms looked 6px lower than the ones you stand on, next to the full
     // slab of the odd tile: the surface was unclear.  It is set upside down, so the empty part faces DOWN and the stone starts at the walking surface.
     plat(g, tx, ty, im = IMG.church_tileset) {
@@ -537,7 +544,7 @@ export class Room {
         let depth = 0; while (depth < 3 && this.solid(tx, ty - 1 - depth) && ty - 1 - depth >= 0) depth++;
         // ceilings/overhangs: tile with air below and solid above shouldn't look like grass-top
         const nbs = { u: this.solid(tx, ty - 1), d: this.solid(tx, ty + 1), l: this.solid(tx - 1, ty), r: this.solid(tx + 1, ty) }, dr = this.dividerRows;
-        if (th.wall && dr && this.divider !== undefined && tx >= this.divider && tx <= this.divider + 1 && ty >= dr[0] && ty <= dr[1]) th.wall(g, tx, ty, nbs, depth, ty - dr[0]);          // (a divider wall - a tall free-standing wall in a two-floor room - gets the theme's wall tiles: an earth tile ten rows deep is just a black bar)
+        if (th.wall && dr && this.divider !== undefined && tx >= this.divider && tx <= this.divider + 1 && ty >= dr[0] && ty <= dr[1]) th.wall(g, tx, ty, nbs, depth, ty - dr[0], tx - this.divider);          // (a divider wall - a tall free-standing wall in a two-floor room - gets the theme's wall tiles: an earth tile ten rows deep is just a black bar)
         else th.solid(g, tx, ty, nbs, depth);
       } else if (v === TILE.PLAT) { if (!(this.platSet && this.platSet.has(tx + ',' + ty))) th.plat(g, tx, ty); }          // (a platform that some scenery overlaps is not painted into the room's picture: drawPlatsOver paints it over the scenery)
       else if (v === TILE.SPIKE) { if (!(this.rivers && this.rivers.some(c => ty * T >= c.y))) drawSheet(g, 'spikes', 0, tx * T, ty * T, { ax: 0, ay: 0 }); this.spikes.push([tx, ty]); }          // (under a river the spikes are unseen)
