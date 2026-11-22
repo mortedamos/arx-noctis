@@ -50,7 +50,7 @@ Five sound effects are by Free Sounds Library ([freesoundslibrary.com](https://w
 | File | Title |
 |---|---|
 | `shatter_2.mp3` | [Glass Shattering Sound Effect](https://www.freesoundslibrary.com/glass-shattering-sound-effect/) |
-| `levelup.mp3` | [Ding Level Up](https://www.freesoundslibrary.com/ding-level-up-sound-effect/) |
+| `boss_vampire.mp3` | [Evil Laugh Sound Effect](https://www.freesoundslibrary.com/evil-laugh-sound-effect/) |
 | `kill_rot_4.mp3` | [Zombie Noise](https://www.freesoundslibrary.com/zombie-noise/) |
 | `boss_nightmare.mp3` | [Horse Whinny Sound Effect](https://www.freesoundslibrary.com/horse-whinny-sound-effect/) |
 | `boss_nightmare_2.mp3` | [Horse Neighing Sound Effect](https://www.freesoundslibrary.com/horse-neighing-sound-effect/) |
@@ -155,11 +155,11 @@ Blackletter ExtraBold was rebuilt from the original `BLACEB__.TTF` so that brows
 Only the recorded sounds are listed here; every other sound is synthesized in code. Each recording was trimmed, level-matched and re-encoded as a mono 96 kbps mp3. Pixabay sounds are under the [Pixabay Content License](https://pixabay.com/service/license-summary/): free for commercial use, no credit required, not to be resold or passed on as a sound pack. The table is sorted by file name.
 
 <!-- sfx-table:start -->
-135 recordings: 112 CC0, 18 Pixabay Content License, 5 CC BY 4.0.
+141 recordings: 116 CC0, 20 Pixabay Content License, 5 CC BY 4.0.
 
 | File | Sound | By | Source | Licence |
 |---|---|---|---|---|
-| `ability.mp3` | 36 Bar Chimes Sweep Ascend 01 | loganzsound | [Freesound](https://freesound.org/people/loganzsound/sounds/874685/) | CC0 |
+| `ability.mp3` | power up (Type 1) | RibhavAgrawal | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-power-up-type-1-230548/) | Pixabay Content License |
 | `back.mp3` | Cancel or No Button Sound | el_boss | [Freesound](https://freesound.org/people/el_boss/sounds/788602/) | CC0 |
 | `block.mp3` | Sword_Clash (7).wav | JohnBuhr | [Freesound](https://freesound.org/people/JohnBuhr/sounds/326868/) | CC0 |
 | `bone.mp3` | Bones Crack 2.wav | Kane53126 | [Freesound](https://freesound.org/people/Kane53126/sounds/257927/) | CC0 |
@@ -173,15 +173,19 @@ Only the recorded sounds are listed here; every other sound is synthesized in co
 | `boss_beast_die.mp3` | Dragons Dying Breath | MickBoere | [Freesound](https://freesound.org/people/MickBoere/sounds/276577/) | CC0 |
 | `boss_bramble.mp3` | Monster sound 02 based on plants | rubberduck9999 | [Freesound](https://freesound.org/people/rubberduck9999/sounds/672920/) | CC0 |
 | `boss_bramble_2.mp3` | creaturechitter.wav | j1987 | [Freesound](https://freesound.org/people/j1987/sounds/106126/) | CC0 |
+| `boss_bramble_die.mp3` | zombie death | dreggsome | [Freesound](https://freesound.org/people/dreggsome/sounds/744096/) | CC0 |
 | `boss_cinder.mp3` | Sleeping  Monster | szegvari | [Freesound](https://freesound.org/people/szegvari/sounds/546402/) | CC0 |
 | `boss_cinder_2.mp3` | Dragon roar 1.wav | AMWD_Mortsel-Edegem-Kontich | [Freesound](https://freesound.org/people/AMWD_Mortsel-Edegem-Kontich/sounds/651817/) | CC0 |
 | `boss_cinder_die.mp3` | Sleeping  Monster | szegvari | [Freesound](https://freesound.org/people/szegvari/sounds/546402/) | CC0 |
 | `boss_colossus.mp3` | Bycicle grears in reverse.wav | MichelleGrobler | [Freesound](https://freesound.org/people/MichelleGrobler/sounds/410557/) | CC0 |
 | `boss_colossus_2.mp3` | clock.wav | Narjara | [Freesound](https://freesound.org/people/Narjara/sounds/527517/) | CC0 |
 | `boss_colossus_die.mp3` | Trap Springing Shut | qubodup | [Freesound](https://freesound.org/people/qubodup/sounds/752070/) | CC0 |
+| `boss_drowned.mp3` | Sea monster scream | Contant_aghony | [Freesound](https://freesound.org/people/Contant_aghony/sounds/478180/) | CC0 |
+| `boss_drowned_die.mp3` | Underwater Explosion | CAT-FOX_ALEX | [Freesound](https://freesound.org/people/CAT-FOX_ALEX/sounds/877023/) | CC0 |
 | `boss_librarian.mp3` | Creepy Whispering | RaspberryTickle | [Freesound](https://freesound.org/people/RaspberryTickle/sounds/234044/) | CC0 |
 | `boss_librarian_2.mp3` | LongWhisper | EvaMusik | [Freesound](https://freesound.org/people/EvaMusik/sounds/832739/) | CC0 |
 | `boss_librarian_die.mp3` | Release me - Whispering ROUGH Latin | JoelMcDaniel | [Freesound](https://freesound.org/people/JoelMcDaniel/sounds/851763/) | CC0 |
+| `boss_mirror_die.mp3` | big smash with glass break.wav | drewkelly | [Freesound](https://freesound.org/people/drewkelly/sounds/171996/) | CC0 |
 | `boss_nightmare.mp3` | Horse Whinny Sound Effect | Free Sounds Library | [freesoundslibrary.com](https://www.freesoundslibrary.com/horse-whinny-sound-effect/) | CC BY 4.0 |
 | `boss_nightmare_2.mp3` | Horse Neighing Sound Effect | Free Sounds Library | [freesoundslibrary.com](https://www.freesoundslibrary.com/horse-neighing-sound-effect/) | CC BY 4.0 |
 | `boss_nightmare_3.mp3` | Horse steps on grass | Luisa_Sanchez | [Freesound](https://freesound.org/people/Luisa_Sanchez/sounds/813383/) | CC0 |
@@ -193,6 +197,8 @@ Only the recorded sounds are listed here; every other sound is synthesized in co
 | `boss_shadow_2.mp3` | Deep Evil Laugh | DRFX | [Freesound](https://freesound.org/people/DRFX/sounds/350679/) | CC0 |
 | `boss_shadow_3.mp3` | Evil Presence 01.wav | LilMati | [Freesound](https://freesound.org/people/LilMati/sounds/445719/) | CC0 |
 | `boss_shadow_die.mp3` | Cthulhu | qubodup | [Freesound](https://freesound.org/people/qubodup/sounds/827668/) | CC0 |
+| `boss_vampire.mp3` | Evil Laugh Sound Effect | Free Sounds Library | [freesoundslibrary.com](https://www.freesoundslibrary.com/evil-laugh-sound-effect/) | CC BY 4.0 |
+| `boss_vampire_die.mp3` | Strange Ability Echo | qubodup | [Freesound](https://freesound.org/people/qubodup/sounds/827665/) | CC0 |
 | `break.mp3` | Barrel Break 4.wav | kevinkace | [Freesound](https://freesound.org/people/kevinkace/sounds/66772/) | CC0 |
 | `break_2.mp3` | Smash.ogg | egomassive | [Freesound](https://freesound.org/people/egomassive/sounds/536777/) | CC0 |
 | `break_3.mp3` | snd_box_smash.wav | gristi | [Freesound](https://freesound.org/people/gristi/sounds/562189/) | CC0 |
@@ -222,7 +228,7 @@ Only the recorded sounds are listed here; every other sound is synthesized in co
 | `gear_2.mp3` | SqueakyClick1.wav | BMacZero | [Freesound](https://freesound.org/people/BMacZero/sounds/94133/) | CC0 |
 | `gear_3.mp3` | Mechanical1.wav | BMacZero | [Freesound](https://freesound.org/people/BMacZero/sounds/94120/) | CC0 |
 | `ghost.mp3` | Spectral Ghost Whisper Breeze Whoosh | brktkrgll | [Freesound](https://freesound.org/people/brktkrgll/sounds/856169/) | CC0 |
-| `heal.mp3` | Sound Effect: Twinkle/Sparkle | ShidenBeatsMusic | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-sound-effect-twinklesparkle-115095/) | Pixabay Content License |
+| `heal.mp3` | Glitter Sparkle | Scratchonix | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-glitter-sparkle-423283/) | Pixabay Content License |
 | `hit.mp3` | 75 CC0 breaking / falling / hit sfx / bfh1_hit_01.ogg | frances | [OpenGameArt](https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx) | CC0 |
 | `hit_2.mp3` | Impact Sounds / impactPunch_heavy_000.ogg | Kenney | [Kenney](https://kenney.nl/assets/impact-sounds) | CC0 |
 | `hit_3.mp3` | 3 Melee sounds / animal melee sound.wav | Dream2Reality | [OpenGameArt](https://opengameart.org/content/3-melee-sounds) | CC0 |
@@ -259,7 +265,7 @@ Only the recorded sounds are listed here; every other sound is synthesized in co
 | `land.mp3` | Impact Sounds / impactSoft_medium_000.ogg | Kenney | [Kenney](https://kenney.nl/assets/impact-sounds) | CC0 |
 | `land_2.mp3` | Impact Sounds / impactSoft_medium_002.ogg | Kenney | [Kenney](https://kenney.nl/assets/impact-sounds) | CC0 |
 | `land_3.mp3` | Impact Sounds / impactSoft_medium_001.ogg | Kenney | [Kenney](https://kenney.nl/assets/impact-sounds) | CC0 |
-| `levelup.mp3` | Ding Level Up | Free Sounds Library | [freesoundslibrary.com](https://www.freesoundslibrary.com/ding-level-up-sound-effect/) | CC BY 4.0 |
+| `levelup.mp3` | Level-up | Sunovia | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-level-up-289723/) | Pixabay Content License |
 | `mana.mp3` | Magic charge mana 2 | FxProSound | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-magic-charge-mana-2-186628/) | Pixabay Content License |
 | `page.mp3` | Fast Page Turn - 5 | SpaceJoe | [Freesound](https://freesound.org/people/SpaceJoe/sounds/484911/) | CC0 |
 | `page_2.mp3` | One page book flip | freesound_community | [Pixabay](https://pixabay.com/sound-effects/film-special-effects-one-page-book-flip-101928/) | Pixabay Content License |

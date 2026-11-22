@@ -148,8 +148,8 @@ freesound.org, opengameart.org, kenney.nl, pixabay.com and freesoundslibrary.com
 ## CC BY 4.0 - Free Sounds Library (credit asked for)
 Trimmed, level-matched and re-encoded for the game.
 
-Ding Level Up - Free Sounds Library
-freesoundslibrary.com/ding-level-up-sound-effect
+Evil Laugh Sound Effect - Free Sounds Library
+freesoundslibrary.com/evil-laugh-sound-effect
 
 Glass Shattering Sound Effect - Free Sounds Library
 freesoundslibrary.com/glass-shattering-sound-effect
@@ -178,9 +178,6 @@ opengameart.org/content/3-melee-sounds
 16_Raton_chillando.wav - JoseAgudelo
 freesound.org/people/JoseAgudelo
 
-36 Bar Chimes Sweep Ascend 01 - loganzsound
-freesound.org/people/loganzsound
-
 50 RPG sound effects / handleCoins.ogg - LunaVR
 opengameart.org/content/50-rpg-sound-effects
 
@@ -204,6 +201,9 @@ freesound.org/people/kevinkace
 
 bat swoosh - MrGungus
 freesound.org/people/MrGungus
+
+big smash with glass break.wav - drewkelly
+freesound.org/people/drewkelly
 
 Bird Flap B 05.wav - deleted_user_2104797
 freesound.org/people/deleted_user_2104797/sounds/330967
@@ -385,6 +385,9 @@ kenney.nl/assets/rpg-audio
 RPG Audio / doorOpen_2.ogg - Kenney
 kenney.nl/assets/rpg-audio
 
+Sea monster scream - Contant_aghony
+freesound.org/people/Contant_aghony
+
 Skeleton bones (game).wav - cribbler
 freesound.org/people/cribbler
 
@@ -421,6 +424,9 @@ opengameart.org/content/steam-release-sounds
 steam_burst.wav - pengo_au
 freesound.org/people/pengo_au
 
+Strange Ability Echo - qubodup
+freesound.org/people/qubodup
+
 strike 3 sec.wav - Littlebrojay
 freesound.org/people/Littlebrojay
 
@@ -456,6 +462,9 @@ freesound.org/people/nednednerb
 
 Trap Springing Shut - qubodup
 freesound.org/people/qubodup
+
+Underwater Explosion - CAT-FOX_ALEX
+freesound.org/people/CAT-FOX_ALEX
 
 Wet Splat 1.mp3 - nebulasnails
 freesound.org/people/nebulasnails
@@ -499,6 +508,9 @@ pixabay.com/sound-effects/film-special-effects-crumble-2-82156
 Game UI Confirm Selection Sound #2 - Vadim_Makes_Sound
 pixabay.com/sound-effects/technology-game-ui-confirm-selection-sound-2-547852
 
+Glitter Sparkle - Scratchonix
+pixabay.com/sound-effects/film-special-effects-glitter-sparkle-423283
+
 Holy Spell Cast - DRAGON-STUDIO
 pixabay.com/sound-effects/musical-holy-spell-cast-450460
 
@@ -507,6 +519,9 @@ pixabay.com/sound-effects/film-special-effects-item-pickup-1-540174
 
 Item Pickup (3) - Yodguard
 pixabay.com/sound-effects/film-special-effects-item-pickup-3-540193
+
+Level-up - Sunovia
+pixabay.com/sound-effects/film-special-effects-level-up-289723
 
 Magic charge mana 2 - FxProSound
 pixabay.com/sound-effects/film-special-effects-magic-charge-mana-2-186628
@@ -526,8 +541,8 @@ pixabay.com/sound-effects/film-special-effects-page-flip-1-178322
 Page flip2 - OxidVideos
 pixabay.com/sound-effects/film-special-effects-page-flip2-178323
 
-Sound Effect: Twinkle/Sparkle - ShidenBeatsMusic
-pixabay.com/sound-effects/film-special-effects-sound-effect-twinklesparkle-115095
+power up (Type 1) - RibhavAgrawal
+pixabay.com/sound-effects/film-special-effects-power-up-type-1-230548
 
 Steam Hissing - DRAGON-STUDIO
 pixabay.com/sound-effects/film-special-effects-steam-hissing-386157

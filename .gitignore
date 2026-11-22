@@ -45,3 +45,6 @@ tools/trailer/out/
 
 # the font download itself (the unzipped font and its licence are in assets/fonts/livingstone/)
 assets/fonts/livingstone.zip
+
+# the author's working notes on which sounds to find (the sounds themselves are credited in CREDITS.md and credits.txt)
+assets/sfx/SFX-LIST.txt
