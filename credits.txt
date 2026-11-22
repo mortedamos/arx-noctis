@@ -7,11 +7,19 @@
 ;   a blank line    a gap
 ;   ---             a thin line
 ;   ; a note         lines that start with a semicolon are NOT shown
-; (The game draws everything in capital letters.)
+; (The credits are lettered in Eroded Motta, in the case they are written.  It has no colon, so a colon is shown as a dash: web addresses are written without https://.)
 ; Longer licence texts and links are in CREDITS.md and in assets/credits/.
 
 # ARX NOCTIS
 A gothic adventure
+
+---
+
+## A message from ArxNWorks
+This is my first game.
+As an individual developer, I have immense gratitude to the community of creators who chose to author and share their resources - the artists, the sound designers, the type designers and the programmers. They have made Arx Noctis possible.
+Thank you.
+ArxNWorks
 
 ---
 
@@ -24,31 +32,44 @@ Gothicvania Town
 Gotthicvania Swamp
 Gothicvania Bridge Expansion Pack 1
 Mountain at Dusk Background
-(OpenGameArt.org)
+Published on OpenGameArt.org
+opengameart.org/content/gothicvania-patreons-collection
+opengameart.org/content/gothicvania-church-pack
+opengameart.org/content/gothicvania-cemetery-pack
+opengameart.org/content/gothicvania-town
+opengameart.org/content/gotthicvania-swamp
+opengameart.org/content/gothicvania-bridge-expansion-pack-1
+opengameart.org/content/mountain-at-dusk-background
+More from the author - pixelgameart.org and patreon.com/cw/ansimuz
 
-The hero, the monsters, the castle and the village are mostly his work.
-The Reflection (the boss in the Mirror Room) is the Gothic Hero again, recoloured at load time.
+The hero, the monsters, the castle and the village.
+The Reflection (the boss in the Mirror Room) is the Hero again, recoloured at load time.
 
 ## ETTiNGRiNDER - CC0
 Haunted Forest Trees
+opengameart.org/content/haunted-forest-trees
 
 ## Chloe Wolfe - CC BY 4.0
 Castlevania-esque Tilemap (Stone and Bricks)
+opengameart.org/content/castlevania-esque-tilemap-stone-and-bricks
 The village streets and brickwork.
 Cropped and rearranged for use in the game.
 
 ## Balmer, with Redshrike - CC BY 3.0
 Bosses and Monsters Spritesheets (Ars Notoria)
+opengameart.org/content/bosses-and-monsters-spritesheets-ars-notoria
 The acolyte, the archmage, the brass sorcerer, the Cinder Warden, the Brazen Hierophant and the Mire Mother.
 Cropped and rearranged for use in the game.
 
 ## Emcee Flesher - OGA-BY 3.0
 Super Dead Gunner: Cyber-tooth
+opengameart.org/content/super-dead-gunner-cyber-tooth-enemy
 The bone, frost and ember wyrms.
 Sliced and re-assembled in code.
 
 ## CaptainSkolot - Magic Books pack (itch.io)
 Magic Book pixel-art grimoires, captainskolot.itch.io/magic-books-pixelart-pixel-art-sprite-grimoire-pack-for-rpg-fantasy
+More from the author - captainskolot.itch.io
 The haunted tomes and grimoires of the Library of Ages: all 32 covers, drawn half-seen.
 Also the open pages they show as they cast (Magic Books interface pack).
 ; (the page's licence field says CC BY-NC-SA 4.0, but the author's description allows commercial use and modification, which is what this game follows - see CREDITS.md)
@@ -60,6 +81,8 @@ The Keeper of the shops: the cloaked vendor with the pack on his back.
 Cut out and shrunk for use in the game.
 
 ## Anokolisa
+Hero's Journey - Moon Graveyard
+anokolisa.itch.io/moon-graveyard
 The moonlit graveyard set.
 
 ## Photographs
@@ -74,9 +97,11 @@ Candelabra and Candelabra Stand (the candelabras in the castle's halls) and Sign
 
 ## worldswithoutend
 Graveyard 400 Assets (two headstones, four flowers, a wreath, three iron fences and eight statues) - worldswithoutend.itch.io/graveyard-2d-game-assets
+More from the author - worldswithoutend.itch.io
 
 ## assets2D
-Gothic Vampire Undead Horde (the free download) - assets2d.itch.io
+Gothic Vampire Undead Horde (the free download) - assets2d.itch.io/gothic-vampire-horde-pixel-art-2d-character-sprites
+More from the author - assets2d.itch.io
 The Crimson Count, the vampire lord.
 Cut into strips and scaled down for the game.
 
@@ -85,15 +110,15 @@ The framed pictures on the castle walls: fifteen painted faces, five moods each.
 Made by the project owner with Google Gemini, first for The Kingdom Marches. Pixelated for the game.
 
 ## Eddie's Workshop (itch.io)
-Old Golem
+Old Golem - eddies-workshop.itch.io/old-golem
 The Boiler Golem.
 
 ## Szadi art - public domain
-Pixel Platformer Set 1
+Pixel Platformer Set 1 - szadiart.itch.io/pixel-platformer-castle
 The sickle-fighting zealot and the sparkling gem.
 
 ## Icko (itch.io)
-The Sidescroller's Dungeon - Tileset [32x32] - inr-1ko.itch.io/the-sidescrollers-dungeon
+The Sidescroller's Dungeon - Tileset 32x32 - inr-1ko.itch.io/the-sidescrollers-dungeon
 Pillars, banners, urns, crates, doors and torches.
 ; (the page's licence field says CC BY-ND 4.0, but the author's description allows commercial use and modification, which is what this game follows - see CREDITS.md)
 
@@ -102,19 +127,21 @@ Some sprites are recoloured while the game loads.
 ---
 
 # FONTS
+## Dieter Steffmann (dafont.com, listed as 100% Free)
+Morris Roman - William Morris's Golden Type of 1893, digitised by Dieter Steffmann - the menus, the HUD and the banners - dafont.com/morris-roman.font
+Blackletter ExtraBold - the title - dafont.com/blackletter-ds.font
+More from the author - www.steffmann.de
+
 ## SIL Open Font Licence 1.1
-Pirata One - Rodrigo Fuenzalida and Nicolas Massi
-Elementary Gothic Bookhand - Bill Roach - the Stranger's voice
-Almendra Bold - Ana Sanfelippo
+Almendra Bold - Ana Sanfelippo - fonts.google.com/specimen/Almendra
+Elementary Gothic Bookhand - Bill Roach - the Stranger's voice - dafont.com/elementary-gothic-bookhand.font
+Pirata One - Rodrigo Fuenzalida and Nicolas Massi - the privacy and terms pages - fonts.google.com/specimen/Pirata+One
 
 ## PrimaFont (free font, American Collection)
 Livingstone - the voices of villagers, the Keeper and the bosses
 
-## Dieter Steffmann (dafont.com, listed as 100% Free)
-Blackletter ExtraBold - the title
-
 ## Lirkiv (1001fonts.com, free for commercial use)
-Eroded Motta - the gravestones and tablets
+Eroded Motta - the gravestones and tablets - 1001fonts.com/erodedmotta-font.html
 
 ---
 
@@ -128,16 +155,17 @@ Some creatures, props and projectiles are drawn in code.
 
 # SOUND EFFECTS
 Recorded sounds by Freesound, OpenGameArt, Kenney and Pixabay creators. Every one is named in CREDITS.md.
+Published at freesound.org, opengameart.org, kenney.nl, pixabay.com and freesoundslibrary.com
 
 ## CC BY 4.0 - Free Sounds Library
 freesoundslibrary.com - trimmed, level-matched and re-encoded
 Glass Shattering, Ding Level Up, Zombie Noise, Horse Whinny, Horse Neighing
 
 ## CC0 (public domain)
-click, click 2 - 51 UI sound effects - gopherapps (OpenGameArt)
+click, click 2 - 51 UI sound effects - gopherapps - opengameart.org/content/51-ui-sound-effects-buttons-switches-and-clicks
 
 ## Pixabay Content License
-select - Game UI Confirm Selection Sound #2 - Vadim_Makes_Sound
+select - Game UI Confirm Selection Sound #2 - Vadim_Makes_Sound - pixabay.com/sound-effects/technology-game-ui-confirm-selection-sound-2-547852
 
 ---
 
