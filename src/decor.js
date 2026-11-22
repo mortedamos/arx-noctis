@@ -60,7 +60,7 @@ function drawCog(g, x, y, r, n, ang, a) {
 // NEVER draw the signs traditionally used for male and female (Mars, a circle with an arrow, which is also iron; Venus, a circle on a cross, which is also copper) or anything that reads like them: the user asked for them
 // to be avoided.  The Clockwork Lord's sigil was Mars's sign and the Mire Mother's was Mercury's (a circle on a cross, which reads as Venus's), so they are now AIR (a triangle with a bar) and WATER (a triangle
 // pointing down).  The names of the metals stay in the game's TEXT (the Keys of Iron, Copper and Mercury); only the pictures are avoided.
-const SIGIL_OF = { boss_h4: 'sulphur', boss_qb: 'water', boss_u3: 'salt', boss_kb: 'air', skulls_done: 'skull', boss_og: 'earth' };
+const SIGIL_OF = { boss_h4: 'sulphur', boss_ib: 'water', boss_u3: 'salt', boss_kb: 'air', skulls_done: 'skull', boss_og: 'earth' };
 const SIGILS_BY_ORDER = ['sulphur', 'water', 'salt', 'air'];
 function glyph(g, name, x, y) {
   g.beginPath();

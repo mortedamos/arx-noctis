@@ -15,7 +15,7 @@ import { letterTitle, markPage } from './letters.js';
 export const ABILITIES = {
   djump: { name: 'AETHER FEATHER', desc: 'PRESS JUMP AGAIN IN MIDAIR TO DOUBLE JUMP.', icon: 'feather', color: [0.6, 0.85, 1] },
   dash: { name: 'QUICKSILVER STEP', desc: 'PRESS SHIFT TO DASH. YOU CANNOT BE HURT WHILE YOU MOVE LIKE QUICKSILVER.', icon: 'boot', color: [0.75, 0.5, 1] },
-  ember: { name: 'SULPHUR RUNE', desc: 'PRESS C TO HURL FIRE. IT BURNS WOODEN BARRICADES. Q / V CHANGE WHAT C USES.', icon: 'ember', color: [1, 0.55, 0.2] },
+  ember: { name: 'SULPHUR RUNE', desc: 'PRESS C TO HURL FIRE. IT BURNS WOODEN BARRICADES AND MELTS ICE. Q / V CHANGE WHAT C USES.', icon: 'ember', color: [1, 0.55, 0.2] },
   thunder: { name: 'VITRIOL RUNE', desc: 'PRESS C TO CALL LIGHTNING DOWN ON YOUR FOES. THE CORROSIVE BOLT SHATTERS CRYSTAL.', icon: 'thunder', color: [0.9, 0.95, 1] },
   dawn: { name: 'AZOTH', desc: 'THE LIGHT THAT WAKES THE SUN.', icon: 'orb', color: [1, 0.9, 0.5] },
 };

@@ -155,7 +155,7 @@ const SPEC = {
   c2: { kind: 'corridor', zone: 3, name: 'Bell Gallery', w: [96, 108], leverCell: true, abilities: ['djump', 'dash'], opts: LOOK[3],
     mods: [{ t: 'gap' }, { t: 'door', to: 'shc', kind: 'wood', label: 'THE KEEPER', hint: 'SOMETHING IN THE DARK SELLS WHAT THE DEAD NO LONGER NEED.' }, { t: 'door', to: 'vc', kind: 'crypt', key: 'key_chapel' }, { t: 'tablet', id: 'tab6', near: 'gap', text: 'THE GULF IS TOO WIDE FOR ANY LEAP. ONLY ONE WHO STEPS THROUGH SHADOW MAY CROSS.' }],
     candles: [3, 4], mix: { wraith: [2, 2], ghost: [1, 1], wizard: [1, 1], acolyte: [1, 1], archmage: [1, 1], ghoul: [1, 2], bat: [2, 2], frostwyrm: [1, 1] } },
-  c3: { kind: 'arena', zone: 3, name: 'Sanctum of the Seraph', w: [40, 46], h: 16, boss: 'angel', reward: 'ember', plats: 3, rise: 4, seal: 'both', exitGate: 'barricade', abilities: ['djump'], decor: 'column', flyRow: 6,
+  c3: { kind: 'arena', zone: 3, name: 'Sanctum of the Seraph', w: [40, 46], h: 16, boss: 'angel', reward: 'tide', plats: 3, rise: 4, seal: 'both', exitGate: 'barricade', abilities: ['djump'], decor: 'column', flyRow: 6,
     opts: { weather: 'wisps', ambient: 0.28, horizon: 14, boss: 'angel', music: 'boss' } },
   s3: { kind: 'sanctuary', zone: 3, name: 'Chapel Sanctuary', parent: 'c1' },
   vc: { kind: 'interior', zone: 3, name: "The Verger's Vault", parent: 'c2', look: 'vault', theme: 'chapel', ambient: 0.42, tint: [0.04, 0.02, 0.07], npcs: [0, 0], chest: { kind: 'hpup', id: 'vc_chest' } },
@@ -173,9 +173,9 @@ const SPEC = {
   q3: { kind: 'corridor', zone: 9, name: 'The Drowned Aqueduct', w: [84, 98], opts: { ...LOOK[9], fog: 0.3 }, abilities: ['djump', 'dash'], streams: [2, 3],
     mods: [{ t: 'tablet', id: 'tab15', near: 'start', text: 'BEYOND THE LAST SLUICE STANDS THE GATE THE WATER WAS MADE TO KEEP. SOMETHING OLDER THAN THE CITY KEEPS IT NOW.' }],
     candles: [2, 3], barrels: [2, 3], mix: { zombie: [2, 3], swampthing: [1, 2], ghost: [1, 2], bat: [1, 2], frostwyrm: [1, 2], swampspider: [1, 2] } },
-  qb: { kind: 'arena', zone: 9, name: 'The Flooded Gate', w: [44, 50], h: 16, boss: 'drowned', reward: 'tide', plats: 2, rise: 3, seal: 'both', flyRow: 7, abilities: ['djump', 'dash'], decor: 'cistern', candles: [2, 2],
+  qb: { kind: 'arena', zone: 9, name: 'The Flooded Gate', w: [44, 50], h: 16, boss: 'drowned', reward: 'ember', plats: 2, rise: 3, seal: 'both', flyRow: 7, abilities: ['djump', 'dash'], decor: 'cistern', candles: [2, 2],
     opts: { ...LOOK[9], ambient: 0.28, boss: 'drowned', music: 'boss' } },
-  tf: { kind: 'teleport', zone: 9, name: 'Waystone Floodgate', exitGate: 'ice', opts: LOOK[9] },          // (past the Flooded Gate, in front of the wall of ice that fire melts: a second waystone, so the way back to the wall - once the Chapel has given fire - is one jump)
+  tf: { kind: 'teleport', zone: 9, name: 'Waystone Floodgate', exitGate: 'ice', opts: LOOK[9] },          // (past the Flooded Gate - the Drowned Warden has just given fire - in front of the wall of ice that fire melts: a second waystone, so the way back to the wall is one jump)
   sq: { kind: 'sanctuary', zone: 9, name: 'Dry Sanctuary', parent: 'q1' },
   // ======== ZONE 8 - THE CLOCKWORK DUNGEON (the Brazen Hierophant's works: brass, pipes and steam, with gears behind gears)
   tk: { kind: 'teleport', zone: 8, name: 'Cogwheel Landing', areaLabel: 'The Clockwork Dungeon', opts: LOOK[8] },
@@ -285,7 +285,7 @@ const LINKS = CHAINS.flatMap(c => c.slice(1).map((id, i) => [c[i], 'R', id, 'L']
 const PAIRS = [
   { a: 'hk', ta: 'hall', b: 'th', tb: 'in', kind: 'wood', mod: 'door', label: 'ARX NOCTIS: THE GREAT HALL', hint: 'THE GATE OF THE KEEP. EVERYTHING BEYOND IT BELONGS TO THE LORD.' },
   { a: 'hub1', ta: 'mire', b: 'tw', tb: 'in', kind: 'crypt', mod: 'djDoor', label: 'THE WEEPING MIRE', hint: 'THE DOOR IS HIGH. ONLY A WINGED LEAP WILL REACH IT. THE MIRE ENDS WHERE ITS MOTHER WAITS.' },
-  { a: 'hk', ta: 'chapel', b: 'tc', tb: 'in', kind: 'crypt', mod: 'door', label: 'ARX NOCTIS: THE MOONLIT CHAPEL', hint: 'A SECOND GATE INTO THE KEEP. IT OPENS ONLY WHEN THE MASTERS OF THE GREAT HALL AND OF THE FLOODED GATE ARE DEAD. THE FLOODED GATE IS IN THE CISTERN, UNDER KARLUV BRIDGE IN PRAGUE.', lock: ['boss_h4', 'boss_qb'] },
+  { a: 'hk', ta: 'chapel', b: 'tc', tb: 'in', kind: 'crypt', mod: 'door', label: 'ARX NOCTIS: THE MOONLIT CHAPEL', hint: 'A SECOND GATE INTO THE KEEP. IT OPENS ONLY WHEN THE MASTERS OF THE GREAT HALL AND OF THE FROZEN CAVERNS ARE DEAD. THE FROZEN CAVERNS LIE BEYOND THE CISTERN, UNDER KARLUV BRIDGE IN PRAGUE.', lock: ['boss_h4', 'boss_ib'] },
   { a: 'hub2', ta: 'crypts', b: 'tu', tb: 'in', kind: 'crypt', mod: 'cellDoor', gate: 'barricade', label: 'THE CRYPTS', hint: 'THE WAY IS BARRICADED. FIRE WILL CLEAR IT.' },
   // the Clockwork Dungeon is entered through the Orloj Tower, in PRAGUE: a locked door high on a ledge (a double jump) in Smouldering Lane...
   { a: 'v2', ta: 'orloj', b: 'ot', tb: 'in', kind: 'crypt', mod: 'djDoor', key: 'key_crypt', wide: true, label: 'THE ORLOJ TOWER', hint: 'THE DOOR IS HIGH, AND LOCKED. IT NEEDS THE KEY OF TIN.' },
@@ -302,8 +302,8 @@ const PAIRS = [
 const RETURNS = [['wb', 'out', 'hub1', 'mire'], ['h3', 'out', 'hk', 'hall'], ['u3', 'out', 'hub2', 'crypts'], ['kb', 'out', 'ot', 'clockwork'], ['lb', 'out', 'hl', 'library'], ['ic', 'out', 'br', 'cistern'], ['ls', 'out', 'pd', undefined]];
 // what each boss gives (and what each door asks for): the order in which things can be done.  tools/test-world.mjs proves from this table that every castle can be finished.
 export const PROGRESS = {
-  gives: { g3: 'djump', h4: 'dash', c3: 'ember', u3: 'thunder', t2: 'dawn', qb: 'tide' },
-  doors: { mire: { needs: ['djump'] }, hall: {}, chapel: { bosses: ['h4', 'qb'] }, crypts: { needs: ['ember'] }, orloj: { needs: ['djump'], key: 'key_crypt' }, clockwork: {}, forge: { bosses: ['og'] }, cistern: { needs: ['djump', 'dash'] }, library: { key: 'key_frost' }, throne: { needs: ['thunder'], bosses: ['u3', 'kb'], key: 'key_gold' } },
+  gives: { g3: 'djump', h4: 'dash', qb: 'ember', u3: 'thunder', t2: 'dawn', c3: 'tide' },          // (qb, the Drowned Warden, gives fire; c3, the Seraph of Ash, leaves the Tide Blade)
+  doors: { mire: { needs: ['djump'] }, hall: {}, chapel: { bosses: ['h4', 'ib'] }, crypts: { needs: ['ember'] }, orloj: { needs: ['djump'], key: 'key_crypt' }, clockwork: {}, forge: { bosses: ['og'] }, cistern: { needs: ['djump', 'dash'] }, library: { key: 'key_frost' }, throne: { needs: ['thunder'], bosses: ['u3', 'kb'], key: 'key_gold' } },
 };
 // some neighbouring areas are joined by a DOOR at each end (UP) instead of an open edge: 'a>b' = a's far-right door leads to b's far-left door.  (Only when both are generated rooms: the hand-built classic ones keep their open edges.)
 const DOOR_LINK = { 'tp>t2': 'crypt', 'v2>v3': 'wood', 'g1>g2': 'crypt', 'w1>w2': 'wood', 'h1>h2': 'wood', 'c1>c2': 'wood', 'u1>u2': 'wood', 'k1>k2': 'wood', 'q1>q2': 'wood' };          // (consecutive rooms of a chain that are joined by doors instead)
