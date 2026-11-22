@@ -75,6 +75,8 @@ const THEME = {
       else if (depth === 1) blit(g, im, 64 + v * 16, 80, 16, 16, dx, dy);
       else blit(g, im, hash1(tx * 3.1 + ty * 1.7) < 0.18 ? 16 : 32, 96, 16, 16, dx, dy);
     },
+    // the divider wall of a two-floor room: a ruined crypt wall of purple-grey stone bricks (the village's brickwork), with a course of coping stones on top - the earth tiles go black ten rows down
+    wall(g, tx, ty, nb, depth, wy) { const im = IMG.crypt_tilemap; if (wy === 0) blit(g, im, 288 + (((tx % 6) + 6) % 6) * 16, 0, 16, 16, tx * T, ty * T); else blit(g, im, 224 + (tx & 1) * 16, 16 + ((wy - 1) & 1) * 16, 16, 16, tx * T, ty * T); },
     plat(g, tx, ty) { const im = IMG.cemetery_tileset, v = Math.floor(hash1(tx * 5.1) * 4); blit(g, im, 64 + v * 16, 55, 16, 25, tx * T, ty * T - 9); g.fillStyle = 'rgba(0,0,10,0.55)'; g.fillRect(tx * T, ty * T + 8, 16, 2); },
   },
   // Gothicvania Swamp: mossy mud blocks (the third block, 5 tiles wide, is used) - top lip, mid, dark underside
@@ -534,7 +536,9 @@ export class Room {
       if (v === TILE.SOLID || (v === TILE.CRACK && this.isHollow(tx, ty))) {          // (a hollow wall is drawn as plain wall: nothing shows that it will give)
         let depth = 0; while (depth < 3 && this.solid(tx, ty - 1 - depth) && ty - 1 - depth >= 0) depth++;
         // ceilings/overhangs: tile with air below and solid above shouldn't look like grass-top
-        th.solid(g, tx, ty, { u: this.solid(tx, ty - 1), d: this.solid(tx, ty + 1), l: this.solid(tx - 1, ty), r: this.solid(tx + 1, ty) }, depth);
+        const nbs = { u: this.solid(tx, ty - 1), d: this.solid(tx, ty + 1), l: this.solid(tx - 1, ty), r: this.solid(tx + 1, ty) }, dr = this.dividerRows;
+        if (th.wall && dr && this.divider !== undefined && tx >= this.divider && tx <= this.divider + 1 && ty >= dr[0] && ty <= dr[1]) th.wall(g, tx, ty, nbs, depth, ty - dr[0]);          // (a divider wall - a tall free-standing wall in a two-floor room - gets the theme's wall tiles: an earth tile ten rows deep is just a black bar)
+        else th.solid(g, tx, ty, nbs, depth);
       } else if (v === TILE.PLAT) { if (!(this.platSet && this.platSet.has(tx + ',' + ty))) th.plat(g, tx, ty); }          // (a platform that some scenery overlaps is not painted into the room's picture: drawPlatsOver paints it over the scenery)
       else if (v === TILE.SPIKE) { if (!(this.rivers && this.rivers.some(c => ty * T >= c.y))) drawSheet(g, 'spikes', 0, tx * T, ty * T, { ax: 0, ay: 0 }); this.spikes.push([tx, ty]); }          // (under a river the spikes are unseen)
       else if (v === TILE.CRACK) { if (this.bookWall && this.bookWall.has(tx + ',' + ty)) bookTile(g, tx, ty); else drawSheet(g, 't_crack', 0, tx * T, ty * T, { ax: 0, ay: 0 }); this.brk.push([tx, ty, v]); }

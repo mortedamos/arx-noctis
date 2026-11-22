@@ -629,7 +629,7 @@ function genCorridor(id, spec, r) {
         b.plat(cx - 2, 2, DK - 2);                                                                  // the way OVER: a platform against the wall's near face...
         b.rect(cx + 5, DK, 3, 2, TILE.EMPTY);                                                       // hole B: climb back up
         b.plat(cx + 2, 3, BASE - 3); b.plat(cx + 3, 3, BASE - 6); b.plat(cx + 5, 3, BASE - 9);    // ...and the staircase beneath hole B (the top step is level with the slab's underside)
-        keepOut.push([cx - 10, cx + 10]); b.def.divider = cx;
+        keepOut.push([cx - 10, cx + 10]); b.def.divider = cx; b.def.dividerRows = [wallTop, wallBot];          // (where the wall stands: Room.prerender draws it with the theme's own wall tiles, if the theme has any)
       }
     }
     for (let k = 0; k < nf; k++) {
