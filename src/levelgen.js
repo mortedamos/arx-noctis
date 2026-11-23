@@ -15,7 +15,7 @@ import { validateRoom, checkSpawns, roomOf, surfaces, reach, simulateChain } fro
 import { mulberry32 } from './util.js';
 import { packMap, mapCells } from './maplayout.js';
 
-export const GEN_VERSION = 17;          // (17: the Cistern is entered from under Karluv Bridge, and the Frozen Caverns lie beyond it)
+export const GEN_VERSION = 18;          // (18: the Moonlit Chapel is entered from the Great Hall, by a door at the top of a new tall stair between the Entrance Hall and the Portrait Gallery; the Gate of Arx Noctis has one door.  17: the Cistern is entered from under Karluv Bridge, and the Frozen Caverns lie beyond it)
 const MAX_TRY = 60;
 
 // ------------------------------------------------------------------------------------------------ seeded random helpers
@@ -32,7 +32,7 @@ function makeRng(seed, id, attempt) {
 // (ids, zones, secrets and the order of everything are fixed; sizes and layouts are randomised)
 //
 // The castle has seven zones, each with ONE look (so a level never mixes tilesets):
-//   6 Prague  ->  1 Graveyard  ->  (the Waystone Glade, the Mire Road, the Gate of Arx Noctis, the Quiet Corner) [7 Weeping Swamp | 2 Great Hall | 3 Moonlit Chapel]  ->  (the Crossing Waystone, the Barricaded Gallery, the Archive Passage, the Throne Approach) [4 Crypts | 8 Clockwork Dungeon | 5 Shadow Throne]   (see CHAINS / PAIRS below)
+//   6 Prague  ->  1 Graveyard  ->  (the Waystone Glade, the Mire Road, the Gate of Arx Noctis, the Quiet Corner) [7 Weeping Swamp | 2 Great Hall (whose Restless Tower has the door up to the 3 Moonlit Chapel)]  ->  (the Crossing Waystone, the Barricaded Gallery, the Archive Passage, the Throne Approach) [4 Crypts | 8 Clockwork Dungeon | 5 Shadow Throne]   (see CHAINS / PAIRS below)
 //   and, under Prague's Karluv Bridge (a door in the river-side pier, reached by a fall and a dash): 9 Cistern -> (an ice wall that only fire melts) -> 11 Frozen Caverns
 // Every zone opens with a WAYSTONE chamber (the teleport room), has a boss at its far end, and a sanctuary (save room) off one of its corridors.
 const T1 = 'ARX NOCTIS SWALLOWED THE SUN LONG AGO. ONLY A STRANGER FOOLISH ENOUGH TO ENTER WILL SEE IT RISE AGAIN.';
@@ -131,6 +131,10 @@ const SPEC = {
   h1: { kind: 'corridor', zone: 2, name: 'Entrance Hall', w: [82, 92], deck: true, opts: { ...LOOK[2], ambient: 0.34 },
     mods: [{ t: 'skull', id: 'skull3' }, { t: 'door', to: 's2', kind: 'wood' }, { t: 'deckDoor', to: 'ha', kind: 'wood' }, { t: 'deckDoor', to: 'mr', kind: 'crypt' }, { t: 'tablet', id: 'tab3', near: 'start', text: 'THE GREAT HALL ONCE RANG WITH FEASTING. NOW THE FACES ON THE WALLS WATCH - AND SOME OF THEM WATCH BACK.' }],
     candles: [4, 6], barrels: [2, 4], mix: { bat: [3, 3], ghost: [1, 1], zealot: [3, 5] } },
+  // THE RESTLESS TOWER: a tall shaft between the Entrance Hall and the Portrait Gallery (at least four screens of climb).  Along the floor, on to the right, is the Portrait Gallery; up the zig-zag of steps, on the top landing,
+  // is the door to the Moonlit Chapel (locked by two sigils: the Phantom Steed and the Rimewyrm).  The only way into the Chapel: the Gate of Arx Noctis has one door, the Great Hall's.
+  h5: { kind: 'tower', zone: 2, name: 'The Restless Tower', w: [28, 32], h: [70, 76], top: [9, 11], tall: true, exitLow: true, opts: { ...LOOK[2], ambient: 0.4 },
+    mods: [{ t: 'tablet', id: 'tabstair', near: 'start', text: 'THE RESTLESS TOWER. THE PORTRAIT GALLERY LIES ON, TO THE RIGHT. THE MOONLIT CHAPEL LIES FAR ABOVE.' }], candles: [6, 8], barrels: [2, 3], mix: { bat: [4, 5], ghost: [2, 2], fireskull: [3, 3], zealot: [4, 5] } },
   h2: { kind: 'corridor', zone: 2, name: 'Portrait Gallery', w: [84, 98], levers: 1, opts: { ...LOOK[2], ambient: 0.36 },
     mods: [{ t: 'djLedge', kind: 'mpup', id: 'h2_mp' }, { t: 'cell', gate: 'crystal', kind: 'hpup', id: 'h2_hp' }, { t: 'cell', gate: 'crack', kind: 'mpup', id: 'h2_mp2' }, { t: 'door', to: 'vh', kind: 'crypt', key: 'key_hall' }],
     candles: [5, 6], barrels: [2, 4], mix: { skeleton: [1, 1], ghost: [2, 2], fireskull: [2, 2], bat: [3, 3], wyrm: [1, 1], zealot: [5, 5] } },
@@ -225,7 +229,7 @@ const SPEC = {
   // THE THREE ROADS used to be one busy stretch with a waystone, a high door, two gates into the keep and the Reliquary's door.  Now each has a place of its own, in the order they are met:
   hw: { kind: 'teleport', zone: 1, name: 'The Waystone Glade', outdoor: true, abilities: ['djump'], opts: { ...LOOK[1], ambient: 0.14 } },          // the waystone, alone
   hub1: { kind: 'corridor', zone: 1, name: 'The Mire Road', w: [32, 38], outdoor: true, calm: true, abilities: ['djump'], opts: { ...LOOK[1], ambient: 0.14 }, mods: [], candles: [2, 3], mix: {} },          // only the high door to the Mire
-  hk: { kind: 'corridor', zone: 1, name: 'The Gate of Arx Noctis', w: [46, 52], outdoor: true, calm: true, abilities: ['djump'], opts: { ...LOOK[1], ambient: 0.12 }, mods: [], candles: [2, 3], mix: {} },          // the two gates into the keep, the Great Hall and the Chapel
+  hk: { kind: 'corridor', zone: 1, name: 'The Gate of Arx Noctis', w: [46, 52], outdoor: true, calm: true, abilities: ['djump'], opts: { ...LOOK[1], ambient: 0.12 }, mods: [], candles: [2, 3], mix: {} },          // the one gate into the keep: the Great Hall (the Chapel is entered from inside it)
   hr: { kind: 'corridor', zone: 1, name: 'The Quiet Corner', w: [30, 36], outdoor: true, calm: true, closedRight: true, abilities: ['djump'], opts: { ...LOOK[1], ambient: 0.1 }, mods: [{ t: 'door', to: 'sr', kind: 'crypt', lock: ['skulls_done'] }, { t: 'tablet', id: 'tabsix', near: 'door', to: 'sr', text: 'IN THE WAR I KILLED SIX MEN.' }], candles: [1, 2], mix: {} },          // beyond the gates, out of the way: the Reliquary's door, and a gravestone
   // THE CROSSING HALL, likewise, is four short places: the waystone, the barricaded way to the Crypts (and the hidden page), the Library's door, and last the Throne's door.
   hx: { kind: 'teleport', zone: 3, name: 'The Crossing Waystone', abilities: ['djump', 'dash', 'ember'], opts: { ...LOOK[3], ambient: 0.34 } },          // the waystone, alone
@@ -259,11 +263,11 @@ const SPEC = {
   s4: { kind: 'sanctuary', zone: 5, name: 'Last Sanctuary', parent: 't1' },
   ta: { kind: 'interior', zone: 5, name: 'The Hidden Study', parent: 't1', look: 'study', theme: 'hall', ambient: 0.5, tint: [0.03, 0.0, 0.05], npc: { kind: 'oldman', title: 'THE LORD\'S SCRIBE', text: 'I WROTE DOWN EVERYTHING HE DID, AND NEVER ONCE LOOKED UP. NOW I CANNOT STOP LOOKING. HE IS ABOVE US. TAKE THIS, STRANGER - AND WHEN YOU MEET HIM, DO NOT LET HIM SPEAK.', again: 'I HAVE NO MORE PAGES. ONLY THE ONES I CANNOT BURN.', gifts: ['it_holy', 'it_holy', 'heart'], sells: { item: 'holy', price: 50 } } },
 };
-const ORDER = ['v0', 'vq', 'v1', 'tv', 'v2', 'v3', 'vb', 'vs', 'br', 'ot', 'og', 'sv', 'tg', 'g1', 'g2', 'g4', 'vg', 'g3', 'pd', 'ls', 's1', 'hw', 'hub1', 'hk', 'hr', 'sr', 'tw', 'w1', 'w2', 'vw', 'w3', 'wb', 'sw', 'tq', 'q1', 'q2', 'q3', 'qb', 'tf', 'sq', 'th', 'h1', 'h2', 'vh', 'h4', 'h3', 's2', 'tc', 'c1', 'c2', 'vc', 'c3', 's3', 'dc', 'hx', 'hub2', 'hl', 'ht', 'tu', 'u1', 'vu', 'u2', 'u3', 's5', 'tk', 'k1', 'vk', 'k2', 'k3', 'kb', 'sk', 'tl', 'l1', 'l2', 'l3', 'lb', 'sl', 'ti', 'i1', 'i2', 'i3', 'ib', 'ic', 'si', 'shc', 'shu', 'shl', 'sht', 'tt', 't1', 'tp', 't2', 's4', 'hv1', 'hv2', 'hv3', 'hv4', 'hc', 'shk', 'ga', 'wa', 'ha', 'ta', 'mr'];
+const ORDER = ['v0', 'vq', 'v1', 'tv', 'v2', 'v3', 'vb', 'vs', 'br', 'ot', 'og', 'sv', 'tg', 'g1', 'g2', 'g4', 'vg', 'g3', 'pd', 'ls', 's1', 'hw', 'hub1', 'hk', 'hr', 'sr', 'tw', 'w1', 'w2', 'vw', 'w3', 'wb', 'sw', 'tq', 'q1', 'q2', 'q3', 'qb', 'tf', 'sq', 'th', 'h1', 'h5', 'h2', 'vh', 'h4', 'h3', 's2', 'tc', 'c1', 'c2', 'vc', 'c3', 's3', 'dc', 'hx', 'hub2', 'hl', 'ht', 'tu', 'u1', 'vu', 'u2', 'u3', 's5', 'tk', 'k1', 'vk', 'k2', 'k3', 'kb', 'sk', 'tl', 'l1', 'l2', 'l3', 'lb', 'sl', 'ti', 'i1', 'i2', 'i3', 'ib', 'ic', 'si', 'shc', 'shu', 'shl', 'sht', 'tt', 't1', 'tp', 't2', 's4', 'hv1', 'hv2', 'hv3', 'hv4', 'hc', 'shk', 'ga', 'wa', 'ha', 'ta', 'mr'];
 // The castle is a GRAPH, not a road.  Each chain is a run of rooms joined edge to edge (a's right end opens into b's left end); the chains meet at two crossroads (hub1, hub2), whose doors are signed:
 //   village - graveyard - hub1 -+- the Mire (a door high on a ledge: needs the double jump) - the Mother's Hollow (a dead end: its return door drops you back at hub1)
-//                               +- the Great Hall ------------------------------------------------+-- back to hub1; the Chapel door has two sigils: the Hall's and the Flooded Gate's boss
-//                               +- the Chapel - hub2 -+- the Crypts (their door is barricaded: burn it) ---+
+//                               +- the Great Hall (Entrance Hall - Restless Tower - Portrait Gallery - ...) -- back to hub1.  The Restless Tower is a tall shaft: along its floor, on to the Portrait Gallery; up its steps, a door to the Chapel with two sigils (the Hall's boss and the Rimewyrm)
+//                                  ... and through that door the Chapel - hub2 -+- the Crypts (their door is barricaded: burn it) ---+
 //                                                     +- (the Clockwork Dungeon: its door is over a gulf) -+-- back to hub2; the Throne door has two sigils and a crystal wall (thunder)
 //                                                     +- the Throne
 // Every branch ends in a return door (RETURNS) that drops you at its crossroads, so you can always come back.
@@ -272,7 +276,7 @@ const ORDER = ['v0', 'vq', 'v1', 'tv', 'v2', 'v3', 'vb', 'vs', 'br', 'ot', 'og',
 const CHAINS = [
   ['v0', 'v1', 'tv', 'v2', 'v3', 'vb', 'vs', 'br', 'tg', 'g1', 'g2', 'g4', 'g3', 'pd', 'hw', 'hub1', 'hk', 'hr'],
   ['tw', 'w1', 'w2', 'w3', 'wb'],
-  ['th', 'h1', 'h2', 'h4', 'h3'],
+  ['th', 'h1', 'h5', 'h2', 'h4', 'h3'],          // (the Entrance Hall, the Restless Tower - its top door is the Chapel's way in - the Portrait Gallery, the Phantom Stable, the Belfry)
   ['tc', 'c1', 'c2', 'c3', 'hx', 'hub2', 'hl', 'ht'],
   ['tu', 'u1', 'u2', 'u3'],
   ['tt', 't1', 'tp', 't2'],
@@ -285,7 +289,7 @@ const LINKS = CHAINS.flatMap(c => c.slice(1).map((id, i) => [c[i], 'R', id, 'L']
 const PAIRS = [
   { a: 'hk', ta: 'hall', b: 'th', tb: 'in', kind: 'wood', mod: 'door', label: 'ARX NOCTIS: THE GREAT HALL', hint: 'THE GATE OF THE KEEP. EVERYTHING BEYOND IT BELONGS TO THE LORD.' },
   { a: 'hub1', ta: 'mire', b: 'tw', tb: 'in', kind: 'crypt', mod: 'djDoor', label: 'THE WEEPING MIRE', hint: 'THE DOOR IS HIGH. ONLY A WINGED LEAP WILL REACH IT. THE MIRE ENDS WHERE ITS MOTHER WAITS.' },
-  { a: 'hk', ta: 'chapel', b: 'tc', tb: 'in', kind: 'crypt', mod: 'door', label: 'ARX NOCTIS: THE MOONLIT CHAPEL', hint: 'A SECOND GATE INTO THE KEEP. IT OPENS ONLY WHEN THE MASTERS OF THE GREAT HALL AND OF THE FROZEN CAVERNS ARE DEAD. THE FROZEN CAVERNS LIE BEYOND THE CISTERN, UNDER KARLUV BRIDGE IN PRAGUE.', lock: ['boss_h4', 'boss_ib'] },
+  { a: 'h5', ta: 'chapel', b: 'tc', tb: 'in', kind: 'crypt', side: 'T', label: 'ARX NOCTIS: THE MOONLIT CHAPEL', hint: 'THE DOOR AT THE TOP OF THE RESTLESS TOWER. IT OPENS ONLY WHEN THE MASTERS OF THE GREAT HALL AND OF THE FROZEN CAVERNS ARE DEAD. THE FROZEN CAVERNS LIE BEYOND THE CISTERN, UNDER KARLUV BRIDGE IN PRAGUE.', lock:['boss_h4', 'boss_ib'] },
   { a: 'hub2', ta: 'crypts', b: 'tu', tb: 'in', kind: 'crypt', mod: 'cellDoor', gate: 'barricade', label: 'THE CRYPTS', hint: 'THE WAY IS BARRICADED. FIRE WILL CLEAR IT.' },
   // the Clockwork Dungeon is entered through the Orloj Tower, in PRAGUE: a locked door high on a ledge (a double jump) in Smouldering Lane...
   { a: 'v2', ta: 'orloj', b: 'ot', tb: 'in', kind: 'crypt', mod: 'djDoor', key: 'key_crypt', wide: true, label: 'THE ORLOJ TOWER', hint: 'THE DOOR IS HIGH, AND LOCKED. IT NEEDS THE KEY OF TIN.' },
@@ -306,7 +310,7 @@ export const PROGRESS = {
   doors: { mire: { needs: ['djump'] }, hall: {}, chapel: { bosses: ['h4', 'ib'] }, crypts: { needs: ['ember'] }, orloj: { needs: ['djump'], key: 'key_crypt' }, clockwork: {}, forge: { bosses: ['og'] }, cistern: { needs: ['djump', 'dash'] }, library: { key: 'key_frost' }, throne: { needs: ['thunder'], bosses: ['u3', 'kb'], key: 'key_gold' } },
 };
 // some neighbouring areas are joined by a DOOR at each end (UP) instead of an open edge: 'a>b' = a's far-right door leads to b's far-left door.  (Only when both are generated rooms: the hand-built classic ones keep their open edges.)
-const DOOR_LINK = { 'tp>t2': 'crypt', 'v2>v3': 'wood', 'g1>g2': 'crypt', 'w1>w2': 'wood', 'h1>h2': 'wood', 'c1>c2': 'wood', 'u1>u2': 'wood', 'k1>k2': 'wood', 'q1>q2': 'wood' };          // (consecutive rooms of a chain that are joined by doors instead)
+const DOOR_LINK = { 'tp>t2': 'crypt', 'v2>v3': 'wood', 'g1>g2': 'crypt', 'w1>w2': 'wood', 'c1>c2': 'wood', 'u1>u2': 'wood', 'k1>k2': 'wood', 'q1>q2': 'wood' };          // (consecutive rooms of a chain that are joined by doors instead)
 // abilities the player owns when coming BACK through a zone (they've beaten that zone's boss by then)
 const BACK = { 10: ['djump', 'dash', 'ember'], 11: ['djump', 'dash', 'ember'], 9: ['djump', 'dash'], 8: ['djump', 'dash', 'ember'], 6: [], 1: ['djump'], 7: ['djump'], 2: ['djump', 'dash'], 3: ['djump', 'dash', 'ember'], 4: ['djump', 'dash', 'ember', 'thunder'], 5: ['djump', 'dash', 'ember', 'thunder', 'dawn'] };
 // Everything after Baelphegaz (who gives the double jump) is built for a hero who HAS it - Prague and the Graveyard (zones 6 and 1) are not.  Such a room's baseline abilities include the double jump.
@@ -660,7 +664,7 @@ function genCorridor(id, spec, r) {
   const meta = { abilities: [...new Set([...(spec.abilities || []), ...(DJ ? ['djump'] : [])])], back: spec.bridge ? ['djump'] : BACK[spec.zone], entry: { L: { tx: 1, gy: BASE }, R: { tx: W - 2, gy: BASE } }, must: [], items: [], start: { tx: 4, gy: BASE } };
   if (spec.closedLeft) { meta.entry.L = null; b.d('gate', 0, BASE); }
   for (const d of doors) {
-    if (d.tag === 'hall' || d.tag === 'chapel') b.d('keepgate', d.x, BASE, {});          // the gate of Arx Noctis: the doors from the crossroads into the keep stand in it (see keepgate.js)
+    if (d.tag === 'hall') b.d('keepgate', d.x, BASE, {});          // the gate of Arx Noctis: the door from the crossroads into the keep stands in it (see keepgate.js)
     if (d.tag === 'orloj') b.d('orlojtower', d.x, BASE, {});          // the Orloj Tower itself: it rises from the ground behind the door's ledge (the ledge is its balcony); see orlojtower.js
     b.door(d.x, d.gy, d.to, 3, 12, d.kind); patchDoor(b, d); if (d.deck) meta.must.push({ tx: d.x, gy: d.gy, name: 'upper door' });
     if (d.needs) meta.items.push({ id: 'door_' + d.tag, tx: d.x, gy: d.gy, needs: d.needs });                    // (the validator proves the door is out of reach without it)
@@ -800,9 +804,13 @@ function genTower(id, spec, r) {
     b.d('animgear', W / 2 - 11, top - 2, { img: 'gear_b', scale: 1.1, rate: 0.5, a: 0.36 }).d('animgear', W / 2 + 11, top + 6, { img: 'gear_a', scale: 1.2, rate: -0.45, a: 0.36 }).d('animgear', W / 2 - 3, top + 11, { img: 'gear_c', scale: 1.0, rate: 0.5, a: 0.32 });          // (accents from the Animated Gears pack, beside the generated cogs)
     b.d('img', W / 2 - 0.5, top - 4.2 + hpx / 32, { img: 'orloj', back: true, scale: sc });
     b.d('pendulum', 4, top - 11, { len: 112, bob: 10, speed: 0.032, swing: 0.3 }).d('pendulum', W - 5, top - 11, { len: 112, bob: 10, speed: 0.032, phase: 3.1, swing: 0.3 }); }          // THE ORLOJ: centred in the shaft, behind everything, its centre a little above the landing where the door to the Clockwork Dungeon stands
-  const meta = { abilities: [...new Set([...(spec.abilities || []), ...(DJ ? ['djump'] : [])])], back: BACK[spec.zone], entry: { L: { tx: 1, gy: floor }, R: { tx: W - 2, gy: top } }, must: [], items: [] };
+  const meta = { abilities: [...new Set([...(spec.abilities || []), ...(DJ ? ['djump'] : [])])], back: BACK[spec.zone], entry: { L: { tx: 1, gy: floor }, R: { tx: W - 2, gy: spec.exitLow ? floor : top } }, must: [], items: [] };          // (exitLow: the way on to the right is along the FLOOR, not off the top landing)
   if (spec.doorL) { b.door(W - 9, floor, spec.doorL.to, 0, 0, spec.doorL.kind); patchDoor(b, spec.doorL); }                       // the door from the previous area
   if (spec.doorR) { b.door(W - 11, top, spec.doorR.to, 3, 12, spec.doorR.kind || 'crypt'); patchDoor(b, spec.doorR); meta.entry.R = null; }          // a door on the top landing: the way back to a crossroads
+  if (spec.doorT) {          // a door on the top landing that is a way ON, not a way back (the Restless Tower's: up to the Moonlit Chapel), with its sigils and a signpost beside it
+    const dx = W - 11, dT = spec.doorT; b.door(dx, top, dT.to, 3, 12, dT.kind || 'crypt'); patchDoor(b, dT); if (dT.lock) b.d('sigils', dx, top, { flags: dT.lock });
+    meta.must.push({ tx: dx, gy: top, name: 'door ' + dT.tag }); if (dT.label) { b.tablet(W - 4, top, signText(dT), 'sign_' + id + '_0', dT.tag); meta.must.push({ tx: W - 4, gy: top, name: 'sign' }); }
+  }
   if (spec.bell) { const LEN = 5, LX = Math.max(1, W - 28), bx = LX + 2; b.plat(LX, LEN, top); b.e('bell', bx, top, { id: 'page5', secret: true }); meta.items.push({ id: 'page5', tx: bx, gy: top, needs: ['djump', 'dash'] }); }          // (the BELL of the bell tower: hidden on a ledge at the far side of the top from the way out, across a gulf nine tiles wide that only the double jump and the dash together can cross)
   if (spec.topItem) { b.e('upgrade', W - 7, top, { kind: spec.topItem.kind, id: spec.topItem.id }); meta.must.push({ tx: W - 7, gy: top, name: 'top item' }); }
   b.def.meta = meta; b.def.entries = { L: meta.entry.L, R: meta.entry.R };
@@ -815,7 +823,8 @@ function genTower(id, spec, r) {
   const v = validateMoving(b.def, movers); if (!v.ok) return { ok: false, errs: v.errs, def: b.def };
   const g = new Array(W).fill(floor);
   populate(b, W, H, spec, r, v.S, v.seen, g, true, [1, W - 2], tabAvoid);
-  for (const rr of [floor - 6, floor - 14, floor - 22].filter(y => y > top)) b.torches([2, W - 3], rr);
+  const torchRows = [floor - 6, floor - 14, floor - 22]; if (spec.tall) for (let rr = floor - 30; rr > top; rr -= 8) torchRows.push(rr);          // (a tall shaft gets a row of torches every eight rows all the way up)
+  for (const rr of torchRows.filter(y => y > top)) b.torches([2, W - 3], rr);
   b.d('brazier', 4, floor).d('brazier', W - 5, floor);
   if (spec.falls) for (let i = 0, n = r.i(spec.falls[0], spec.falls[1]), used = []; i < n; i++) { const x = r.i(3, W - 4); if (used.some(u => Math.abs(u - x) < 8)) continue; used.push(x); b.d('waterfall', x, floor, { top: -80, w: 18 }); }          // water pours down the shaft
   const sp = checkSpawns(b.def); if (sp.length) return { ok: false, errs: sp, def: b.def };
@@ -1192,7 +1201,7 @@ function* buildSteps(seed, opts = {}) {
   const isHand = () => false;                                // (there is no hand-built castle any more: every room but Market Street is generated, whatever the seed)
   const ends = {};                                           // the doors that join neighbouring areas
   for (const [k, kind] of Object.entries(DOOR_LINK)) { const [a, b2] = k.split('>'); (ends[a] ||= {}).doorR = { to: b2, kind }; (ends[b2] ||= {}).doorL = { to: a, kind }; }
-  for (const p of PAIRS) { if (p.side === 'R') (ends[p.a] ||= {}).doorR = { to: p.b, tag: p.ta, destTag: p.tb, kind: p.kind, lock: p.lock, hint: p.hint }; else ((ends[p.a] ||= {}).mods ||= []).push({ t: p.mod, to: p.b, tag: p.ta, destTag: p.tb, kind: p.kind, label: p.label, hint: p.hint, lock: p.lock, gate: p.gate, key: p.key, wide: p.wide }); (ends[p.b] ||= {}).doorL = { to: p.a, tag: p.tb, destTag: p.ta, kind: p.kind }; }
+  for (const p of PAIRS) { if (p.side === 'R') (ends[p.a] ||= {}).doorR = { to: p.b, tag: p.ta, destTag: p.tb, kind: p.kind, lock: p.lock, hint: p.hint }; else if (p.side === 'T') (ends[p.a] ||= {}).doorT = { to: p.b, tag: p.ta, destTag: p.tb, kind: p.kind, lock: p.lock, hint: p.hint, label: p.label }; else ((ends[p.a] ||= {}).mods ||= []).push({ t: p.mod, to: p.b, tag: p.ta, destTag: p.tb, kind: p.kind, label: p.label, hint: p.hint, lock: p.lock, gate: p.gate, key: p.key, wide: p.wide }); (ends[p.b] ||= {}).doorL = { to: p.a, tag: p.tb, destTag: p.ta, kind: p.kind }; }
   for (const [a, ta, b2, tb] of RETURNS) (ends[a] ||= {}).doorR = { to: b2, tag: ta, destTag: tb, kind: 'crypt' };
   let stepNo = 0;
   for (const id of ORDER) {
