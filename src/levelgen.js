@@ -67,7 +67,9 @@ const SPEC = {
     mods: [{ t: 'door', to: 'sv', kind: 'wood' }, { t: 'door', to: 'hv4', kind: 'house', tag: 'cooper' }, { t: 'djLedge', kind: 'atkup', id: 'v2_atk' }, { t: 'djLedge', kind: 'hpup', id: 'v2_hp' }, { t: 'tablet', id: 'tab9', near: 'start', text: 'THE BELLS WERE THE FIRST TO FALL SILENT. THE PRIEST BARRED THE CHAPEL DOOR AND PRAYED. IT DID NOT HELP.' }],
     candles: [3, 5], barrels: [1, 2], mix: { zombie: [2, 3], skeleton: [1, 2], hound: [1, 1], bat: [1, 2], fireskull: [1, 1], villager: [1, 2] } },
   v3: { kind: 'tower', zone: 6, name: 'The Bell Tower', bell: true, chase: true, w: [28, 32], h: [34, 38], top: [8, 10], opts: { ...LOOK[6], ambient: 0.4 },
-    mods: [{ t: 'tablet', id: 'tab10', text: 'HE CALLS IT MERCY, TO BURN WHAT HE CANNOT PROTECT. THE WARDEN WAITS IN THE SQUARE BELOW THE HILL ROAD.' }], topItem: { kind: 'mpup', id: 'v3_mp' }, candles: [3, 4], mix: { bat: [2, 3], fireskull: [2, 3], zombie: [1, 2] } },
+    mods: [{ t: 'tablet', id: 'tab10', text: 'HE CALLS IT MERCY, TO BURN WHAT HE CANNOT PROTECT. THE WARDEN WAITS IN THE SQUARE BELOW THE HILL ROAD.' }], topItem: { kind: 'hpup', id: 'v3_hp' }, candles: [3, 4], mix: { bat: [2, 3], fireskull: [2, 3], zombie: [1, 2] } },          // (a max HP up on the top landing, where a max MP up used to lie)
+  // THE BELL TOWER DESCENT: the same shaft the other way round, back down to street level.  In at the top landing on the left (off the Bell Tower's), down the same kind of steps, out along the floor on the right into the Burning Square.
+  vd: { kind: 'tower', descent: true, sameHeightAs: 'v3', zone: 6, name: 'Bell Tower Descent', w: [28, 32], h: [34, 38], top: [8, 10], opts: { ...LOOK[6], ambient: 0.4 }, candles: [2, 3], mix: { bat: [1, 2], fireskull: [1, 2], zombie: [1, 1] } },
   vb: { kind: 'arena', zone: 6, name: 'The Burning Square', w: [40, 46], outdoor: true, boss: 'cinder', reward: 'mantle', plats: 2, rise: 3, seal: 'both', candles: [3, 3], decor: 'village',
     opts: { ...LOOK[6], boss: 'cinder', music: 'boss' } },
   // THE STONE BRIDGE TOWER: the Gothic gate at the foot of the bridge (the game's year is 1541: the names "Old Town Bridge Tower" and "Charles Bridge" are younger), calm, with an altar in its gateway - the first place to save after the Cinder Warden - and a scaffold up its front to a gallery with a secret
@@ -264,7 +266,7 @@ const SPEC = {
   s4: { kind: 'sanctuary', zone: 5, name: 'Last Sanctuary', parent: 't1' },
   ta: { kind: 'interior', zone: 5, name: 'The Hidden Study', parent: 't1', look: 'study', theme: 'hall', ambient: 0.5, tint: [0.03, 0.0, 0.05], npc: { kind: 'oldman', title: 'THE LORD\'S SCRIBE', text: 'I WROTE DOWN EVERYTHING HE DID, AND NEVER ONCE LOOKED UP. NOW I CANNOT STOP LOOKING. HE IS ABOVE US. TAKE THIS, STRANGER - AND WHEN YOU MEET HIM, DO NOT LET HIM SPEAK.', again: 'I HAVE NO MORE PAGES. ONLY THE ONES I CANNOT BURN.', gifts: ['it_holy', 'it_holy', 'heart'], sells: { item: 'holy', price: 50 } } },
 };
-const ORDER = ['v0', 'vq', 'vt', 'v1', 'tv', 'v2', 'v3', 'vb', 'vs', 'br', 'ot', 'og', 'sv', 'tg', 'g1', 'g2', 'g4', 'vg', 'g3', 'pd', 'ls', 's1', 'hw', 'hub1', 'hk', 'hr', 'sr', 'tw', 'w1', 'w2', 'vw', 'w3', 'wb', 'sw', 'tq', 'q1', 'q2', 'q3', 'qb', 'tf', 'sq', 'th', 'h1', 'h5', 'h2', 'vh', 'h4', 'h3', 's2', 'tc', 'c1', 'c2', 'vc', 'c3', 's3', 'dc', 'hx', 'hub2', 'hl', 'ht', 'tu', 'u1', 'vu', 'u2', 'u3', 's5', 'tk', 'k1', 'vk', 'k2', 'k3', 'kb', 'sk', 'tl', 'l1', 'l2', 'l3', 'lb', 'sl', 'ti', 'i1', 'i2', 'i3', 'ib', 'ic', 'si', 'shc', 'shu', 'shl', 'sht', 'tt', 't1', 'tp', 't2', 's4', 'hv1', 'hv2', 'hv3', 'hv4', 'hc', 'shk', 'ga', 'wa', 'ha', 'ta', 'mr'];
+const ORDER = ['v0', 'vq', 'vt', 'v1', 'tv', 'v2', 'v3', 'vd', 'vb', 'vs', 'br', 'ot', 'og', 'sv', 'tg', 'g1', 'g2', 'g4', 'vg', 'g3', 'pd', 'ls', 's1', 'hw', 'hub1', 'hk', 'hr', 'sr', 'tw', 'w1', 'w2', 'vw', 'w3', 'wb', 'sw', 'tq', 'q1', 'q2', 'q3', 'qb', 'tf', 'sq', 'th', 'h1', 'h5', 'h2', 'vh', 'h4', 'h3', 's2', 'tc', 'c1', 'c2', 'vc', 'c3', 's3', 'dc', 'hx', 'hub2', 'hl', 'ht', 'tu', 'u1', 'vu', 'u2', 'u3', 's5', 'tk', 'k1', 'vk', 'k2', 'k3', 'kb', 'sk', 'tl', 'l1', 'l2', 'l3', 'lb', 'sl', 'ti', 'i1', 'i2', 'i3', 'ib', 'ic', 'si', 'shc', 'shu', 'shl', 'sht', 'tt', 't1', 'tp', 't2', 's4', 'hv1', 'hv2', 'hv3', 'hv4', 'hc', 'shk', 'ga', 'wa', 'ha', 'ta', 'mr'];
 // The castle is a GRAPH, not a road.  Each chain is a run of rooms joined edge to edge (a's right end opens into b's left end); the chains meet at two crossroads (hub1, hub2), whose doors are signed:
 //   village - graveyard - hub1 -+- the Mire (a door high on a ledge: needs the double jump) - the Mother's Hollow (a dead end: its return door drops you back at hub1)
 //                               +- the Great Hall (Entrance Hall - Restless Tower - Portrait Gallery - ...) -- back to hub1.  The Restless Tower is a tall shaft: along its floor, on to the Portrait Gallery; up its steps, a door to the Chapel with two sigils (the Hall's boss and the Rimewyrm)
@@ -275,7 +277,7 @@ const ORDER = ['v0', 'vq', 'vt', 'v1', 'tv', 'v2', 'v3', 'vb', 'vs', 'br', 'ot',
 // Off the main row, Karluv Bridge has a door of its own (the 'cistern' pair): in a pier under the deck, reached by a fall through the planks and then the double jump and the dash.  It leads into the Cistern, the Flooded Gate, a waystone room (tf)
 // and a wall of ice that only fire melts, and so on into the Frozen Caverns, whose far end drops you back on the bridge.
 const CHAINS = [
-  ['v0', 'vt', 'v1', 'tv', 'v2', 'v3', 'vb', 'vs', 'br', 'tg', 'g1', 'g2', 'g4', 'g3', 'pd', 'hw', 'hub1', 'hk', 'hr'],
+  ['v0', 'vt', 'v1', 'tv', 'v2', 'v3', 'vd', 'vb', 'vs', 'br', 'tg', 'g1', 'g2', 'g4', 'g3', 'pd', 'hw', 'hub1', 'hk', 'hr'],
   ['tw', 'w1', 'w2', 'w3', 'wb'],
   ['th', 'h1', 'h5', 'h2', 'h4', 'h3'],          // (the Entrance Hall, the Restless Tower - its top door is the Chapel's way in - the Portrait Gallery, the Phantom Stable, the Belfry)
   ['tc', 'c1', 'c2', 'c3', 'hx', 'hub2', 'hl', 'ht'],
@@ -778,6 +780,7 @@ function genCorridor(id, spec, r) {
 function genTower(id, spec, r) {
   const DJ = hasDJ(spec), DASH = (spec.abilities || []).includes('dash');          // (with the dash in hand the steps can lie much further apart)
   const W = r.i(spec.w[0], spec.w[1]), H = r.i(spec.h[0], spec.h[1]), floor = H - 2, top = r.i(spec.top[0], spec.top[1]);
+  const D = !!spec.descent, mx = (x, len = 1) => D ? W - x - len : x;          // (a DESCENT is a tower seen the other way round: the very same steps, mirrored, so that you come in on the top landing at the LEFT and go down to leave along the floor at the RIGHT - the Bell Tower Descent, back to street level.  Climbing back up it is just a tower's climb, so the validator proves both ways)
   const b = new B(id, spec.name, spec.zone, W, H, { ...spec.opts, horizon: floor }); b.def.interior = true;                  // (a tower is a building: brickwork and narrow windows behind you, never open sky)
   b.floor(0, W, floor).ceil(0, W, 2);
   const plats = []; let prev = { x: r.i(3, 6), len: r.i(5, 6), row: floor - r.i(2, 3) }; plats.push(prev); let dir = 1, guard = 0;
@@ -798,14 +801,15 @@ function genTower(id, spec, r) {
     p.moves = true; const c = (p.x + p.len / 2) * 16;
     movers.push({ x0: Math.round(c - AMPT * 16), y0: p.row * 16, x1: Math.round(c + AMPT * 16), y1: p.row * 16, w: p.len * 16, period: 260 + r.i(0, 40), ph: r.f(), style: mstyle });
   });
-  for (const p of plats) if (!p.moves) b.plat(p.x, p.len, p.row);
+  if (D && movers.length) throw new Error('a descent has no moving steps (only the towers of Prague are made as descents)');
+  for (const p of plats) if (!p.moves) b.plat(mx(p.x, p.len), p.len, p.row);
   if (movers.length) b.def.movers = movers;
-  b.plat(W - 14, 14, top);                                                   // the top landing (one-way, so you can jump up through it)
+  b.plat(D ? 0 : W - 14, 14, top);                                           // the top landing (one-way, so you can jump up through it)
   if (spec.orloj) { const sc = 1.45, hpx = 112 * sc; b.d('cog', W / 2 - 8.2, top - 6.5, { r: 40, n: 15, spin: 0.011, a: 0.8 }).d('cog', W / 2 + 7.6, top - 1.5, { r: 30, n: 11, spin: -0.0145, phase: 0.5, a: 0.8 }).d('cog', W / 2 - 6.5, top + 3.5, { r: 22, n: 8, spin: 0.020, a: 0.8 }).d('cog', W / 2 + 6.4, top - 9, { r: 18, n: 7, spin: 0.023, phase: 1, a: 0.8 });
     b.d('animgear', W / 2 - 11, top - 2, { img: 'gear_b', scale: 1.1, rate: 0.5, a: 0.36 }).d('animgear', W / 2 + 11, top + 6, { img: 'gear_a', scale: 1.2, rate: -0.45, a: 0.36 }).d('animgear', W / 2 - 3, top + 11, { img: 'gear_c', scale: 1.0, rate: 0.5, a: 0.32 });          // (accents from the Animated Gears pack, beside the generated cogs)
     b.d('img', W / 2 - 0.5, top - 4.2 + hpx / 32, { img: 'orloj', back: true, scale: sc });
     b.d('pendulum', 4, top - 11, { len: 112, bob: 10, speed: 0.032, swing: 0.3 }).d('pendulum', W - 5, top - 11, { len: 112, bob: 10, speed: 0.032, phase: 3.1, swing: 0.3 }); }          // THE ORLOJ: centred in the shaft, behind everything, its centre a little above the landing where the door to the Clockwork Dungeon stands
-  const meta = { abilities: [...new Set([...(spec.abilities || []), ...(DJ ? ['djump'] : [])])], back: BACK[spec.zone], entry: { L: { tx: 1, gy: floor }, R: { tx: W - 2, gy: spec.exitLow ? floor : top } }, must: [], items: [] };          // (exitLow: the way on to the right is along the FLOOR, not off the top landing)
+  const meta = { abilities: [...new Set([...(spec.abilities || []), ...(DJ ? ['djump'] : [])])], back: BACK[spec.zone], entry: D ? { L: { tx: 1, gy: top }, R: { tx: W - 2, gy: floor } } : { L: { tx: 1, gy: floor }, R: { tx: W - 2, gy: spec.exitLow ? floor : top } }, must: [], items: [] };          // (exitLow: the way on to the right is along the FLOOR, not off the top landing;  a descent: in at the top on the left, out along the floor on the right)
   if (spec.doorL) { b.door(W - 9, floor, spec.doorL.to, 0, 0, spec.doorL.kind); patchDoor(b, spec.doorL); }                       // the door from the previous area
   if (spec.doorR) { b.door(W - 11, top, spec.doorR.to, 3, 12, spec.doorR.kind || 'crypt'); patchDoor(b, spec.doorR); meta.entry.R = null; }          // a door on the top landing: the way back to a crossroads
   if (spec.doorT) {          // a door on the top landing that is a way ON, not a way back (the Restless Tower's: up to the Moonlit Chapel), with its sigils and a signpost beside it
@@ -1182,11 +1186,11 @@ function checkLinks(rooms) {
 // The map is PACKED: rooms are blocks of cells that touch, with no space and no line between areas.  Every chain of rooms is a strip hung from the room its first room is entered from, on the side it prefers;
 // side rooms (sanctuaries, houses, lairs) sit against their parent.  The packing itself is in maplayout.js; the map screen (MapScreen, ui.js) draws what it is given.
 const MAP_SIDES = [[], ['right'], ['right'], ['above'], ['above'], ['right'], ['above'], ['above'], ['below']];          // where each chain (in the order of CHAINS) prefers to sit against its anchor: the Cistern below the bridge (required), the others wherever the whole map comes out biggest on the screen (found by trying every combination, on several seeds, among the layouts where every room touches another and every zone is one piece)
+const MAP_ABOVE = ['ot', 'og'];          // (the Orloj Tower is a climb, and the Boiler Loft lies atop it: on the map they sit ABOVE Smouldering Lane, and the Clockwork Dungeon (chain 6, which prefers 'above') goes on up from there - not down, as it did)
 const MAP_FIRST = [8];          // (the Cistern and the Frozen Caverns are set against the bridge before the main row's side rooms: the Cistern lies UNDER Karluv Bridge on the map, as it does in the castle)
 function layoutMap(rooms) {
   const ids = ORDER.filter(id => rooms[id] && !rooms[id].hidden), size = {}, zone = {}, parent = {}, anchor = {};
   for (const id of ids) { size[id] = mapCells(rooms[id]); zone[id] = rooms[id].zone; if (SPEC[id].parent) parent[id] = SPEC[id].parent; }
-const MAP_ABOVE = ['ot', 'og'];          // (the Orloj Tower is a climb, and the Boiler Loft lies atop it: on the map they sit ABOVE Smouldering Lane, and the Clockwork Dungeon (chain 6, which prefers 'above') goes on up from there - not down, as it did)
   CHAINS.forEach((c, ci) => { if (ci) { const p = PAIRS.find(q => q.b === c[0]); if (p) anchor[ci] = p.a; } });
   const pos = packMap({ ids, size, zone, chains: CHAINS, anchor, parent, sides: MAP_SIDES, first: MAP_FIRST, above: MAP_ABOVE });
   for (const id of ORDER) if (rooms[id]) rooms[id].map = pos[id] || (SPEC[id].parent && pos[SPEC[id].parent]) || { x: 0, y: 0 };          // (a secret room is not on the map: it takes its parent's place)
@@ -1209,6 +1213,7 @@ function* buildSteps(seed, opts = {}) {
   for (const id of ORDER) {
     yield stepNo++ / ORDER.length;
     let def = null; const e = ends[id] || {}, spec = { ...SPEC[id], ...e, mods: [...(SPEC[id].mods || []), ...(e.mods || [])] }, hand = SPEC[id].kind === 'authored';
+    if (spec.sameHeightAs && rooms[spec.sameHeightAs]) { const o = rooms[spec.sameHeightAs]; spec.h = [o.h, o.h]; if (o.chaseTop) spec.top = [o.chaseTop, o.chaseTop]; }          // (the Bell Tower Descent is exactly as tall as the Bell Tower, and its landing is at the same height as the Bell Tower's: the rooms before it are made first, so their size is known)
     if ((spec.kind === 'interior' || spec.lair) && !(rooms[spec.parent] && rooms[spec.parent].doors.some(d => d.room === id))) continue;          // no door leads here in this world (a hand-built parent): no room
     // seed 0 is the classic castle: every hand-built room as authored (the rooms that were added later have no hand-built version, so they use seed 1)
     const useHand = isHand(id), tries = hand ? MAX_TRY : MAX_TRY * 6;
