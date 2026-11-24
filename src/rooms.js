@@ -253,7 +253,7 @@ export function arrangeCandelabras(def) {
   b.d('img', 7, 12, { img: 'gy_st4', back: true }).d('img', 19, 12, { img: 'gy_st1', back: true }).d('img', 25, 10, { img: 'gy_st5' }).d('img', 36, 12, { img: 'gy_st3', back: true }).d('img', 47, 12, { img: 'gy_st7', back: true }).d('img', 44, 11, { img: 'gy_st8' }).d('img', 58, 12, { img: 'gy_st6', back: true });          // statues on the hill (Graveyard pack): a kneeling mourner beside her grave, the others among the stones and behind the fences, a gargoyle on the rise and an owl on the step
   b.tablet(51, 12, '', 'tabv0');
   b.e('upgrade', 25, 10, { kind: 'silberzahn', id: 'got_silberzahn' });          // the hero's sword, on top of the rise (a new game only: see game.js; the Player cannot swing until it is taken)
-  b.exit('R', 9, 11, 'v1', 1, 12).exit('L', 9, 11, 'vq', 24, 12);          // (and, far to the left, past the stones: the way into the hollow under the yew - a secret: no arrow, no label, not on the map)
+  b.exit('R', 9, 11, 'vt', 1, 12).exit('L', 9, 11, 'vq', 24, 12);          // (the way down to the Cart Road, and so to Prague; and, far to the left, past the stones: the way into the hollow under the yew - a secret: no arrow, no label, not on the map)
   add(b);
 }
 {
@@ -266,6 +266,29 @@ export function arrangeCandelabras(def) {
   b.e('tablet', 11, 12, { id: 'tabyew', narr: true, text: 'A flat stone under an old yew, worn smooth, as if someone sat here a long time in the rain. A folded page lies under a smaller stone, kept dry.' });          // (the flat stone he sat on)
   b.e('upgrade', 13, 12, { kind: 'page', n: 6, id: 'page6', secret: true });          // PAGE 6: THE NAME I LEFT
   b.exit('R', 9, 11, 'v0', 1, 12);
+  add(b);
+}
+{
+  // THE CART ROAD - the way down from the hill to the city, and the first thing the hero walks that is not a scene: a gentle road where the pace is slower than in Prague, with a little of everything to learn by doing and no signs to say how.
+  // (Everything here is something the hill has already shown him once - the rise he jumped to reach the sword - or something he finds out by trying: a low wall you cannot walk through, a barrel and a stranger who are struck, a dead man who
+  // rises and must be fought, a platform to jump up on, a stack of crates, and a carter beside his broken wagon who presses a gift on him.)  The hill's iron fences and graves thin out on the left; the lamps, crates and houses of the city come in on the right.
+  const b = new B('vt', 'The Cart Road', 6, 72, 14, { theme: 'village', weather: 'embers', ambient: 0.34, horizon: 12, tint: [0.1, 0.04, 0.08], vig: 0.55, music: 'intro', map: { x: 0, y: 4 } });
+  b.floor(0, 72, 12);
+  b.block(13, 11, 2, 1);                                                     // a low wall of fallen stones across the road: the first jump (one tile)
+  b.plat(33, 5, 9);                                                          // a plank platform, three tiles up, with something to hit on it
+  b.block(52, 10, 3, 2);                                                     // a stack of crates: the second jump (two tiles)...
+  b.plat(57, 4, 8);                                                          // ...and a platform beyond it, to jump on from the top of the stack
+  for (const [from, to] of [[2, 9]]) for (let x = from, i = 0; x <= to; x += 2.3, i++) b.d('img', x, 12, { img: ['gy_fence_a', 'gy_fence_b', 'gy_fence_a', 'gy_fence_c'][i % 4], fore: true, sink: 3 });          // the last of the hill's iron fences
+  b.d('img', 3, 12, { img: 'forest_tree_4', back: true }).d('img', 10, 12, { img: 'forest_tree_2', back: true }).d('img', 22, 12, { img: 'forest_tree_3', back: true }).d('img', 29, 12, { img: 'forest_tree_1', back: true });
+  b.d('img', 6, 12, { img: 'cemetery_stone-2' }).d('img', 11, 12, { img: 'cemetery_bush-small' }).d('img', 17, 12, { img: 'cemetery_bush-small' }).d('img', 24, 12, { img: 'cemetery_bush-large', back: true });          // (a last stone, and bushes by the road)
+  b.d('img', 31, 12, { img: 'town_lamp' }).d('img', 48, 12, { img: 'town_lamp' }).d('img', 62, 12, { img: 'town_lamp' });          // the first street lamps
+  b.d('img', 45, 12, { img: 'town_cart' }).d('img', 39, 12, { img: 'town_crates', back: true });          // the carter's wagon (a wheel off), and crates stacked behind him
+  b.house(67, 12, 'town_house_3', [], false);          // the first house of the city, not yet burning (its small fires are lit only when Prague burns)
+  b.e('barrel', 19, 12, { drop: 'coin' }).e('barrel', 50, 12, { drop: 'coin' });          // (barrels you can smash)
+  b.e('statue', 35, 9, { drop: 'heart' }).e('statue', 59, 8, { drop: 'coin' });          // (a breakable one on each platform)
+  b.e('zombie', 27, 12).e('zombie', 64, 12);          // the two easy ones: slow, they rise from the ground when you come near and walk straight at you
+  b.e('villager', 41, 12, { kind: 'oldman', calm: true, stand: true, title: 'CARTER', text: 'MY CART SPLIT AN AXLE LEAVING THE CITY, AND NOW I SIT HERE AND LISTEN TO IT. IT HAS SOUNDED WRONG ALL NIGHT. I AM NOT GOING BACK. YOU ARE GOING DOWN, I THINK. TAKE THIS - IT HAS CLOSED WORSE WOUNDS THAN YOURS.', again: 'GO ON, THEN. I WILL STAY WITH THE WAGON. MIND THE ROAD BELOW.', gifts: ['it_bandage'] });
+  b.exit('L', 9, 11, 'v0', 62, 12).exit('R', 9, 11, 'v1', 1, 12);
   add(b);
 }
 {
@@ -284,7 +307,7 @@ export function arrangeCandelabras(def) {
   b.candle(16, 12, 'heart').candle(38, 12, 'coin').e('statue', 55, 12, { drop: 'mana' }).candle(77, 12, 'heart');
   b.many('zombie', [20, 34, 58, 72], 12).e('skeleton', 46, 12).e('hound', 66, 12).e('fireskull', 40, 5).e('bat', 28, 3).e('bat', 60, 4);
   for (const [x, kind] of [[9, 'woman'], [30, 'bearded'], [47, 'hatman'], [76, 'oldman']]) b.e('villager', x, 12, { kind });          // (four runners, about half of what the street once had)
-  b.exit('L', 9, 11, 'v0', 62, 12).exit('R', 9, 11, 'g1', 1, 12);
+  b.exit('L', 9, 11, 'vt', 70, 12).exit('R', 9, 11, 'g1', 1, 12);
   add(b);
 }
 {

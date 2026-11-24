@@ -54,6 +54,7 @@ const SPEC = {
   // ======== ZONE 6 - PRAGUE (Gothicvania Town): calm at dusk until the Cinder Warden's torches (VillageScene), then it burns
   v0: { kind: 'authored', zone: 6, name: 'The Hill Above Prague' },
   vq: { kind: 'authored', zone: 6, name: 'Under the Yew', parent: 'v0', hidden: true },          // (a secret: a hollow to the left of the hill with the last page in it - no arrow, no label, not on the map)
+  vt: { kind: 'authored', zone: 6, name: 'The Cart Road' },          // (the way down from the hill to the city: a gentle place to learn the controls by playing, with no signs - see rooms.js)
   v1: { kind: 'authored', zone: 6, name: 'Market Street' },
   tv: { kind: 'teleport', zone: 6, name: 'Waystone Square', outdoor: true, opts: LOOK[6] },
   // The ORLOJ TOWER: a locked door high on a ledge in Smouldering Lane (it needs the Key of Tin and the double jump) leads in.  The great astronomical clock hangs in the middle of the shaft; the door to the Clockwork Dungeon is on the landing beside it.
@@ -263,7 +264,7 @@ const SPEC = {
   s4: { kind: 'sanctuary', zone: 5, name: 'Last Sanctuary', parent: 't1' },
   ta: { kind: 'interior', zone: 5, name: 'The Hidden Study', parent: 't1', look: 'study', theme: 'hall', ambient: 0.5, tint: [0.03, 0.0, 0.05], npc: { kind: 'oldman', title: 'THE LORD\'S SCRIBE', text: 'I WROTE DOWN EVERYTHING HE DID, AND NEVER ONCE LOOKED UP. NOW I CANNOT STOP LOOKING. HE IS ABOVE US. TAKE THIS, STRANGER - AND WHEN YOU MEET HIM, DO NOT LET HIM SPEAK.', again: 'I HAVE NO MORE PAGES. ONLY THE ONES I CANNOT BURN.', gifts: ['it_holy', 'it_holy', 'heart'], sells: { item: 'holy', price: 50 } } },
 };
-const ORDER = ['v0', 'vq', 'v1', 'tv', 'v2', 'v3', 'vb', 'vs', 'br', 'ot', 'og', 'sv', 'tg', 'g1', 'g2', 'g4', 'vg', 'g3', 'pd', 'ls', 's1', 'hw', 'hub1', 'hk', 'hr', 'sr', 'tw', 'w1', 'w2', 'vw', 'w3', 'wb', 'sw', 'tq', 'q1', 'q2', 'q3', 'qb', 'tf', 'sq', 'th', 'h1', 'h5', 'h2', 'vh', 'h4', 'h3', 's2', 'tc', 'c1', 'c2', 'vc', 'c3', 's3', 'dc', 'hx', 'hub2', 'hl', 'ht', 'tu', 'u1', 'vu', 'u2', 'u3', 's5', 'tk', 'k1', 'vk', 'k2', 'k3', 'kb', 'sk', 'tl', 'l1', 'l2', 'l3', 'lb', 'sl', 'ti', 'i1', 'i2', 'i3', 'ib', 'ic', 'si', 'shc', 'shu', 'shl', 'sht', 'tt', 't1', 'tp', 't2', 's4', 'hv1', 'hv2', 'hv3', 'hv4', 'hc', 'shk', 'ga', 'wa', 'ha', 'ta', 'mr'];
+const ORDER = ['v0', 'vq', 'vt', 'v1', 'tv', 'v2', 'v3', 'vb', 'vs', 'br', 'ot', 'og', 'sv', 'tg', 'g1', 'g2', 'g4', 'vg', 'g3', 'pd', 'ls', 's1', 'hw', 'hub1', 'hk', 'hr', 'sr', 'tw', 'w1', 'w2', 'vw', 'w3', 'wb', 'sw', 'tq', 'q1', 'q2', 'q3', 'qb', 'tf', 'sq', 'th', 'h1', 'h5', 'h2', 'vh', 'h4', 'h3', 's2', 'tc', 'c1', 'c2', 'vc', 'c3', 's3', 'dc', 'hx', 'hub2', 'hl', 'ht', 'tu', 'u1', 'vu', 'u2', 'u3', 's5', 'tk', 'k1', 'vk', 'k2', 'k3', 'kb', 'sk', 'tl', 'l1', 'l2', 'l3', 'lb', 'sl', 'ti', 'i1', 'i2', 'i3', 'ib', 'ic', 'si', 'shc', 'shu', 'shl', 'sht', 'tt', 't1', 'tp', 't2', 's4', 'hv1', 'hv2', 'hv3', 'hv4', 'hc', 'shk', 'ga', 'wa', 'ha', 'ta', 'mr'];
 // The castle is a GRAPH, not a road.  Each chain is a run of rooms joined edge to edge (a's right end opens into b's left end); the chains meet at two crossroads (hub1, hub2), whose doors are signed:
 //   village - graveyard - hub1 -+- the Mire (a door high on a ledge: needs the double jump) - the Mother's Hollow (a dead end: its return door drops you back at hub1)
 //                               +- the Great Hall (Entrance Hall - Restless Tower - Portrait Gallery - ...) -- back to hub1.  The Restless Tower is a tall shaft: along its floor, on to the Portrait Gallery; up its steps, a door to the Chapel with two sigils (the Hall's boss and the Rimewyrm)
@@ -274,7 +275,7 @@ const ORDER = ['v0', 'vq', 'v1', 'tv', 'v2', 'v3', 'vb', 'vs', 'br', 'ot', 'og',
 // Off the main row, Karluv Bridge has a door of its own (the 'cistern' pair): in a pier under the deck, reached by a fall through the planks and then the double jump and the dash.  It leads into the Cistern, the Flooded Gate, a waystone room (tf)
 // and a wall of ice that only fire melts, and so on into the Frozen Caverns, whose far end drops you back on the bridge.
 const CHAINS = [
-  ['v0', 'v1', 'tv', 'v2', 'v3', 'vb', 'vs', 'br', 'tg', 'g1', 'g2', 'g4', 'g3', 'pd', 'hw', 'hub1', 'hk', 'hr'],
+  ['v0', 'vt', 'v1', 'tv', 'v2', 'v3', 'vb', 'vs', 'br', 'tg', 'g1', 'g2', 'g4', 'g3', 'pd', 'hw', 'hub1', 'hk', 'hr'],
   ['tw', 'w1', 'w2', 'w3', 'wb'],
   ['th', 'h1', 'h5', 'h2', 'h4', 'h3'],          // (the Entrance Hall, the Restless Tower - its top door is the Chapel's way in - the Portrait Gallery, the Phantom Stable, the Belfry)
   ['tc', 'c1', 'c2', 'c3', 'hx', 'hub2', 'hl', 'ht'],

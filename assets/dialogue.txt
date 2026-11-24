@@ -371,6 +371,12 @@ TITLE: The Lord's scribe
 TEXT: I wrote down everything he did, and never once looked up. Now I cannot stop looking. He is above us. Take this, Stranger - and when you meet him, do not let him speak.
 AGAIN: I have no more pages. Only the ones I cannot burn.
 
+[npc vt]
+; The Cart Road (outdoors, on the way down from the hill: the first person you can talk to)
+TITLE: Carter
+TEXT: My cart split an axle leaving the city, and now I sit here and listen to it. It has sounded wrong all night. I am not going back. You are going down, I think. Take this - it has closed worse wounds than yours.
+AGAIN: Go on, then. I will stay with the wagon. Mind the road below.
+
 ; ---------------------------------------------------------------------------------------------------------------------
 ;  THE TOWNSFOLK  (street = out in the burning streets, home = indoors the first time, again = after, shop = a merchant's greeting)
 ; ---------------------------------------------------------------------------------------------------------------------
