@@ -23,7 +23,7 @@ export function decoCoversHazard(d, spikes) {
 const CDL = [{ img: 'cdl_a', fl: [[-10.7, -33.5], [-0.3, -35.8], [10.9, -34.3]] }, { img: 'cdl_b', fl: [[-9.2, -38.6], [-0.3, -41.8], [9.2, -39]] }];
 const CDL_DROP = 4;          // (the candelabra pictures have a little perspective painted in: they are set 4 pixels lower so the foot stands ON the ground, not above it)
 const cdlOf = d => CDL[(((Math.round(d.x) * 2654435761) >>> 0) >>> 20) & 1];
-const SINK = { town_well: 6 };          // (pictures with a little perspective painted into their base: they are drawn lower, so they stand ON the ground instead of hovering over it)
+const SINK = { town_well: 6, forest_tree_1: 8, forest_tree_2: 8, forest_tree_3: 8, forest_tree_4: 8 };          // (pictures with a little perspective painted into their base: they are drawn lower, so they stand ON the ground instead of hovering over it.  The four gnarled dead trees taper to a few thin roots, so the roots are sunk into the ground: 8px)
 export const isBack = d => BACK_KINDS.has(d.t) || (d.back && (d.t === 'img' || d.t === 'bookcase' || d.t === 'barwin'));
 
 // The platform tiles that a piece of front scenery (a crate, a cart, a lamp, a well ...) stands across.  The scenery is drawn after the ground, so it would hide such a platform; the room paints these tiles again
