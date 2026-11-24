@@ -11,7 +11,7 @@ export const mapCells = r => ({ cw: clamp(Math.round(r.w / 24), 1, 7), ch: clamp
 
 // ids: the rooms to put on the map, in a fixed order; size[id] = { cw, ch }; zone[id]; chains: [[ids]] (the first is the main row); anchor[i] = the room chain i is entered from;
 // parent[id] = the room a side room hangs from; sides[i] = where chain i prefers to sit ('above' | 'below' | 'right', best first).  -> { id: { x, y } } in cells, the whole map starting at 0, 0
-export function packMap({ ids, size, zone, chains, anchor, parent, sides, first = [], log }) {
+export function packMap({ ids, size, zone, chains, anchor, parent, sides, first = [], above = [], log }) {          // (above: side rooms that lie ABOVE their parent when they can, because the way into them climbs: the Orloj Tower and the Boiler Loft atop it)
   const pos = {}, occ = new Map(), key = (x, y) => x + ',' + y, has = id => !!size[id];
   // a PIECE is a strip: a chain, or - when a chain runs through more than one zone (the Cistern, then the Frozen Caverns) - each zone's run of it, hung from the end of the run before
   const pieces = [], pieceOf = {};
@@ -68,10 +68,11 @@ export function packMap({ ids, size, zone, chains, anchor, parent, sides, first 
   function placeChild(id) {
     const P = parent[id], p0 = pos[P], pw = size[P].cw, ph = size[P].ch, { cw, ch } = size[id], cands = [];
     const tryAt = (x, y, cost) => { if (free(x, y, cw, ch)) cands.push({ x, y, score: cost }); };
+    const up = above.includes(id), dn = up ? 2 : 0, ab = up ? 0 : 2;          // (a room that climbs prefers the place above its parent, the others the place below)
     for (let d = 0; d < 5; d++) {
-      for (let x = p0.x - cw + 1; x < p0.x + pw; x++) { tryAt(x, p0.y + ph + d, d * 3 + Math.abs(x - p0.x) * 0.2); tryAt(x, p0.y - ch - d, 2 + d * 3 + Math.abs(x - p0.x) * 0.2); }
+      for (let x = p0.x - cw + 1; x < p0.x + pw; x++) { tryAt(x, p0.y + ph + d, dn + d * 3 + Math.abs(x - p0.x) * 0.2); tryAt(x, p0.y - ch - d, ab + d * 3 + Math.abs(x - p0.x) * 0.2); }
       for (let y = p0.y - ch + 1; y < p0.y + ph; y++) { tryAt(p0.x + pw + d, y, 4 + d * 3 + Math.abs(y - p0.y) * 0.2); tryAt(p0.x - cw - d, y, 5 + d * 3 + Math.abs(y - p0.y) * 0.2); }
-      if (d >= 1) for (let x = p0.x - cw - 1; x < p0.x + pw + 2; x++) tryAt(x, p0.y + ph + d, d * 3 + 1 + Math.abs(x - p0.x) * 0.2);          // (under a brother, a little to either side)
+      if (d >= 1) for (let x = p0.x - cw - 1; x < p0.x + pw + 2; x++) tryAt(x, p0.y + ph + d, dn + d * 3 + 1 + Math.abs(x - p0.x) * 0.2);          // (under a brother, a little to either side)
     }
     if (cands.length) { cands.sort((p, q) => p.score - q.score); put(id, cands[0].x, cands[0].y); return; }
     put(id, Math.max(0, ...Object.keys(pos).map(right)) + 1, 0);

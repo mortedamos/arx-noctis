@@ -1186,8 +1186,9 @@ const MAP_FIRST = [8];          // (the Cistern and the Frozen Caverns are set a
 function layoutMap(rooms) {
   const ids = ORDER.filter(id => rooms[id] && !rooms[id].hidden), size = {}, zone = {}, parent = {}, anchor = {};
   for (const id of ids) { size[id] = mapCells(rooms[id]); zone[id] = rooms[id].zone; if (SPEC[id].parent) parent[id] = SPEC[id].parent; }
+const MAP_ABOVE = ['ot', 'og'];          // (the Orloj Tower is a climb, and the Boiler Loft lies atop it: on the map they sit ABOVE Smouldering Lane, and the Clockwork Dungeon (chain 6, which prefers 'above') goes on up from there - not down, as it did)
   CHAINS.forEach((c, ci) => { if (ci) { const p = PAIRS.find(q => q.b === c[0]); if (p) anchor[ci] = p.a; } });
-  const pos = packMap({ ids, size, zone, chains: CHAINS, anchor, parent, sides: MAP_SIDES, first: MAP_FIRST });
+  const pos = packMap({ ids, size, zone, chains: CHAINS, anchor, parent, sides: MAP_SIDES, first: MAP_FIRST, above: MAP_ABOVE });
   for (const id of ORDER) if (rooms[id]) rooms[id].map = pos[id] || (SPEC[id].parent && pos[SPEC[id].parent]) || { x: 0, y: 0 };          // (a secret room is not on the map: it takes its parent's place)
 }
 
