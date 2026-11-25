@@ -463,7 +463,7 @@ export class MapScreen {
   constructor(g, o = {}) {
     this.g = g; this.t = 0; this.here = o.teleport || null; this.tele = !!o.teleport; this.zoom = 1; this.lastZoom = 1; this.sc = 1; this.rep = 0; this.zh = 0; this.left = 0;
     const S = g.save; this.stones = (g.world.stones || []).filter(id => S.flags['tp_' + id]);
-    if (this.tele) { const i = this.stones.indexOf(this.here); this.sel = i > 0 ? i - 1 : Math.min(1, this.stones.length - 1); if (this.sel < 0) this.sel = 0; }
+    if (this.tele) { this.sel = Math.max(0, this.stones.indexOf(this.here)); this.came = null; }          // (the choice starts on the stone you stand at: the arrows lead off from there)
     this.R = Object.fromEntries(Object.entries(g.world.rooms).filter(([, r]) => !r.hidden));          // (the map knows nothing of the secret rooms)
     this.lay = mapLayout(this.R); this.zoom = this.sc = this.lastZoom = clamp(1, this.fitScale(), ZOOM_MAX); this.selId = this.R[g.room.id] ? g.room.id : (g.room.exits.map(e => e.room).find(id => this.R[id]) || 'v0');
     const c = this.centre(this.focusRoom()); this.cam = { x: c.x, y: c.y };
@@ -493,14 +493,26 @@ export class MapScreen {
     }
     if (best) { this.selId = best.id; A.sfx('click'); }
   }
+  // WAYSTONES are chosen by direction, as they lie on the map (d: 0 left, 1 right, 2 up, 3 down): the nearest one that way - those within 45 degrees of the arrow before any further to the side - and the opposite
+  // arrow, straight after a move, takes the move back.  (Every attuned stone can be reached with the four arrows, whichever of them are attuned.)
+  seek(d, dx, dy) {
+    const back = this.came && d === (this.came.d ^ 1) ? this.came.from : -1; let best = back, score = Infinity;
+    if (best < 0) { const c = this.centre(this.R[this.stones[this.sel]]); this.stones.forEach((id, i) => {
+      if (i === this.sel || !this.R[id]) return; const q = this.centre(this.R[id]), ahead = (q.x - c.x) * dx + (q.y - c.y) * dy, aside = Math.abs((q.x - c.x) * dy) + Math.abs((q.y - c.y) * dx);
+      if (ahead < 1) return; const s = (aside <= ahead ? 0 : 1e6) + ahead + 2 * aside; if (s < score) { score = s; best = i; } }); }
+    if (best < 0) return;          // (nothing lies that way)
+    this.came = back >= 0 ? null : { d, from: this.sel }; this.sel = best; A.sfx('select');
+  }
   update() {
-    this.t++; const g = this.g;
+    this.t++; const g = this.g, dirs = [['left', -1, 0], ['right', 1, 0], ['up', 0, -1], ['down', 0, 1]];
     if (this.tele) {
-      if (Input.pressed.left && this.sel > 0) { this.sel--; A.sfx('select'); } if (Input.pressed.right && this.sel < this.stones.length - 1) { this.sel++; A.sfx('select'); }
+      let any = false;          // (a held arrow repeats - but only one pressed here: the UP that woke the stone is still down as the map opens)
+      dirs.forEach(([k, dx, dy], d) => { if (Input.pressed[k]) { this.seek(d, dx, dy); this.rep = 0; this.repKey = k; } else if (Input.held[k] && this.repKey === k) { any = true; if (++this.rep > 16 && this.rep % 9 === 0) this.seek(d, dx, dy); } });
+      if (!any) this.rep = 0;
       if (Input.pressed.confirm) { const id = this.stones[this.sel]; if (id && id !== this.here) g.teleportTo(id); else A.sfx('back'); return; }
       if (Input.pressed.map || Input.pressed.back || Input.pressed.pkey) g.resume();
     } else {
-      const dirs = [['left', -1, 0], ['right', 1, 0], ['up', 0, -1], ['down', 0, 1]]; let any = false;
+      let any = false;
       for (const [k, dx, dy] of dirs) { if (Input.pressed[k]) { this.hop(dx, dy); this.rep = 0; } else if (Input.held[k]) { any = true; if (++this.rep > 16 && this.rep % 7 === 0) this.hop(dx, dy); } }
       if (!any) this.rep = 0;
       if (Input.pressed.attack || Input.pressed.jump) this.toggleWhole();
@@ -574,8 +586,8 @@ export class MapScreen {
     if (this.tele) {
       const id = this.stones[this.sel], r = id && ROOMS[id];
       if (this.stones.length < 2) drawText(ctx, 'NO OTHER WAYSTONE IS ATTUNED YET', W / 2, H - 38, { align: 'center', color: PALE });
-      else if (r) { drawText(ctx, (ZONES[r.zone].name + ' - ' + r.name).toUpperCase(), W / 2, H - 40, { align: 'center', color: '#bff4ff', scale: 1.2 }); drawText(ctx, id === this.here ? 'YOU ARE HERE' : (this.sel + 1) + ' / ' + this.stones.length, W / 2, H - 28, { align: 'center', color: DIM }); }
-      drawText(ctx, Input.touchOn ? 'PAD LEFT / RIGHT CHOOSE     JUMP = TRAVEL     HIT = CANCEL' : 'LEFT / RIGHT CHOOSE     ENTER TRAVEL     ESC CANCEL', W / 2, H - 12, { align: 'center', color: PALE });
+      else if (r) { drawText(ctx, (ZONES[r.zone].name + ' - ' + r.name).toUpperCase(), W / 2, H - 40, { align: 'center', color: '#bff4ff', scale: 1.2 }); drawText(ctx, id === this.here ? 'YOU ARE HERE' : this.stones.length + ' WAYSTONES ATTUNED', W / 2, H - 28, { align: 'center', color: DIM }); }
+      drawText(ctx, Input.touchOn ? 'PAD CHOOSES     JUMP = TRAVEL     HIT = CANCEL' : 'ARROWS CHOOSE     ENTER TRAVEL     ESC CANCEL', W / 2, H - 12, { align: 'center', color: PALE });
       return;
     }
     // the panel: what the cursor rests on, what it holds, where it leads

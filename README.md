@@ -114,8 +114,8 @@ A gamepad also works (A jump, X attack, B dash, Y use selected, bumpers move the
   or haunted - hangs on a freestanding pillar. Banners stay: they are fixed to the ceiling. (Towers have a brick shaft that does not slide, so they keep their wall torches.)
 * **Two floors.** Seven of the generated areas (Iron Gate, the Mourning Fields, Weeping Hollow, the Drowned Boardwalk, the Entrance Hall, the Nave, the Hall of Shadows) are tall rooms with a lower floor and an upper floor: a staircase of one-way platforms climbs to the upper floor, which has its own gaps, blocks and loot, and comes down again at the far end. Four of them hide a **door on the upper floor** to a small room of its own (the gravedigger's shed, the fisherman's hut, the servants' quarters, the scribe's study).
 * **Waystones (teleport rooms).** Every zone opens with a *waystone chamber*, a calm room with a glowing stone. Walk up to attune it, then press
-  **Up** at any attuned stone to open the map: pick any other waystone you have already found with Left / Right and press Enter to travel there
-  (Esc cancels). Waystones are not save points - altars still are. Which ones you have found is part of your save.
+  **Up** at any attuned stone to open the map: the choice starts on the stone you stand at, and the arrows (or the D-pad) move it to the waystone lying that way
+  on the map - the opposite arrow takes a move back. Press Enter to travel there (Esc cancels). Waystones are not save points - altars still are. Which ones you have found is part of your save.
 * **Throwable items** (top-right of the screen, beside your spells; **Q / V** move the selection box, **C / I** uses what is selected). They are
   found lying about, in statues and barrels, dropped by enemies and left behind by bosses. Each can be found again and again and adds to your stack, up to its limit:
   **throwing dagger** (fast, weak, up to 30), **torch** (sets a foe ablaze for
