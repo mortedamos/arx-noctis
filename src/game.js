@@ -23,7 +23,8 @@ import { SteamJet } from './steamjets.js';
 import { Shopkeeper, ShopScreen } from './shop.js';
 import { KEYS } from './itemdata.js';
 import { Projectile, Shockwave, FirePatch } from './projectiles.js';
-import { Skull, SKULL_COUNT, Bell, LitCandle, Statue, Barrel, Altar, Waystone, Tablet, Chest, Lever, Upgrade, Relic, Pickup, chestGift, ABILITIES, UPGRADES } from './props.js';
+import { Skull, SKULL_COUNT, Bell, LitCandle, Statue, Barrel, Altar, Waystone, Tablet, Chest, Lever, Upgrade, Relic, Pickup, chestGift, ABILITIES, UPGRADES, SecretCase } from './props.js';
+import { PuzzleLever, puzzlePiece, puzzleDress } from './puzzleprops.js';
 import { drawDeco, isBack, roomFlames, drawFlames2D, drawFireWall, decoCoversHazard, platesOver, sigilOf, drawSigilCard } from './decor.js';
 import { drawIce } from './enchant.js';
 import { drawSheet, IMG } from './assets.js';
@@ -40,7 +41,7 @@ const POOL_DEPTH = 8;          // px of water in a swamp pool (the hollow it lie
 const CHASE_DELAY = 140 + 180;          // steps (60 a second) from the Bell Tower's flames igniting to their first step upward: 140 to get moving, plus 3 seconds
 const DOOR_CLEAR = 200;          // px: no enemy starts within this distance of a door you have just come through (about half a screen)
 const FLYERS = new Set(['bat', 'ghost', 'wraith', 'fireskull', 'wyrm', 'frostwyrm', 'emberwyrm', 'tome', 'grimoire']);
-const ITEM_IDS = ['br_hp', 'g2_hp', 'g2_atk', 'h2_mp', 'h2_hp', 'c1_chest_u', 'u1_hp', 'u2_atk', 't1_mp', 'v2_atk', 'v3_hp', 'g4_mp', 'w1_hp', 'w2_mp', 'w3_atk', 'bu_vb', 'bu_wb', 'got_djump', 'got_dash', 'got_ember', 'got_thunder'];
+const ITEM_IDS = ['br_hp', 'g2_hp', 'g2_atk', 'h2_mp', 'h2_hp', 'c1_chest_u', 'u1_hp', 'u2_atk', 't1_mp', 'v2_atk', 'v3_hp', 'g4_mp', 'w1_hp', 'w2_mp', 'w3_atk', 'bu_vb', 'bu_wb', 'stk_atk', 'kp_chest_u', 'vy_chest_u', 'wv_chest_u', 'lz_chest_u', 'got_djump', 'got_dash', 'got_ember', 'got_thunder'];
 
 const newSave = world => ({
   seed: world.seed, room: world.start.room, spawnX: world.start.x * 16 + 8, spawnY: world.start.gy * 16, hp: 60, maxHp: 60, mp: 40, maxMp: 40, atk: 8, level: 1, xp: 0, gold: 0,
@@ -326,6 +327,10 @@ export class Game {
       else if (s.type === 'altar') this.props.push(new Altar(x, y));
       else if (s.type === 'shopkeeper') this.props.push(new Shopkeeper(x, y, o));
       else if (s.type === 'barrel') this.props.push(new Barrel(x, y, o));
+      else if (s.type === 'pzlever') this.props.push(new PuzzleLever(x, y, o, S.flags));
+      else if (s.type === 'pzcandle') this.props.push(puzzlePiece(x, y, o));
+      else if (s.type === 'pzdress') this.props.push(puzzleDress(x, y, o));          // (the beam of the lens room, the carved stone of the vent room)
+      else if (s.type === 'secretcase') { if (!S.flags[o.id]) this.props.push(new SecretCase(x, y, o)); }          // (gone for good once broken: the door behind it is there instead)
       else if (s.type === 'waystone') this.props.push(new Waystone(x, y, { id: 'tp_' + id }));
       else if (s.type === 'itemspawn') { if (!S.flags[o.id]) { const pk = new Pickup('it_' + o.item, x, y - 6, 0, 0); pk.qty = o.qty || pk.qty; pk.flagId = o.id; pk.life = 1e9; this.pickups.push(pk); } }
       else if (s.type === 'tablet') this.props.push(new Tablet(x, y, o));
@@ -390,7 +395,7 @@ export class Game {
   nearInteractable() {
     const p = this.player, pb = { x: p.x - 14, y: p.y - 40, w: 28, h: 44 };
     for (const o of this.props) if (o.interact && !o.dead && overlap(pb, o.box) && !(o.open === true)) return { kind: 'prop', o, x: o.x, y: o.y - (o.box.h + 8) };
-    if (!(this.boss && this.boss.active && !this.boss.dying)) for (const d of this.room.doors) if (Math.abs(p.x - (d.x * 16 + 8)) < 14 && Math.abs(p.y - d.gy * 16) < 10) return { kind: 'door', d, x: d.x * 16 + 8, y: d.gy * 16 - 54 };
+    if (!(this.boss && this.boss.active && !this.boss.dying)) for (const d of this.room.doors) if (!(d.hid && !this.save.flags[d.hid]) && Math.abs(p.x - (d.x * 16 + 8)) < 14 && Math.abs(p.y - d.gy * 16) < 10) return { kind: 'door', d, x: d.x * 16 + 8, y: d.gy * 16 - 54 };
     for (const e of this.enemies) if (e.talk && !e.dead && Math.abs(p.x - e.x) < 26 && Math.abs(p.y - e.y) < 24) return { kind: 'npc', e, x: e.x, y: e.y - 58 };            // people you can talk to
     return null;
   }
@@ -448,7 +453,7 @@ export class Game {
   pullLever(lv) {
     const r = this.room, p = this.player, def = (r.levers || []).find(q => q.id === lv.id); this.save.flags[lv.id] = true; A.sfx('door'); A.sfx('click'); this.shake(2, 8);
     this.fx.sparks(lv.x, lv.y - 16, 10, [[1, 0.9, 0.6], [0.8, 0.8, 1]], 2.5, { gy: 0.1 }); this.fx.ring(lv.x, lv.y - 14, 26, [1, 0.8, 0.5], 14, 0.2);
-    if (!def) return;
+    if (!def) { this.after(40, () => { A.sfx('gear'); A.sfx('boom'); this.shake(1.5, 36); }); return; }          // (a lever with nothing to show for it in its own room - the Book Nook's: something heavy moves, a long way off)
     const gx = def.gate.reduce((a, q) => a + q[0], 0) / def.gate.length * 16 + 8, gy = (Math.min(...def.gate.map(q => q[1])) + Math.max(...def.gate.map(q => q[1]))) / 2 * 16 + 8, seen = gx > this.camera.x + 70 && gx < this.camera.x + W - 70;
     this.gaze = { x: gx, y: gy, def, t: 0, pan: seen ? 0 : 34, opened: false }; this.playerFrozen = true; p.vx = 0; p.invT = Math.max(p.invT, 220);
   }

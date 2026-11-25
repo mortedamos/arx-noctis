@@ -8,7 +8,7 @@ import { COLORS } from './fx.js';
 import { T, clamp, approach, rand, TAU } from './util.js';
 import { TILE } from './world.js';
 import { Fireball, SwordFire } from './projectiles.js';
-import { ENCH, TUNE } from './enchant.js';
+import { ENCH, TUNE, enchTime } from './enchant.js';
 import { STAINS, STAIN_KEYS, RAIN_WASH, stainSource } from './stain.js';
 import { ITEM_ORDER, itemCount, canUseItem, releaseItem } from './items.js';
 
@@ -100,10 +100,11 @@ export class Player extends Entity {
 
   // ------------------------------------------------------------------ sword enchantments
   setEnchant(type) {
-    const E = this.ench, def = ENCH[type], g = this.g;
-    if (E && E.type === type) E.t = Math.min(TUNE.maxTime, E.t + TUNE.addTime); else { this.clearEnchant(false); this.ench = { type, t: TUNE.time }; }
+    const E = this.ench, def = ENCH[type], g = this.g, full = enchTime(this.S.flags.seals);
+    if (E && E.type === type) E.t = Math.min(full + TUNE.addTime, E.t + TUNE.addTime); else { this.clearEnchant(false); this.ench = { type, t: full }; }
     A.sfx('enchant'); g.fx.ring(this.x, this.y - 18, 46, def.rgb, 30, 0.14); g.fx.flash(def.rgb, 0.22); g.fx.sparks(this.x, this.y - 18, 20, [[1, 1, 1], def.rgb], 3.2);
-    g.banner(def.title, def.desc + ' ' + Math.round(this.ench.t / 3600) + ' MIN LEFT.', 200, { y: 56, color: '#ffe9a0' });
+    const secs = Math.round(this.ench.t / 60);
+    g.banner(def.title, def.desc + ' ' + Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0') + ' LEFT.', 200, { y: 56, color: '#ffe9a0' });
   }
   clearEnchant(announce) {
     if (this.sunQuad) { this.sunQuad.kill = true; this.sunQuad = null; }
@@ -261,8 +262,13 @@ export class Player extends Entity {
     // ---- vertical motion
     if (!this.dashT) this.vy = Math.min(this.vy + GRAV, MAXFALL);
     this.fallSpeed = this.vy;
-    // flowing water carries the hero: fully when wading, a little when in the air above it
-    let drift = 0; if (room.currents) for (const c of room.currents) if (this.x >= c.x0 && this.x <= c.x1 && this.y <= c.y + 4 && this.y >= c.y - 40) { drift = c.vx * (this.onGround ? 1 : 0.4); break; }
+    // flowing water carries the hero: fully when wading, a little when in the air above it, not at all while he stands on something over it.  Water that goes over a lip (c.spill: the freezing ways down) keeps its hold
+    // of a wading hero until he is clear of the edge - he has footing for half his own width past it - and so takes him over
+    let drift = 0; if (room.currents) for (const c of room.currents) {
+      const past = c.spill && this.onGround ? this.w / 2 + 2 : 0;
+      if (this.x < c.x0 - (c.vx < 0 ? past : 0) || this.x > c.x1 + (c.vx > 0 ? past : 0) || this.y > c.y + 4 || this.y < c.y - 40 || (this.onGround && this.y < c.y - 4)) continue;
+      drift = c.vx * (this.onGround ? 1 : 0.4); break;
+    }
     if (drift) { const v0 = this.vx; this.vx = v0 + drift; moveX(this, room); if (this.vx !== 0) this.vx = v0; } else moveX(this, room);
     moveY(this, room);
     if (room.movers) room.movers.land(this);

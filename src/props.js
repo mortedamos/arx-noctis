@@ -11,6 +11,7 @@ import { T, rand, dist, overlap, TAU, choice } from './util.js';
 import { ENCH, ENCH_TYPES, ENCH_BIAS, TUNE } from './enchant.js';
 import { ITEMS, addItem, itemFull, randomItemId } from './itemdata.js';
 import { letterTitle, markPage } from './letters.js';
+import { drawDeco } from './decor.js';
 
 export const ABILITIES = {
   djump: { name: 'AETHER FEATHER', desc: 'PRESS JUMP AGAIN IN MIDAIR TO DOUBLE JUMP.', icon: 'feather', color: [0.6, 0.85, 1] },
@@ -34,6 +35,7 @@ export const UPGRADES = {
   goldkey: { name: 'KEY OF GOLD', desc: 'THE LAST KEY: IT OPENS THE DOOR OF THE SHADOW THRONE.', icon: 'key', color: KEYS.find(k => k.id === 'key_gold').rgb.map(v => v / 255) },          // (the Librarian's: its id is the flag 'has_key_gold'; the colour is its lock's)
   frostkey: { name: 'KEY OF ANTIMONY', desc: 'IT OPENS THE LIBRARY OF AGES, DEEP IN ARX NOCTIS.', icon: 'key', color: KEYS.find(k => k.id === 'key_frost').rgb.map(v => v / 255) },          // (the Rimewyrm's: its id is the flag 'has_key_frost')
   ouroboros: { name: 'OUROBOROS', desc: 'THE SERPENT THAT EATS ITS OWN TAIL. DASH IN THE AIR AND A JUMP IS GIVEN BACK TO YOU, AND A DOUBLE JUMP, AND ANOTHER DASH: FOR AS LONG AS YOU CARE TO KEEP GOING.', icon: 'ouroboros', color: [0.55, 0.9, 0.5] },          // (its id is the flag 'got_crampons': the Player reads it)
+  seal: { name: 'TEMPORAL SEAL', desc: '', icon: 'seal', color: [0.82, 0.62, 1] },          // (the puzzle rooms' prize; each adds to how long a sword enchantment lasts - enchant.js.  No line under its name: the timer on screen shows what it does)
   hoard: { name: 'A HOARD', desc: 'SOMEONE HID THIS AWAY LONG AGO: GOLD, A GREAT DEAL OF IT.', icon: 'coin', color: [1, 0.85, 0.3] },
   shoes: { name: 'SHOES OF HERMES', desc: 'MOVE 10% FASTER', icon: 'shoes', color: [1, 0.45, 0.95] },          // (its id is the flag 'got_shoes': the Player reads it)
 };
@@ -173,6 +175,34 @@ export class Barrel {
     if (!this.broken) { ctx.drawImage(im, X, Y, w, h); return; }
     ctx.save(); ctx.globalAlpha = this.broken > 50 ? Math.max(0, 1 - (this.broken - 50) / 30) : 1;                   // what is left: the bottom third of it, splintered
     const keep = Math.round(im.height * 0.34), kh = Math.round(h * 0.34); ctx.drawImage(im, 0, im.height - keep, im.width, keep, X, Y + h - kh, w, kh); ctx.restore();
+  }
+}
+
+// ------------------------------------------------------------------------------------------------ THE BOOKCASE WITH A DOOR BEHIND IT (a secret: nothing marks it)
+// It is drawn exactly as the other bookcases are: no sparkle, no glow, no words.  A blow shakes books out of it; the third brings it down, and the door that was behind it is there for good (flag o.id: see levelgen's hiddenDoor).
+const BOOK_COLS = ['#7a1e2a', '#2c4a6e', '#3c6a40', '#8a6a2a', '#5a2c6c', '#a8884a'];
+export class SecretCase {
+  constructor(x, y, o = {}) { this.x = x; this.y = y; this.id = o.id; this.hp = 3; this.cool = 0; this.shake = 0; this.broken = 0; this.dead = false; this.books = []; }
+  get box() { return { x: this.x - 15, y: this.y - 46, w: 30, h: 46 }; }
+  spill(n) { for (let i = 0; i < n; i++) this.books.push({ x: this.x + rand(-12, 12), y: this.y - rand(8, 42), vx: rand(-0.9, 0.9), vy: -rand(0, 1.2), c: choice(BOOK_COLS), flat: false }); }
+  hit(g) {
+    if (this.dead || this.broken || this.cool > 0) return false; this.cool = 14; this.shake = 12;          // (one blow, one count: a swing is "active" for several steps)
+    const wood = [[0.55, 0.36, 0.2], [0.24, 0.14, 0.07]]; g.fx.sparks(this.x, this.y - 24, 7, wood, 2.4, { gy: 0.2 });
+    if (--this.hp > 0) { A.sfx('crumble'); g.shake(1, 5); this.spill(3); return true; }
+    this.broken = 1; g.save.flags[this.id] = true; A.sfx('break'); A.sfx('crumble'); g.shake(2.5, 14); this.spill(14);
+    g.fx.burst(this.x, this.y - 22, 16, wood, { speed: 2, s0: 9, gy: 0.04 }); g.fx.burst(this.x, this.y - 6, 10, [[0.5, 0.45, 0.4], [0.3, 0.28, 0.26]], { speed: 1.2, s0: 11 }); return true;
+  }
+  update() {
+    if (this.cool > 0) this.cool--; if (this.shake > 0) this.shake--; if (this.broken) this.broken++;
+    for (const b of this.books) if (!b.flat) { b.vy += 0.16; b.x += b.vx; b.y += b.vy; if (b.y >= this.y - 2) { b.y = this.y - 2; b.flat = true; } }
+  }
+  draw(ctx, cx, cy, g) {
+    if (this.broken < 40) {
+      const jolt = this.shake ? (this.shake % 4 < 2 ? 1 : -1) : 0;
+      ctx.save(); if (this.broken) { ctx.globalAlpha = Math.max(0, 1 - this.broken / 30); ctx.translate(0, Math.min(24, this.broken * 1.6)); }          // (it sags and falls to pieces)
+      drawDeco(ctx, { t: 'bookcase', x: this.x, y: this.y }, cx - jolt, cy, 0, null); ctx.restore();
+    }
+    for (const b of this.books) { const x = Math.round(b.x - cx), y = Math.round(b.y - cy); ctx.fillStyle = b.c; if (b.flat) ctx.fillRect(x - 4, y, 8, 2); else ctx.fillRect(x - 1, y - 5, 3, 7); }
   }
 }
 
@@ -327,14 +357,20 @@ export function chestGift(g, x, y, contents, id) {
   if (String(contents).startsWith('e_')) { const pk = new Pickup(contents, x, y, 0, -1); pk.life = 1e9; g.pickups.push(pk); g.save.flags[id] = true; } else g.props.push(new Upgrade(x, y, { kind: contents, id }));
 }
 export class Chest {
-  constructor(x, y, o) { this.x = x; this.y = y; this.contents = o.contents; this.id = o.id; this.open = false; this.t = 0; this.dead = false; }
+  constructor(x, y, o) { this.x = x; this.y = y; this.contents = o.contents; this.id = o.id; this.lock = o.lock; this.locked = !!o.lock; this.open = false; this.t = 0; this.dead = false; }          // (lock: a flag that must be set before it opens - a puzzle's)
   get box() { return { x: this.x - 11, y: this.y - 16, w: 22, h: 16 }; }
-  update(g) { this.t++; if (!this.open && this.t % 14 === 0) g.fx.emit({ x: this.x + rand(-8, 8), y: this.y - 14, vx: 0, vy: -rand(0.2, 0.5), life: 36, s0: 5, s1: 1, c0: [1, 0.9, 0.5], a0: 0.9, a1: 0, kind: 6 }); }
+  update(g) { this.t++; this.locked = !!this.lock && !g.save.flags[this.lock]; if (!this.open && !this.locked && this.t % 14 === 0) g.fx.emit({ x: this.x + rand(-8, 8), y: this.y - 14, vx: 0, vy: -rand(0.2, 0.5), life: 36, s0: 5, s1: 1, c0: [1, 0.9, 0.5], a0: 0.9, a1: 0, kind: 6 }); }
   interact(g) {
-    if (this.open) return false; this.open = true; g.save.flags[this.id] = true; A.sfx('door'); g.fx.burst(this.x, this.y - 12, 14, COLORS.gold, { speed: 2 }); g.fx.flash([1, 0.9, 0.5], 0.15);
+    if (this.open) return false; if (this.lock && !g.save.flags[this.lock]) { A.sfx('back'); g.popup(this.x, this.y - 30, 'LOCKED', '#cfc2a0'); return true; }
+    this.open = true; g.save.flags[this.id] = true; A.sfx('door'); g.fx.burst(this.x, this.y - 12, 14, COLORS.gold, { speed: 2 }); g.fx.flash([1, 0.9, 0.5], 0.15);
     chestGift(g, this.x, this.y - 22, this.contents, this.id + '_u'); return true;
   }
-  draw(ctx, cx, cy) { drawSheet(ctx, 'chest', this.open ? 1 : 0, this.x - cx, this.y - cy); }
+  draw(ctx, cx, cy) {
+    drawSheet(ctx, 'chest', this.open ? 1 : 0, this.x - cx, this.y - cy); if (!this.locked || this.open) return;
+    const x = Math.round(this.x - cx), y = Math.round(this.y - cy);          // (locked: an iron chain across it, and a padlock)
+    ctx.fillStyle = '#0d0c11'; ctx.fillRect(x - 15, y - 11, 30, 5); for (let k = -14; k < 14; k += 5) { ctx.fillStyle = '#b4b4c6'; ctx.fillRect(x + k, y - 10, 4, 3); ctx.fillStyle = '#e4e4f0'; ctx.fillRect(x + k, y - 10, 4, 1); ctx.fillStyle = '#0d0c11'; ctx.fillRect(x + k + 1, y - 9, 2, 1); }
+    ctx.strokeStyle = '#e4e4f0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y - 9, 3.5, Math.PI, 0); ctx.stroke(); ctx.fillStyle = '#0d0c11'; ctx.fillRect(x - 6, y - 10, 12, 10); ctx.fillStyle = '#e8c25a'; ctx.fillRect(x - 5, y - 9, 10, 8); ctx.fillStyle = '#fff0b0'; ctx.fillRect(x - 5, y - 9, 10, 1); ctx.fillStyle = '#2a1a08'; ctx.fillRect(x - 1, y - 7, 2, 4);          // the padlock
+  }
 }
 
 // ------------------------------------------------------------------------------------------------ lever
@@ -382,7 +418,7 @@ export class Upgrade {
   }
   collect(g) {
     this.dead = true; const S = g.save, hadLantern = !!S.flags.got_lantern; g.save.flags[this.id] = true;
-    if (this.kind === 'hpup') { S.maxHp += 20; S.hp = S.maxHp; } else if (this.kind === 'mpup') { S.maxMp += 10; S.mp = S.maxMp; } else if (this.kind === 'atkup') S.atk += 2; else if (this.kind === 'alembic') S.flags.got_alembic = true; else if (this.kind === 'mantle') S.flags.got_mantle = true; else if (this.kind === 'lantern') S.flags.got_lantern = true; else if (this.kind === 'shard') S.flags.got_shard = true; else if (this.kind === 'spring') S.flags.got_spring = true; else if (this.kind === 'athanor') S.flags.got_athanor = true; else if (this.kind === 'astrolabe') S.flags.got_astrolabe = true; else if (this.kind === 'goldkey') S.flags.has_key_gold = true; else if (this.kind === 'frostkey') S.flags.has_key_frost = true; else if (this.kind === 'hoard') { S.gold += 400; g.popup(this.x, this.y - 30, '+400 GOLD', '#ffd860'); } else if (this.kind === 'ouroboros') S.flags.got_ouroboros = true; else if (this.kind === 'key') S.flags['has_' + keyBase(this.id)] = true;
+    if (this.kind === 'hpup') { S.maxHp += 20; S.hp = S.maxHp; } else if (this.kind === 'mpup') { S.maxMp += 10; S.mp = S.maxMp; } else if (this.kind === 'atkup') S.atk += 2; else if (this.kind === 'alembic') S.flags.got_alembic = true; else if (this.kind === 'mantle') S.flags.got_mantle = true; else if (this.kind === 'lantern') S.flags.got_lantern = true; else if (this.kind === 'shard') S.flags.got_shard = true; else if (this.kind === 'spring') S.flags.got_spring = true; else if (this.kind === 'athanor') S.flags.got_athanor = true; else if (this.kind === 'astrolabe') S.flags.got_astrolabe = true; else if (this.kind === 'goldkey') S.flags.has_key_gold = true; else if (this.kind === 'frostkey') S.flags.has_key_frost = true; else if (this.kind === 'hoard') { S.gold += 400; g.popup(this.x, this.y - 30, '+400 GOLD', '#ffd860'); } else if (this.kind === 'ouroboros') S.flags.got_ouroboros = true; else if (this.kind === 'seal') { S.flags.seals = (S.flags.seals || 0) + 1; if (g.player.ench) g.player.ench.t += TUNE.sealTime; } else if (this.kind === 'key') S.flags['has_' + keyBase(this.id)] = true;
     A.sfx('item'); g.fx.ring(this.x, this.y - 8, 44, this.U.color, 30); g.fx.flash(this.U.color, 0.3); g.fx.sparks(this.x, this.y - 8, 18, [[1, 1, 0.8], this.U.color], 3);
     if (this.kind === 'page') g.foundPage(this.n);          // (a page is picked up without a word: no banner, and it is not opened; it is read from LETTERS in the pause menu)
     else g.banner(this.U.name, this.U.desc);

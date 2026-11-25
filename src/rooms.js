@@ -197,7 +197,7 @@ export function tidyRoom(def) {
   }
 }
 
-const STATIC_SPAWNS = new Set(['statue', 'barrel', 'tablet', 'altar', 'chest', 'waystone', 'itemspawn', 'upgrade', 'lever', 'skull', 'bell', 'litcandle']);
+const STATIC_SPAWNS = new Set(['pzlever', 'pzcandle', 'pzdress', 'secretcase', 'statue', 'barrel', 'tablet', 'altar', 'chest', 'waystone', 'itemspawn', 'upgrade', 'lever', 'skull', 'bell', 'litcandle']);
 const BLOCK_DECOS = new Set(['brazier', 'column', 'door', 'gate', 'grate', 'table', 'cot', 'rack']);          // (nothing is set where these stand)
 const OUTDOOR_THEMES = new Set(['swamp', 'graveyard', 'ice']);                                       // open country: no candelabras (a mire or a glacier has no use for them - the ice caves are lit by ghostly wisps), whatever the builder asked for
 export function arrangeCandelabras(def) {
@@ -220,11 +220,12 @@ export function arrangeCandelabras(def) {
   const block = [];                                                                                  // [tile x, standing row, how close is too close]
   for (const s of def.spawns) if (STATIC_SPAWNS.has(s.type)) block.push([s.x, s.y, s.type === 'tablet' || s.type === 'waystone' || s.type === 'altar' ? 2.2 : 1.8]);
   for (const d of def.doors) block.push([d.x, d.gy, 2.6]);
+  for (const d of def.decos) if (d.t === 'shutcase') block.push([(d.x - 8) / 16 - 2, d.y / 16, 3]);          // (the floor a hidden door's bookcase slides across)
   for (const d of def.decos) if (BLOCK_DECOS.has(d.t) || (d.t === 'img' && !d.back) || (d.t === 'cdl')) block.push([(d.x - 8) / 16, d.y / 16, d.t === 'img' ? 2.2 : 1.8]);
   const placed = [], clear = (s, gap) => !block.some(([bx, by, hw]) => Math.abs(s.x - bx) < hw && Math.abs(s.y - by) <= 3) && !placed.some(p => Math.abs(p.x - s.x) < gap && Math.abs(p.y - s.y) <= 3);
   const put = (s, gap) => { if (s && clear(s, gap)) { placed.push(s); return true; } return false; };
   const near = (x, y, tol = 1.6) => { let best = null, bd = 1e9; for (const s of spots) { const d = Math.abs(s.x - x) + (y === undefined ? 0 : Math.abs(s.y - y) * 3); if (d < bd && Math.abs(s.x - x) <= tol) { bd = d; best = s; } } return best; };
-  for (const d of def.doors) { put(near(d.x - 3.5, d.gy), 3); put(near(d.x + 3.5, d.gy), 3); }      // a pair either side of every door
+  for (const d of def.doors) if (!d.hid) { put(near(d.x - 3.5, d.gy), 3); put(near(d.x + 3.5, d.gy), 3); }      // a pair either side of every door (never of a hidden one: they would give it away)
   for (const s of def.spawns) if (s.type === 'waystone') { put(near(s.x - 3.5, s.y), 3); put(near(s.x + 3.5, s.y), 3); }        // and of the waystone
   for (const s of def.spawns) if (s.type === 'tablet') { rnd() < 0.5 ? (put(near(s.x + 3, s.y)) || put(near(s.x - 3, s.y))) : (put(near(s.x - 3, s.y)) || put(near(s.x + 3, s.y))); }      // one beside each tablet
   const total = Math.min(10, Math.max(loose.length, placed.length, Math.round(W / 16))), left = () => total - placed.length;

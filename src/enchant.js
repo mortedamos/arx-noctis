@@ -2,24 +2,27 @@
 // Enemies sometimes drop an enchantment gem; picking one up imbues the sword for a couple of minutes.
 // Only one enchantment is active at a time (a different gem replaces it, the same gem adds time).
 export const ENCH_TYPES = ['fire', 'ice', 'sun'];
+// how long a fresh enchantment lasts for a hero who holds this many TEMPORAL SEALS (save flag 'seals': the puzzle rooms' prize).  The same gem again can build it up to one minute more than that
+export const enchTime = seals => TUNE.time + (seals || 0) * TUNE.sealTime;
 
 export const ENCH = {
-  fire: { name: 'FLAME', title: 'FLAME BLADE', desc: 'MORE DAMAGE. EVERY SLASH HURLS A FIREBALL.', dmg: 1.3, rgb: [1, 0.55, 0.15], icon: 'e_fire', pal: { bright: [255, 228, 120], mid: [255, 112, 30], dark: [150, 34, 10] } },
+  fire: { name: 'FLAME', title: 'FLAME BLADE', desc: 'MORE DAMAGE. EVERY SLASH HURLS A FIREBALL.', dmg: 1.1, rgb: [1, 0.55, 0.15], icon: 'e_fire', pal: { bright: [255, 228, 120], mid: [255, 112, 30], dark: [150, 34, 10] } },
   ice: { name: 'FROST', title: 'FROST BLADE', desc: 'HITS CAN FREEZE FOES SOLID FOR A FEW SECONDS.', dmg: 1.15, rgb: [0.55, 0.85, 1], icon: 'e_ice', pal: { bright: [240, 252, 255], mid: [110, 200, 255], dark: [40, 104, 190] } },
-  sun: { name: 'SUN', title: 'SUNBRAND', desc: 'GREATLY INCREASED DAMAGE. SHEDS HOLY LIGHT.', dmg: 1.5, rgb: [1, 0.88, 0.4], icon: 'e_sun', pal: { bright: [255, 252, 226], mid: [255, 214, 84], dark: [190, 122, 22] } },
+  sun: { name: 'SUN', title: 'SUNBRAND', desc: 'GREATLY INCREASED DAMAGE. SHEDS HOLY LIGHT.', dmg: 1.35, rgb: [1, 0.88, 0.4], icon: 'e_sun', pal: { bright: [255, 252, 226], mid: [255, 214, 84], dark: [190, 122, 22] } },
 };
 
 // every balance knob in one place (all times are in 60ths of a second)
 export const TUNE = {
-  time: 60 * 60,             // how long a fresh enchantment lasts (one minute)
-  addTime: 60 * 60,          // picking up the same gem again adds this much (one more minute)...
-  maxTime: 120 * 60,         // ...up to this cap (two minutes)
+  time: 60 * 60,             // how long a fresh enchantment lasts (one minute)...
+  sealTime: 20 * 60,         // ...and this much longer for each Temporal Seal held
+  addTime: 60 * 60,          // picking up the same gem again adds this much (one more minute), up to a fresh one's length plus this
   // ICE - chance to freeze per sword hit.  Stun-lock protection: a thawed enemy is immune to freezing for a while.
   freezeChance: 0.2, freezeMin: 60, freezeMax: 180, freezeImmune: 240,                  // normal enemies: 1-3s frozen, then 4s immune
   bossFreezeChance: 0.06, bossFreezeMin: 60, bossFreezeMax: 100, bossFreezeImmune: 480,  // bosses: rare, 1-1.7s, then 8s immune
   frozenBonus: 1.2,          // frozen things take 20% extra damage
   // FIRE
-  fireballFrac: 0.4, fireballLife: 30,        // fireball damage = 40% of the swing; flies ~100px
+  // PARITY: blade (110%) and fireball (25% of a bare blow) together do what a Sunbrand blow does (135%), when both strike the same foe
+  fireballFrac: 0.25 / 1.1, fireballLife: 30,          // fireball damage as a share of the swing (so 25% of a bare blow); flies ~100px
   // DROPS
   dropBase: 0.035, dropElite: 0.06, dropPity: 0.005, dropPityMax: 0.08,
 };

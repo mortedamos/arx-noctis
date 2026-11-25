@@ -8,7 +8,7 @@ import { orlojTower, TOWER_W, TOWER_H } from './orlojtower.js';
 import { keepGate, KEEP_W, KEEP_H } from './keepgate.js';
 import { bridgeTower, BT_W, BT_H } from './bridgetower.js';
 
-const BACK_KINDS = new Set(['column', 'waterfall', 'spill', 'portrait', 'cog', 'pendulum', 'animgear', 'orlojtower', 'keepgate', 'bridgetower', 'icicles', 'crystals', 'voidpit', 'vaultback', 'table', 'stool', 'cot', 'rack']);
+const BACK_KINDS = new Set(['column', 'waterfall', 'spill', 'portrait', 'cog', 'pendulum', 'animgear', 'orlojtower', 'keepgate', 'bridgetower', 'icicles', 'crystals', 'voidpit', 'vaultback', 'table', 'stool', 'cot', 'rack', 'rug', 'hearth', 'armchair', 'cat', 'shutcase', 'altarledge', 'bog']);
 // Is this piece of scenery drawn over a hazard (a spike tile)?  Nothing may stand in front of a hazard: the room drops such pieces when it loads.
 export function decoCoversHazard(d, spikes) {
   if (isBack(d)) return false; let x0, y0, w, h;
@@ -153,6 +153,47 @@ export function drawDeco(g, d, cx, cy, t, room) {
         const gl = 0.5 + 0.5 * Math.sin(t * 0.05 + i * 2 + d.x); g.fillStyle = 'rgba(255,255,255,' + (0.4 + 0.5 * gl).toFixed(2) + ')'; g.fillRect(Math.round(x + ox + lean - 1), Math.round(y - h * 0.7), 1, 3); }
       break; }
     case 'dgtorch': drawSheet(g, 'dg_torch', Math.floor(t / 6 + d.x) % 4, x, y); break;
+    case 'shutcase': {         // a bookcase standing over a hidden door (levelgen's hiddenDoor): once the flag d.flag is set it stands aside, and the door is there
+      const aside = room && room.flags && room.flags[d.flag]; drawDeco(g, { t: 'bookcase', x: d.x - (aside ? 34 : 0), y: d.y }, cx, cy, t, room);
+      if (aside) { g.fillStyle = 'rgba(0,0,0,0.35)'; for (let k = 0; k < 4; k++) g.fillRect(x - 17 + k * 9, y - 2, 6, 1); } break; }          // (the scrape it left in the dust)
+    case 'rug': {          // a red rug with a gold border.  x = its middle, y = the floor
+      const w = d.w || 96, x0 = Math.round(x - w / 2);
+      g.fillStyle = '#5c1d27'; g.fillRect(x0, y - 3, w, 3); g.fillStyle = '#84303a'; g.fillRect(x0 + 4, y - 3, w - 8, 2); g.fillStyle = '#c9a14a'; g.fillRect(x0 + 2, y - 3, 2, 3); g.fillRect(x0 + w - 4, y - 3, 2, 3);
+      for (let bx = x0 + 10; bx < x0 + w - 10; bx += 12) g.fillRect(bx, y - 2, 3, 1); g.fillStyle = '#d9c9a0'; for (let k = 0; k < 3; k++) { g.fillRect(x0 - 3, y - 3 + k, 3, 1); g.fillRect(x0 + w, y - 3 + k, 3, 1); } break; }
+    case 'hearth': {          // a stone fireplace: a mantel with a few things on it, a dark firebox with logs (the fire itself is lit by the effects layer: roomFlames)
+      g.fillStyle = '#4a4352'; g.fillRect(x - 24, y - 40, 48, 40); g.fillStyle = '#625a6c';
+      for (let row = 0; row < 5; row++) for (let bx = x - 23 + (row % 2 ? 6 : 0); bx < x + 22; bx += 12) g.fillRect(bx, y - 39 + row * 8, Math.min(10, x + 23 - bx), 6);
+      g.fillStyle = '#12080a'; g.fillRect(x - 14, y - 24, 28, 24); g.beginPath(); g.arc(x, y - 24, 14, Math.PI, 0); g.fill();
+      const gl = 0.5 + 0.12 * Math.sin(t * 0.21) + 0.08 * Math.sin(t * 0.47); g.fillStyle = 'rgba(255,120,40,' + (gl * 0.5).toFixed(2) + ')'; g.fillRect(x - 12, y - 12, 24, 10);
+      g.fillStyle = '#3a2415'; g.fillRect(x - 11, y - 5, 22, 3); g.fillStyle = '#5a3a22'; g.fillRect(x - 8, y - 8, 16, 3); g.fillStyle = '#2a2430'; g.fillRect(x - 16, y - 2, 32, 2);
+      g.fillStyle = '#4a2f18'; g.fillRect(x - 27, y - 45, 54, 5); g.fillStyle = '#7a5230'; g.fillRect(x - 27, y - 45, 54, 1); // the mantel, and the stone chimney going up to the ceiling
+      g.fillStyle = '#3d3745'; g.fillRect(x - 15, y - 160, 30, 115); g.fillStyle = '#524b5c'; for (let row = 0; row < 14; row++) for (let bx = x - 14 + (row % 2 ? 5 : 0); bx < x + 13; bx += 10) g.fillRect(bx, y - 159 + row * 8, Math.min(8, x + 14 - bx), 6); g.fillStyle = 'rgba(0,0,0,0.3)'; g.fillRect(x + 7, y - 160, 8, 115);
+      g.fillStyle = '#c9a14a'; g.fillRect(x - 22, y - 52, 3, 7); g.fillRect(x - 23, y - 46, 5, 1); g.fillStyle = '#2c4a6e'; g.fillRect(x + 12, y - 54, 4, 9); g.fillStyle = '#7a1e2a'; g.fillRect(x + 17, y - 52, 3, 7); g.fillStyle = '#3c6a40'; g.fillRect(x + 21, y - 53, 3, 8); break; }
+    case 'armchair': {          // a deep armchair facing right, toward the fire
+      g.fillStyle = '#2a1a10'; g.fillRect(x - 12, y - 4, 3, 4); g.fillRect(x + 8, y - 4, 3, 4);
+      g.fillStyle = '#2f4a38'; g.fillRect(x - 14, y - 34, 9, 30); g.beginPath(); g.arc(x - 9.5, y - 34, 4.5, Math.PI, 0); g.fill(); g.fillRect(x - 6, y - 14, 18, 10);
+      g.fillStyle = '#45664d'; g.fillRect(x - 13, y - 33, 2, 28); g.fillRect(x - 6, y - 15, 17, 3); g.fillStyle = '#24372a'; g.fillRect(x - 6, y - 20, 16, 4); g.fillRect(x + 9, y - 18, 4, 14);
+      g.fillStyle = '#b9833c'; g.fillRect(x - 5, y - 23, 6, 8); g.fillStyle = '#d9a85a'; g.fillRect(x - 5, y - 23, 6, 1); break; }          // (a cushion)
+    case 'cat': {          // a cat curled up asleep: it breathes, and now and then an ear twitches
+      const br = Math.sin(t * 0.035 + d.x) > 0 ? 1 : 0, ear = (t + Math.round(d.x)) % 460 < 10 ? 1 : 0;
+      g.fillStyle = '#b9682c'; g.beginPath(); g.ellipse(x, y - 5 - br * 0.5, 9, 4.5 + br * 0.6, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#d98a44'; g.fillRect(x - 5, y - 9 - br, 2, 4); g.fillRect(x - 1, y - 10 - br, 2, 4); g.fillRect(x + 3, y - 9 - br, 2, 3);
+      g.fillStyle = '#c9762f'; g.beginPath(); g.arc(x + 8, y - 6, 4, 0, Math.PI * 2); g.fill(); g.fillRect(x + 5, y - 12 + ear, 2, 3); g.fillRect(x + 10, y - 11, 2, 3);
+      g.fillStyle = '#4a2810'; g.fillRect(x + 7, y - 7, 2, 1); g.fillRect(x + 10, y - 7, 2, 1); g.fillStyle = '#a8561f'; g.fillRect(x - 9, y - 3, 13, 2); g.fillStyle = '#efd9b0'; g.fillRect(x + 3, y - 3, 3, 2); break; }
+    case 'altarledge': {          // the wall behind the altar candles and the stone ledge they stand on.  x = its middle, y = the floor, w = its width; marks = where (from the middle) a candle's soot has blackened the wall
+      const w = d.w || 184, x0 = Math.round(x - w / 2), led = y - 40, top = led - 66;
+      g.fillStyle = '#3b3546'; g.fillRect(x0 + 3, top - 3, w - 6, led - top + 3); g.fillStyle = '#6a6276'; g.fillRect(x0 + 6, top, w - 12, led - top);          // a pale stone panel in a frame
+      g.fillStyle = '#5b5467'; for (let row = 0; row < 5; row++) { g.fillRect(x0 + 6, top + 13 + row * 13, w - 12, 1); for (let bx = x0 + 22 + (row % 2) * 14; bx < x0 + w - 10; bx += 28) g.fillRect(bx, top + row * 13, 1, 13); }
+      for (const off of d.marks || []) { const mx = Math.round(x + off), my = led - 46;          // soot: a smudge shaped like a flame, darkest low down, fading as it rises
+        g.save(); g.fillStyle = '#17101a'; for (const [dy, rx, ry, a] of [[5, 8, 8, 0.34], [3, 5.5, 8, 0.42], [-4, 4, 8, 0.34], [-11, 2.4, 6, 0.28], [6, 3.5, 4, 0.4]]) { g.globalAlpha = a; g.beginPath(); g.ellipse(mx, my + dy, rx, ry, 0, 0, Math.PI * 2); g.fill(); }
+        g.globalAlpha = 0.4; for (let k = 0; k < 9; k++) g.fillRect(mx - 9 + ((k * 37) % 19), my - 14 + ((k * 23) % 27), 1, 1); g.restore(); }
+      g.fillStyle = '#4a4352'; g.fillRect(x0, led, w, 6); g.fillStyle = '#8a8299'; g.fillRect(x0, led, w, 1); g.fillStyle = '#26212e'; g.fillRect(x0 + 2, led + 6, w - 4, 2);          // the ledge
+      g.fillStyle = '#4a4352'; for (const bx of [x0 + 4, x0 + w - 8]) { g.fillRect(bx, led + 8, 4, 7); g.fillRect(bx + 1, led + 15, 2, 3); } break; }
+    case 'bog': {          // the mire behind a causeway: dark water with scum and slow ripples, and a few reeds.  x = its middle, y = the floor, w = its width
+      const w = d.w, x0 = Math.round(x - w / 2);
+      g.fillStyle = '#0d1a14'; g.fillRect(x0, y - 14, w, 14); g.fillStyle = '#1b3226'; g.fillRect(x0, y - 14, w, 2);
+      g.fillStyle = 'rgba(130,175,110,0.35)'; for (let k = 0; k < w / 14; k++) g.fillRect(x0 + ((k * 37 + Math.floor(t / 24)) % (w - 6)), y - 11 + ((k * 7) % 8), 4 + (k % 3) * 2, 1);
+      g.fillStyle = '#35522e'; for (let k = 0; k < w / 40; k++) { const rx = x0 + 12 + ((k * 97) % (w - 24)); for (let j = 0; j < 3; j++) { const h = 12 + ((k * 13 + j * 7) % 14); g.fillRect(rx + j * 3, y - 12 - h, 1, h); } } break; }
     case 'bookcase': {         // a tall bookcase drawn in code: oak frame, three shelves of books in a dozen colours (the same books every time for the same place)
       const W = 30, H = 46, x0 = x - 15, y0 = y - H, hh = n => { const s = Math.sin(d.x * 12.9898 + n * 78.233) * 43758.5453; return s - Math.floor(s); };
       const cols = ['#7a1e2a', '#2c4a6e', '#3c6a40', '#8a6a2a', '#5a2c6c', '#a8884a', '#2a2a3c', '#6a3a1a'];
@@ -188,6 +229,7 @@ export function drawDeco(g, d, cx, cy, t, room) {
       g.fillStyle = '#c9a14a'; g.fillRect(x - w / 2 - 1, top, w + 2, 3); g.fillRect(x - 1, top + 12, 2, 10); g.fillRect(x - 4, top + 15, 8, 2); g.fillRect(x - 3, top + 24, 6, 1); break;
     }
     case 'door': {
+      if (d.hid && !(room && room.flags && room.flags[d.hid])) break;          // (a hidden door: not there until its flag is set)
       const sprite = d.kind === 'crypt' ? IMG.dg_arch : IMG.dg_door; if (sprite) { const w = Math.round(sprite.width * 0.5), h = Math.round(sprite.height * 0.5); g.drawImage(sprite, Math.round(x - w / 2), y - h, w, h); break; }
       const wood = d.kind === 'wood', w = 30, h = 44;
       g.fillStyle = '#0a0612'; g.fillRect(x - w / 2, y - h, w, h); g.beginPath(); g.arc(x, y - h, w / 2, Math.PI, 0); g.fill();
@@ -323,6 +365,9 @@ export function drawFlames2D(g, flames, cx, cy, t) {
 
 // flowing water on the floor (the Cistern): a translucent knee-deep sheet drawn OVER the hero's legs, with streaks of foam sliding along it the way the water runs
 
+// where the three wicks of the candelabrum standing at (d.x, d.y) are (the puzzle's candelabras light and darken them: props.js PuzzleCandle)
+export const candelabraWicks = d => cdlOf(d).fl.map(([ox, oy]) => [d.x + ox, d.y + oy + CDL_DROP]);
+
 // flames that must be lit for this room's decor
 export function roomFlames(room) {
   const out = [];
@@ -336,6 +381,7 @@ export function roomFlames(room) {
       out.push({ x: d.x, y: d.y, fs: sc * 1.35 * j, seed: d.x + d.y, ph: Math.floor(hash(d.y, d.x) * 97), light: small ? 0 : Math.round(130 * (0.75 + 0.25 * j)), big: true, blaze: true, small, smoke: true, behind: true });
     }
     else if (d.t === 'dgtorch') out.push({ x: d.x, y: d.y - 44, light: 90, lightOnly: true });      // the flame is part of the sprite: it only needs to light the room
+    else if (d.t === 'hearth') out.push({ x: d.x, y: d.y - 8, fs: 0.85, seed: d.x, light: 140, big: true, blaze: true, behind: true });          // (the fire in the Book Nook's fireplace)
     else if (d.t === 'brazier') out.push({ x: d.x, y: d.y - 17, fs: 0.95, seed: d.x, light: 110, big: true, blaze: true, behind: true });      // the bowl's rim is 18px above the base of its sprite: the fire sits IN the bowl (a real flame outline - no flat edge - a little smaller than it used to be)
   }
   return out;

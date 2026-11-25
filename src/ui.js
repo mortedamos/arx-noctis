@@ -8,7 +8,7 @@ import { SHEET, IMG, drawSheet, drawKey } from './assets.js';
 import { ICON } from './procart.js';
 import { ZONES } from './rooms.js';
 import { SPELLS } from './player.js';
-import { ENCH, TUNE } from './enchant.js';
+import { ENCH, enchTime } from './enchant.js';
 import { ITEMS, KEYS } from './itemdata.js';
 import { STORY } from './story.js';
 import { lines as dlines } from './dialogue.js';
@@ -53,7 +53,7 @@ export const HUD = {
     if (E) {
       const def = ENCH[E.type], css = `rgb(${def.rgb.map(v => Math.round(v * 255)).join(',')})`, secs = Math.ceil(E.t / 60), low = E.t < 600 && Math.floor(E.t / 12) % 2;
       icon(ctx, def.icon, 15, 44, 1.1, low ? 0.4 : 1); drawText(ctx, `${def.name} ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`, 26, 36, { color: low ? '#8a7d9a' : css, outline: '#000' });
-      ctx.fillStyle = '#000'; ctx.fillRect(25, 46, 52, 4); ctx.fillStyle = css; ctx.fillRect(26, 47, Math.round(50 * clamp(E.t / TUNE.time, 0, 1)), 2);
+      ctx.fillStyle = '#000'; ctx.fillRect(25, 46, 52, 4); ctx.fillStyle = css; ctx.fillRect(26, 47, Math.round(50 * clamp(E.t / enchTime(S.flags.seals), 0, 1)), 2);          // (a full bar is a fresh one, seals and all)
     }
     // hotbar: unlocked spells + carried items.  Q / V move the box, C / I uses what is selected.
     const slots = p.hotbar();
@@ -360,10 +360,11 @@ export function foundItems(g) {
   const S = g.save, F = S.flags, AB = (g.info && g.info.ABILITIES) || {}, UP = (g.info && g.info.UPGRADES) || {}, rows = [];
   for (const [k, ic, name] of POWERS) rows.push({ ic, name: S.abilities[k] ? name : '???', has: !!S.abilities[k], title: S.abilities[k] ? (AB[k] ? AB[k].name : name) : 'NOT YET FOUND', desc: S.abilities[k] && AB[k] ? AB[k].desc : 'A POWER YOU HAVE NOT FOUND YET. THE BOSSES OF THE CASTLE GUARD THEM.' });
   for (const [f, ic, name, up] of RELICS) if (F[f]) rows.push({ ic, name, has: true, title: UP[up] ? UP[up].name : name, desc: UP[up] ? UP[up].desc : '' });
+  if (F.seals) rows.push({ ic: 'seal', name: 'TEMPORAL SEAL (' + F.seals + ')', has: true, title: 'TEMPORAL SEAL', desc: 'EACH SEAL MAKES THE POWERS THAT TAKE HOLD OF YOUR SWORD LAST 20 SECONDS LONGER.' });          // (how many he holds: save flag 'seals')
   for (const k of KEYS) if (F['has_' + k.id] && !F['unlocked_' + k.id]) rows.push({ ic: 'key', name: k.name, has: true, key: k, title: k.name, desc: 'IT OPENS ' + (KEY_USE[k.id] || 'ONE LOCKED DOOR.') + ' THE DOOR IS DRAWN WITH ITS PADLOCK IN THE KEY\'S OWN COLOUR.' });
   return rows;
 }
-// the list: where each row's middle is (the keys sit in one row under the list).  It is set small: with every power and relic found there are thirteen rows, and the eight keys under them must still be on the screen
+// the list: where each row's middle is (the keys sit in one row under the list).  It is set small: with every power and relic found (and the seals) there are fourteen rows, and the eight keys under them must still be on the screen
 const FOUND_Y = 57, FOUND_STEP = 9, FOUND_TEXT = 0.8;
 function foundLayout(rows) {
   const list = rows.filter(r => !r.key), y0 = FOUND_Y + list.length * FOUND_STEP + 1, pos = [];
@@ -531,7 +532,7 @@ export class MapScreen {
     const sx = x => W / 2 + (x - this.cam.x) * sc, sy = y => (VIEW_Y0 + VIEW_Y1) / 2 + (y - this.cam.y) * sc;          // (map coordinates -> screen)
     ctx.save(); ctx.beginPath(); ctx.rect(0, VIEW_Y0, W, VIEW_Y1 - VIEW_Y0); ctx.clip(); ctx.translate(W / 2 - this.cam.x * sc, (VIEW_Y0 + VIEW_Y1) / 2 - this.cam.y * sc); ctx.scale(sc, sc);
     // the rooms beside the ones you know, as faint shapes (the Astrolabe)
-    if (astro) { const near = new Set(); for (const r of rooms) for (const id of [...r.exits.map(e => e.room), ...r.doors.map(d => d.room)]) if (id && ROOMS[id] && !S.visited[id]) near.add(id);
+    if (astro) { const near = new Set(); for (const r of rooms) for (const id of [...r.exits.map(e => e.room), ...r.doors.filter(d => !(d.hid && !S.flags[d.hid])).map(d => d.room)]) if (id && ROOMS[id] && !S.visited[id]) near.add(id);
       for (const id of near) { const q = rect(ROOMS[id]); ctx.fillStyle = 'rgba(120,110,150,0.22)'; ctx.fillRect(q.x, q.y, q.w, q.h); ctx.strokeStyle = 'rgba(180,170,210,0.35)'; ctx.strokeRect(q.x + 0.5, q.y + 0.5, q.w - 1, q.h - 1); } }
     // the rooms: each filled in its zone's colour, a bright wall with gaps where it opens on a neighbour, and the marks of what it holds
     for (const r of rooms) {
@@ -542,7 +543,7 @@ export class MapScreen {
       const gaps = { L: new Set(), R: new Set() }; for (const e of r.exits) if (gaps[e.side]) gaps[e.side].add(Math.floor(clamp(((e.from + e.to) / 2) / r.h, 0, 0.999) * q.ch));
       ctx.fillStyle = '#d6defa'; ctx.fillRect(x, y, w, 1); ctx.fillRect(x, y + h - 1, w, 1);
       for (let j = 0; j < q.ch; j++) { if (!gaps.L.has(j)) ctx.fillRect(x, y + j * CELL_H, 1, CELL_H); if (!gaps.R.has(j)) ctx.fillRect(x + w - 1, y + j * CELL_H, 1, CELL_H); }
-      for (const d of r.doors) {                                                       // a door: a small mark where it really is in the room (gold; light blue for a one-way door; violet for the Keeper's)
+      for (const d of r.doors) if (!(d.hid && !S.flags[d.hid])) {                       // a door: a small mark where it really is in the room (gold; light blue for a one-way door; violet for the Keeper's)
         const tx = Math.round(x + clamp((d.x + 0.5) / r.w, 0.04, 0.96) * w), ty = Math.round(y + clamp(d.gy / r.h, 0.1, 0.96) * h) - 2, one = d.tag === 'out', kp = ROOMS[d.room] && ROOMS[d.room].spawns.some(sp => sp.type === 'shopkeeper');
         ctx.fillStyle = '#05030a'; ctx.fillRect(tx - 1, ty - 1, 4, 5); ctx.fillStyle = kp ? '#c8a0ff' : one ? '#7fd8ff' : '#e8b84a'; ctx.fillRect(tx, ty, 2, 3); }
       if (stone) { const cx = x + w / 2, cy = y + h / 2; ctx.fillStyle = lit ? '#e8ffff' : '#6a9aaa'; ctx.fillRect(Math.round(cx) - 1, Math.round(cy) - 3, 2, 6); ctx.fillRect(Math.round(cx) - 3, Math.round(cy) - 1, 6, 2); }
@@ -562,7 +563,7 @@ export class MapScreen {
     const links = [];
     if (sel && !this.tele) {
       for (const e of sel.exits) { const t = ROOMS[e.room]; if (t) links.push({ id: t.id, seen: !!S.visited[t.id] }); }
-      for (const d of sel.doors) { const t = ROOMS[d.room]; if (t) links.push({ id: t.id, seen: !!S.visited[t.id] }); }
+      for (const d of sel.doors) { if (d.hid && !S.flags[d.hid]) continue; const t = ROOMS[d.room]; if (t) links.push({ id: t.id, seen: !!S.visited[t.id] }); }
       const sq = rect(sel), pulse = 0.6 + 0.4 * Math.sin(this.t * 0.2); ctx.strokeStyle = `rgba(255,255,255,${pulse.toFixed(2)})`; ctx.lineWidth = 1.5 / Math.max(sc, 0.5); ctx.strokeRect(sq.x - 2, sq.y - 2, sq.w + 4, sq.h + 4);
     }
     if (this.tele) for (let i = 0; i < this.stones.length; i++) {       // brackets round every attuned waystone; the chosen one pulses

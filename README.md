@@ -146,10 +146,11 @@ A gamepad also works (A jump, X attack, B dash, Y use selected, bumpers move the
   you own the right power, so backtracking pays off. Levels, XP and item drops included. **Stone statues** are the breakable
   treasure: 2-3 sword hits to shatter, paying out 2-3 items instead of one, and they stand about 2.5x less often than the
   old candles did. Candelabras are scenery only.
-* **Sword enchantments:** enemies (and more often bosses) sometimes drop a glowing rune that imbues your blade for a couple
-  of minutes - **fire** (flaming sword, more damage, shoots short fireballs), **ice** (frost blade, chance to freeze foes
-  for 1-3 s; rarer and shorter on bosses, with a thaw immunity so nothing can be stun-locked), **radiant** (sunlight blade,
-  big damage boost, glowing aura) and **defending** (the blade sometimes raises an energy shield that blocks one hit).
+* **Sword enchantments:** enemies (and more often bosses) sometimes drop a glowing rune that imbues your blade for a minute -
+  **Flame Blade** (10% more damage, and every slash shoots a short fireball for 25% of a bare blow: together, what Sunbrand does), **Frost Blade** (15% more, a chance to freeze foes for 1-3 s; rarer and
+  shorter on bosses, with a thaw immunity so nothing can be stun-locked) and **Sunbrand** (35% more, glowing aura). The same rune
+  again adds a minute, up to a fresh one's length plus a minute.
+* **Temporal Seals:** the prize in each of the four puzzle rooms. Each makes a sword enchantment last **20 seconds longer** (2:20 with all four, 3:20 at most), and adds the 20 seconds to one already running. Numbers: `TUNE` in `enchant.js`.
 * **A different castle every game:** the rooms are generated from a seed (see below), but every room is *proven*
   beatable before you ever see it.
 * **The white cloak remembers.** Fire singes it grey-black, filth (zombies, swamp things, thrown bones) dirties it brown, and teeth, claws and spikes
@@ -158,7 +159,16 @@ A gamepad also works (A jump, X attack, B dash, Y use selected, bumpers move the
 * **Water.** Standing in water, the hero runs at **half speed** and jumps **half as high**. There is water in the Weeping Swamp's corridors (now and then a **pool**: a one-tile hollow in the
   ground, three to five tiles wide, with a step down and a step up), in the Cistern's flowing channels (which also **push you along** the way they run) and on the floor of the Drowned Warden's arena,
   a sheet of still shallow water until the Warden heaves the **tide**: for a few seconds the whole flood runs one way, or the other (a lane on the water shows which way, just before). Water is drawn by the
-  three.js water shader (`fx.js`); the physics are in `Player.waterAt` (`player.js`).
+  three.js water shader (`fx.js`); the physics are in `Player.waterAt` (`player.js`). In the Freezing Deep and the Black Ice Falls the water running along each ledge **carries you over its edge**
+  if you stand in it (walking upstream still works).
+* **The Library's secret (spoiler).** Nothing in the game points to it. One bookcase on the ground floor of the Spiral Stair (the right-hand one) breaks at the third blow and shows a door to **the Book Nook**, a warm little room with a fire, a cat and a lever.
+  The lever slides a bookcase aside in **The Stacks**, and behind it is **the Sealed Archive** with a Sal Martis. Until each is found, its door is not drawn, cannot be used and is not on the map (`hiddenDoor` in `levelgen.js`).
+* **Puzzle rooms (spoilers).** Four single rooms off the vertical ways and the gallery, each with levers and a chained chest holding a Temporal Seal. Every lever has a rule (candles it puts out, lights, then toggles); the rules are in `puzzle` of the room's entry in `levelgen.js`,
+  and `tools/test-world.mjs` proves each puzzle can be solved from wherever the levers can bring it.
+  * **The Winding Room** (half way up the Mainspring Shaft): each of three levers toggles two of three candelabras; light all three. One candelabrum starts lit, which is what makes it solvable, so one pull of the right lever does it.
+  * **The Vestry** (the Barricaded Gallery): four altar candles; the soot on the wall shows that the second and fourth should burn. Lever 1 lights 1 and 2 and puts out 3; lever 2 puts out 2 and 3 and lights 4; lever 3 toggles 1. From all dark: levers 2, 1, 3.
+  * **The Wisp Causeway** (the Lower Road): four bog vents; the carved stone shows 1, 3 and 4 burning and 2 not (sludge covers the lock while it does). Lever 1 toggles 1 and 2; lever 2 lights 2 and puts out 3; lever 3 toggles 3 and 4; lever 4 puts out 1 and toggles 4. From all dormant: levers 2, 1, 3.
+  * **The Glacial Lattice** (the Black Ice Falls): a beam through three lenses, clear or frosted, must light both side crystals and miss the node: lenses 1 and 3 clear, 2 frosted. Lever 1 toggles 1 and frosts 2; lever 2 toggles 2 and 3; lever 3 clears 1 and toggles 3. No start needs more than two pulls.
 * **Save altars** (candle shrines in small sanctuary rooms) heal you and save to the browser's localStorage.
   Dying returns you to your last altar.
 
@@ -215,6 +225,7 @@ src/
   gears.js          the turning gears of the gear room: each tooth is a moving platform that carries the hero      scenes.js   scripted scenes (the Cinder Warden setting Prague alight)
   validate.js       reachability prover (jump simulation + search)       physics.js   movement constants shared with the player
   enchant.js        sword enchantment data + effects
+  puzzle.js         the lever puzzles' rules, solver and starting patterns      puzzleprops.js   their levers, candles, vents, lenses and beam
   fx.js             three.js effects: particles, flame shaders, lightning, rings, magic circles, light/darkness
   procart.js        code-drawn pixel art: bat, icons, props
   audio.js          music manager + synthesized sound effects      ui.js   HUD, menus, map, story screens
