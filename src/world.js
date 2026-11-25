@@ -1,11 +1,11 @@
 // Rooms: tile grid, collision queries, tile-art themes (auto-tiled from the Gothicvania tilesets) and parallax backgrounds.
 import { W, H, T, mulberry32, hash1 } from './util.js';
 import { IMG, SHEET, drawSheet } from './assets.js';
-import { LIBRARY_THEME, ICE_THEME, bookTile, drawIceBlock, drawLibrary, drawIceCave, drawForeground } from './newzones.js';
+import { LIBRARY_THEME, ICE_THEME, bookTile, drawIceBlock, drawFloorBlock, drawLibrary, drawIceCave, drawForeground } from './newzones.js';
 export { drawForeground };
 
-export const TILE = { EMPTY: 0, SOLID: 1, PLAT: 2, SPIKE: 3, CRACK: 4, BARRICADE: 5, CRYSTAL: 6, SEAL: 7, ICE: 8, GATE: 9 };          // (ICE: a barrier of ice that the Ember spell melts; GATE: a portcullis of iron bars that a LEVER, somewhere else in the room, raises - see props.js Lever)
-export const isSolid = v => v === 1 || v === 4 || v === 5 || v === 6 || v === 7 || v === 8 || v === 9;
+export const TILE = { EMPTY: 0, SOLID: 1, PLAT: 2, SPIKE: 3, CRACK: 4, BARRICADE: 5, CRYSTAL: 6, SEAL: 7, ICE: 8, GATE: 9, FLOOR: 10 };          // (FLOOR: a cracked floor block that only the Alembic Strike breaks; ICE: a barrier of ice that the Ember spell melts; GATE: a portcullis of iron bars that a LEVER, somewhere else in the room, raises - see props.js Lever)
+export const isSolid = v => v === 1 || v === 4 || v === 5 || v === 6 || v === 7 || v === 8 || v === 9 || v === 10;
 
 // A PORTCULLIS: iron bars (brass in the Clockwork Dungeon) with a crossbar every third course, hanging from a heavy housing in the ceiling.  One 16x16 cell at pixel (x, y); `top` is the first cell of its column
 // (it carries the housing).  Drawn into the room's prerendered picture, and again - sliding up - while the gate is rising (Game.openGate).
@@ -611,6 +611,7 @@ export class Room {
       else if (v === TILE.CRACK) { if (this.bookWall && this.bookWall.has(tx + ',' + ty)) bookTile(g, tx, ty); else drawSheet(g, 't_crack', 0, tx * T, ty * T, { ax: 0, ay: 0 }); this.brk.push([tx, ty, v]); }
       else if (v === TILE.BARRICADE) { drawSheet(g, 't_barricade', 0, tx * T, ty * T, { ax: 0, ay: 0 }); this.brk.push([tx, ty, v]); }
       else if (v === TILE.ICE) { drawIceBlock(g, tx, ty); this.brk.push([tx, ty, v]); }
+      else if (v === TILE.FLOOR) { drawFloorBlock(g, tx, ty); this.brk.push([tx, ty, v]); }
       else if (v === TILE.CRYSTAL || v === TILE.SEAL) this.anim.push([tx, ty, v]);
       else if (v === TILE.GATE) { if (!(this.gateRising && this.gateRising.has(tx + ',' + ty))) drawGateTile(g, tx * T, ty * T, this.theme, this.tiles[(ty - 1) * this.w + tx] !== TILE.GATE, ty); }          // (a gate that is rising is drawn by Game.draw, sliding up)
     }

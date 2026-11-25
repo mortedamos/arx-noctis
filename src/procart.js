@@ -78,7 +78,7 @@ function batFrame(p, k) {
 // ------------------------------------------------------------------------------------------------
 // ICONS (14x14) and props
 // ------------------------------------------------------------------------------------------------
-export const ICON = ['heart', 'potion', 'mana', 'coin', 'gem', 'key', 'feather', 'boot', 'ember', 'thunder', 'hpup', 'mpup', 'atkup', 'skull', 'orb', 'scroll', 'e_fire', 'e_ice', 'e_sun', 'e_aegis', 'dagger', 'axe', 'torchi', 'marrow', 'holy', 'bandage', 'shoes', 'lock', 'mantle', 'lantern', 'shard', 'spring', 'astrolabe', 'ouroboros', 'athanor'];
+export const ICON = ['heart', 'potion', 'mana', 'coin', 'gem', 'key', 'feather', 'boot', 'ember', 'thunder', 'hpup', 'mpup', 'atkup', 'skull', 'orb', 'scroll', 'e_fire', 'e_ice', 'e_sun', 'e_aegis', 'dagger', 'axe', 'torchi', 'marrow', 'holy', 'bandage', 'shoes', 'lock', 'mantle', 'lantern', 'shard', 'spring', 'astrolabe', 'ouroboros', 'athanor', 'alembic'];
 const IW = 14;
 function iconFrame(p, k) {
   const R = hex('#d4263a'), R2 = hex('#ff7a86'), GL = hex('#f2c14e'), GL2 = hex('#fff0a8'), BL = hex('#3a8bff'), BL2 = hex('#a8d4ff'), WH = hex('#f4f6ff');
@@ -120,6 +120,7 @@ function iconFrame(p, k) {
     case 'ouroboros': p.disc(6.5, 6.5, 5.8, hex('#2f6a3a')); p.disc(6.5, 6.5, 4.9, hex('#5fbf62')); p.disc(6.5, 6.5, 2.9, [0, 0, 0, 0]); for (let i = 0; i < 9; i++) { const a = i * Math.PI * 2 / 9 + 0.4; p.set(Math.round(6 + Math.cos(a) * 4.2), Math.round(6 + Math.sin(a) * 4.2), GL); } p.poly([[7, 0], [12, 1], [13, 4], [9, 4]], hex('#2f6a3a')); p.poly([[8, 1], [12, 2], [12, 3], [9, 3]], hex('#8fe08a')); p.set(11, 2, R); p.set(13, 5, R); break;
     case 'crampons': p.poly([[2, 2], [7, 2], [7, 7], [12, 8], [12, 10], [2, 10]], hex('#5a6e8a')); p.rect(2, 2, 5, 1, hex('#a8c0e0')); p.rect(8, 8, 3, 1, hex('#a8c0e0')); p.rect(2, 10, 10, 1, hex('#2a3446')); for (let i = 0; i < 4; i++) p.poly([[2 + i * 3, 11], [4 + i * 3, 11], [3 + i * 3, 13]], hex('#dff4ff')); break;
     case 'athanor': p.rect(2, 11, 10, 2, hex('#4a4458')); p.rect(3, 4, 8, 7, hex('#8a7a6a')); p.poly([[3, 4], [5, 2], [9, 2], [11, 4]], hex('#a89a86')); p.rect(6, 0, 2, 3, hex('#6a5a4a')); p.poly([[5, 11], [5, 8], [7, 6], [9, 8], [9, 11]], hex('#14101c')); p.poly([[7, 7], [9, 10], [8, 11], [6, 11], [5, 10]], BL); p.poly([[7, 9], [8, 11], [6, 11]], BL2); p.rect(3, 4, 8, 1, hex('#c9bca6')); break;
+    case 'alembic': p.disc(4.8, 8.6, 4.2, hex('#cfe9e4')); p.poly([[1.4, 9], [8.2, 9], [7.4, 11.4], [4.8, 12.6], [2.2, 11.4]], hex('#4fd08c')); p.disc(3.6, 7.4, 1.1, WH); p.line(5.5, 5, 8, 2.4, hex('#cfe9e4'), 2); p.line(8, 2.4, 10.5, 3, hex('#cfe9e4'), 2); p.line(10.5, 3, 12.2, 7.6, hex('#cfe9e4'), 1); p.set(12, 9, hex('#4fd08c')); p.set(12, 11, hex('#9cf0c0')); break;          // (a glass retort, its long beak dripping downward)
     case 'scroll': p.rect(3, 2, 8, 10, hex('#e8d9a8')); p.rect(2, 1, 10, 2, hex('#b68a4a')); p.rect(2, 11, 10, 2, hex('#b68a4a')); for (let i = 0; i < 3; i++) p.rect(4, 4 + i * 2, 6, 1, hex('#8a6a3a')); break;
   }
   if (name !== 'coin' && name !== 'mana' && name !== 'potion') { p.shade(1.18, 0.78); } p.outline(OUT);

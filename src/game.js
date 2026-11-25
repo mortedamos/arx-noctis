@@ -64,7 +64,7 @@ const BOSS_K = { 6: [2.0, 1.25], 1: [2.3, 1.3], 7: [2.6, 1.4], 2: [3.2, 1.55], 9
 // the boss flags a sealed door asks for -> where that master is to be found (the door's dialogue lists the ones that still live)
 const LOCK_HINTS = {
   boss_h4: 'THE PHANTOM STEED STILL RIDES THE GREAT HALL, THROUGH THE WOODEN DOOR AT THE GATE OF ARX NOCTIS.',
-  boss_ib: 'THE RIMEWYRM STILL KEEPS THE END OF THE FROZEN CAVERNS, BEYOND THE CISTERN UNDER KARLUV BRIDGE: DROP THROUGH THE PLANKS IN THE DECK, BREAK YOUR FALL WITH A DOUBLE JUMP AND A DASH, AND MELT THE WALL OF ICE WITH FIRE.',
+  boss_ib: 'THE RIMEWYRM STILL KEEPS THE END OF THE FROZEN CAVERNS, BEYOND THE CISTERN UNDER KARLUV BRIDGE: DROP THROUGH THE PLANKS IN THE DECK, BREAK YOUR FALL WITH A DOUBLE JUMP AND A DASH, AND MELT THE WALL OF ICE WITH THE SULPHUR SPELL.',
   boss_u3: 'THE CRIMSON COUNT STILL WAITS IN THE CRYPTS: BURN THE BARRICADE IN THE BARRICADED GALLERY.',
   boss_og: 'THE BOILER GOLEM STILL KEEPS THE FIRES, IN THE LOFT AT THE TOP OF THE ORLOJ TOWER.',
   boss_kb: 'THE BRAZEN HIEROPHANT STILL WORKS THE CLOCKWORK DUNGEON. ITS ENTRANCE IS IN PRAGUE: A LOCKED DOOR HIGH IN SMOULDERING LANE LEADS UP THE ORLOJ TOWER. YOU NEED THE KEY OF TIN.',
@@ -144,10 +144,11 @@ export class Game {
   // the room's streams and waterfalls, for the water shader (fx.setWater)
   waterList() {
     const r = this.room, out = [];
-    for (const c of r.currents || []) out.push({ type: 0, x0: c.x0, y0: c.y - 15, x1: c.x1, y1: c.y + 1, v: c.vx * 60 });
+    for (const d of r.decos) if (d.t === 'spill') out.push({ type: d.dir > 0 ? 2 : 3, x0: d.dir > 0 ? d.lip : d.lip - 22, y0: d.from - 12, x1: d.dir > 0 ? d.lip + 22 : d.lip, y1: d.to, v: 120 });          // (water going over the edge of a ledge: from the lip, curving over, down to where it lands.  Listed first: it is drawn in front of the water it falls into)
+    for (const c of r.currents || []) out.push({ type: c.spill ? 0.4 : 0, x0: c.x0, y0: c.y - 15, x1: c.x1, y1: c.y + 1, v: c.vx * 60 });          // (c.spill: it pours over a lip at its downstream end)
     for (const c of r.rivers || []) out.push({ type: 0, x0: c.x0, y0: c.y, x1: c.x1, y1: r.ph, v: c.vx * 60 });
     for (const d of r.decos) if (d.t === 'waterfall') out.push({ type: 1, x0: d.x - d.w / 2, y0: d.top, x1: d.x + d.w / 2, y1: d.y, v: 95 });
-    for (const p of r.pools || []) out.push({ type: 0, x0: p.x0, y0: p.yb - POOL_DEPTH, x1: p.x1, y1: p.yb, v: 0 });          // (a pool: a still sheet of shallow water lying on the bottom of a one-tile hollow of the ground: its surface is well below the lip, not level with it)
+    for (const p of r.pools || []) out.push({ type: 0, x0: p.x0, y0: p.yb - (p.depth || POOL_DEPTH), x1: p.x1, y1: p.yb, v: 0 });          // (a pool: a still sheet of shallow water lying on the bottom of a one-tile hollow of the ground: its surface is well below the lip, not level with it)
     return out;
   }
   // the flow of the room's water has changed (a boss heaves the tide): hand the new speeds to the water shader
@@ -259,7 +260,7 @@ export class Game {
   applyCode(code) {
     if (code !== 'all') return; const S = this.save;
     for (const k of Object.keys(S.abilities)) S.abilities[k] = true;
-    for (const f of ['got_mantle', 'got_lantern', 'got_shard', 'got_spring', 'got_tide', 'got_astrolabe', 'got_ouroboros', 'got_shoes', 'got_athanor']) S.flags[f] = true;
+    for (const f of ['got_mantle', 'got_lantern', 'got_shard', 'got_spring', 'got_alembic', 'got_astrolabe', 'got_ouroboros', 'got_shoes', 'got_athanor']) S.flags[f] = true;
     for (let n = 1; n <= PAGE_COUNT; n++) { S.flags['page' + n] = true; markPage(n); }
     for (const id of Object.keys(ITEMS)) addItem(S, id, ITEMS[id].max);
     for (const id of this.world.stones || []) S.flags['tp_' + id] = true;
@@ -283,7 +284,8 @@ export class Game {
   respawn() { // after death: back to the last save
     const s = this.loadSave(); if (s) this.useSave(s); else { this.save = newSave(this.world); this.save.flags.opening_seen = true; } this.player = new Player(this, 0, 0); this.boss = null; this.slow = 0; this.save.hp = this.save.maxHp; this.save.mp = this.save.maxMp; this.beginPlay(true);
   }
-  useSave(s) { s.items ||= {}; s.bestiary ||= {}; delete s.items.caltrops; delete s.items.axe; if (s.sel === 'caltrops' || s.sel === 'axe') s.sel = 'dagger'; this.save = s; this.world = buildWorld(s.seed || 0);
+  useSave(s) { if (s.flags && s.flags.got_tide) { s.flags.got_alembic = true; delete s.flags.got_tide; }          // (Aqua Regia became the Alembic Strike: whoever had the one has the other)
+    s.items ||= {}; s.bestiary ||= {}; delete s.items.caltrops; delete s.items.axe; if (s.sel === 'caltrops' || s.sel === 'axe') s.sel = 'dagger'; this.save = s; this.world = buildWorld(s.seed || 0);
     if (s.gv !== GEN_VERSION || !this.world.rooms[s.room]) { s.gv = GEN_VERSION; s.room = this.world.start.room; s.spawnX = this.world.start.x * 16 + 8; s.spawnY = this.world.start.gy * 16; s.visited = {}; s.flags.opening_seen = true; }          // (a save made before the castle's layout last changed: the rooms are not where they were, so the hero wakes at the start with everything they carry; the maps fill in again)
   }                       // (caltrops were removed from the game)
   openShop(keeper) { this.state = 'shop'; this.shop = new ShopScreen(this, keeper); A.sfx('select'); }
@@ -301,13 +303,13 @@ export class Game {
   // -------------------------------------------------------------------------------- rooms
   loadRoom(id, pos, dir = 1) {
     const def = this.world.rooms[id], S = this.save, tiles = Uint8Array.from(def.tiles);
-    for (let ty = 0; ty < def.h; ty++) for (let tx = 0; tx < def.w; tx++) { const v = tiles[ty * def.w + tx]; if ((v === 4 || v === 5 || v === 6 || v === 8) && S.flags[`b_${id}_${tx}_${ty}`]) tiles[ty * def.w + tx] = 0; }
+    for (let ty = 0; ty < def.h; ty++) for (let tx = 0; tx < def.w; tx++) { const v = tiles[ty * def.w + tx]; if ((v === 4 || v === 5 || v === 6 || v === 8 || v === 10) && S.flags[`b_${id}_${tx}_${ty}`]) tiles[ty * def.w + tx] = 0; }
     for (const lv of def.levers || []) if (S.flags[lv.id]) for (const [gx, gy] of lv.gate) tiles[gy * def.w + gx] = 0;          // (a gate whose lever has been thrown stays raised)
     if (id === 'ib' && S.flags.boss_ib) { for (let i = 0; i < tiles.length; i++) if (tiles[i] === TILE.PLAT) tiles[i] = 0; for (let ty = def.h - 2; ty < def.h; ty++) for (let tx = 5; tx <= def.w - 6; tx++) tiles[ty * def.w + tx] = 0; }          // (the Rimewyrm's floor stays shattered: a way down into the Frozen Well - and so do its platforms: see stepWell)
     const prevZone = this.zone; this.room = new Room({ ...def, tiles, ...(def.currents ? { currents: def.currents.map(c => ({ ...c })) } : {}) }); /* (the room gets its OWN copy of the currents: a boss may change their speed, and the castle's blueprint must not remember it) */ this.room.flags = S.flags; this.room.ignited = new Set(); this.room.fireOut = def.zone === 6 && !!S.flags.boss_vb; if (S.flags.boss_vb) S.flags.village_fire = true; S.visited[id] = true; this.zone = def.zone;          // (the room can see the save's flags: scenery such as the sigils over a locked door reads them)
     { const spk = []; for (let ty = 0; ty < def.h; ty++) for (let tx = 0; tx < def.w; tx++) if (tiles[ty * def.w + tx] === TILE.SPIKE) spk.push([tx, ty]); if (spk.length) this.room.decos = def.decos.filter(d => !decoCoversHazard(d, spk)); }          // nothing may stand in front of a hazard
     this.room.setPlatOver(platesOver(this.room));          // (a platform a crate, cart or lamp stands across is drawn over it: see Room.drawPlatsOver)
-    if (this.gaze) { this.gaze = null; this.playerFrozen = false; } this.gateAnims = []; this.hatchAnim = null; for (const d of this.room.decos) if (d.t === 'hatch') d.p = S.flags[d.lever] ? 1 : 0;          // (a hatch whose lever has been thrown stays drawn back: p = how far it has slid, 0..1)
+    if (this.gaze) { this.gaze = null; this.playerFrozen = false; } this.gateAnims = []; this.grateAnim = null; for (const d of this.room.decos) if (d.t === 'grate') d.p = S.flags[d.lever] ? 1 : 0;          // (a grate whose lever has been thrown stays drawn back: p = how far it has slid, 0..1)
     this.blackout = null; this.well = null; this.enemies = []; this.projectiles = []; this.pickups = []; this.props = []; this.popups = []; this.boss = null; this.delayed = []; this.fx.reset(); this.fx.setWisps(def.wisps || 0); this.flames = roomFlames(this.room); this.smokeSpots = this.room.fireOut ? this.room.decos.filter(d => d.t === 'blaze' && !d.small).map(d => ({ x: d.x, y: d.y })) : []; this.falls = this.room.decos.filter(d => d.t === 'waterfall'); this.fx.setWater(this.waterList()); this.mirrorView = def.mirror ? new MirrorView(def.mirror, !!S.flags['boss_' + id]) : null;          // (the Mirror Room: a great mirror - whole until you walk up to it)
     const dusk = def.zone === 6 && !S.flags.village_fire && !def.keepLook;          // Prague before the Cinder Warden's torches: a calm violet dusk, with golden dust in the air - the monsters are loose, but nothing burns yet
     A.hush = 1; this.fx.setShadowMask(this.room); this.fx.setAmbient(dusk ? Math.max(def.ambient, 0.42) : def.ambient, dusk ? [0.05, 0.03, 0.12] : this.room.fireOut ? [0.09, 0.05, 0.06] : def.tint, def.vig); if (def.dark) this.fx.setDark(); this.fx.setAmbientFx(dusk ? 'dust' : this.room.fireOut ? 'mist' : def.weather); A.setIndoor(def.indoor); this.fx.setStorm(def.storm, 0.0035);
@@ -315,7 +317,7 @@ export class Game {
        def.horizon + 4, FOG_COL[def.theme] || FOG_COL.default, def.fogH);          // rolling ground fog in the damp, dead places
     this.room.pitFade = def.pitFade ? { ...def.pitFade, on: true, m: 0, d: 0, base: this.fx.ambBase } : null;          // (a room whose music and light fade as you cross it)
     this.room.movers = def.movers ? new Movers(def.movers) : null; this.icicles = (def.icicleTraps || []).map(d => new Icicle(d)); this.jets = def.jets && !(def.jetsBoss && this.save && this.save.flags['boss_' + id]) ? def.jets.map(d => new SteamJet(d)) : [];          // (steam jets: in a boss's room they are only there while the boss lives)
-    this.player.ride = null; this.graves = this.room.decos.filter(d => d.t === 'grave'); this.ghost.snap();
+    this.player.ride = null; this.player.diving = false; this.graves = this.room.decos.filter(d => d.t === 'grave'); this.ghost.snap();
     if (def.disco) { this.room.discoState = { mode: S.flags.disco_done ? 'gone' : 'party', t0: 0 }; A.preload('record_scratch'); }
     const bossDone = !!S.flags['boss_' + id];
     for (let si = 0; si < def.spawns.length; si++) {
@@ -379,7 +381,7 @@ export class Game {
     else if (p.x > r.pw - 3) { const e = r.exitRows.R[row]; if (e && p.vx >= 0) this.changeRoom({ room: e.room, x: e.tx * 16 + 8, y: e.gy * 16 }, 1); }
     if (r.id === 'ib' && this.save.flags.boss_ib && p.y > r.ph - 4 && !p.dead && !this.well) { this.enterWell(); return; }          // (the broken arena: a drop into the Frozen Well)
     if (r.id === 'pd' && p.y > r.ph - 4 && !p.dead && !this.trans) { this.enterAbyss(); return; }          // (the Pit of Despair has no bottom, until you reach it)
-    if (r.dropTo && p.y > r.ph - 4 && !p.dead && !this.trans) { this.dropInto(r.dropTo); return; }          // (a floor with a way through: the loose planks of the Cooper's House drop into the cellar)
+    if (r.dropTo && p.y > r.ph - 4 && !p.dead && !this.trans) { this.dropInto(r.dropTo); return; }          // (a floor with a way through: the Cooper's House and the Bell Tower Descent once their cracked floors are broken, the Warder's Chamber once its grate is drawn)
     if (p.y > r.ph + 48 && !p.dead) { p.hurt(10, p.x, { kb: 0 }); this.respawnAtSafe(p); }
   }
   respawnAtSafe(p) { this.after(0, () => { p.x = p.lastSafe.x; p.y = p.lastSafe.y; p.vx = p.vy = 0; p.invT = 90; this.fx.flash([0.6, 0.4, 1], 0.3); this.fx.burst(p.x, p.y - 16, 10, COLORS.purple, { speed: 1.5 }); }); }
@@ -410,16 +412,6 @@ export class Game {
   }
 
   // -------------------------------------------------------------------------------- combat resolution
-  // the Tide Blade: a dash cuts through whatever it passes through (each foe once per dash)
-  dashHit(p) {
-    const box = { x: p.x - 16, y: p.y - 38, w: 32, h: 38 }; let hit = false;
-    for (const e of this.enemies) {
-      if (e.dead || e.calm || e.talk || !e.hitBy(box)) continue;
-      if (e.hurt(Math.round(p.swordDamage() * 0.9) + 2, p.dir, { id: p.dashAtkId, kb: 1.5 })) { hit = true; this.fx.sparks(e.x, e.cy, 6, [[0.55, 0.88, 1], [0.2, 0.5, 1]], 3, {}); this.fx.ring(e.x, e.cy, 26, [0.5, 0.85, 1], 12, 0.2); }
-    }
-    if (hit && !p.dashHitDone) { p.dashHitDone = true; this.hitstop = 2; A.sfx('hit'); }
-    if (p.t % 2 === 0) this.fx.burst(p.x - p.dir * 8, p.y - 14, 2, [[0.6, 0.88, 1], [0.3, 0.55, 1]], { speed: 0.8, s0: 8, s1: 2, l0: 10, l1: 18 });
-  }
   // the Mirror Shard: an enemy's arrow, bone, orb or thrown item is sent back (at the nearest foe in front, else straight back), faster, and now it hurts them
   reflectable(pr) { return pr.owner === 'enemy' && !pr.reflected && typeof pr.vx === 'number' && typeof pr.vy === 'number' && !(pr instanceof Column) && !(pr instanceof Shockwave) && !(pr instanceof FirePatch) && pr.kind !== 'wisp'; }
   reflect(pr, p) {
@@ -428,15 +420,15 @@ export class Game {
     A.sfx('block'); this.fx.ring(pr.x, pr.y, 22, [0.8, 0.9, 1], 12, 0.25); this.fx.sparks(pr.x, pr.y, 8, [[1, 1, 1], [0.7, 0.85, 1]], 3, {}); this.popup(pr.x, pr.y - 12, 'REFLECTED', '#cfe2ff');
   }
   swordHit(p) {
-    const box = p.attackBox(), dir = p.dir; let hit = false;
+    const box = p.attackBox(), dir = p.dir, down = !!p.seq.down; let hit = false, spring = false;          // (spring: the Alembic Strike has landed on something that throws the hero back up)
     for (const e of this.enemies) {
       if (e.dead || !e.hitBy(box)) continue;
       if (e.hurt(p.swordDamage(), dir, { id: p.atkId, kb: p.seq.kb })) {
-        hit = true; p.gainMp(1.2); this.fx.sparks(e.x, e.cy, 4, COLORS.white, 3, { dir: dir > 0 ? 0 : Math.PI, spread: 0.6 });
+        hit = true; spring = true; p.gainMp(1.2); this.fx.sparks(e.x, e.cy, 4, COLORS.white, 3, { dir: dir > 0 ? 0 : Math.PI, spread: 0.6 });
         if (!e.dead) p.onSwordHit(e);                          // enchantment procs: freeze
       }
     }
-    for (const o of this.props) if (o.hit && !o.dead && overlap(box, o.box)) { if (o.hit(this, p.swordDamage(), dir)) { hit = true; p.gainMp(2); } }
+    for (const o of this.props) if (o.hit && !o.dead && overlap(box, o.box)) { if (o.hit(this, p.swordDamage(), dir)) { hit = true; spring = true; p.gainMp(2); } }
     // breakable walls
     const tx0 = Math.floor(box.x / T), tx1 = Math.floor((box.x + box.w) / T), ty0 = Math.floor(box.y / T), ty1 = Math.floor((box.y + box.h) / T);
     for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) if (this.room.get(tx, ty) === TILE.CRACK) { if (this.hitBookTile(tx, ty, p.atkId)) hit = true; else { this.breakTile(tx, ty); hit = true; } }
@@ -444,6 +436,11 @@ export class Game {
       if (pr.dead || pr.reflected || !overlap(box, pr.box)) continue;          // (a reflected one is already on its way: the rest of the swing must not cut it down)
       if (this.save.flags.got_shard && this.reflectable(pr)) { this.reflect(pr, p); hit = true; continue; }          // the Mirror Shard: it goes back where it came from
       if (pr.k && (pr.kind === 'bone' || pr.kind === 'ember' || pr.destructible)) { pr.explode(this); hit = true; }
+    }
+    if (down) for (let ty = Math.floor((p.y - 4) / T); ty <= Math.floor((p.y + 36) / T); ty++) for (let tx = tx0; tx <= tx1; tx++) if (this.room.get(tx, ty) === TILE.FLOOR) { this.breakFloor(tx, ty); hit = true; }          // (the floor gives as far down as the arc is drawn)
+    if (down && !p.onGround && !p.pogoUsed) {          // spikes under the blade throw him up too, before his feet reach them
+      for (let ty = ty0; ty <= ty1 && !spring; ty++) for (let tx = tx0; tx <= tx1; tx++) if (this.room.get(tx, ty) === TILE.SPIKE && box.y + box.h > ty * T + 6) { spring = true; A.sfx('block'); break; }
+      if (spring) p.bounce();
     }
     if (hit && p.hitsThisSwing++ === 0) { this.hitstop = 3; this.shake(1.5, 5); }
   }
@@ -457,7 +454,7 @@ export class Game {
   }
   stepGaze() {
     const gz = this.gaze; gz.t++;
-    if (!gz.opened && gz.t >= gz.pan + 10) { gz.opened = true; if (gz.def.kind === 'hatch') this.openHatch(gz.def); else this.openGate(gz.def.gate); }
+    if (!gz.opened && gz.t >= gz.pan + 10) { gz.opened = true; if (gz.def.kind === 'grate') this.openGrate(gz.def); else this.openGate(gz.def.gate); }
     if (gz.t >= gz.pan + 10 + 72) { this.gaze = null; this.playerFrozen = false; this.player.invT = Math.max(this.player.invT, 30); }
   }
   // the gate rises: its bars slide up out of sight (drawn by drawGates), and once there is room to walk under, the tiles are cleared
@@ -468,23 +465,23 @@ export class Game {
     A.sfx('seal'); A.sfx('gear'); this.shake(3, 40);
     this.after(30, () => { const rr = this.room; if (rr !== r) return; for (const [tx, ty] of tiles) if (rr.get(tx, ty) === TILE.GATE) rr.set(tx, ty, TILE.EMPTY); });
   }
-  // A HATCH in the floor draws back: its leaf slides under the floor beside it, and each column of floor under it is cleared as the leaf's edge passes (a hole into the room below: see def.dropTo)
-  openHatch(def) {
-    const d = this.room.decos.find(q => q.t === 'hatch' && q.lever === def.id); if (!d) { for (const [tx, ty] of def.gate) this.room.set(tx, ty, TILE.EMPTY); this.room.dirty = true; return; }
-    this.hatchAnim = { d, def, t: 0, dur: 54 }; A.sfx('door'); A.sfx('gear'); this.shake(2, 30);
+  // A GRATE in the floor draws back: it slides under the floor beside it, and each column under it is cleared as its edge passes (a hole into the room below: see def.dropTo)
+  openGrate(def) {
+    const d = this.room.decos.find(q => q.t === 'grate' && q.lever === def.id); if (!d) { for (const [tx, ty] of def.gate) this.room.set(tx, ty, TILE.EMPTY); this.room.dirty = true; return; }
+    this.grateAnim = { d, def, t: 0, dur: 54 }; A.sfx('door'); A.sfx('gear'); this.shake(2, 30);
   }
-  stepHatch() {
-    const a = this.hatchAnim, r = this.room, w = a.d.w || 48; a.t++;
+  stepGrate() {
+    const a = this.grateAnim, r = this.room, w = a.d.w || 48, top = a.def.gate[0][1]; a.t++;
     const p = Math.min(1, a.t / a.dur), e = 1 - Math.pow(1 - p, 2); a.d.p = e;
-    for (const [tx, ty] of a.def.gate) if (r.get(tx, ty) !== TILE.EMPTY && e * w >= w - 16 * (tx - a.def.hx)) { r.set(tx, ty, TILE.EMPTY); r.dirty = true; if (ty === 12) this.fx.burst(tx * 16 + 8, ty * 16 + 6, 6, [[0.5, 0.4, 0.3], [0.3, 0.25, 0.2]], { speed: 1.2, s0: 8, gy: 0.03 }); }
+    for (const [tx, ty] of a.def.gate) if (r.get(tx, ty) !== TILE.EMPTY && e * w >= w - 16 * (tx - a.def.hx)) { r.set(tx, ty, TILE.EMPTY); r.dirty = true; if (ty === top) this.fx.burst(tx * 16 + 8, ty * 16 + 6, 6, [[0.45, 0.42, 0.5], [0.25, 0.23, 0.3]], { speed: 1.2, s0: 8, gy: 0.03 }); }
     if (a.t % 8 === 0 && p < 1) A.sfx('gear');
-    if (p >= 1) { A.sfx('click'); this.hatchAnim = null; }
+    if (p >= 1) { A.sfx('click'); this.grateAnim = null; }
   }
   // walking up to a gate that is still down: a few words, now and then, so it is clear what it is
   gateHint() {
     const p = this.player, S = this.save; if (p.dead || this.gaze || this.frame < (this.gateHintT || 0)) return;
     for (const lv of this.room.levers) {
-      if (S.flags[lv.id] || lv.kind === 'hatch') continue; const x0 = lv.gate[0][0] * 16, ys = lv.gate.map(q => q[1]), y0 = Math.min(...ys) * 16, y1 = (Math.max(...ys) + 1) * 16;
+      if (S.flags[lv.id] || lv.kind === 'grate') continue; const x0 = lv.gate[0][0] * 16, ys = lv.gate.map(q => q[1]), y0 = Math.min(...ys) * 16, y1 = (Math.max(...ys) + 1) * 16;
       if (p.x > x0 - 24 && p.x < x0 + 56 && p.y > y0 && p.y < y1 + 8) { this.popup(p.x, p.y - 48, 'BARRED - A LEVER MUST RAISE IT', '#e8dcc0'); this.gateHintT = this.frame + 300; A.sfx('back'); return; }
     }
   }
@@ -513,17 +510,21 @@ export class Game {
     A.sfx('hit'); this.fx.burst(x, y, 4, [[0.95, 0.85, 0.6], [0.5, 0.3, 0.12]], { speed: 1.4, s0: 8, gy: 0.05 }); this.fx.sparks(x, y, 3, [[1, 0.9, 0.6]], 2, { gy: 0.1 }); return true;
   }
   breakTile(tx, ty) {
-    const r = this.room, v = r.get(tx, ty); if (v !== TILE.CRACK && v !== TILE.BARRICADE && v !== TILE.CRYSTAL && v !== TILE.ICE) return;
+    const r = this.room, v = r.get(tx, ty); if (v !== TILE.CRACK && v !== TILE.BARRICADE && v !== TILE.CRYSTAL && v !== TILE.ICE && v !== TILE.FLOOR) return;
     if (v === TILE.CRACK && r.isHollow(tx, ty)) { A.sfx('block'); this.fx.ring(tx * 16 + 8, ty * 16 + 8, 22, [0.8, 0.85, 1], 14, 0.2); }          // (a hollow wall rings under the blow)
     const bk = r.bookWall && r.bookWall.has(tx + ',' + ty); r.set(tx, ty, TILE.EMPTY); if (bk) r.bookWall.delete(tx + ',' + ty); else this.save.flags[`b_${r.id}_${tx}_${ty}`] = true; const x = tx * 16 + 8, y = ty * 16 + 8;
     if (bk) { this.fx.burst(x, y, 10, [[0.95, 0.85, 0.6], [0.5, 0.3, 0.12]], { speed: 2, s0: 11, up: 0.4, gy: 0.05 }); this.fx.sparks(x, y, 7, [[1, 0.9, 0.6], [1, 0.7, 0.3]], 2.5, { gy: 0.1 }); A.sfx('break'); this.shake(1.5, 6); return; }
     if (v === TILE.CRACK) { this.fx.burst(x, y, 10, [[0.7, 0.65, 0.8], [0.3, 0.28, 0.4]], { speed: 2, s0: 12, up: -0.5, gy: 0.05 }); this.fx.sparks(x, y, 8, [[0.8, 0.8, 0.9], [0.4, 0.4, 0.5]], 2.5, { gy: 0.2 }); }
     else if (v === TILE.BARRICADE) { this.fx.burst(x, y, 14, COLORS.fire, { speed: 2, s0: 16 }); this.fx.sparks(x, y, 10, COLORS.fire, 3, { gy: 0.15 }); this.fx.glow(x, y, 50, [1, 0.5, 0.2], 0.8, 14); }
     else if (v === TILE.ICE) { this.fx.burst(x, y, 12, COLORS.ice, { speed: 2.2, s0: 12 }); this.fx.sparks(x, y, 10, COLORS.white, 3, { gy: 0.15 }); this.fx.smoke(x, y, 3, { c0: [0.85, 0.92, 1], c1: [0.6, 0.7, 0.85], s0: 6, s1: 22, l: 0.7 }); this.fx.glow(x, y, 44, [1, 0.6, 0.3], 0.6, 12); }
+    else if (v === TILE.FLOOR) { this.fx.burst(x, y, 12, [[0.7, 0.66, 0.78], [0.28, 0.25, 0.34]], { speed: 1.8, s0: 12, up: -0.2, gy: 0.12 }); this.fx.sparks(x, y, 8, [[0.8, 1, 0.9], [0.35, 0.85, 0.6]], 2.6, { gy: 0.2 }); this.fx.glow(x, y, 34, [0.4, 1, 0.7], 0.5, 12); }
     else { this.fx.burst(x, y, 12, COLORS.ice, { speed: 2.5, s0: 14 }); this.fx.sparks(x, y, 14, COLORS.white, 4, { gy: 0.2 }); this.fx.flash([0.6, 0.8, 1], 0.25); }
     A.sfx(v === TILE.ICE ? 'shatter' : 'break'); this.shake(2, 8);
   }
   meltIce(tx, ty) { const q = [[tx, ty]], seen = new Set(); while (q.length) { const [x, y] = q.pop(), k = x + ',' + y; if (seen.has(k) || this.room.get(x, y) !== TILE.ICE) continue; seen.add(k); this.breakTile(x, y); q.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]); } }          // (fire melts a whole barrier of ice, block by block)
+  // CRACKED FLOOR gives way a whole patch at a time, and only to the Alembic Strike: whatever of it the blade reaches (swordHit), or whatever is under his feet when he comes down out of the strike (strikeFloor)
+  breakFloor(tx, ty) { const q = [[tx, ty]], seen = new Set(); while (q.length) { const [x, y] = q.pop(), k = x + ',' + y; if (seen.has(k) || this.room.get(x, y) !== TILE.FLOOR) continue; seen.add(k); this.breakTile(x, y); q.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]); } }
+  strikeFloor(p) { const ty = Math.floor((p.y + 2) / T); for (let tx = Math.floor((p.x - p.w / 2) / T); tx <= Math.floor((p.x + p.w / 2) / T); tx++) this.breakFloor(tx, ty); }
   burnBarricade(tx, ty) { const q = [[tx, ty]], seen = new Set(); while (q.length) { const [x, y] = q.pop(), k = x + ',' + y; if (seen.has(k) || this.room.get(x, y) !== TILE.BARRICADE) continue; seen.add(k); this.breakTile(x, y); q.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]); } }
   castThunder(p) {
     const S = this.save, dmg = 20 + Math.round(p.atkPower * 1.3), cam = this.camera;
@@ -700,7 +701,7 @@ export class Game {
     if (this.icicles && this.icicles.length > 14) this.icicles = this.icicles.filter(i => !i.dead); for (const ic of this.icicles || []) ic.step(this); for (const j of this.jets || []) j.step(this);                          // loose icicles: shiver when the hero comes close, then drop
     if (this.smokeSpots && this.smokeSpots.length && this.frame % 5 === 0) for (const sp of this.smokeSpots) if (sp.x > this.camera.x - 40 && sp.x < this.camera.x + W + 40 && sp.y > this.camera.y - 60 && sp.y < this.camera.y + H + 40 && Math.random() < 0.3) fx.smoke(sp.x + rand(-6, 6), sp.y, 1, { c0: [0.5, 0.47, 0.46], c1: [0.28, 0.26, 0.27], s0: 7, s1: 26, l: 1.5, a: 0.4 });          // (the burnt city smoulders: the fires are out - no flames - but smoke still rises from the ruins)
     if (this.cutscene) this.updateCutscene();
-    if (this.gaze) this.stepGaze(); if (this.gateAnims.length) this.stepGates(); if (this.hatchAnim) this.stepHatch(); if (this.room.levers && this.frame % 10 === 0) this.gateHint();
+    if (this.gaze) this.stepGaze(); if (this.gateAnims.length) this.stepGates(); if (this.grateAnim) this.stepGrate(); if (this.room.levers && this.frame % 10 === 0) this.gateHint();
     p.update();
     const cam = this.camera, ccx = cam.x + W / 2, ccy = cam.y + H / 2;
     const still = !!(this.cutscene && this.cutscene.scene);          // (during a scripted scene the monsters neither move nor attack)
@@ -710,11 +711,11 @@ export class Game {
     if (!still) this.updateProjectiles();
     for (const o of this.pickups) o.update(this); this.pickups = this.pickups.filter(o => !o.dead);
     for (const o of this.props) o.update(this); this.props = this.props.filter(o => !o.dead);
-    if (this.frame % 6 === 0 && this.room) {          // breakable ground gives off sparks too: cracked walls lilac, barricades like embers, crystal icy (real particles, no painted glow)
+    if (this.frame % 6 === 0 && this.room) {          // breakable ground gives off sparks too: cracked walls lilac, barricades like embers, cracked floors green, crystal icy (real particles, no painted glow)
       const cx0 = this.camera.x - 16, cx1 = this.camera.x + W + 16, cy0 = this.camera.y - 16, cy1 = this.camera.y + H + 16;
       for (const [tx, ty, v] of [...(this.room.brk || []), ...(this.room.anim || []).filter(a => a[2] === TILE.CRYSTAL)]) {
         const x = tx * T, y = ty * T; if (x < cx0 || x > cx1 || y < cy0 || y > cy1 || Math.random() > 0.12) continue;
-        const k = v === TILE.CRACK ? [0.8, 0.76, 1] : v === TILE.BARRICADE ? [1, 0.6, 0.27] : [0.5, 0.86, 1];
+        const k = v === TILE.CRACK ? [0.8, 0.76, 1] : v === TILE.BARRICADE ? [1, 0.6, 0.27] : v === TILE.FLOOR ? [0.45, 1, 0.7] : [0.5, 0.86, 1];
         this.fx.emit({ x: x + rand(1, 15), y: y + rand(2, 15), vx: rand(-0.1, 0.1), vy: -rand(0.12, 0.38), life: rand(55, 100), s0: rand(6.5, 10), s1: 2, c0: k, c1: [1, 1, 0.92], a0: 1, a1: 0, kind: 6 });
       }
     }
@@ -797,7 +798,7 @@ export class Game {
   }
   snapCamera() { const p = this.player, r = this.room; this.camera.x = this.camTargetX(p, r); this.camera.y = this.camTargetY(p, r); }
   camTargetX(p, r) { return r.pw <= W ? (r.pw - W) / 2 : clamp(p.x + p.dir * 18 - W / 2, 0, r.pw - W); }
-  camTargetY(p, r) { return r.ph <= H ? (r.ph - H) / 2 : clamp(p.y - 30 - H / 2, 0, r.ph - H); }          // (the hero stands about two thirds of the way down the picture, as everywhere: on the bridge too, where the river still shows below him)
+  camTargetY(p, r) { const foot = r.camFloor && p.y < r.camFloor - 24 ? r.camFloor : r.ph; return r.ph <= H ? (r.ph - H) / 2 : clamp(p.y - 30 - H / 2, 0, foot - H); }          // (camFloor: a room with a hollow under its floor shows no more depth than usual until the hero goes down into it)          // (the hero stands about two thirds of the way down the picture, as everywhere: on the bridge too, where the river still shows below him)
   updateCamera() {
     const p = this.player, r = this.room, c = this.camera, gz = this.gaze;
     this.fx.rainCount = 0.52; this.fx.rainK = r && r.id === 'v0' && p ? Math.max(0, Math.min(1, 1 - (p.x - r.pw * 0.38) / (r.pw * 0.5 - 24))) : 1;          // (the rain on the hill thins out as he walks towards the way down to Prague, and is gone by the time he reaches it)

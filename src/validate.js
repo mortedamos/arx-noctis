@@ -149,7 +149,7 @@ export function reach(room, S, starts, abilities) {
 }
 
 // ------------------------------------------------------------------------------------------------ whole-room validation
-const GROUND_SPAWN = new Set(['skull', 'bell', 'litcandle', 'lever', 'zombie', 'skeleton', 'hound', 'ghoul', 'wizard', 'sorcerer', 'acolyte', 'archmage', 'swampspider', 'swampthing', 'villager', 'candle', 'statue', 'itemspawn', 'altar', 'waystone', 'boss_cinder', 'boss_vampire', 'boss_mirror', 'boss_golem', 'barrel', 'zealot', 'tablet', 'chest', 'boss_beast', 'boss_nightmare', 'boss_colossus', 'upgrade', 'shade']);
+const GROUND_SPAWN = new Set(['skull', 'bell', 'litcandle', 'lever', 'zombie', 'skeleton', 'hound', 'ghoul', 'wizard', 'sorcerer', 'acolyte', 'archmage', 'swampspider', 'swampthing', 'villager', 'candle', 'statue', 'itemspawn', 'altar', 'waystone', 'boss_cinder', 'boss_vampire', 'boss_mirror', 'boss_golem', 'boss_risen', 'barrel', 'zealot', 'tablet', 'chest', 'boss_beast', 'boss_nightmare', 'boss_colossus', 'upgrade', 'shade']);
 // everything spawned in the room must stand on open ground (or float in open air) - never inside a wall
 export function checkSpawns(def) {
   const room = roomOf(def), errs = [];
@@ -197,6 +197,7 @@ export function validateRoom(def0, opts = {}) {
       const s2 = surfaceAt(open, So, startP.tx * T + 8, startP.gy * T);
       if (s2 < 0 || !reach(open, So, [s2], [...new Set([...base0, ...need])]).has(id)) errs.push(`${it.id} unreachable even with its gate destroyed`);
       else for (const a of need) if (reach(open, So, [s2], [...base0, ...need.filter(b => b !== a)]).has(id)) errs.push(`${it.id} is reachable without ${a}`);
+      if (it.back && s2 >= 0 && !reach(open, So, [id], [...new Set([...base, 'djump'])]).has(s2)) errs.push(`there is no climbing back out from ${it.id}`);          // (a hollow under the floor: he must be able to get out of it)
     }
   }
   // ---- the dash gulf: must need Double Jump AND Dash

@@ -6,10 +6,12 @@ import { COLORS } from './fx.js';
 import { TILE, isSolid } from './world.js';
 import { Audio_ as A } from './audio.js';
 
-const WARN = 36, DMG = 9;
+// How long a loose icicle shivers before it drops, in 60ths of a second: a hanging trap picks its own wait each time, anywhere from WAIT_MIN to WAIT_MAX, so they cannot be counted out.  (It was a flat 36.)
+// WARN is the wait of one that is knocked loose on purpose (the Rimewyrm's: it sets them going itself, one after another).
+const WARN = 36, WAIT_MIN = 10, WAIT_MAX = 28, DMG = 9;
 
 export class Icicle {
-  constructor(d) { this.x = d.x; this.y0 = d.y; this.len = d.len; this.w = d.w; this.y = d.y; this.state = 0; this.t = 0; this.vy = 0; this.dead = false; this.shake = 0; this.dmg = DMG; }
+  constructor(d) { this.x = d.x; this.y0 = d.y; this.len = d.len; this.w = d.w; this.y = d.y; this.state = 0; this.t = 0; this.vy = 0; this.dead = false; this.shake = 0; this.dmg = DMG; this.warn = WARN; }
   get box() { return { x: this.x - this.w * 0.5, y: this.y + 2, w: this.w, h: this.len - 2 }; }
   // is there a clear drop from the ceiling to the hero's head?  (no stone in between)
   clearTo(room, y1) {
@@ -26,13 +28,13 @@ export class Icicle {
     if (this.dead) return; const p = g.player, r = g.room;
     if (this.state === 0) {
       const dx = Math.abs(p.x - this.x), headY = p.y - 40;
-      if (!p.dead && dx < 34 && p.y > this.y0 + this.len + 10 && p.y - this.y0 < 16 * 13 && this.clearTo(r, headY)) { this.state = 1; this.t = 0; A.sfx('crack'); }
+      if (!p.dead && dx < 34 && p.y > this.y0 + this.len + 10 && p.y - this.y0 < 16 * 13 && this.clearTo(r, headY)) { this.state = 1; this.t = 0; this.warn = WAIT_MIN + Math.floor(Math.random() * (WAIT_MAX - WAIT_MIN + 1)); A.sfx('crack'); }
       return;
     }
     if (this.state === 1) {                                                         // it shivers, flakes of ice falling from it
-      this.t++; this.shake = Math.sin(this.t * 1.9) * (0.6 + this.t / WARN * 1.2);
+      this.t++; this.shake = Math.sin(this.t * 1.9) * (0.6 + this.t / this.warn * 1.2);
       if (this.t % 7 === 0) { g.fx.sparks(this.x + this.shake, this.y0 + this.len * 0.7, 2, COLORS.white, 1.2, { gy: 0.1 }); A.sfx('crack'); }
-      if (this.t >= WARN) { this.state = 2; this.shake = 0; }
+      if (this.t >= this.warn) { this.state = 2; this.shake = 0; }
       return;
     }
     // falling

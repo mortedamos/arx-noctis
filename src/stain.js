@@ -14,7 +14,7 @@ export const RAIN_WASH = 1 / (14 * 60);     // per frame
 
 const BY_NAME = { fireskull: 'soot', ghoul: 'soot', emberwyrm: 'soot', zombie: 'mud', swampthing: 'mud', swampspider: 'mud', skeleton: 'mud', hound: 'blood', bat: 'blood', wyrm: 'blood', frostwyrm: 'blood', sorcerer: 'soot' };
 const BY_PROJ = { fire: 'soot', ember: 'soot', bone: 'mud', gear: 'soot' };
-const BOSS = { BossBeast: s => (s === 'breath' || s === 'pillars' ? 'soot' : 'blood'), BossNightmare: () => 'soot', BossColossus: () => 'soot', BossShadow: () => 'soot' };
+const BOSS = { BossBeast: s => (s === 'breath' || s === 'pillars' ? 'soot' : 'blood'), BossRisen: s => (s === 'pyre' || s === 'wake' || s === 'blink' ? 'soot' : 'blood'), BossNightmare: () => 'soot', BossColossus: () => 'soot', BossShadow: () => 'soot' };
 
 // what hit the hero?  (the hurt() callers all pass the attacker's x, which matches the attacker exactly)
 export function stainSource(g, fromX) {

@@ -55,6 +55,17 @@ export function drawIceBlock(g, tx, ty) {
   g.fillStyle = 'rgba(255,255,255,0.5)'; g.fillRect(x + 11, y + 11, 1, 1); g.fillRect(x + 12, y + 12, 1, 1);
 }
 
+// A CRACKED FLOOR BLOCK (TILE.FLOOR): a flagstone split right through, a thread of alchemical green in the split.  Only the Alembic Strike breaks it.
+export function drawFloorBlock(g, tx, ty) {
+  const x = tx * T, y = ty * T, h = k => hash1(tx * 7.7 + ty * 13.1 + k * 3.9);
+  g.fillStyle = '#15121c'; g.fillRect(x, y, T, T); g.fillStyle = '#625b72'; g.fillRect(x + 1, y + 1, T - 2, T - 2);
+  g.fillStyle = '#9c94ae'; g.fillRect(x + 1, y + 1, T - 2, 1); g.fillStyle = '#7a728c'; g.fillRect(x + 2, y + 2, 5, 3); g.fillStyle = '#413b4e'; g.fillRect(x + 1, y + T - 3, T - 2, 2);
+  let cx = 5 + ((h(1) * 6) | 0);          // the split: a jagged line from the top face to the foot
+  for (let j = 1; j < T - 1; j++) { cx = Math.max(3, Math.min(T - 4, cx + (((h(j + 2) * 3) | 0) - 1))); g.fillStyle = '#17131f'; g.fillRect(x + cx, y + j, 2, 1);
+    if (j % 3 === 1) { g.fillStyle = h(j + 30) > 0.5 ? '#9cffc8' : '#4fcf90'; g.fillRect(x + cx, y + j, 1, 1); }
+    if (j === 6) { g.fillStyle = '#17131f'; for (let k = 1; k < 5; k++) g.fillRect(x + cx + (h(40) > 0.5 ? k + 1 : -k), y + j + (k >> 1), 1, 1); } }
+}
+
 // ---------------------------------------------------------------------------------------------- backgrounds (cached strips, scrolled at their own depth in both directions)
 let LIB = null, ICE = null;
 // a repeating background strip, softened once when it is built (blurring the whole picture every frame is far too slow).  It is tiled 3 x 3 before the blur so the seams between repeats stay invisible.
@@ -90,17 +101,59 @@ function libraryStrips() {
   }
   return LIB = { far: softened(far, 0.55), mid: softened(mid, 0.25) };
 }
+// ---- THE FROZEN CAVERNS: a cave of ice and rock, in three depths.  Each strip is built once, pixel by pixel, from noise that wraps (so it tiles both ways): the far wall of the cavern with its deeper
+// hollows; nearer masses of rock with ice lying on their tops and icicles hanging under them, stalagmites, frozen falls and clusters of crystals; and, close by, a few dark teeth of rock and great icicles.
+const IW = 384, IH = 288;
+function wrapNoise(seed, cell) {          // value noise on a grid of `cell` px that repeats every IW x IH
+  const gx = Math.max(1, Math.round(IW / cell)), gy = Math.max(1, Math.round(IH / cell)), V = (i, j) => hash1(((i % gx) + gx) % gx * 12.9898 + (((j % gy) + gy) % gy) * 78.233 + seed * 3.17);
+  return (x, y) => { const fx = x / IW * gx, fy = y / IH * gy, i = Math.floor(fx), j = Math.floor(fy), u = fx - i, v = fy - j, a = u * u * (3 - 2 * u), b = v * v * (3 - 2 * v);
+    return (V(i, j) * (1 - a) + V(i + 1, j) * a) * (1 - b) + (V(i, j + 1) * (1 - a) + V(i + 1, j + 1) * a) * b; };
+}
+const rockField = (seed, big, mid, small) => { const A = wrapNoise(seed, big), B = wrapNoise(seed + 7, mid), C = wrapNoise(seed + 19, small); return (x, y) => A(x, y) * 0.6 + B(x, y) * 0.3 + C(x, y) * 0.1; };
+const paintPixels = (w, h, fn) => { const c = canvasOf(w, h), g = c.getContext('2d'), img = g.createImageData(w, h), d = img.data; for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const px = fn(x, y); if (!px) continue; const k = (y * w + x) * 4; d[k] = px[0]; d[k + 1] = px[1]; d[k + 2] = px[2]; d[k + 3] = px[3] === undefined ? 255 : px[3]; } g.putImageData(img, 0, 0); return c; };
+const wrapY = y => ((y % IH) + IH) % IH, wrapX = x => ((x % IW) + IW) % IW;
 function iceStrips() {
   if (ICE) return ICE;
-  const far = canvasOf(256, 192), f = far.getContext('2d');       // stalactites and a pale glow of ice far away
-  const sg = f.createLinearGradient(0, 0, 0, 192); sg.addColorStop(0, '#0c2238'); sg.addColorStop(1, '#16405e'); f.fillStyle = sg; f.fillRect(0, 0, 256, 192);
-  for (let i = 0; i < 9; i++) { const x = i * 28 + hash1(i * 3.1) * 12, l = 40 + hash1(i * 7.7) * 90; f.fillStyle = 'rgba(120,190,230,' + (0.1 + hash1(i) * 0.1).toFixed(2) + ')'; f.beginPath(); f.moveTo(x - 9, 0); f.lineTo(x + 9, 0); f.lineTo(x, l); f.fill(); }
-  for (let i = 0; i < 6; i++) { const x = i * 44 + hash1(i * 5.3) * 20, l = 30 + hash1(i * 2.1) * 70; f.fillStyle = 'rgba(90,160,205,0.14)'; f.beginPath(); f.moveTo(x - 14, 192); f.lineTo(x + 14, 192); f.lineTo(x, 192 - l); f.fill(); }
-  const mid = canvasOf(256, 192), m = mid.getContext('2d');       // great crystals leaning out of the walls, and frozen falls
-  for (let i = 0; i < 4; i++) { const x = i * 64 + 12 + hash1(i * 4.7) * 20, l = 50 + hash1(i * 9.1) * 70, top = i % 2 === 0;
-    m.fillStyle = 'rgba(70,140,190,0.35)'; m.beginPath(); if (top) { m.moveTo(x - 10, 0); m.lineTo(x + 10, 0); m.lineTo(x + 3, l); } else { m.moveTo(x - 12, 192); m.lineTo(x + 12, 192); m.lineTo(x - 2, 192 - l); } m.fill();
-    m.fillStyle = 'rgba(190,235,255,0.25)'; m.beginPath(); if (top) { m.moveTo(x - 10, 0); m.lineTo(x - 2, 0); m.lineTo(x + 2, l * 0.8); } else { m.moveTo(x - 12, 192); m.lineTo(x - 3, 192); m.lineTo(x - 3, 192 - l * 0.8); } m.fill(); }
-  return ICE = { far: softened(far, 0.55), mid: softened(mid, 0.25) };
+  // the far wall: rough rock in dim blues, with hollows going back into black and a cold light in some
+  const F = rockField(3, 96, 40, 12), Fd = rockField(41, 72, 28, 9), grain = wrapNoise(5, 4);
+  const far = paintPixels(IW, IH, (x, y) => {
+    const strata = F(x, y * 1.7), hole = Fd(x, y), g = grain(x, y);
+    if (hole < 0.36) return hole < 0.3 ? [4, 11, 20] : [7, 18, 32];          // a way going back into the dark
+    const t = strata + (g - 0.5) * 0.18 + (F(x, wrapY(y - 3)) < strata - 0.012 ? 0.07 : 0);          // (a pale edge on the upper side of each fold)
+    return t > 0.66 ? [26, 57, 84] : t > 0.54 ? [19, 44, 68] : t > 0.44 ? [14, 33, 53] : [10, 25, 42];
+  });
+  // the nearer rock: irregular masses with air between
+  const M = rockField(11, 112, 40, 12), tex = rockField(23, 36, 14, 6), solid = (x, y) => M(wrapX(x), wrapY(y)) > 0.54;
+  const mid = paintPixels(IW, IH, (x, y) => {
+    if (!solid(x, y)) return null;
+    let up = 0; while (up < 6 && solid(x, y - 1 - up)) up++;
+    let down = 0; while (down < 4 && solid(x, y + 1 + down)) down++;
+    if (up < 2) return [168, 214, 236];          // ice lying on the top
+    if (up < 4) return [92, 150, 184];
+    if (up < 6 && grain(x, y) > 0.55) return [60, 108, 144];
+    if (down < 2) return [6, 14, 24];          // the shadowed underside
+    const t = tex(x, y) + (grain(x, y) - 0.5) * 0.2 + (!solid(x - 4, y) ? 0.12 : 0) - (!solid(x + 4, y) ? 0.1 : 0);          // (lit from the left)
+    return t > 0.64 ? [38, 72, 102] : t > 0.5 ? [28, 54, 80] : t > 0.38 ? [20, 40, 62] : [14, 29, 47];
+  });
+  const m = mid.getContext('2d'), put = (x, y, col, w = 1, h = 1) => { m.fillStyle = col; for (const ox of [0, -IW, IW]) for (const oy of [0, -IH, IH]) m.fillRect(Math.round(x) + ox, Math.round(y) + oy, w, h); };
+  // where rock meets air: icicles under it, stalagmites on it, frozen falls from it, crystals in its corners
+  let k = 0;
+  for (let x = 3; x < IW; x += 3) for (let y = 0; y < IH; y++) {
+    const h = hash1(x * 7.31 + y * 1.93);
+    if (solid(x, y) && !solid(x, y + 1)) {          // an underside
+      if (h < 0.34) { const len = 4 + ((hash1(x * 3.7 + y) * 20) | 0), wd = len > 14 ? 3 : len > 8 ? 2 : 1; for (let j = 0; j < len; j++) { const w = Math.max(1, Math.round(wd * (1 - j / len))); put(x, y + 1 + j, j < len * 0.6 ? '#4f87ac' : '#79b4d2', w, 1); put(x, y + 1 + j, '#b6e2f2', 1, 1); } }
+      else if (h > 0.955 && k < 5) { k++; const w = 7 + ((h * 997) % 7 | 0); let len = 0; while (len < 120 && !solid(x + (w >> 1), y + 3 + len)) len++; if (len > 18) for (let i = 0; i < w; i++) { const sag = (hash1(i * 5.1 + x) * 6) | 0; for (let j = 0; j < len - sag; j++) put(x + i, y + 1 + j, ['rgba(96,160,196,0.75)', 'rgba(150,206,230,0.8)', 'rgba(66,122,162,0.7)', 'rgba(205,240,252,0.8)'][(i + ((hash1(i * 2.3 + (j >> 3)) * 2) | 0)) % 4]); } }          // a frozen fall
+    } else if (solid(x, y) && !solid(x, y - 1)) {          // a top
+      if (h < 0.12) { const len = 5 + ((hash1(x + y * 5.9) * 16) | 0), wd = 2 + (len > 12 ? 2 : 0); for (let j = 0; j < len; j++) { const w = Math.max(1, Math.round(wd * (1 - j / len) * 2)); put(x - (w >> 1), y - 1 - j, '#1d3b5a', w, 1); put(x - (w >> 1), y - 1 - j, '#6aa6c8', 1, 1); } }
+      else if (h > 0.965) for (let c = 0; c < 4; c++) { const lean = (c - 1.5) * 0.45, len = 6 + ((hash1(x * 1.7 + c * 9) * 10) | 0); for (let j = 0; j < len; j++) { put(x + lean * j + c, y - j, j > len - 3 ? '#e6fbff' : '#63c4dc', j < len - 2 ? 2 : 1, 1); } put(x + c, y - 1, '#2a7fa0', 1, 1); }          // crystals
+    }
+  }
+  // close by: a few dark shoulders of rock, as ragged as the rest (noise, not drawn shapes), a pale cold rim on their lit side and thin icicles hanging from them
+  const N = rockField(61, 104, 34, 9), lump = (x, y) => N(wrapX(x), wrapY(y)) > 0.668;
+  const near = paintPixels(IW, IH, (x, y) => { if (!lump(x, y)) return null; if (!lump(x - 2, y - 1)) return [88, 150, 188, 190]; return grain(x * 2, y * 2) > 0.62 ? [10, 24, 40, 235] : [5, 13, 24, 238]; });
+  const n = near.getContext('2d');
+  for (let x = 2; x < IW; x += 5) for (let y = 0; y < IH; y++) if (lump(x, y) && !lump(x, y + 1) && hash1(x * 2.7 + y * 5.1) < 0.2) { const len = 5 + ((hash1(x + y * 3.3) * 26) | 0); for (let j = 0; j < len; j++) { n.fillStyle = j < len * 0.55 ? 'rgba(40,86,118,0.92)' : 'rgba(110,176,208,0.8)'; n.fillRect(x, (y + 1 + j) % IH, j < len * 0.4 ? 2 : 1, 1); } }
+  return ICE = { far: softened(far, 0.5), mid, near };
 }
 const tiled = (g, img, par, camX, camY, alpha, dy = 0) => {
   const ox = -(((camX * par) % img.width) + img.width) % img.width, oy = -(((camY * par) % img.height) + img.height) % img.height + dy; g.save(); g.globalAlpha = alpha;
@@ -118,12 +171,18 @@ function paintLibrary(g, room, camX, camY, t) {
   g.fillStyle = 'rgba(8,5,2,0.28)'; g.fillRect(0, 0, W, H);
 }
 function paintIceCave(g, room, camX, camY, t) {
-  const S = iceStrips(), bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#071626'); bg.addColorStop(1, '#0f2f48'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
-  g.save(); g.globalCompositeOperation = 'lighter';                          // a slow pale aurora seeping through the ice far above
-  for (let i = 0; i < 3; i++) { const y = 30 + i * 36 + Math.sin(t * 0.01 + i * 2) * 8 - camY * 0.05, gr = g.createLinearGradient(0, y - 16, 0, y + 16); gr.addColorStop(0, 'rgba(60,200,180,0)'); gr.addColorStop(0.5, 'rgba(80,210,200,' + (0.06 + 0.03 * Math.sin(t * 0.02 + i)).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(60,120,220,0)'); g.fillStyle = gr; g.fillRect(0, y - 16, W, 32); }
+  const S = iceStrips(), bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#05101e'); bg.addColorStop(1, '#0b2236'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  tiled(g, S.far, 0.12, camX, camY, 1);
+  g.save(); g.globalCompositeOperation = 'lighter';                          // cold light welling out of the depths of the cave, slowly breathing
+  for (let i = 0; i < 4; i++) { const x = (((hash1(i * 9.3 + 2) * 900 - camX * 0.18) % 560) + 560) % 560 - 90, y = (((hash1(i * 4.7) * 700 - camY * 0.18) % 330) + 330) % 330 - 50, rad = 54 + i * 9, a = 0.1 + 0.035 * Math.sin(t * 0.017 + i * 2.1), gr = g.createRadialGradient(x, y, 2, x, y, rad); gr.addColorStop(0, 'rgba(70,180,210,' + a.toFixed(3) + ')'); gr.addColorStop(1, 'rgba(40,90,160,0)'); g.fillStyle = gr; g.fillRect(x - rad, y - rad, rad * 2, rad * 2); }
   g.restore();
-  tiled(g, S.far, 0.14, camX, camY, 0.95); tiled(g, S.mid, 0.34, camX, camY, 0.9);
-  g.fillStyle = 'rgba(2,10,20,0.22)'; g.fillRect(0, 0, W, H);
+  tiled(g, S.mid, 0.32, camX, camY, 0.92);
+  g.fillStyle = 'rgba(8,28,46,0.34)'; g.fillRect(0, 0, W, H);          // (the cold air between: the near rock stands out against it)
+  tiled(g, S.near, 0.52, camX, camY, 0.85);
+  g.save(); g.globalCompositeOperation = 'lighter';                          // glints in the ice
+  for (let i = 0; i < 26; i++) { const x = (((hash1(i * 6.1) * 1000 - camX * 0.32) % 440) + 440) % 440 - 28, y = (((hash1(i * 3.3 + 40) * 900 - camY * 0.32) % 260) + 260) % 260 - 22, tw = Math.pow(Math.abs(Math.sin(t * 0.022 + i * 2.3)), 6); if (tw < 0.05) continue; g.fillStyle = 'rgba(210,245,255,' + (0.55 * tw).toFixed(3) + ')'; g.fillRect(x | 0, y | 0, 1, 1); if (tw > 0.6) { g.fillRect((x | 0) - 1, y | 0, 3, 1); g.fillRect(x | 0, (y | 0) - 1, 1, 3); } }
+  g.restore();
+  g.fillStyle = 'rgba(2,8,18,0.2)'; g.fillRect(0, 0, W, H);
 }
 
 // These two backgrounds are built from several full-picture layers (a gradient, an aurora, two scrolling strips, a dark veil).  Done straight onto the game canvas, which is several times larger than the picture

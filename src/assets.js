@@ -194,6 +194,8 @@ function buildRecolors() {
   recolor('zombie_rise', 'zombie_rise_g', (h, s, l) => [0.24, Math.min(0.55, s * 0.7), l * 0.92 + 0.03]);
   // frost hound
   for (const k of ['idle', 'walk', 'run', 'jump']) recolor('hound_' + k, 'houndb_' + k, (h, s, l) => [h > 0.5 || h < 0.08 ? 0.58 : h, s * 0.9, l * 1.05]);
+  // Baelphegaz RISEN: his hide gone a greyish purple; what burned brightest on him (eyes, flame) burns violet
+  for (const k of ['idle', 'breath', 'burn']) recolor('beast_' + k, 'risen_' + k, (h, s, l) => (s > 0.7 && l > 0.55 && h < 0.18 ? [0.77, 0.9, Math.min(0.88, l * 1.04)] : [0.74, Math.min(0.26, s * 0.25 + 0.1), l * 0.92 + 0.07]));
   // pale-green specter variant of the ghost
   for (const k of ['idle', 'appear', 'vanish', 'shriek']) recolor('ghost_' + k, 'ghostg_' + k, (h, s, l) => [0.42, s * 0.9, l]);
   // blue "frozen" nightmare is the original; make a cursed-green wraith lantern ghost

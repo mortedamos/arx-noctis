@@ -87,7 +87,13 @@ export class Slashes {
     const q = { m, o, t, age: 1 }; this.place(q); this.live.push(q); return q;
   }
   place(q) {
-    const o = q.o, p = o.follow(), sc = o.scale || 1, b = swipeBox(o.sheet, o.f, p.x, p.y, o.dir, o.ay);
+    const o = q.o, p = o.follow(), sc = o.scale || 1;
+    if (o.under) {          // turned a quarter so the arc sweeps BENEATH: follow() gives the point it turns about (the painted swipe's own pivot is put there)
+      const flip = o.dir < 0, rot = flip ? -Math.PI / 2 : Math.PI / 2, vx = (flip ? -1 : 1) * (q.t.w / 2 - q.t.pivot[0]), vy = q.t.h / 2 - q.t.pivot[1], c = Math.cos(rot), s = Math.sin(rot);
+      q.m.position.set(p.x + (vx * c - vy * s) * sc, p.y + (vx * s + vy * c) * sc, 0); q.m.rotation.z = rot; q.m.scale.set((flip ? -1 : 1) * q.t.w * sc, q.t.h * sc, 1); return;
+    }
+    q.m.rotation.z = 0;
+    const b = swipeBox(o.sheet, o.f, p.x, p.y, o.dir, o.ay);
     q.m.position.set(p.x + (b.cx - p.x) * sc, p.y + (b.cy - p.y) * sc, 0); q.m.scale.set((b.flip ? -1 : 1) * q.t.w * sc, q.t.h * sc, 1);
   }
   update(dt) {

@@ -103,7 +103,7 @@ class ThrownTorch extends Thrown {
     const r = this.step(g);
     g.fx.fire(this.x, this.y, { scale: 0.5, n: 1 }); g.fx.light(this.x, this.y, 78, 0.95, [1, 0.72, 0.35]); g.fx.glow(this.x, this.y, 26, [1, 0.6, 0.2], 0.4);          // (its flame lights the air round it as it flies)
     if (r === 'wall' || r === 'floor') {
-      const [tx, ty] = this.tileAt() || [0, 0]; if (g.room.get(tx, ty) === TILE.BARRICADE) { g.burnBarricade(tx, ty); this.dead = true; return; } if (g.room.get(tx, ty) === TILE.ICE) { g.meltIce(tx, ty); this.dead = true; return; }      // wooden barricades go up in flames
+      const [tx, ty] = this.tileAt() || [0, 0]; if (g.room.get(tx, ty) === TILE.BARRICADE) { g.burnBarricade(tx, ty); this.dead = true; return; }      // wooden barricades go up in flames.  (Ice does not melt for a torch: that takes the Ember spell)
       if (r === 'floor') g.addProjectile(new GroundFlame(this.x, Math.floor((this.y + 4) / T) * T, this.burn)); else g.fx.burst(this.x, this.y, 5, COLORS.fire, { speed: 1.2, s0: 8 });
       A.sfx('fire'); this.dead = true; return;
     }

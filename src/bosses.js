@@ -12,7 +12,7 @@ import * as D from './dialogue.js';
 import { isHer, voice } from './story.js';
 import { Audio_ as A } from './audio.js';
 import { COLORS } from './fx.js';
-import { Projectile, Shockwave, FirePatch, RollingGear } from './projectiles.js';
+import { Projectile, Shockwave, FirePatch, RollingGear, HomingWisp } from './projectiles.js';
 import { dropItem, rollEnchantDrop } from './props.js';
 import { drawText } from './font.js';
 import { PW as HPW, PH as HPH } from './physics.js';
@@ -67,6 +67,10 @@ const ATTACKS = {
   encase: { label: 'ICE SHELL: USE FIRE!', rgb: [255, 190, 110], icon: 'ember' },
   blizzard: { label: 'BLIZZARD', rgb: [210, 230, 255], glyph: 'chevrons' },
   frostbreath: { label: 'FROST BREATH', rgb: [175, 230, 255], icon: 'orb' },          // (the Rimewyrm: a cone of cold that sweeps the floor and slows you if it catches you)
+  pyre: { label: 'SOULFIRE', rgb: [190, 120, 255], icon: 'orb' },          // (Baelphegaz risen)
+  blink: { label: 'BLINK', rgb: [190, 110, 255], glyph: 'diag' },
+  souls: { label: 'SOUL FLAMES', rgb: [200, 130, 255], icon: 'skull' },
+  wake: { label: 'BURNING WAKE', rgb: [170, 90, 255], glyph: 'bars' },
 };
 const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 
@@ -201,8 +205,8 @@ export class Column {
 // -------------------------------------------------------------------------------------------- Boss base
 // how bosses read the player (see Boss.choose): which of their attacks are for when you are close, far off, or in the air
 const CLOSE_ATK = new Set(['punch', 'scoop', 'gearslam', 'slam', 'stomp', 'lunge', 'strikes', 'tentacles', 'leap', 'dive', 'vents', 'shelves', 'spikes']);
-const FAR_ATK = new Set(['fireball', 'embers', 'breath', 'bolts', 'tideorbs', 'spores', 'skulls', 'feathers', 'gears', 'geysers', 'pillars', 'mist', 'summon', 'charge', 'gallop', 'pages', 'tomes', 'ink', 'frostbreath']);
-const AIR_ATK = new Set(['fireball', 'feathers', 'bolts', 'skulls', 'pillars', 'spores', 'embers', 'breath', 'tideorbs', 'pages', 'ink', 'frostbreath']);
+const FAR_ATK = new Set(['fireball', 'embers', 'breath', 'bolts', 'tideorbs', 'spores', 'skulls', 'feathers', 'gears', 'geysers', 'pillars', 'mist', 'summon', 'charge', 'gallop', 'pages', 'tomes', 'ink', 'frostbreath', 'souls', 'wake', 'blink']);
+const AIR_ATK = new Set(['fireball', 'feathers', 'bolts', 'skulls', 'pillars', 'spores', 'embers', 'breath', 'tideorbs', 'pages', 'ink', 'frostbreath', 'souls']);
 const combo_min = w => Math.max(58, Math.round(w * 0.5));
 export class Boss extends Enemy {
   constructor(g, x, y, w, h, o) {
@@ -425,6 +429,119 @@ export class BossBeast extends Boss {
     this.spr(ctx, id, f, cx + ox, cy, { flash: this.flashT > 0 });
     if (this.phase === 2 && !this.dying) this.g.fx.glow(this.x + this.dir * -5, this.y - 60, 14, [1, 0.2, 0.1], 0.5);
     this.g.fx.light(this.x, this.y - 43, 70, 0.6);
+  }
+}
+
+// ============================================================================================== BAELPHEGAZ, RISEN (the Hall of Sorrow, before the Last Dark: the master has raised him to feast on the Stranger's sorrow)
+// Greyish purple, quicker, and SWELLING as he is cut: every wound feeds him, from his old size up to RISEN_TALL pixels of hit box - just over what a double jump rises (104) - so that when he charges, the hero needs more
+// than a double jump to get over him on a floor with no platforms: an ALEMBIC STRIKE off him (the bounce carries him over: there is a good sixth of a second to press it in), a dash at the top of the jump, or the Ouroboros.  He has: CHARGE; SOULFIRE (an arch of purple fire, which grows with him);
+// LEAP SLAM; BLINK (he goes up in purple flame, comes out behind the hero and lunges at once); SOUL FLAMES (purple wisps that follow; the sword cuts them down); and in the second half a BURNING WAKE (pillars
+// of purple fire that march across the floor).
+const RISEN_GROW = 1.38, RISEN_TALL = 106;          // (how much bigger he is drawn at his greatest, and how tall his hit box is then)
+const RISEN_GO = 34, RISEN_OUT = 64, RISEN_LUNGE = 16;          // (BLINK: gone by GO, stands there until OUT, then lunges)
+export class BossRisen extends BossBeast {
+  constructor(g, x, y, o) {
+    super(g, x, y, o); this.hp = this.maxHp = 280; this.dmg = 13; this.xp = 420; this.bossName = 'BAELPHEGAZ RISEN'; this.sub = 'WHO FEASTS ON SORROW'; this.deathFx = COLORS.purple; this.stainBlood = true;
+    this.grow = 1; this.grown = 0; this.base = { w: this.w, h: this.h, scale: this.scale, ice: this.ice }; this.alpha = 1; this.ghosting = false;
+  }
+  get spd() { return this.phase === 2 ? 1.45 : 1.25; }
+  tele(k) { return Math.max(40, Math.round({ charge: 60, pyre: 52, leap: 52 }[k] / this.spd)); }
+  dangerous() { return (this.state === 'charge' && this.st >= this.tele('charge')) || (this.state === 'leap' && this.st >= this.tele('leap')) || (this.state === 'blink' && this.st >= RISEN_OUT && this.st < RISEN_OUT + RISEN_LUNGE); }
+  hurt(dmg, dir, opts = {}) { return this.ghosting ? false : super.hurt(dmg, dir, opts); }          // (nothing to cut while he is only flame)
+  touch() { if (!this.ghosting) super.touch(); }
+  intro(g) { if (this.st === 8) { this.cry(); g.shake(4, 40); g.fx.flash([0.7, 0.4, 1], 0.35); g.fx.ring(this.x, this.cy, 120, [0.7, 0.4, 1], 40, 0.1); } if (this.st % 3 === 0) g.fx.fire(this.x + rand(-17, 17), this.y - 17, { scale: 1.0, n: 1, color: 'purple' }); this.faceP(); }
+  update() { super.update(); if (!this.dead && !this.dying && !(this.freezeT > 0)) this.swell(); }
+  // the more he has bled, the bigger he is: full size from the last quarter of his life
+  swell() {
+    const g = this.g, want = 1 + (RISEN_GROW - 1) * clamp((1 - this.hp / this.maxHp) / 0.75, 0, 1);
+    if (this.grow < want - 1e-6) {
+      this.grow = Math.min(want, this.grow + 0.005); const k = (this.grow - 1) / (RISEN_GROW - 1), B = this.base;
+      this.w = Math.round(B.w * this.grow); this.h = Math.round(B.h + (RISEN_TALL - B.h) * k); this.scale = B.scale * this.grow; this.ice = { w: Math.round(B.ice.w * this.grow), h: Math.round(B.ice.h * this.grow) };
+      if (Math.floor(k * 4) > this.grown) { this.grown = Math.floor(k * 4); this.cry(); g.shake(3, 18); g.fx.ring(this.x, this.cy, 60 + this.h, [0.75, 0.45, 1], 26, 0.14); g.fx.burst(this.x, this.cy, 18, COLORS.purple, { speed: 2.6, s0: 14 }); }          // (a roar at each swelling)
+    }
+    this.x = clamp(this.x, 20 + this.w / 2, g.room.pw - 20 - this.w / 2);          // (as he widens he stays out of the walls)
+  }
+  breathAt(k) { return { x: this.x, y: this.y, k, D: this.dir }; }
+  ai(g) {
+    const p = g.player, spd = this.spd, d = Math.abs(this.dx()), dk = this.dmgK || 1, pw = g.room.pw;
+    if (this.state !== 'blink') { this.alpha = 1; this.ghosting = false; }
+    if (this.t % 4 === 0 && !this.ghosting) g.fx.fire(this.x + rand(-this.w / 2, this.w / 2), this.y - rand(4, this.h * 0.7), { scale: 0.45, n: 1, color: 'purple' });
+    const idle = st => { this.vx = 0; this.state = 'idle'; this.st = st; };
+    switch (this.state) {
+      case 'idle':
+        this.faceP(); this.vx = approach(this.vx, d > 110 ? this.dir * 0.95 : 0, 0.09);
+        this.planNext(this.phase === 2 ? ['charge', 'charge', 'pyre', 'leap', 'blink', 'souls', 'wake', 'wake'] : ['charge', 'charge', 'pyre', 'leap', 'blink', 'souls'], Math.round(88 / spd)); break;
+      case 'charge': {
+        const T0 = this.tele('charge');
+        if (this.st < T0) {
+          this.vx = 0; if (this.st < T0 - 20) this.faceP();
+          this.tell('charge', this.st / T0, [{ type: 'lane', x0: this.x, x1: this.dir > 0 ? pw - 24 : 24, y: this.y }]);
+          if (this.st === 2) this.cry(); if (this.st % 4 === 0) g.fx.fire(this.x + this.dir * this.w * 0.4, this.y - this.h * 0.8, { scale: 0.7, n: 1, color: 'purple' });
+        } else {
+          this.vx = this.dir * 3.2 * spd; if (this.st % 2 === 0) g.fx.fire(this.x - this.dir * this.w * 0.4, this.y - 4, { scale: 1.0, n: 1, color: 'purple' }); if (this.st % 10 === 0) A.sfx('step');
+          if (this.hitX) { this.state = 'stun'; this.st = 0; this.stunDur = 80; this.vx = 0; g.shake(5, 20); A.sfx('boom'); g.fx.ring(this.x + this.dir * this.w / 2, this.y - 34, 50, [0.8, 0.6, 1], 18); g.fx.burst(this.x + this.dir * this.w / 2, this.y - 34, 16, [[0.7, 0.6, 0.8], [0.3, 0.2, 0.4]], { speed: 3, s0: 14, up: 1 }); }
+          else if (this.st > T0 + 100) { this.state = 'stun'; this.st = 0; this.stunDur = 36; this.vx = 0; }
+        } break; }
+      case 'stun':          // OPEN
+        this.vx = 0; if (this.st % 8 === 0) g.fx.sparks(this.x + rand(-12, 12), this.y - this.h - 4, 2, COLORS.gold, 1.2, { kind: 6, size: 6 });
+        if (this.st > this.stunDur) idle(-10); break;
+      case 'pyre': {          // soulfire: the beast's arch, in purple, and as much bigger as he is
+        const T0 = this.tele('pyre'), SW = 80, D = this.dir, k = 1 + (this.grow - 1) * 0.6, at = ([f, h]) => [this.x + D * f * k, this.y - h * k]; this.vx = 0;
+        if (this.st < T0) {
+          if (this.st < T0 - 20) this.faceP();
+          this.tell('pyre', this.st / T0, [{ type: 'poly', pts: BREATH.out.map(at).concat(BREATH.inn.slice().reverse().map(at)) }]);
+        } else if (this.st < T0 + SW) {
+          const t = this.st - T0, last = BREATH.out.length - 1, i1 = Math.floor(clamp(t / 24, 0, 1) * last), i0 = Math.floor(clamp((t - (SW - 28)) / 28, 0, 1) * last);
+          if (i0 < i1) {
+            for (let n = 0; n < 12; n++) { const i = i0 + Math.floor(Math.random() * (i1 - i0)), m = Math.random(), po = BREATH.out[i], pi = BREATH.inn[i], [fx, fy] = at([pi[0] + (po[0] - pi[0]) * m, pi[1] + (po[1] - pi[1]) * m]); g.fx.fire(fx + rand(-3, 3), fy + 6, { scale: 0.7 + 0.5 * Math.random(), n: 1, color: 'purple' }); }
+            const [lx, ly] = at(BREATH.out[i1]); g.fx.glow(lx, ly, 26, [0.7, 0.4, 1], 0.5); g.fx.light(lx, ly, 140, 1, [0.75, 0.55, 1]);
+            if (t % 20 === 0) A.sfx('fire');
+            if (this.st % 3 === 0) { const r = p.hurtbox, local = { x: this.x + (r.x - this.x) / k - (D < 0 ? 0 : 0), y: this.y - (this.y - r.y) / k, w: r.w / k, h: r.h / k }; if (breathHits(i0, i1, this.x, this.y, D, local)) p.hurt(Math.round(9 * dk), this.x, { kb: 1.2 }); }          // (the hero shrunk into the arch's own size)
+          }
+        } else if (this.st > T0 + SW + 14) idle(-20); break; }
+      case 'leap': {
+        const T0 = this.tele('leap');
+        if (this.st === 1) { this.tx = clamp(p.x, 40 + this.w / 2, pw - 40 - this.w / 2); this.cry(); }
+        if (this.st < T0) { this.vx = 0; this.dir = this.tx >= this.x ? 1 : -1; this.tell('leap', this.st / T0, [{ type: 'ring', x: this.tx, y: this.y, r: 20 + this.w / 2 }]); }
+        else if (this.st === T0) { this.vy = -6.4; this.vx = clamp((this.tx - this.x) / 61, -4.4, 4.4); this.onGround = false; A.sfx('jump'); }
+        else if (this.st > T0 + 8 && this.onGround) {
+          g.shake(7, 22); A.sfx('boom'); g.fx.ring(this.x, this.y - 4, 100, [0.7, 0.4, 1], 28, 0.15);
+          for (const s of [-1, 1]) g.addProjectile(new Shockwave(this.x + s * this.w / 2, this.y, s, { dmg: Math.round(5 * dk), speed: 2.5, life: 80, big: true, color: COLORS.purple, fire: 'purple' }));
+          idle(-22);
+        } else this.warns = [{ type: 'ring', x: this.tx, y: this.y, r: 20 + this.w / 2 }]; break; }
+      case 'blink': {
+        if (this.st === 1) { A.sfx('ghost'); this.cry(); const side = -(p.dir || 1), off = 56 + this.w / 2, lo = 30 + this.w / 2, hi = pw - 30 - this.w / 2; let x = p.x + side * off; if (x < lo || x > hi) x = p.x - side * off; this.tx = clamp(x, lo, hi); }          // (behind the hero, if there is room there)
+        if (this.st < RISEN_GO) {
+          this.vx = 0; this.alpha = clamp(1 - this.st / (RISEN_GO - 6), 0.04, 1); this.ghosting = this.alpha < 0.4; this.tell('blink', this.st / RISEN_GO, [{ type: 'ring', x: this.tx, y: this.y, r: 20 + this.w / 2 }]);
+          for (let i = 0; i < 2; i++) { g.fx.fire(this.x + rand(-this.w / 2, this.w / 2), this.y - rand(0, this.h), { scale: 0.9, n: 1, color: 'purple' }); g.fx.fire(this.tx + rand(-this.w / 2, this.w / 2), this.y, { scale: 0.7, n: 1, color: 'purple' }); }
+        } else if (this.st < RISEN_OUT) {
+          this.vx = 0; if (this.st === RISEN_GO) { this.x = this.tx; this.faceP(); g.fx.burst(this.x, this.cy, 24, COLORS.purple, { speed: 3, s0: 14 }); A.sfx('ghost'); }
+          this.alpha = clamp((this.st - RISEN_GO) / 18, 0.04, 1); this.ghosting = this.alpha < 0.6; this.warns = [{ type: 'lane', x0: this.x, x1: this.x + this.dir * (RISEN_LUNGE * 5.4 + this.w / 2), y: this.y }]; this.intent = 'blink'; this.tellP = (this.st - RISEN_GO) / (RISEN_OUT - RISEN_GO);
+        } else if (this.st < RISEN_OUT + RISEN_LUNGE) { this.alpha = 1; this.ghosting = false; this.vx = this.dir * 5.4; g.fx.fire(this.x - this.dir * this.w * 0.4, this.y - rand(4, this.h * 0.5), { scale: 1.0, n: 1, color: 'purple' }); }
+        else { this.vx = 0; if (this.st > RISEN_OUT + RISEN_LUNGE + 24) idle(-18); }
+        break; }
+      case 'souls': {
+        const T0 = 40; this.vx = 0; this.faceP(); if (this.st < T0) this.tell('souls', this.st / T0);
+        if (this.st === T0) { A.sfx('cast'); const n = this.phase === 2 ? 4 : 3; for (let i = 0; i < n; i++) { const a = -Math.PI / 2 + (i - (n - 1) / 2) * 0.75; g.addProjectile(new HomingWisp(this.x + this.dir * 8, this.y - this.h - 4, Math.cos(a) * 1.4, Math.sin(a) * 1.4, Math.round(6 * dk), 'purple')); } g.fx.ring(this.x, this.y - this.h, 36, [0.75, 0.45, 1], 18); }
+        if (this.st > T0 + 36) idle(-18); break; }
+      case 'wake': {          // pillars of purple fire, one after another, marching away from him toward the hero
+        const T0 = 36, D = this.dir; this.vx = 0; if (this.st < T0 - 12) this.faceP(); if (this.st < T0) this.tell('wake', this.st / T0, [{ type: 'lane', x0: this.x, x1: this.dir > 0 ? pw - 24 : 24, y: this.y }]);
+        if (this.st === T0) { this.cry(); for (let i = 0; i < 12; i++) { const x = this.x + this.dir * (this.w / 2 + 22 + i * 48); if (x < 22 || x > pw - 22) break; g.addProjectile(new Column(x, this.y, 'shadow', { warn: 28 + i * 9, active: 16, dmg: Math.round(7 * dk), w: 26, h: 80 })); } }
+        if (this.st > T0 + 110) idle(-16); break; }
+    }
+  }
+  draw(ctx, cx, cy) {
+    let id = 'risen_idle', f = Math.floor(this.t / 6) % 6, ox = 0; const st = this.state;
+    if (st === 'pyre') { const T0 = this.tele('pyre'); id = 'risen_breath'; f = this.st < T0 * 0.6 ? 0 : this.st < T0 ? 1 : this.st < T0 + 80 ? 2 : 3; }
+    else if (st === 'charge' && this.st < this.tele('charge')) { id = 'risen_breath'; f = 0; ox = Math.sin(this.t * 2.5) * 2 * (this.st / this.tele('charge')); }
+    else if (st === 'charge' || (st === 'blink' && this.st >= RISEN_OUT && this.st < RISEN_OUT + RISEN_LUNGE)) f = Math.floor(this.t / 2) % 6;
+    else if (st === 'leap') { id = 'risen_breath'; f = this.st < this.tele('leap') ? 0 : 2; }
+    else if (st === 'souls' || st === 'wake') { id = 'risen_breath'; f = this.st < 30 ? 0 : 1; }
+    else if (st === 'stun') { id = 'risen_breath'; f = 3; }
+    if (this.dying) { id = 'risen_burn'; f = 1 + Math.min(2, Math.floor(this.dying / 25)); }
+    this.spr(ctx, id, f, cx + ox, cy, { flash: this.flashT > 0 });
+    if (!this.dying) this.g.fx.glow(this.x, this.cy, 20 + this.h * 0.4, [0.55, 0.25, 0.85], 0.16 * this.alpha);
+    this.g.fx.light(this.x, this.cy, 60 + this.h * 0.4, 0.65 * this.alpha, [0.8, 0.65, 1]);
   }
 }
 
@@ -793,7 +910,7 @@ export class BossShadow extends Boss {
     if (this.summonCd > 0) this.summonCd--;
     switch (this.state) {
       case 'idle': this.faceP(); this.alphaT = 1; this.moveTo(clamp(p.x + Math.sin(this.t * 0.02) * 110, 70, g.room.pw - 70), 96 + Math.sin(this.t * 0.04) * 14, 0.025);
-        { const opts = ['skulls', 'breath', 'slam']; if (this.summonCd === 0) opts.push('summon'); if (this.phase === 2) opts.push('skulls', 'slam'); this.planNext(opts, Math.round(90 / spd)); } break;
+        { const opts = ['breath', 'slam']; if (this.summonCd === 0) opts.push('summon'); if (this.phase === 2) opts.push('skulls', 'skulls', 'slam'); this.planNext(opts, Math.round(90 / spd)); } break;          // (the SKULL VOLLEY is kept for the second phase)
       case 'skulls': {
         this.faceP(); this.moveTo(this.x, 100, 0.05); const T0 = this.phase === 2 ? [40, 68, 96] : [40, 74];
         if (this.st < 40) this.tell('skulls', this.st / 40, [{ type: 'line', x0: this.x, y0: this.cy, x1: p.x, y1: p.y - 20 }]);
@@ -1365,4 +1482,4 @@ export class BossDrowned extends Boss {
   }
 }
 
-export const BOSS_TYPES = { boss_librarian: BossLibrarian, boss_rimewyrm: BossRimewyrm, boss_drowned: BossDrowned, boss_vampire: BossVampire, boss_beast: BossBeast, boss_nightmare: BossNightmare, boss_angel: BossAngel, boss_colossus: BossColossus, boss_shadow: BossShadow, boss_cinder: BossCinder, boss_bramble: BossBramble, boss_mirror: BossMirror, boss_golem: BossGolem };
+export const BOSS_TYPES = { boss_risen: BossRisen, boss_librarian: BossLibrarian, boss_rimewyrm: BossRimewyrm, boss_drowned: BossDrowned, boss_vampire: BossVampire, boss_beast: BossBeast, boss_nightmare: BossNightmare, boss_angel: BossAngel, boss_colossus: BossColossus, boss_shadow: BossShadow, boss_cinder: BossCinder, boss_bramble: BossBramble, boss_mirror: BossMirror, boss_golem: BossGolem };

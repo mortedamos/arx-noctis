@@ -28,6 +28,10 @@ const ATTACKS = [
 const AIR_ATTACK = seq({ sheet: 'hero_jump_attack', air: true, durs: [3, 3, 3, 3, 4, 4], active: [3, 4], dmg: 1.0, reach: 42, kb: 1.6 });
 // ducking (hold Down): a low, quick slash that skims the ground - it hits what a standing swing sails over
 const CROUCH_ATTACK = seq({ sheet: 'hero_crouch_slash', crouch: true, durs: [4, 4, 4, 4], active: [1, 2], dmg: 1.0, reach: 40, kb: 1.4 });
+// THE ALEMBIC STRIKE (the Seraph of Ash's gift): in the air, hold Down and attack - a quick slash in an arc beneath him (frame 2 of the air swing, gathered, then frame 3, cloak flung up).  What it lands on - a foe, a barrel,
+// a statue, spikes - throws him back up, ONCE between touching the ground: no chaining one bounce off the next.
+const DOWN_STRIKE = seq({ sheet: 'hero_jump_attack', air: true, down: true, frames: [2, 3, 3], durs: [3, 8, 6], active: [1, 1], dmg: 1.0, reach: 40, kb: 1.2 });
+const BOUNCE = -4.6, BOUNCE_HOLD = 14;          // (the bounce, and for how long letting go of jump does not cut it short)
 const WET_RUN = 0.5, WET_JUMP = Math.SQRT1_2;          // standing in water: half the running speed, and a jump half as HIGH (the height of a jump goes with the square of its speed, so the speed is 0.707 of the usual)
 const CROUCH_H = 22;                         // hitbox height while ducking (standing is PH)
 const JUMP_CY = [56, 46, 31, 24.5, 31.5];      // vertical centre of each hero_jump frame (the art bakes the jump arc into the cell)
@@ -58,6 +62,7 @@ export class Player extends Entity {
   swordDamage() { const E = this.ench; return Math.max(1, Math.round(this.atkPower * this.seq.dmg * (E ? ENCH[E.type].dmg : 1))); }
   attackBox() {
     const d = this.dir, x = this.x, y = this.y, r = this.seq.reach;
+    if (this.seq.down) return { x: x - 20, y: y - 16, w: 40, h: 36 };          // (the Alembic Strike: beneath him, a little either side)
     if (this.seq.crouch) return { x: d > 0 ? x : x - r, y: y - 24, w: r, h: 22 };
     return { x: d > 0 ? x : x - r, y: y - 52, w: r, h: 48 };
   }
@@ -113,6 +118,12 @@ export class Player extends Entity {
       if (Math.random() < chance) e.freeze(boss ? rand(TUNE.bossFreezeMin, TUNE.bossFreezeMax) : rand(TUNE.freezeMin, TUNE.freezeMax), boss ? TUNE.bossFreezeImmune : TUNE.freezeImmune);
     }
   }
+  // the one bounce of an airtime, off whatever the Alembic Strike has landed on: up he goes, with the double jump and the air dash given back.  (pogoUsed is cleared only by touching the ground.)
+  bounce() {
+    if (this.pogoUsed || this.onGround || this.dead) return;
+    this.pogoUsed = true; this.diving = false; this.vy = BOUNCE; this.bounceT = BOUNCE_HOLD; this.canDouble = true; this.canAirDash = true; this.jumpBuf = 0; this.fallSpeed = 0;
+    const fx = this.g.fx; A.sfx('djump'); fx.ring(this.x, this.y + 6, 20, [0.6, 1, 0.75], 16, 0.22, 4); fx.sparks(this.x, this.y + 8, 10, [[1, 1, 0.85], [0.5, 0.95, 0.7]], 2.6, { gy: 0.1 });
+  }
   // world positions of blade / slash-arc pixels in the current frame (empty while the sword is sheathed)
   swordPoints() {
     const fi = this.frameInfo(), out = [], dir = this.dir;
@@ -156,7 +167,7 @@ export class Player extends Entity {
     const was = this.onGround;
     const wet = this.onGround && !!this.waterAt(room);          // (standing in water: see waterAt)
     if (wet !== !!this.wet) { this.wet = wet; this.splash(wet ? 9 : 6); }
-    if (wet && room.freezing && this.chillT < 20) this.chill(90);          // (the freezing pools of the way down to the Frozen Caverns: standing in them chills the blood)
+    if (wet && room.freezing && this.chillT < 20 && this.waterAt(room).vx === undefined) this.chill(90);          // (the deep pools at the foot of the ways down to the Frozen Caverns chill the blood; the shallow water running down them does not, or the hero could hardly move)
     else if (wet && Math.abs(this.vx) > 0.25 && this.t % 5 === 0) g.fx.burst(this.x - this.dir * 3, this.y - 2, 2, [[0.6, 0.8, 0.9], [0.3, 0.5, 0.65]], { speed: 0.8, s0: 4, s1: 1, up: 0.8 });          // (wading: a few drops)
     if (this.ride) { if (room.movers && this.ride.active) { this.x += this.ride.dx; this.y += this.ride.dy; } else this.ride = null; }          // (standing on a moving platform: carried with it)
     let dx = locked ? 0 : I.horiz;
@@ -187,14 +198,15 @@ export class Player extends Entity {
       if (armed && (I.pressed.attack || this.atkBuf > 0) && !this.atk && !this.castT && !this.dashT) {
         this.atkBuf = 0; const air = !this.onGround;
         const idx = air ? 1 : this.crouch ? 0 : (this.comboT > 0 ? (this.comboN + 1) % 3 : 0);
-        this.seq = air ? AIR_ATTACK : this.crouch ? CROUCH_ATTACK : ATTACKS[idx]; this.comboN = idx; if (!air) this.vx = 0;     // a ground swing is planted: no sliding, no lunging
+        this.seq = air ? (I.held.down && S.flags.got_alembic ? DOWN_STRIKE : AIR_ATTACK) : this.crouch ? CROUCH_ATTACK : ATTACKS[idx]; this.comboN = idx; if (!air) this.vx = 0;     // a ground swing is planted: no sliding, no lunging
         this.atkDur = this.atk = this.seq.total; this.atkId = ++g.attackCounter; this.hitsThisSwing = 0; this.fireFired = false;
+        if (this.seq.down) this.diving = true;          // (until he lands, bounces or leaps again: cracked floor he comes down on gives way - see Game.strikeFloor)
         if (dx) this.dir = dx; A.sfx('slash');
       }
       // ---- dash
       if (I.pressed.dash && S.abilities.dash && this.dashCd === 0 && !this.dashT && (this.onGround || this.canAirDash) && (!this.crouch || this.canStand(room))) {
         if (this.crouch) { this.crouch = false; this.h = PH; }
-        this.dashT = DASH_T; this.dashCd = S.flags.got_spring ? 15 : 34; this.atk = 0; this.atkBuf = 0; this.castT = 0; if (dx) this.dir = dx; if (!this.onGround) { this.canAirDash = false; if (S.flags.got_ouroboros) this.airJump = true; } this.invT = Math.max(this.invT, DASH_T + 3); this.dashAtkId = ++g.attackCounter; this.dashHitDone = false;          // (the Ouroboros: a dash in the air gives a jump back)
+        this.dashT = DASH_T; this.dashCd = S.flags.got_spring ? 15 : 34; this.atk = 0; this.atkBuf = 0; this.castT = 0; this.diving = false; if (dx) this.dir = dx; if (!this.onGround) { this.canAirDash = false; if (S.flags.got_ouroboros) this.airJump = true; } this.invT = Math.max(this.invT, DASH_T + 3);          // (the Ouroboros: a dash in the air gives a jump back)
         A.sfx('dash'); g.fx.burst(this.x, this.y - 18, 8, COLORS.purple, { speed: 1.5, s0: 10, s1: 2 });
       }
       // ---- jump
@@ -205,15 +217,16 @@ export class Player extends Entity {
       if (this.jumpBuf > 0 && !this.crouch) {
         if (this.coyote > 0 || this.onGround) { this.vy = JUMP * (this.wet ? WET_JUMP : 1); this.jumpBuf = 0; this.coyote = 0; this.onGround = false; A.sfx('jump'); g.fx.burst(this.x, this.y - 1, 4, [[0.7, 0.7, 0.8], [0.4, 0.4, 0.5]], { speed: 0.8, s0: 7, s1: 2, l0: 10, l1: 18 }); }
         else if (this.airJump && S.flags.got_ouroboros) {          // THE OUROBOROS: after a dash in the air, a whole jump again (it even cuts the dash short), and with it the double jump and the dash come back - jump, double jump, dash, jump, double jump, dash ... and never a need to land
-          this.airJump = false; this.dashT = 0; this.vy = JUMP; this.canDouble = true; this.canAirDash = true; this.jumpBuf = 0; this.djumpT = 0; A.sfx('jump');
+          this.airJump = false; this.diving = false; this.dashT = 0; this.vy = JUMP; this.canDouble = true; this.canAirDash = true; this.jumpBuf = 0; this.djumpT = 0; A.sfx('jump');
           g.fx.ring(this.x, this.y - 8, 20, [0.5, 0.95, 0.5], 18, 0.22, 4); g.fx.burst(this.x, this.y - 6, 8, [[0.6, 1, 0.6], [0.2, 0.6, 0.3]], { speed: 1.4, s0: 8, s1: 1, up: -0.5 });
         }
         else if (S.abilities.djump && this.canDouble && !this.dashT) {
-          this.vy = DJUMP; this.canDouble = false; this.jumpBuf = 0; this.djumpT = 18; A.sfx('djump'); g.fx.ring(this.x, this.y - 6, 18, [0.6, 0.8, 1], 18, 0.25, 4);
+          this.vy = DJUMP; this.diving = false; this.canDouble = false; this.jumpBuf = 0; this.djumpT = 18; A.sfx('djump'); g.fx.ring(this.x, this.y - 6, 18, [0.6, 0.8, 1], 18, 0.25, 4);
           g.fx.burst(this.x, this.y - 4, 12, COLORS.ice, { speed: 1.6, s0: 9, s1: 1, up: -0.6 });
         }
       }
-      if (!I.held.jump && this.vy < -2.4 && !this.dashT) this.vy = -2.4;      // variable jump height
+      if (!I.held.jump && this.vy < -2.4 && !this.dashT && !(this.bounceT > 0)) this.vy = -2.4;      // variable jump height
+      if (this.bounceT > 0) this.bounceT--;
       // ---- interact
       if (I.pressed.interact && this.onGround && !this.atk && this.interactCd === 0 && !this.dashT) { if (g.interact(this)) this.interactCd = 20; }
     }
@@ -239,7 +252,7 @@ export class Player extends Entity {
     const groundLock = (this.atk && this.onGround) || this.castT || this.crouch;
     if (this.crouch && dx && !this.atk) this.dir = dx;
     const slip = this.onGround && !this.ride && !this.S.flags.got_crampons && room.theme === 'ice' && room.get(Math.floor(this.x / T), Math.floor((this.y + 2) / T)) === TILE.SOLID, kA = slip ? 0.4 : 1, kF = slip ? 0.16 : 1; this.onIce = slip;
-    if (this.dashT > 0) { if (S.flags.got_tide) g.dashHit(this); this.dashT--; this.vx = this.dir * DASH_V; this.vy = 0; if (this.dashT === 0) this.vx = this.dir * 2.2; if (this.t % 2 === 0) g.fx.burst(this.x - this.dir * 6, this.y - 18, 1, COLORS.purple, { speed: 0.3, s0: 12, s1: 3, l0: 14, l1: 22 }); this.trail.push({ x: this.x, y: this.y, f: this.frameInfo(), dir: this.dir, life: 14 }); }
+    if (this.dashT > 0) { this.dashT--; this.vx = this.dir * DASH_V; this.vy = 0; if (this.dashT === 0) this.vx = this.dir * 2.2; if (this.t % 2 === 0) g.fx.burst(this.x - this.dir * 6, this.y - 18, 1, COLORS.purple, { speed: 0.3, s0: 12, s1: 3, l0: 14, l1: 22 }); this.trail.push({ x: this.x, y: this.y, f: this.frameInfo(), dir: this.dir, life: 14 }); }
     else if (groundLock) { this.vx = approach(this.vx, 0, FRIC * 1.4 * kF); }
     else if (dx) { this.vx = approach(this.vx, dx * RUNV, this.onGround ? ACC * kA : AIRACC); if (!this.atk || !this.onGround) this.dir = dx; }
     else this.vx = approach(this.vx, 0, this.onGround ? FRIC * kF : 0.05);
@@ -256,7 +269,8 @@ export class Player extends Entity {
 
     // landing / coyote
     if (this.onGround) {
-      this.coyote = 6; this.canDouble = true; this.canAirDash = true; this.djumpT = 0; this.airJump = false;
+      if (this.diving) { this.diving = false; g.strikeFloor(this); }
+      this.coyote = 6; this.canDouble = true; this.canAirDash = true; this.djumpT = 0; this.airJump = false; this.pogoUsed = false;
       if (!was) { A.sfx('land'); this.landedT = 8; if (this.fallSpeed > 3) g.fx.burst(this.x, this.y - 1, 5, [[0.7, 0.68, 0.75], [0.3, 0.3, 0.4]], { speed: 1, s0: 8, s1: 2, l0: 10, l1: 20 }); }
       // remember a safe spot to respawn after spikes/pits
       if (++this.safeT > 10 && this.hurtT === 0 && this.nearFloor(room) && !touchesSpikes({ x: this.x + this.dir * 10, y: this.y, w: this.w, h: this.h, box: { x: this.x + this.dir * 10 - 6, y: this.y - 36, w: 13, h: 36 } }, room)) { this.lastSafe = { x: this.x, y: this.y }; this.safeT = 0; }
@@ -359,7 +373,7 @@ export class Player extends Entity {
     const S = this;
     if (S.dead) return { sheet: 'hero_hurt', f: 2 };
     if (S.hurtT > 0) return { sheet: 'hero_hurt', f: S.hurtT > 12 ? 0 : S.hurtT > 5 ? 1 : 2 };
-    if (S.atk) { const e = S.atkDur - S.atk, sq = S.seq; let f = 0; while (f + 1 < sq.starts.length && sq.starts[f + 1] <= e) f++; return sq.air ? { sheet: sq.sheet, f, cy: JATK_CY[f], ch: 80 } : { sheet: sq.sheet, f }; }
+    if (S.atk) { const e = S.atkDur - S.atk, sq = S.seq; let f = 0; while (f + 1 < sq.starts.length && sq.starts[f + 1] <= e) f++; const q = sq.frames ? sq.frames[f] : f; return sq.air ? { sheet: sq.sheet, f: q, cy: JATK_CY[q], ch: 80 } : { sheet: sq.sheet, f: q }; }
     if (S.castT) return { sheet: 'hero_attack', f: S.castT > 14 ? 0 : S.castT > 6 ? 1 : 2 };
     if (S.dashT > 0 || (S.dashCd > 22 && !S.onGround)) return { sheet: 'hero_run', f: 3 };
     if (!S.onGround) { const f = S.vy < -3 ? 1 : S.vy < -0.6 ? 2 : S.vy < 1.2 ? 3 : 4; return { sheet: 'hero_jump', f, cy: JUMP_CY[f], ch: 77 }; }
@@ -381,6 +395,11 @@ export class Player extends Entity {
   }
   // a frame of a swing that had a painted swipe has come up: three.js draws it (see slash.js), following him, in the colour of the sword's enchantment
   stepSwipe() {
+    // the Alembic Strike's arc under him, the moment the blade is out (see slash.js: the air swing's painted crescent, turned to sweep beneath)
+    if (this.atk && this.seq.down && this.atkDur - this.atk >= this.seq.s0 && this.strikeArc !== this.atkId && !this.dead) {
+      this.strikeArc = this.atkId;
+      this.g.fx.swipe({ sheet: 'hero_jump_attack', f: 4, under: true, dir: this.dir, follow: () => ({ x: this.x, y: this.y - 14 }), pal: this.ench ? ENCH[this.ench.type].pal : null });
+    }
     const fi = this.frameInfo(), key = fi.sheet + ':' + fi.f; if (key === this.swipeKey) return; this.swipeKey = key;
     if (this.dead) return; const jump = fi.cy !== undefined;
     this.g.fx.swipe({ sheet: fi.sheet, f: fi.f, dir: this.dir, ay: jump ? fi.cy / fi.ch : undefined, follow: () => ({ x: this.x, y: jump ? this.y - this.h / 2 + 1 : this.y }), pal: this.ench ? ENCH[this.ench.type].pal : null });

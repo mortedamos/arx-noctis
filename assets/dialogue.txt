@@ -87,6 +87,15 @@ The Stranger: Keep her name out of your mouth!
 [boss BAELPHEGAZ after]
 Baelphegaz: But there was so much sorrow... left to reap...
 
+[boss BAELPHEGAZ RISEN before]
+Baelphegaz: Did you think the grave would keep me, Stranger? My master has raised me up again, and I have come back hungry.
+Baelphegaz: He raised me for one dish alone: your sorrow. So rich, so potent... and he says I may have every drop of it.
+The Stranger: I put you down once.
+Baelphegaz: And how much more have you grieved since? Cut me, little soul. Every wound of mine, your sorrow will fill.
+
+[boss BAELPHEGAZ RISEN after]
+Baelphegaz: Too much... such sorrow... more than even I could hold...
+
 [boss THE MIRE MOTHER before]
 The Mire Mother: There you are, my child. You have been away so long. You taste of salt... a sea of tears...
 The Stranger: I am not your child.

@@ -166,21 +166,46 @@ void main(){
 // along its edges and a mist where it lands.  All patterns are carried along WITH the water, so the water looks like it flows rather than like lines painted on the screen.
 const WATERFRAG = /* glsl */`
 precision highp float; varying vec2 vUv;
-uniform vec2 uCam; uniform vec2 uRes; uniform float uTime; uniform int uN; uniform vec4 uR[10]; uniform vec4 uQ[10];
+uniform vec2 uCam; uniform vec2 uRes; uniform float uTime; uniform int uN; uniform vec4 uR[16]; uniform vec4 uQ[16];
 float h21(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
 float vn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f); return mix(mix(h21(i),h21(i+vec2(1.0,0.0)),f.x),mix(h21(i+vec2(0.0,1.0)),h21(i+vec2(1.0,1.0)),f.x),f.y); }
 float fbm(vec2 p){ float a=0.5, s=0.0; for(int i=0;i<4;i++){ s+=a*vn(p); p=p*2.03+vec2(17.0,9.0); a*=0.5; } return s; }
 void main(){
   vec2 w = uCam + vec2(vUv.x*uRes.x, vUv.y*uRes.y);
   vec4 acc = vec4(0.0);
-  for(int i=0;i<10;i++){
+  for(int i=0;i<16;i++){
     if(i>=uN) break;
     vec4 r=uR[i]; vec4 q=uQ[i];
     if(w.x < r.x-6.0 || w.x > r.z+6.0 || w.y < r.y-30.0 || w.y > r.w+30.0) continue;
     float wd=r.z-r.x, ht=r.w-r.y, px=w.x-r.x, py=w.y-r.y, v=q.y; vec3 col=vec3(0.0); float a=0.0;
-    if(q.x < 0.5){
+    if(q.x > 1.5){          // THE SPILL: the sheet of water leaving the lip of a ledge (type 2: it pours to the right, 3: to the left; r: from the lip out, and from the water's surface at the lip to where it lands)
+      float dir = q.x > 2.5 ? -1.0 : 1.0, lip = dir > 0.0 ? r.x : r.z;
+      float u = (w.x - lip)*dir, d = w.y - r.y, D = 12.0;          // u: how far out past the lip; d: below the surface at the lip; D: how deep the water is as it gets there
+      float wob = 0.9*sin(w.y*0.19 - uTime*9.0 + q.z) * smoothstep(D, D + 40.0, d);
+      float uo = 15.0*sqrt(clamp(d/30.0, 0.0, 1.0)) + 0.6 + wob;          // the outer face: leaves level, bends over, falls
+      float ui = 7.5*sqrt(clamp((d - D)/34.0, 0.0, 1.0)) + wob*0.6;          // the inner face: leaves from the foot of the lip
+      float inner = max(smoothstep(-0.8, 0.5, u - ui), step(d, D + 1.0));          // (no fading at the join with the stream)
+      float inside = inner * smoothstep(-0.6, 0.9, uo - u) * step(0.0, d) * step(w.y, r.w) * step(0.0, u);
+      float along = d + u*0.9 - q.w, across = clamp((u - ui)/max(1.0, uo - ui), 0.0, 1.0);          // the water's own coordinates: down the curve, and across the sheet
+      float s1 = fbm(vec2(across*3.0 + q.z, along*0.055)), s2 = fbm(vec2(across*6.5 + q.z*3.0, along*0.11));
+      float streak = smoothstep(0.34, 0.8, s1*0.6 + s2*0.5), bend = 1.0 - smoothstep(6.0, 34.0, d);          // (bend: near the lip the water is still smooth and clear, like the stream; below it breaks into streaks)
+      float dpt = clamp(d/16.0, 0.0, 1.0), join = (1.0 - smoothstep(0.0, 11.0, u)) * (1.0 - smoothstep(D, D + 12.0, d));          // join: right at the lip it IS the stream (same colours, same clearness)
+      col = mix(mix(vec3(0.32,0.58,0.73), vec3(0.88,0.97,1.0), streak), vec3(0.42,0.68,0.82), bend*0.6);
+      vec2 sw = vec2((w.x - q.w*dir)*0.05, (d + 3.0)*0.45 + uTime*0.25);          // (the stream's own streaks, carried to the very edge)
+      col = mix(col, mix(vec3(0.50,0.78,0.88), vec3(0.09,0.26,0.40), dpt) + vec3(0.55,0.75,0.8)*smoothstep(0.56, 0.86, fbm(sw + vec2(q.z*1.7, 0.0)))*0.55, join);
+      a = inside*mix(0.46 + 0.26*streak, 0.42 + 0.26*dpt, join);
+      float rim = smoothstep(2.0, 0.0, abs(uo - u - 0.7)) * step(0.0, d) * step(w.y, r.w) * step(0.0, u);          // the bright line of the surface, carried on over the edge
+      col = mix(col, vec3(0.92,0.99,1.0), rim*0.85); a = max(a, rim*0.78);
+      float mx = (u - 11.0)/17.0, my = (r.w - w.y)/22.0;
+      float mist = smoothstep(1.0, 0.0, length(vec2(mx, my*1.2))) * step(-0.4, my) * (0.55 + 0.45*fbm(vec2(w.x*0.09 + uTime*0.4, w.y*0.09 - uTime*0.3)));
+      col = mix(col, vec3(0.9,0.98,1.0), clamp(mist,0.0,1.0)*0.6); a = max(a, mist*0.55);
+      float foot = smoothstep(1.0, 0.25, abs(u - 11.0)/(15.0 + 3.0*sin(uTime*7.0 + q.z))) * smoothstep(5.0, 0.5, abs(w.y - r.w + 1.0)) * smoothstep(0.35, 0.75, fbm(vec2(w.x*0.28 - uTime*dir*1.6, w.y*0.4 + uTime*2.4)) + 0.2);          // churned foam where it strikes
+      col = mix(col, vec3(0.95,1.0,1.0), foot); a = max(a, foot*0.85);
+    } else if(q.x < 0.5){
       float xs = w.x - q.w;                                                        // the water's own x: everything below moves with it (q.w: how far it has flowed so far - added up on the CPU, so a change of speed or of direction never makes the pattern jump)
       float surf = 1.1*sin(xs*0.23 + q.z) + 0.8*sin(xs*0.51 + q.z*2.0 + uTime*1.3);
+      float lipped = step(0.3, q.x), toLip = v > 0.0 ? wd - px : px;          // (a stream that pours over a lip: it draws down as it nears the edge and its waves lie down there)
+      surf = mix(surf, surf*smoothstep(0.0, 18.0, toLip) + 3.0*pow(1.0 - smoothstep(0.0, 18.0, toLip), 2.0), lipped);
       float inside = smoothstep(-0.6, 0.9, py - surf) * step(py, ht + 0.5) * step(0.0, px) * step(px, wd);
       float dpt = clamp((py - surf)/ht, 0.0, 1.0);
       float n = fbm(vec2(xs*0.07 + q.z, py*0.22));
@@ -189,7 +214,7 @@ void main(){
       a = inside*(0.42 + 0.26*dpt);
       float line = smoothstep(1.8, 0.0, abs(py - surf - 0.7)) * step(0.0, px) * step(px, wd);
       col = mix(col, vec3(0.92,0.99,1.0), line*0.85); a = max(a, line*0.8);
-      float foam = (smoothstep(6.0,0.0,px) + smoothstep(6.0,0.0,wd-px)) * inside * (0.5 + 0.5*n);
+      float foam = (smoothstep(6.0,0.0,px) * (1.0 - lipped*step(v, 0.0)) + smoothstep(6.0,0.0,wd-px) * (1.0 - lipped*step(0.0, v))) * inside * (0.5 + 0.5*n);          // (no wall of foam at the lip: the water goes on over it)
       col = mix(col, vec3(0.94,0.99,1.0), clamp(foam,0.0,1.0)*0.6); a = max(a, foam*0.5);
     } else {
       float edge = smoothstep(0.0,2.5,px)*smoothstep(0.0,2.5,wd-px);
@@ -353,7 +378,8 @@ export class FX {
     this.rainU = { uTime: { value: 0 }, uAmt: { value: 0 }, uCount: { value: 0.52 }, uColor: { value: new THREE.Vector3(0.62, 0.72, 0.95) } };
     this.rainMesh = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.ShaderMaterial({ vertexShader: QVERT, fragmentShader: RAINFRAG, uniforms: this.rainU, transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide, ...NORMAL_PM }));
     this.rainMesh.renderOrder = 2; this.rainMesh.frustumCulled = false; this.rainMesh.visible = false; this.scene.add(this.rainMesh);
-    this.waterU = { uCam: { value: new THREE.Vector2() }, uRes: { value: new THREE.Vector2(W, H) }, uTime: { value: 0 }, uN: { value: 0 }, uR: { value: Array.from({ length: 10 }, () => new THREE.Vector4()) }, uQ: { value: Array.from({ length: 10 }, () => new THREE.Vector4()) } };
+    this.waterU = { uCam: { value: new THREE.Vector2() }, uRes: { value: new THREE.Vector2(W, H) }, uTime: { value: 0 }, uN: { value: 0 }, uR: { value: Array.from({ length: 16 }, () => new THREE.Vector4()) }, uQ: { value: Array.from({ length: 16 }, () => new THREE.Vector4()) } };
+    this.water = [];          // (every sheet of water in the room; the shader gets those in sight: see render)
     this.waterMesh = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.ShaderMaterial({ vertexShader: QVERT, fragmentShader: WATERFRAG, uniforms: this.waterU, transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide, ...NORMAL_PM }));
     this.waterMesh.renderOrder = -3; this.waterMesh.frustumCulled = false; this.waterMesh.visible = false; this.scene.add(this.waterMesh);
     this.gusts = [];                              // bursts of moving air (see gust())
@@ -375,7 +401,7 @@ export class FX {
 
   // wipe everything (used when changing rooms)
   reset() {
-    this.waterU.uN.value = 0; this.waterMesh.visible = false;
+    this.water = []; this.waterU.uN.value = 0; this.waterMesh.visible = false;
     this.slashes.reset();
     this.add.n = 0; this.alpha.n = 0; this.gusts.length = 0; this.wisps.set(0); this.lights.length = 0; this.pendingThunder.length = 0; this.flashA = 0; this.hurt = 0;
     for (const q of this.quads) { q.m.visible = false; this.quadPool.push(q.m); } this.quads.length = 0;
@@ -384,12 +410,16 @@ export class FX {
 
   // the room's water: [{ type: 0 stream | 1 fall, x0, y0, x1, y1 (world px), v (px/s, signed for a stream) }]
   setWater(list) {
-    const u = this.waterU, n = Math.min(10, list.length); u.uN.value = n;
-    for (let i = 0; i < n; i++) { const o = list[i]; u.uR.value[i].set(o.x0, o.y0, o.x1, o.y1); u.uQ.value[i].set(o.type, o.v, (Math.abs(o.x0 * 0.137) % 6.28), 0); }
-    this.waterMesh.visible = n > 0;
+    this.water = list.map(o => ({ ...o, ph: 0, seed: Math.abs(o.x0 * 0.137) % 6.28 })); this.waterMesh.visible = list.length > 0; this.pickWater();
+  }
+  // the (up to sixteen) sheets of water that can be seen from here, handed to the shader
+  pickWater() {
+    const u = this.waterU, x0 = this.camX - 40, x1 = this.camX + W + 40, y0 = this.camY - 60, y1 = this.camY + H + 60; let n = 0;
+    for (const o of this.water) { if (n >= 16) break; if (o.x1 < x0 || o.x0 > x1 || o.y1 < y0 || o.y0 > y1) continue; u.uR.value[n].set(o.x0, o.y0, o.x1, o.y1); u.uQ.value[n].set(o.type, o.v, o.seed, o.ph); n++; }
+    u.uN.value = n;
   }
   // change the speed of the water already set (px/s, one per entry of the list, in the same order): used while a boss heaves the flood one way or the other
-  setFlows(vs) { const u = this.waterU, n = u.uN.value; for (let i = 0; i < n && i < vs.length; i++) u.uQ.value[i].y = vs[i]; }
+  setFlows(vs) { for (let i = 0; i < this.water.length && i < vs.length; i++) this.water[i].v = vs[i]; }
   setCamera(x, y) { this.camX = x; this.camY = y; this.cam.position.x = x + this.shakeX; this.cam.position.y = y + this.shakeY; this.darkMesh.position.set(x + W / 2 + this.shakeX, y + H / 2 + this.shakeY, -1); this.fogMesh.position.set(x + W / 2 + this.shakeX, y + H / 2 + this.shakeY, -1); this.waterMesh.position.set(x + W / 2 + this.shakeX, y + H / 2 + this.shakeY, -1); this.rainMesh.position.set(x + W / 2 + this.shakeX, y + H / 2 + this.shakeY, 1); this.flashMesh.position.set(x + W / 2, y + H / 2, 0); }
   setShake(sx, sy) { this.shakeX = sx; this.shakeY = sy; }
 
@@ -585,7 +615,7 @@ export class FX {
   // ------------------------------------------------------------ per-step update
   update(dt = 1) {
     this.time += dt / 60;
-    { const u = this.waterU, n = u.uN.value; for (let i = 0; i < n; i++) { const q = u.uQ.value[i]; q.w += q.y * dt / 60; } }          // (each stream's pattern flows on at its own speed: see the water shader)
+    for (const o of this.water) o.ph += (o.type > 1.5 ? Math.abs(o.v) : o.v) * dt / 60;          // (each stream's pattern flows on at its own speed: see the water shader)
     this.add.update(dt); this.alpha.update(dt); this.slashes.update(dt);
     for (let i = this.gusts.length - 1; i >= 0; i--) {
       const g = this.gusts[i]; g.life += dt; if (g.life > g.max) { this.gusts.splice(i, 1); continue; }
@@ -622,7 +652,7 @@ export class FX {
         if (this.lantern) F.uW.value[5].set(this.lantern.x, this.lantern.y, 150, 0.92);          // (the Marshlight Lantern's wisp)
         for (let i = 0; i < 6; i++) { const g = this.gusts[i]; if (g) { F.uG.value[i].set(g.x, g.y, g.vx, g.vy); F.uGP.value[i].set(g.r, g.k); } else { F.uG.value[i].set(0, 0, 0, 0); F.uGP.value[i].set(1, 0); } } } }
     { const R = this.rainU; R.uCount.value = this.rainCount === undefined ? 0.52 : this.rainCount; R.uAmt.value += ((this.ambient === 'rain' ? (this.rainK === undefined ? 1 : this.rainK) : 0) - R.uAmt.value) * 0.06; this.rainMesh.visible = R.uAmt.value > 0.01; if (this.rainMesh.visible) R.uTime.value = this.time; }          // (rain: one full-screen shader, fading in and out)
-    if (this.waterMesh.visible) { this.waterU.uCam.value.set(this.camX + this.shakeX, this.camY + this.shakeY); this.waterU.uTime.value = this.time; }
+    if (this.waterMesh.visible) { this.pickWater(); this.waterU.uCam.value.set(this.camX + this.shakeX, this.camY + this.shakeY); this.waterU.uTime.value = this.time; }
     this.add.mat.uniforms.uTime.value = this.time; this.alpha.mat.uniforms.uTime.value = this.time;
     this.add.upload(); this.alpha.upload();
     for (const q of this.quads) {

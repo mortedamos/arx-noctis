@@ -351,10 +351,10 @@ export function controlsScreen(ctx) {
   drawText(ctx, Input.touchOn ? 'TAP ANYWHERE TO RETURN' : 'GAMEPAD WORKS TOO.   ANY KEY TO RETURN', W / 2, H - 28, { align: 'center', color: DIM });
 }
 
-// what the hero has found, for the pause screen: the four powers (dim and unnamed until found), the Magic Shoes and the Tide Blade once found, and the keys he carries
+// what the hero has found, for the pause screen: the four powers (dim and unnamed until found), the Magic Shoes and the other relics once found, and the keys he carries
 const POWERS = [['djump', 'feather', 'AETHER FEATHER'], ['dash', 'boot', 'QUICKSILVER'], ['ember', 'ember', 'SULPHUR'], ['thunder', 'thunder', 'VITRIOL']];
 // what the pause screen lists as FOUND: the four powers, the relics the bosses leave, and the keys you carry (each with what it is and what it does, for the cursor to read out)
-const RELICS = [['got_mantle', 'mantle', 'SALAMANDER', 'mantle'], ['got_lantern', 'lantern', 'IGNIS VAPOUR', 'lantern'], ['got_shard', 'shard', 'LACUNA', 'shard'], ['got_spring', 'spring', 'PERPETUUM', 'spring'], ['got_shoes', 'shoes', 'HERMES SHOES', 'shoes'], ['got_tide', 'e_ice', 'AQUA REGIA', 'tide'], ['got_astrolabe', 'astrolabe', 'ASTROLABE', 'astrolabe'], ['got_ouroboros', 'ouroboros', 'OUROBOROS', 'ouroboros'], ['got_athanor', 'athanor', 'ATHANOR', 'athanor']];
+const RELICS = [['got_mantle', 'mantle', 'SALAMANDER', 'mantle'], ['got_lantern', 'lantern', 'IGNIS VAPOUR', 'lantern'], ['got_shard', 'shard', 'LACUNA', 'shard'], ['got_spring', 'spring', 'PERPETUUM', 'spring'], ['got_shoes', 'shoes', 'HERMES SHOES', 'shoes'], ['got_alembic', 'alembic', 'ALEMBIC STRIKE', 'alembic'], ['got_astrolabe', 'astrolabe', 'ASTROLABE', 'astrolabe'], ['got_ouroboros', 'ouroboros', 'OUROBOROS', 'ouroboros'], ['got_athanor', 'athanor', 'ATHANOR', 'athanor']];
 const KEY_USE = { key_grave: "THE GRAVEKEEPER'S VAULT, OFF THE MOURNING FIELDS.", key_hall: "THE STEWARD'S VAULT, OFF THE PORTRAIT GALLERY.", key_chapel: "THE VERGER'S VAULT, OFF THE BELL GALLERY.", key_crypt: 'THE DOOR OF THE ORLOJ TOWER, HIGH ABOVE SMOULDERING LANE IN PRAGUE.', key_mire: "THE FERRYMAN'S VAULT, OFF THE WEEPING HOLLOW.", key_gear: "THE ENGINEER'S VAULT, OFF THE ESCAPEMENT.", key_frost: 'THE DOOR OF THE LIBRARY OF AGES, AT THE CROSSING HALL.', key_gold: 'THE DOOR OF THE SHADOW THRONE, AT THE CROSSING HALL.' };
 export function foundItems(g) {
   const S = g.save, F = S.flags, AB = (g.info && g.info.ABILITIES) || {}, UP = (g.info && g.info.UPGRADES) || {}, rows = [];

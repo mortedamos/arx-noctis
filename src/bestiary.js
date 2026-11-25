@@ -49,6 +49,7 @@ export const BEST = {
   boss_mirror: ['THE REFLECTION', 'It steps out of the glass wearing your face, and carries whatever you carry.'],
   boss_librarian: ['THE LIBRARIAN', 'He was asked only to keep the keys. He keeps everything, and nothing may be borrowed.'],
   boss_rimewyrm: ['THE RIMEWYRM', 'The cold that came up from the foundations learned to move. It guards the key the Library asks for, and wears the ice like a second skin.'],
+  boss_risen: ['BAELPHEGAZ RISEN', 'Raised again by the Shadow Lord, grey as a thing dug up, and sent to feast on one sorrow only. Every wound feeds him, and he swells with it.'],
   boss_shadow: ['THE SHADOW LORD', 'The one who took the sun. He waits above, and he has been waiting a very long time.'],
 };
 export const ORDER = Object.keys(BEST);

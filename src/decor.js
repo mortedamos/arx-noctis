@@ -8,7 +8,7 @@ import { orlojTower, TOWER_W, TOWER_H } from './orlojtower.js';
 import { keepGate, KEEP_W, KEEP_H } from './keepgate.js';
 import { bridgeTower, BT_W, BT_H } from './bridgetower.js';
 
-const BACK_KINDS = new Set(['column', 'waterfall', 'portrait', 'cog', 'pendulum', 'animgear', 'orlojtower', 'keepgate', 'bridgetower', 'icicles', 'crystals', 'voidpit']);
+const BACK_KINDS = new Set(['column', 'waterfall', 'spill', 'portrait', 'cog', 'pendulum', 'animgear', 'orlojtower', 'keepgate', 'bridgetower', 'icicles', 'crystals', 'voidpit', 'vaultback', 'table', 'stool', 'cot', 'rack']);
 // Is this piece of scenery drawn over a hazard (a spike tile)?  Nothing may stand in front of a hazard: the room drops such pieces when it loads.
 export function decoCoversHazard(d, spikes) {
   if (isBack(d)) return false; let x0, y0, w, h;
@@ -93,14 +93,34 @@ export function drawDeco(g, d, cx, cy, t, room) {
   if (x < -150 || x > 540) return;
   switch (d.t) {
     case 'orlojtower': { const tw = orlojTower(); if (tw) g.drawImage(tw, x - TOWER_W / 2, y - TOWER_H); break; }          // (the tower stands on the ground: y is its foot)
-    case 'hatch': {          // a wooden hatch in the floor, three tiles wide (the Cooper's House).  A lever draws it back: it slides left, under the floor beside it (d.p: 0 shut .. 1 gone - see Game.stepHatch)
-      const w = d.w || 48, p = d.p || 0; if (p >= 1) break;
-      const x0 = Math.round(x - w / 2); g.save(); g.beginPath(); g.rect(x0, y, w, 16); g.clip(); g.translate(-Math.round(p * w), 0);
-      g.fillStyle = '#1c130b'; g.fillRect(x0, y, w, 16);                                                  // the frame it lies in
-      for (let i = 0; i < 6; i++) { const bx = x0 + 3 + i * 7; g.fillStyle = i % 2 ? '#6b4a2b' : '#7a5632'; g.fillRect(bx, y + 2, 6, 12); g.fillStyle = 'rgba(255,230,180,0.14)'; g.fillRect(bx, y + 2, 6, 1); g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(bx + 5, y + 2, 1, 12); }
-      g.fillStyle = '#2a2a32'; g.fillRect(x0 + 6, y + 2, 4, 12); g.fillRect(x0 + w - 10, y + 2, 4, 12); g.fillStyle = '#4a4a54'; g.fillRect(x0 + 6, y + 2, 4, 1); g.fillRect(x0 + w - 10, y + 2, 4, 1);          // two iron straps
-      g.strokeStyle = '#a2a2ae'; g.lineWidth = 1; g.beginPath(); g.arc(x0 + w / 2 + 0.5, y + 8.5, 2.5, 0, Math.PI * 2); g.stroke();          // and a ring to lift it by
+    case 'vaultback': {          // the dark stone behind a hollow under the floor (the generator's floor caches): without it the sky would show through a hole in the ground.  x = its middle, y = its top, w x h in pixels
+      const x0 = Math.round(x - d.w / 2), y0 = Math.round(y); g.fillStyle = '#0d0a12'; g.fillRect(x0, y0, d.w, d.h); g.fillStyle = '#17131f';
+      for (let row = 0, yy = y0 + 1; yy < y0 + d.h; row++, yy += 8) for (let xx = x0 + (row % 2 ? -8 : 0); xx < x0 + d.w; xx += 16) { const a = Math.max(x0, xx + 1), z = Math.min(x0 + d.w, xx + 15); if (z > a) g.fillRect(a, yy, z - a, Math.min(6, y0 + d.h - yy)); }
+      break; }
+    case 'grate': {          // an iron grate in the floor, three tiles wide (the Warder's Chamber).  The lever draws it back: it slides left, under the floor beside it (d.p: 0 shut .. 1 gone - see Game.stepGrate)
+      const w = d.w || 48, p = d.p || 0, x0 = Math.round(x - w / 2);
+      g.fillStyle = '#4a4654'; g.fillRect(x0 - 2, y, 2, 5); g.fillRect(x0 + w, y, 2, 5); if (p >= 1) break;          // (the iron lip it runs in)
+      g.save(); g.beginPath(); g.rect(x0, y, w, 16); g.clip(); g.translate(-Math.round(p * w), 0);
+      g.fillStyle = '#07050a'; g.fillRect(x0, y, w, 16);          // the dark under it
+      for (let bx = x0 + 3; bx < x0 + w - 2; bx += 6) { g.fillStyle = '#56525f'; g.fillRect(bx, y + 1, 2, 13); g.fillStyle = '#8d889b'; g.fillRect(bx, y + 1, 1, 13); }
+      for (const by of [0, 8]) { g.fillStyle = '#5f5b69'; g.fillRect(x0, y + by, w, 3); g.fillStyle = '#a29db0'; g.fillRect(x0, y + by, w, 1); for (let bx = x0 + 3; bx < x0 + w - 2; bx += 12) { g.fillStyle = '#2b2831'; g.fillRect(bx, y + by + 1, 1, 1); } }
       g.restore(); break; }
+    case 'table': {          // the Warder's table: planks on two legs, a stub of candle, a mug and an open ledger.  x = its middle, y = the floor
+      g.fillStyle = '#2a1a10'; g.fillRect(x - 13, y - 13, 3, 13); g.fillRect(x + 10, y - 13, 3, 13); g.fillRect(x - 12, y - 6, 24, 2);
+      g.fillStyle = '#6b4a2b'; g.fillRect(x - 16, y - 16, 32, 4); g.fillStyle = '#91683e'; g.fillRect(x - 16, y - 16, 32, 1); g.fillStyle = '#3a2615'; g.fillRect(x - 16, y - 13, 32, 1);
+      g.fillStyle = '#d9cfae'; g.fillRect(x - 12, y - 18, 10, 2); g.fillStyle = '#8c806a'; g.fillRect(x - 7, y - 18, 1, 2);          // the ledger
+      g.fillStyle = '#7b7f8c'; g.fillRect(x + 1, y - 21, 5, 5); g.fillRect(x + 6, y - 20, 2, 3); g.fillStyle = '#a9aebc'; g.fillRect(x + 1, y - 21, 5, 1);          // the mug
+      g.fillStyle = '#e7ddc0'; g.fillRect(x + 11, y - 21, 3, 5); const f = Math.sin(t * 0.3 + d.x) > 0 ? 1 : 0; g.fillStyle = '#ffb347'; g.fillRect(x + 11, y - 25 - f, 3, 4 + f); g.fillStyle = '#fff1b0'; g.fillRect(x + 12, y - 23, 1, 2); break; }
+    case 'stool': { g.fillStyle = '#2a1a10'; g.fillRect(x - 5, y - 8, 2, 8); g.fillRect(x + 3, y - 8, 2, 8); g.fillStyle = '#6b4a2b'; g.fillRect(x - 6, y - 10, 12, 3); g.fillStyle = '#91683e'; g.fillRect(x - 6, y - 10, 12, 1); break; }
+    case 'cot': {          // a straw cot: a low frame, a sacking mattress, a bolster and a blanket thrown back
+      g.fillStyle = '#2a1a10'; g.fillRect(x - 20, y - 14, 3, 14); g.fillRect(x + 17, y - 9, 3, 9); g.fillStyle = '#5a3d23'; g.fillRect(x - 18, y - 6, 36, 3);
+      g.fillStyle = '#8f7c52'; g.fillRect(x - 17, y - 10, 34, 4); g.fillStyle = '#b29d6a'; g.fillRect(x - 17, y - 10, 34, 1); g.fillStyle = '#cdbf9a'; g.fillRect(x - 17, y - 13, 9, 3);
+      g.fillStyle = '#5c2f33'; g.fillRect(x - 1, y - 12, 18, 6); g.fillStyle = '#7d4247'; g.fillRect(x - 1, y - 12, 18, 1); g.fillStyle = '#c9a227'; for (let k = 0; k < 6; k++) g.fillRect(x - 16 + k * 6, y - 5 + (k % 2), 1, 2); break; }
+    case 'rack': {          // a stand of arms: two posts and a rail, a halberd and a pike leaning in it, and the ring of keys
+      g.fillStyle = '#3a2615'; g.fillRect(x - 13, y - 28, 3, 28); g.fillRect(x + 10, y - 28, 3, 28); g.fillStyle = '#6b4a2b'; g.fillRect(x - 15, y - 25, 30, 3); g.fillRect(x - 15, y - 9, 30, 3);
+      for (const [px, h] of [[-6, 44], [3, 48]]) { g.fillStyle = '#7a5632'; g.fillRect(x + px, y - h, 2, h); g.fillStyle = '#b9bfcc'; g.fillRect(x + px, y - h - 6, 2, 6); g.fillRect(x + px - 1, y - h - 3, 4, 1); }
+      g.fillStyle = '#b9bfcc'; g.fillRect(x - 10, y - 42, 5, 6); g.fillStyle = '#8b91a0'; g.fillRect(x - 10, y - 37, 5, 1);          // the halberd's blade
+      g.strokeStyle = '#c9a227'; g.lineWidth = 1; g.beginPath(); g.arc(x + 11.5, y - 18.5, 3, 0, Math.PI * 2); g.stroke(); g.fillStyle = '#c9a227'; g.fillRect(x + 10, y - 16, 1, 6); g.fillRect(x + 13, y - 16, 1, 5); g.fillRect(x + 9, y - 11, 1, 1); break; }
     case 'bridgetower': { const bt = bridgeTower(); if (bt) g.drawImage(bt, Math.round(x - BT_W / 2), y - BT_H); break; }          // (the Stone Bridge Tower, standing on the ground behind the Bridge Gate's altar)
     case 'keepgate': { const kg = keepGate(); if (kg) g.drawImage(kg, Math.round(x - kg.width / 2), y - kg.height); break; }          // (the great gate of Arx Noctis, standing on the ground behind a door into the keep)
     case 'animgear': {          // an accent: a cluster of meshing gears from the Animated Gears pack (a strip of 128x128 frames), turning slowly among the generated ones
@@ -118,7 +138,7 @@ export function drawDeco(g, d, cx, cy, t, room) {
     case 'voidpit': {          // a pit with no bottom (the Pit of Despair): the scenery fades into black below the banks, behind the planks and the hero.  x = its middle, y = the floor's row, w = its width, in pixels
       const w = d.w, top = y - 6, h = (room && room.ph ? room.ph - d.y : 128) + 40, gr = g.createLinearGradient(0, top, 0, top + Math.min(h, 90)); gr.addColorStop(0, 'rgba(2,0,6,0)'); gr.addColorStop(0.35, 'rgba(2,0,6,0.8)'); gr.addColorStop(1, 'rgba(1,0,3,1)');
       g.fillStyle = gr; g.fillRect(Math.round(x - w / 2), top, w, Math.min(h, 90)); g.fillStyle = 'rgb(1,0,3)'; if (h > 90) g.fillRect(Math.round(x - w / 2), top + 90, w, h - 90); break; }
-    case 'waterfall': break;          // (waterfalls and streams are water in the effects layer now: fx.setWater)
+    case 'waterfall': case 'spill': break;          // (waterfalls, spills and streams are water in the effects layer now: fx.setWater)
     case 'portrait': drawFramedPortrait(g, x, y, { ci: d.ci, a: d.emo, frame: d.frame }); break;          // a framed portrait on the wall: x = its centre, y = the bottom edge of the frame (see portraitart.js)
     case 'icicles': {          // a cluster of icicles hanging from the ceiling: x the middle, y the top
       const n = d.n || 2; for (let i = 0; i < n; i++) { const hs = k => { const q = Math.sin(d.x * 12.9898 + i * 78.233 + k * 4.1) * 43758.5453; return q - Math.floor(q); }, ox = (i - (n - 1) / 2) * 7 + (hs(1) - 0.5) * 4, len = 16 + hs(2) * 26, w = 3 + hs(3) * 3;

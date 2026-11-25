@@ -149,7 +149,7 @@ export const decoHidesDoor = (d, o) => { const f = DECO_SPAN[d.t]; if (!f || (d.
 // end up with half of itself hanging out over a pit or past the end of a ledge.  Every standing picture is checked against the floor tiles under it (a house, wall or stone: its whole width; a tree or
 // a clump of props, which has a trunk and a canopy: the middle of it, since branches may hang over a drop): if too much of it is unsupported it is slid along to the nearest spot that is supported, or
 // taken away.  (A house with a door in it stays - the door belongs to it - and so does anything that is not resting on a floor at all: backdrops, signs, the Orloj.)
-const SOLID_FLOOR = new Set([TILE.SOLID, TILE.PLAT, TILE.CRACK, TILE.BARRICADE, TILE.CRYSTAL, TILE.ICE, TILE.GATE]);
+const SOLID_FLOOR = new Set([TILE.SOLID, TILE.PLAT, TILE.CRACK, TILE.BARRICADE, TILE.CRYSTAL, TILE.ICE, TILE.GATE, TILE.FLOOR]);
 const NOT_STANDING = /orloj|gate|door|sign|moon|sun|window|banner|sky|mount|cloud|horizon|lamp|chain|hang/;
 const FULL_WIDTH = /house|town_|cottage|well|cart|crate|barrel|pillar|stone|tomb|crypt|mausoleum|statue|ruin|shed|fence|bench|gy_/;
 export function fitScenery(def) {
@@ -198,7 +198,7 @@ export function tidyRoom(def) {
 }
 
 const STATIC_SPAWNS = new Set(['statue', 'barrel', 'tablet', 'altar', 'chest', 'waystone', 'itemspawn', 'upgrade', 'lever', 'skull', 'bell', 'litcandle']);
-const BLOCK_DECOS = new Set(['brazier', 'column', 'door', 'gate', 'hatch']);          // (a hatch in the floor: nothing may stand on it - it slides away)
+const BLOCK_DECOS = new Set(['brazier', 'column', 'door', 'gate', 'grate', 'table', 'cot', 'rack']);          // (nothing is set where these stand)
 const OUTDOOR_THEMES = new Set(['swamp', 'graveyard', 'ice']);                                       // open country: no candelabras (a mire or a glacier has no use for them - the ice caves are lit by ghostly wisps), whatever the builder asked for
 export function arrangeCandelabras(def) {
   if (def.cdlDone) return; def.cdlDone = true;                                                          // (hand-built rooms are shared between worlds: do it once)
@@ -220,7 +220,7 @@ export function arrangeCandelabras(def) {
   const block = [];                                                                                  // [tile x, standing row, how close is too close]
   for (const s of def.spawns) if (STATIC_SPAWNS.has(s.type)) block.push([s.x, s.y, s.type === 'tablet' || s.type === 'waystone' || s.type === 'altar' ? 2.2 : 1.8]);
   for (const d of def.doors) block.push([d.x, d.gy, 2.6]);
-  for (const d of def.decos) if (BLOCK_DECOS.has(d.t) || (d.t === 'img' && !d.back) || (d.t === 'cdl')) block.push([(d.x - 8) / 16, d.y / 16, d.t === 'hatch' ? Math.max(2, (d.w || 48) / 32) : d.t === 'img' ? 2.2 : 1.8]);
+  for (const d of def.decos) if (BLOCK_DECOS.has(d.t) || (d.t === 'img' && !d.back) || (d.t === 'cdl')) block.push([(d.x - 8) / 16, d.y / 16, d.t === 'img' ? 2.2 : 1.8]);
   const placed = [], clear = (s, gap) => !block.some(([bx, by, hw]) => Math.abs(s.x - bx) < hw && Math.abs(s.y - by) <= 3) && !placed.some(p => Math.abs(p.x - s.x) < gap && Math.abs(p.y - s.y) <= 3);
   const put = (s, gap) => { if (s && clear(s, gap)) { placed.push(s); return true; } return false; };
   const near = (x, y, tol = 1.6) => { let best = null, bd = 1e9; for (const s of spots) { const d = Math.abs(s.x - x) + (y === undefined ? 0 : Math.abs(s.y - y) * 3); if (d < bd && Math.abs(s.x - x) <= tol) { bd = d; best = s; } } return best; };

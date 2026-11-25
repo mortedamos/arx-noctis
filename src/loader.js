@@ -20,14 +20,14 @@ export const STAGES = [
   { id: 'prague', zone: [6], music: [], sfx: ['boss_cinder', 'boss_cinder_die'] },
   { id: 'graveyard', zone: [1], music: ['zone1'], sfx: ['boss_beast', 'boss_beast_die'] },
   { id: 'mire', zone: [7], music: ['zone7'], sfx: ['boss_bramble', 'boss_bramble_die'] },
-  { id: 'hall', zone: [2], music: ['zone2'], sfx: ['boss_nightmare', 'boss_nightmare_die', 'boss_mirror_die'] },
+  { id: 'hall', zone: [2], music: ['zone2', 'zone4'], sfx: ['boss_nightmare', 'boss_nightmare_die', 'boss_mirror_die'] },
   { id: 'cistern', zone: [9], music: ['zone9'], sfx: ['boss_drowned', 'boss_drowned_die'] },
   { id: 'chapel', zone: [3], music: ['zone3'], sfx: ['boss_angel', 'boss_angel_die'] },
   { id: 'crypts', zone: [4], music: ['zone4'], sfx: ['boss_vampire', 'boss_vampire_die'] },
   { id: 'ice', zone: [11], music: ['zone11'], sfx: ['shatter', 'boss_rimewyrm', 'boss_rimewyrm_die'] },
   { id: 'clockwork', zone: [8], music: ['zone8'], sfx: ['gear', 'steam', 'boss_colossus', 'boss_colossus_die'] },
   { id: 'library', zone: [10], music: ['zone10'], sfx: ['page', 'ink', 'boss_librarian', 'boss_librarian_die'] },
-  { id: 'throne', zone: [5], music: ['zone5', 'boss_final', 'ending'], sfx: ['boss_shadow', 'boss_shadow_die'] },
+  { id: 'throne', zone: [5], music: ['zone5', 'boss_final', 'ending'], sfx: ['boss_shadow', 'boss_shadow_die', 'boss_beast', 'boss_beast_die'] },
   { id: 'rest', zone: [], music: ['disco', 'title'], sfx: 'rest' },          // ('title' last: it is already streaming when the game opens, and it is only heard again on QUIT TO TITLE)
 ];
 // what every zone needs, wherever the hero is: right after the zone's own music.  (A track whose file has not been made yet is represented by the stand-ins that play for it: see Audio_.urlsFor.)
