@@ -111,11 +111,12 @@ class Bat extends Enemy {
 }
 
 // ------------------------------------------------------------------------------------------------ ZOMBIE
+const ZOMBIE_RISE = 117;          // (px: how near the hero comes, side to side, before a buried one starts to climb out.  Was 78; raised by half on request, so they do not wait till he is on top of them)
 export class Zombie extends Enemy {
   constructor(g, x, y, o) { super(g, x, y, 14, 32, o); this.hp = this.maxHp = 14; this.dmg = 8; this.xp = 8; this.state = 'buried'; this.harmless = true; this.invuln = true; this.kbRes = 0.4; this.speed = 0.38 + rand(0.1); this.name = 'zombie'; }
   ai(g) {
     const p = g.player;
-    if (this.state === 'buried') { if (Math.abs(this.dx()) < 78 && Math.abs(p.y - this.y) < 50) { this.state = 'rise'; this.t = 0; this.face(); A.sfx('break'); g.fx.burst(this.x, this.y - 2, 10, [[0.45, 0.35, 0.25], [0.2, 0.15, 0.1]], { speed: 1.4, s0: 9, s1: 2, up: 0.8 }); } return; }
+    if (this.state === 'buried') { if (Math.abs(this.dx()) < ZOMBIE_RISE && Math.abs(p.y - this.y) < 50) { this.state = 'rise'; this.t = 0; this.face(); A.sfx('break'); g.fx.burst(this.x, this.y - 2, 10, [[0.45, 0.35, 0.25], [0.2, 0.15, 0.1]], { speed: 1.4, s0: 9, s1: 2, up: 0.8 }); } return; }
     if (this.state === 'rise') { if (this.t > 46) { this.state = 'walk'; this.harmless = false; this.invuln = false; } return; }
     this.face(); if (Math.abs(this.dx()) > 6 && groundAhead(this, g.room, 6) && !wallAhead(this, g.room, 3)) this.vx = approach(this.vx, this.dir * this.speed, 0.05); else this.vx = approach(this.vx, 0, 0.1);
   }
