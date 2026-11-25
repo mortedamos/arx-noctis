@@ -69,8 +69,8 @@ export const HUD = {
       if (cur) drawText(ctx, cur.kind === 'spell' ? SPELLS[cur.id].name : ITEMS[cur.id].short, W - 6, y + sw + 3, { align: 'right', color: PALE, outline: '#000' });
       if (slots.length > 1) drawText(ctx, 'Q', x0 - 9, y + 5, { color: DIM, outline: '#000' });
     }
-    // gold
-    icon(ctx, 'coin', W - 24, 43, 1); drawText(ctx, S.gold, W - 8, 40, { align: 'right', color: PALE, outline: '#000' });
+    // gold: on a line of its own, clear of the selected thing's name above it (and of the tails of its letters), the coin just before the figures however long they grow
+    const gold = String(S.gold), gy = 46; icon(ctx, 'coin', W - 14 - textWidth(gold, 1, { outline: '#000' }), gy + 3.5, 1); drawText(ctx, gold, W - 6, gy, { align: 'right', color: PALE, outline: '#000' });
     // boss bar
     const b = g.boss; if (b && b.active && !b.dead) {
       const w = 220, x = (W - w) / 2, y = H - 22, f = Math.max(0, b.hp / b.maxHp); this.lagBoss += (f - this.lagBoss) * (f < this.lagBoss ? 0.03 : 1);
