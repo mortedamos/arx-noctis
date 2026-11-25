@@ -237,7 +237,7 @@ const SPEC = {
   // ======== ZONE 11 - THE FROZEN CAVERNS (beyond the Cistern, behind a wall of ice that only fire melts; the ice floors are slippery; walls of ice bar the way and hide treasure; at the far end the RIMEWYRM guards the KEY OF ANTIMONY, which opens the Library)
   // THE FREEZING DEEP: down from the Cistern's wall of ice, far under the earth, into the Frozen Caverns: water runs along every floor and falls from lip to lip down to a deep pool cold enough to chill the blood; loose icicles overhead
   fd: { kind: 'shaft', zone: 11, name: 'The Freezing Deep', w: [28, 32], T: 12, S: 6, G: 6, levels: [12, 12], bottomEdge: true, flow: 0.4, freezing: true, spikes: true, dress: 'ice', torchEvery: 3, barrels: [1, 1], abilities: ['djump', 'dash', 'ember'], theme: 'ice', opts: { ...LOOK[11], ambient: 0.34, weather: 'snow' }, foes: [['wraith', 3], ['frostwyrm', 2], ['zombie', 3], ['skeleton', 3], ['bat', 2]] },
-  fb: { kind: 'shaft', zone: 11, name: 'The Black Ice Falls', sideDoor: { to: 'lz', raise: 2 }, w: [28, 32], T: 12, S: 6, G: 6, levels: [8, 8], bottomEdge: true, flow: 0.45, freezing: true, spikes: true, dress: 'ice', torchEvery: 3, barrels: [1, 1], abilities: ['djump', 'dash', 'ember'], theme: 'ice', opts: { ...LOOK[11], ambient: 0.28, weather: 'snow' }, foes: [['wraith', 3], ['frostwyrm', 2], ['skeleton', 3], ['bat', 2]] },          // (deeper still, to the Frozen Caverns themselves)
+  fb: { kind: 'shaft', zone: 11, name: 'The Black Ice Falls', sideDoor: { to: 'lz', raise: 2, right: true }, w: [28, 32], T: 12, S: 6, G: 6, levels: [8, 8], bottomEdge: true, flow: 0.45, freezing: true, spikes: true, dress: 'ice', torchEvery: 3, barrels: [1, 1], abilities: ['djump', 'dash', 'ember'], theme: 'ice', opts: { ...LOOK[11], ambient: 0.28, weather: 'snow' }, foes: [['wraith', 3], ['frostwyrm', 2], ['skeleton', 3], ['bat', 2]] },          // (deeper still, to the Frozen Caverns themselves)
   ti: { kind: 'teleport', zone: 11, name: 'Waystone Rime Hollow', opts: LOOK[11], abilities: ['djump', 'dash', 'ember'] },
   i1: { kind: 'corridor', zone: 11, name: 'The Frozen Gallery', w: [102, 116], leverCell: true, opts: { ...LOOK[11], fog: 0.15 }, abilities: ['djump', 'dash', 'ember'],
     mods: [{ t: 'iceWall' }, { t: 'door', to: 'si', kind: 'wood' }, { t: 'cell', gate: 'ice', kind: 'hpup', id: 'i1_hp' }, { t: 'tablet', id: 'tab22', near: 'start', text: 'THE COLD CAME UP FROM THE FOUNDATIONS THE DAY THE SUN WAS TAKEN. NOTHING THAT FELL IN HAS THAWED. NOTHING THAT WALKS HERE FEELS IT.' }],
@@ -325,7 +325,7 @@ const CHAINS = [
 ];
 // SPURS: a room off the side of another, by an open edge on its own at a height of its own (the left of the Belfry's top landing: def.spurExit), not part of any chain
 const SPURS = [{ of: 'h3', id: 'tbf' }, { of: 'h5', id: 'ob' }];          // (and off the Oubliette, half way down)
-const BESIDE = [{ of: 'k2', id: 'kp' }];          // (side rooms drawn to the RIGHT of their parent on the map, level with their door)
+const BESIDE = [{ of: 'k2', id: 'kp' }, { of: 'fb', id: 'lz' }];          // (side rooms drawn to the RIGHT of their parent on the map, level with their door)
 const UNDER = [{ of: 'wc', id: 'h5' }];          // (a room reached by falling into it sits right under its room on the map)
 const LINKS = CHAINS.flatMap(c => c.slice(1).map((id, i) => [c[i], 'R', id, 'L'])).concat([['vq', 'R', 'v0', 'L']]);          // (the secret hollow joins the hill's left edge)
 // the crossroads' doors (two-way): hub a, its door tag ta, the first room of the branch b, the tag of that room's door tb; mod = how the door is built (see genCorridor), lock = boss flags it needs
@@ -1009,12 +1009,14 @@ function shaftDrop(b, top, floor) {          // the longest stretch of open air 
   return best;
 }
 // A DOOR ON ONE LEVEL OF A SHAFT (spec.sideDoor: { to, raise }), as near half way down as will do, near a wall.  raise: rows over the floor for a ledge of its own (clear of running water); 0 stands the door on the floor.
+// right: by the RIGHT-hand wall if any level near half way will take it there (the map draws the room beyond on that side).
 // Added after the shaft is made, with no random numbers, and proved: the door can be reached, and from it both the way back up and the way on down.
 function shaftDoor(b, sd, meta, down, rows) {
   const W = b.w, n = rows.length - 1, LEN = 6, raise = sd.raise || 0, tile = (x, y) => (x < 0 || x >= W || y < 0 || y >= b.h ? TILE.SOLID : b.def.tiles[y * W + x]);
   const fits = (x0, floor) => { if ((b.def.pools || []).some(p => p.y === floor * 16 && p.x0 < (x0 + LEN) * 16 && p.x1 > x0 * 16)) return false; for (let x = x0; x < x0 + LEN; x++) { if (tile(x, floor) !== TILE.SOLID) return false; for (let y = floor - raise - 3; y < floor; y++) if (tile(x, y) !== TILE.EMPTY) return false; } return true; };
   const mid = n >> 1, starts = Array.from({ length: W - LEN - 1 }, (_, i) => i + 1).sort((p, q) => Math.min(p, W - LEN - p) - Math.min(q, W - LEN - q));
-  for (let d = 0; d < n; d++) for (const k of d ? [mid - d, mid + d] : [mid]) if (k >= 1 && k < n) for (const x0 of starts) {
+  const passes = sd.right ? [[starts.filter(x => x >= W - LEN - 6), 4], [starts, n]] : [[starts, n]];
+  for (const [xs, far] of passes) for (let d = 0; d < far; d++) for (const k of d ? [mid - d, mid + d] : [mid]) if (k >= 1 && k < n) for (const x0 of xs) {
     const floor = rows[k], row = floor - raise, x = x0 + (LEN >> 1); if (!fits(x0, floor)) continue;
     const before = Uint8Array.from(b.def.tiles); if (raise) b.plat(x0, LEN, row);
     const def = { ...b.def, doors: [...b.def.doors, { x, gy: row, room: sd.to }] };
