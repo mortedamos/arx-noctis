@@ -64,6 +64,64 @@ function swampLip() {
   return SWAMP_LIP;
 }
 
+// ------------------------------------------------------------------ BONE (the Oubliette, def.boneWalls): HEAPS of bones, not courses of them
+// Bones lie at every angle, piled over one another and spilling across the edges of the tiles; skulls roll where they will; the planks are rough lashings of long bones.  Everything is set from a hash of
+// the tile, so a room looks the same every time, and drawn pixel by pixel (never as a smoothed, rotated picture).  Three depths of colour - deep in the heap, half buried, on top - are painted in three
+// passes over the WHOLE room, so the bones of one tile lie across those of the next and the grid is lost.
+const BONE_TONES = [['#51452f', '#2a2318', '#665841'], ['#a59372', '#4d4130', '#bfae8a'], ['#e3d7b6', '#85744f', '#fbf4dd']], SOCKET = '#130c06';          // [body, shadow, light]
+const SKULL_BITS = ['..###..', '.#####.', '#######', '#oo#oo#', '#oo#oo#', '.##o##.', '..###..', '..o#o..'];
+const dot = (g, x, y, c, w = 1) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), w, w); };
+function pixelBone(g, cx, cy, a, len, tone) {          // a long bone at any angle: a shaft with its shadow under it, two knuckles at each end
+  const [body, shade, light] = BONE_TONES[tone], dx = Math.cos(a), dy = Math.sin(a), h = len / 2, flip = dx < 0 ? -1 : 1, px = -dy * flip, py = dx * flip;          // (px, py): across the bone, pointing downward
+  for (let t = -h; t <= h; t += 0.5) dot(g, cx + dx * t + px * 1.8, cy + dy * t + py * 1.8, 'rgba(0,0,0,0.6)');
+  for (let t = -h; t <= h; t += 0.5) dot(g, cx + dx * t + px * 0.9, cy + dy * t + py * 0.9, shade);
+  for (let t = -h; t <= h; t += 0.5) dot(g, cx + dx * t, cy + dy * t, body);
+  for (const e of [-h, h]) for (const q of [-1.2, 1.6]) { const x = cx + dx * e + px * q - 1, y = cy + dy * e + py * q - 1; dot(g, x, y, q > 0 ? shade : body, 2); if (q < 0) { dot(g, x + 1, y, body); dot(g, x, y, light); } }
+}
+function pixelSkull(g, cx, cy, a, tone) {          // a skull about 7 x 8, turned any way up
+  const [body, shade, light] = BONE_TONES[tone], c = Math.cos(a), sn = Math.sin(a), cells = [];
+  for (let j = -6; j <= 6; j++) for (let i = -6; i <= 6; i++) {
+    const u = c * i + sn * j + 3.5, v = -sn * i + c * j + 4; if (u < 0 || u >= 7 || v < 0 || v >= 8) continue;
+    const ch = SKULL_BITS[v | 0][u | 0]; if (ch !== '.') cells.push([i, j, ch === 'o' ? SOCKET : v < 1.6 ? light : v >= 6 ? shade : body]);
+  }
+  for (const [i, j] of cells) dot(g, cx + i + 1, cy + j + 1, 'rgba(0,0,0,0.55)');
+  for (const [i, j, col] of cells) dot(g, cx + i, cy + j, col);
+}
+function pixelRib(g, cx, cy, r, a0, tone) { const [body, shade] = BONE_TONES[tone]; for (let a = a0; a < a0 + 2.5; a += 0.12) { dot(g, cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.8 + 1, shade); dot(g, cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.8, body); } }
+const boneRand = (tx, ty) => { let k = 0; return () => hash1(tx * 12.9898 + ty * 78.233 + (++k) * 37.719); };
+// one depth (0 deep, 1 half buried, 2 on top) of the heap in one solid tile.  open: which sides face the air.
+function boneHeap(g, tx, ty, open, pass) {
+  const x = tx * T, y = ty * T, rnd = boneRand(tx + pass * 31, ty + pass * 17), PI = Math.PI;
+  const bone = (bx, by, a, len, tone = pass) => pixelBone(g, bx, by, a, len, tone), any = () => bone(x + 1 + rnd() * 14, y + 2 + rnd() * 12, rnd() * PI, 7 + rnd() * 6);
+  if (pass === 0) { any(); any(); any(); return; }
+  if (pass === 1) { any(); if (rnd() < 0.6) any(); if (rnd() < 0.22) pixelSkull(g, x + 4 + rnd() * 8, y + 5 + rnd() * 7, rnd() * 2 * PI, 1); if (open.d && rnd() < 0.4) bone(x + 2 + rnd() * 12, y + T, PI / 2 + (rnd() - 0.5) * 1.3, 6 + rnd() * 3); return; }
+  if (rnd() < 0.45) any();
+  if (rnd() < 0.16) pixelRib(g, x + 4 + rnd() * 8, y + 5 + rnd() * 7, 4 + rnd() * 2, rnd() * 2 * PI, 2);
+  if (rnd() < 0.34) pixelSkull(g, x + 4 + rnd() * 8, y + 5 + rnd() * 7, (rnd() - 0.5) * 2.6 + (rnd() < 0.2 ? PI : 0), 2);
+  if (open.u) {          // the top of a heap, where the hero walks: bones lying nearly flat along it (so the footing is plain to see), others tipped across them, now and then a skull perched on the edge
+    bone(x + 5 + rnd() * 6, y + 1.5 + rnd(), (rnd() - 0.5) * 0.5, 11 + rnd() * 5);
+    if (rnd() < 0.6) bone(x + 2 + rnd() * 12, y + 3 + rnd() * 2, (rnd() - 0.5) * 1.8, 7 + rnd() * 4);
+    if (rnd() < 0.2) pixelSkull(g, x + 4 + rnd() * 8, y + rnd() * 2 - 1, (rnd() - 0.5) * 1.7, 2);
+  }
+  for (const [side, edge, a] of [['l', x, PI], ['r', x + T, 0]]) if (open[side] && rnd() < 0.45) bone(edge, y + 3 + rnd() * 10, a + (rnd() - 0.5) * 1.7, 6 + rnd() * 3);          // ends sticking out of the face
+}
+// one depth of a plank (1 under, 2 on top): long bones lashed any old how, some dangling, sometimes a skull caught among them
+function boneRaft(g, tx, ty, pass) {
+  const x = tx * T, y = ty * T, rnd = boneRand(tx + pass * 53, ty + pass * 29), PI = Math.PI;
+  if (pass === 1) { pixelBone(g, x + 6 + rnd() * 4, y + 4.5 + rnd(), (rnd() - 0.5) * 1.0, 11 + rnd() * 4, 1); if (rnd() < 0.35) pixelBone(g, x + 2 + rnd() * 12, y + 8, PI / 2 + (rnd() - 0.5) * 1.4, 6 + rnd() * 3, 1); return; }
+  pixelBone(g, x + 6 + rnd() * 4, y + 1.5 + rnd() * 0.8, (rnd() - 0.5) * 0.34, 15 + rnd() * 4, 2);
+  if (rnd() < 0.55) pixelBone(g, x + 2 + rnd() * 12, y + 3.5 + rnd(), (rnd() - 0.5) * 1.3, 7 + rnd() * 5, 2);
+  if (rnd() < 0.14) pixelSkull(g, x + 4 + rnd() * 8, y + 7 + rnd() * 2, (rnd() - 0.5) * 3, 2);
+}
+function boneShade(g, tx, ty, plank, open = {}) {          // the dark between the bones: no stone tile under them, and its edges ragged wherever it meets the air, so a heap has no straight sides
+  const x = tx * T, y = ty * T, rnd = boneRand(tx + 101, ty + 211);
+  if (plank) { g.fillStyle = 'rgba(18,12,8,0.7)'; for (let c = 0; c < T; c++) g.fillRect(x + c, y + 2 + (rnd() < 0.3 ? 1 : 0), 1, 2 + ((rnd() * 3) | 0)); return; }
+  const lin = Array.from({ length: T }, () => (open.l ? (rnd() * 5) | 0 : 0)), rin = Array.from({ length: T }, () => (open.r ? (rnd() * 5) | 0 : 0));
+  g.fillStyle = 'rgba(17,11,7,0.96)';
+  for (let c = 0; c < T; c++) { const top = open.u ? 2 + ((rnd() * 2) | 0) : 0, foot = open.d ? T - ((rnd() * 7) | 0) : T; for (let j = top; j < foot; j++) if (c >= lin[j] && c < T - rin[j]) g.fillRect(x + c, y + j, 1, 1); }
+}
+function bonePlat(g, tx, ty) { boneShade(g, tx, ty, true); boneRaft(g, tx, ty, 1); boneRaft(g, tx, ty, 2); }          // (a single plank tile, for platforms painted over scenery)
+
 // ------------------------------------------------------------------ tile themes
 // Each theme draws one 16x16 cell (tx,ty) onto g.  nb: {u,d,l,r} neighbour-solid flags, depth: solid tiles directly above (0 = surface)
 const blit = (g, img, sx, sy, w, h, dx, dy) => g.drawImage(img, sx, sy, w, h, dx, dy, w, h);
@@ -537,6 +595,7 @@ export class Room {
   prerender() {
     this.canvas = this.canvas || canvasOf(this.pw, this.ph); const g = this.canvas.getContext('2d'); g.imageSmoothingEnabled = false; g.clearRect(0, 0, this.pw, this.ph);
     const th = THEME[this.theme]; this.anim.length = 0; this.spikes = []; this.brk = [];          // (spikes are also drawn again on the clear layer above fog and darkness: a hazard must always be seen)
+    const heaps = [], rafts = [];          // (bone rooms: the tiles to heap with bones once everything else is painted)
     // depth: contiguous solid tiles above
     for (let ty = 0; ty < this.h; ty++) for (let tx = 0; tx < this.w; tx++) {
       const v = this.tiles[ty * this.w + tx]; if (!v) continue;
@@ -545,8 +604,9 @@ export class Room {
         // ceilings/overhangs: tile with air below and solid above shouldn't look like grass-top
         const nbs = { u: this.solid(tx, ty - 1), d: this.solid(tx, ty + 1), l: this.solid(tx - 1, ty), r: this.solid(tx + 1, ty) }, dr = this.dividerRows;
         if (th.wall && dr && this.divider !== undefined && tx >= this.divider && tx <= this.divider + 1 && ty >= dr[0] && ty <= dr[1]) th.wall(g, tx, ty, nbs, depth, ty - dr[0], tx - this.divider);          // (a divider wall - a tall free-standing wall in a two-floor room - gets the theme's wall tiles: an earth tile ten rows deep is just a black bar)
-        else th.solid(g, tx, ty, nbs, depth);
-      } else if (v === TILE.PLAT) { if (!(this.platSet && this.platSet.has(tx + ',' + ty))) th.plat(g, tx, ty); }          // (a platform that some scenery overlaps is not painted into the room's picture: drawPlatsOver paints it over the scenery)
+        else if (!this.boneWalls) th.solid(g, tx, ty, nbs, depth);
+        if (this.boneWalls) { const above = ty > 0 ? this.tiles[(ty - 1) * this.w + tx] : TILE.SOLID, open = { u: !nbs.u && above !== TILE.SPIKE, d: !nbs.d, l: !nbs.l, r: !nbs.r }; boneShade(g, tx, ty, false, open); heaps.push([tx, ty, open]); }
+      } else if (v === TILE.PLAT) { if (!(this.platSet && this.platSet.has(tx + ',' + ty))) { if (this.boneWalls) { boneShade(g, tx, ty, true); rafts.push([tx, ty]); } else th.plat(g, tx, ty); } }          // (a platform that some scenery overlaps is not painted into the room's picture: drawPlatsOver paints it over the scenery)
       else if (v === TILE.SPIKE) { if (!(this.rivers && this.rivers.some(c => ty * T >= c.y))) drawSheet(g, 'spikes', 0, tx * T, ty * T, { ax: 0, ay: 0 }); this.spikes.push([tx, ty]); }          // (under a river the spikes are unseen)
       else if (v === TILE.CRACK) { if (this.bookWall && this.bookWall.has(tx + ',' + ty)) bookTile(g, tx, ty); else drawSheet(g, 't_crack', 0, tx * T, ty * T, { ax: 0, ay: 0 }); this.brk.push([tx, ty, v]); }
       else if (v === TILE.BARRICADE) { drawSheet(g, 't_barricade', 0, tx * T, ty * T, { ax: 0, ay: 0 }); this.brk.push([tx, ty, v]); }
@@ -554,6 +614,7 @@ export class Room {
       else if (v === TILE.CRYSTAL || v === TILE.SEAL) this.anim.push([tx, ty, v]);
       else if (v === TILE.GATE) { if (!(this.gateRising && this.gateRising.has(tx + ',' + ty))) drawGateTile(g, tx * T, ty * T, this.theme, this.tiles[(ty - 1) * this.w + tx] !== TILE.GATE, ty); }          // (a gate that is rising is drawn by Game.draw, sliding up)
     }
+    for (const pass of [0, 1, 2]) { for (const [tx, ty, open] of heaps) boneHeap(g, tx, ty, open, pass); if (pass) for (const [tx, ty] of rafts) boneRaft(g, tx, ty, pass); }
     this.dirty = false;
   }
   // The platforms that crates, carts or lamps stand across (see decor.js platesOver): the room's picture leaves them out, and they are drawn here, after the scenery, so a platform is never hidden behind it.
@@ -561,7 +622,7 @@ export class Room {
   drawPlatsOver(g, camX, camY) {
     const L = this.platOver; if (!L || !L.length) return; const th = THEME[this.theme], cx = Math.floor(camX), cy = Math.floor(camY);
     g.save(); g.translate(-cx, -cy);
-    for (const [tx, ty] of L) { const x = tx * T, y = ty * T; if (x < cx - T || x > cx + W || y < cy - 2 * T || y > cy + H) continue; if (this.tiles[ty * this.w + tx] === TILE.PLAT) th.plat(g, tx, ty); }
+    for (const [tx, ty] of L) { const x = tx * T, y = ty * T; if (x < cx - T || x > cx + W || y < cy - 2 * T || y > cy + H) continue; if (this.tiles[ty * this.w + tx] === TILE.PLAT) (this.boneWalls ? bonePlat : th.plat)(g, tx, ty); }
     g.restore();
   }
   drawTiles(g, camX, camY, t) {

@@ -156,6 +156,7 @@ export class Player extends Entity {
     const was = this.onGround;
     const wet = this.onGround && !!this.waterAt(room);          // (standing in water: see waterAt)
     if (wet !== !!this.wet) { this.wet = wet; this.splash(wet ? 9 : 6); }
+    if (wet && room.freezing && this.chillT < 20) this.chill(90);          // (the freezing pools of the way down to the Frozen Caverns: standing in them chills the blood)
     else if (wet && Math.abs(this.vx) > 0.25 && this.t % 5 === 0) g.fx.burst(this.x - this.dir * 3, this.y - 2, 2, [[0.6, 0.8, 0.9], [0.3, 0.5, 0.65]], { speed: 0.8, s0: 4, s1: 1, up: 0.8 });          // (wading: a few drops)
     if (this.ride) { if (room.movers && this.ride.active) { this.x += this.ride.dx; this.y += this.ride.dy; } else this.ride = null; }          // (standing on a moving platform: carried with it)
     let dx = locked ? 0 : I.horiz;
@@ -378,13 +379,13 @@ export class Player extends Entity {
     if (sp < 0.9) return;
     fx.gust(tx, ty, vx, vy, 30, Math.min(1.5, sp / 3.2)); fx.gust(cx, cy, vx * 0.6, vy * 0.6, 26, 0.8);
   }
-  // the white cloak lives in the three.js layer: a hanging chain of points pinned to the shoulders (see cloak.js)
   // a frame of a swing that had a painted swipe has come up: three.js draws it (see slash.js), following him, in the colour of the sword's enchantment
   stepSwipe() {
     const fi = this.frameInfo(), key = fi.sheet + ':' + fi.f; if (key === this.swipeKey) return; this.swipeKey = key;
     if (this.dead) return; const jump = fi.cy !== undefined;
     this.g.fx.swipe({ sheet: fi.sheet, f: fi.f, dir: this.dir, ay: jump ? fi.cy / fi.ch : undefined, follow: () => ({ x: this.x, y: jump ? this.y - this.h / 2 + 1 : this.y }), pal: this.ench ? ENCH[this.ench.type].pal : null });
   }
+  // the white cloak lives in the three.js layer: a hanging chain of points pinned to the shoulders (see cloak.js)
   stepCloak() {
     const c = this.g.fx.cloak; if (!c) return;
     c.setStain(this.stain);

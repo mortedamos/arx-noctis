@@ -15,7 +15,7 @@ import { validateRoom, checkSpawns, roomOf, surfaces, reach, simulateChain } fro
 import { mulberry32 } from './util.js';
 import { packMap, mapCells } from './maplayout.js';
 
-export const GEN_VERSION = 18;          // (18: the Moonlit Chapel is entered from the Great Hall, by a door at the top of a new tall stair between the Entrance Hall and the Portrait Gallery; the Gate of Arx Noctis has one door.  17: the Cistern is entered from under Karluv Bridge, and the Frozen Caverns lie beyond it)
+export const GEN_VERSION = 19;          // (19: the Lower Road leads down to the Mire; the Restless Tower is now the Oubliette, going DOWN to the Moonlit Chapel; the Freezing Deep and Black Ice Falls lead down to the Frozen Caverns; the Index and Black Stairs climb to the Library and the Throne; the Pier Falls and Bell Tower Descent are serpentines.  18: the Moonlit Chapel is entered from the Great Hall, by a door at the top of a new tall stair between the Entrance Hall and the Portrait Gallery; the Gate of Arx Noctis has one door.  17: the Cistern is entered from under Karluv Bridge, and the Frozen Caverns lie beyond it)
 const MAX_TRY = 60;
 
 // ------------------------------------------------------------------------------------------------ seeded random helpers
@@ -68,8 +68,8 @@ const SPEC = {
     candles: [3, 5], barrels: [1, 2], mix: { zombie: [2, 3], skeleton: [1, 2], hound: [1, 1], bat: [1, 2], fireskull: [1, 1], villager: [1, 2] } },
   v3: { kind: 'tower', zone: 6, name: 'The Bell Tower', bell: true, chase: true, w: [28, 32], h: [34, 38], top: [8, 10], opts: { ...LOOK[6], ambient: 0.4 },
     mods: [{ t: 'tablet', id: 'tab10', text: 'HE CALLS IT MERCY, TO BURN WHAT HE CANNOT PROTECT. THE WARDEN WAITS IN THE SQUARE BELOW THE HILL ROAD.' }], topItem: { kind: 'hpup', id: 'v3_hp' }, candles: [3, 4], mix: { bat: [2, 3], fireskull: [2, 3], zombie: [1, 2] } },          // (a max HP up on the top landing, where a max MP up used to lie)
-  // THE BELL TOWER DESCENT: the same shaft the other way round, back down to street level.  In at the top landing on the left (off the Bell Tower's), down the same kind of steps, out along the floor on the right into the Burning Square.
-  vd: { kind: 'tower', descent: true, sameHeightAs: 'v3', zone: 6, name: 'Bell Tower Descent', w: [28, 32], h: [34, 38], top: [8, 10], opts: { ...LOOK[6], ambient: 0.4 }, candles: [2, 3], mix: { bat: [1, 2], fireskull: [1, 2], zombie: [1, 1] } },
+  // THE BELL TOWER DESCENT: back down to street level.  In at the top on the left (off the Bell Tower's top landing), down a ragged serpentine, out along the floor on the right into the Burning Square.  As tall as the Bell Tower.
+  vd: { kind: 'shaft', sameHeightAs: 'v3', bottomEdge: true, S: 5, G: 6, zone: 6, name: 'Bell Tower Descent', w: [28, 32], h: [34, 38], top: [8, 10], opts: { ...LOOK[6], ambient: 0.4 }, torchEvery: 1, barrels: [1, 1], foes: [['bat', 2], ['fireskull', 1], ['zombie', 1]] },
   vb: { kind: 'arena', zone: 6, name: 'The Burning Square', w: [40, 46], outdoor: true, boss: 'cinder', reward: 'mantle', plats: 2, rise: 3, seal: 'both', candles: [3, 3], decor: 'village',
     opts: { ...LOOK[6], boss: 'cinder', music: 'boss' } },
   // THE STONE BRIDGE TOWER: the Gothic gate at the foot of the bridge (the game's year is 1541: the names "Old Town Bridge Tower" and "Charles Bridge" are younger), calm, with an altar in its gateway - the first place to save after the Cinder Warden - and a scaffold up its front to a gallery with a secret
@@ -113,6 +113,8 @@ const SPEC = {
   ga: { kind: 'interior', zone: 1, name: "Gravedigger's Shed", parent: 'g1', look: 'crypt', theme: 'chapel', npc: { kind: 'bearded', title: 'GRAVEDIGGER', text: 'THEY WALK AGAIN, AND I HAVE RUN OUT OF GROUND TO PUT THEM IN. THE HOLLOW BEYOND IS WORSE THAN THE GATE. TAKE THIS - IT HAS CLEARED MORE GRAVES THAN I CAN COUNT.', again: 'DIG DEEP. NEVER LOOK DOWN THE HOLE.', gifts: ['it_torch', 'it_torch'], sells: { item: 'torch', price: 40 } } },
 
   // ======== ZONE 7 - THE WEEPING SWAMP (Gothicvania Swamp) - you arrive with the Raven Feather
+  // THE LOWER ROAD: the way down from the Mire Road to the Weeping Mire, past ledges of black earth and standing water
+  lr: { kind: 'shaft', zone: 7, name: 'The Lower Road', w: [28, 32], T: 7, S: 6, G: 6, levels: [12, 12], water: { pools: 4 }, spikes: true, torchEvery: 2, barrels: [1, 2], abilities: ['djump'], theme: 'swamp', opts: { ...LOOK[7], ambient: 0.34, weather: null, fog: 0.4 }, foes: [['swampthing', 3], ['zombie', 3], ['swampspider', 2], ['ghost', 2], ['bat', 2]] },
   tw: { kind: 'teleport', zone: 7, name: 'Waystone Boardwalk', outdoor: true, abilities: ['djump'], opts: LOOK[7] },
   w1: { kind: 'corridor', zone: 7, name: 'Mire Edge', w: [88, 102], outdoor: true, abilities: ['djump'], pools: [0, 3], opts: { ...LOOK[7], fog: 0.75 },
     mods: [{ t: 'skull', id: 'skull2' }, { t: 'djLedge', kind: 'hpup', id: 'w1_hp' }, { t: 'cell', gate: 'crack', chest: true, kind: 'key', id: 'key_mire' }, { t: 'tablet', id: 'tab12', near: 'start', text: 'THE MIRE TAKES WHAT THE GRAVE REFUSES. DO NOT STAND STILL.' }],
@@ -136,8 +138,9 @@ const SPEC = {
     candles: [4, 6], barrels: [2, 4], mix: { bat: [3, 3], ghost: [1, 1], zealot: [3, 5] } },
   // THE RESTLESS TOWER: a tall shaft between the Entrance Hall and the Portrait Gallery (at least four screens of climb).  Along the floor, on to the right, is the Portrait Gallery; up the zig-zag of steps, on the top landing,
   // is the door to the Moonlit Chapel (locked by two sigils: the Phantom Steed and the Rimewyrm).  The only way into the Chapel: the Gate of Arx Noctis has one door, the Great Hall's.
-  h5: { kind: 'tower', zone: 2, name: 'The Restless Tower', w: [28, 32], h: [70, 76], top: [9, 11], tall: true, exitLow: true, opts: { ...LOOK[2], ambient: 0.4 },
-    mods: [{ t: 'tablet', id: 'tabstair', near: 'start', text: 'THE RESTLESS TOWER. THE PORTRAIT GALLERY LIES ON, TO THE RIGHT. THE MOONLIT CHAPEL LIES FAR ABOVE.' }], candles: [6, 8], barrels: [2, 3], mix: { bat: [4, 5], ghost: [2, 2], fireskull: [3, 3], zealot: [4, 5] } },
+  // THE OUBLIETTE: a sinister drop under the Great Hall.  Its top is the passage from the Entrance Hall to the Portrait Gallery, with a hatch in the middle of the floor; below, a long ragged serpentine down through walls and planks of bone, full of skeletons, to the Moonlit Chapel's door at the bottom
+  h5: { kind: 'shaft', zone: 2, name: 'The Oubliette', w: [28, 32], T: 12, S: 6, G: 6, levels: [10, 10], hatch: true, topExit: true, spikes: true, boneWalls: true, dress: 'bones', torchEvery: 2, barrels: [1, 2], abilities: ['djump'], opts: { ...LOOK[2], ambient: 0.3, tint: [0.03, 0.02, 0.02], vig: 0.66 },
+    mods: [{ t: 'tablet', id: 'tabstair', near: 'start', text: 'THE PORTRAIT GALLERY LIES ACROSS, TO THE RIGHT. THE HATCH LEADS DOWN INTO THE OUBLIETTE. FAR BELOW IT, THE MOONLIT CHAPEL.' }], foes: [['skeleton', 14], ['fireskull', 2]] },
   h2: { kind: 'corridor', zone: 2, name: 'Portrait Gallery', w: [84, 98], levers: 1, opts: { ...LOOK[2], ambient: 0.36 },
     mods: [{ t: 'djLedge', kind: 'mpup', id: 'h2_mp' }, { t: 'cell', gate: 'crystal', kind: 'hpup', id: 'h2_hp' }, { t: 'cell', gate: 'crack', kind: 'mpup', id: 'h2_mp2' }, { t: 'door', to: 'vh', kind: 'crypt', key: 'key_hall' }],
     candles: [5, 6], barrels: [2, 4], mix: { skeleton: [1, 1], ghost: [2, 2], fireskull: [2, 2], bat: [3, 3], wyrm: [1, 1], zealot: [5, 5] } },
@@ -171,6 +174,7 @@ const SPEC = {
   dc: { kind: 'disco', lair: true, zone: 3, name: 'The Disco', parent: 'c1', w: [42, 48] },
   // ======== ZONE 9 - THE CISTERN (the flooded waterworks under Prague, reached by a door in a pier of Karluv Bridge, where the river runs in: the water flows and carries you; the Drowned Warden keeps the gate; beyond the gate, a wall of ice
   // that only fire melts leads on to the Frozen Caverns).  It is entered with the double jump AND the dash (the fall under the bridge), so its rooms are built for a hero who has both.
+  q0: { kind: 'shaft', zone: 9, name: 'The Pier Falls', abilities: ['djump', 'dash'], w: [25, 27], T: 7, S: 5, G: 6, levels: [6, 6], water: { pools: 5 }, spikes: true, torchEvery: 2, barrels: [0, 1], opts: { ...LOOK[9], ambient: 0.4 }, foes: [['wraith', 3], ['ghost', 1], ['bat', 2]] },          // (the way down inside the bridge pier: waterfalls, pools on the ledges, Grief Wraiths)
   tq: { kind: 'teleport', zone: 9, name: 'Waystone Culvert', opts: LOOK[9] },
   q1: { kind: 'corridor', zone: 9, name: 'The Sluice', w: [92, 106], opts: { ...LOOK[9], fog: 0.3 }, abilities: ['djump', 'dash'], streams: [2, 3],
     mods: [{ t: 'skull', id: 'skull5' }, { t: 'door', to: 'sq', kind: 'wood' }, { t: 'djLedge', kind: 'mpup', id: 'q1_mp' }, { t: 'tablet', id: 'tab14', near: 'start', text: 'THE OLD CITY DREW ITS WATER FROM THESE VAULTS. NOW THE WATER DRAWS WHAT IT LIKES. DO NOT STAND STILL.' }],
@@ -197,6 +201,8 @@ const SPEC = {
   sk: { kind: 'sanctuary', zone: 8, name: 'Brass Sanctuary', parent: 'k1' },
   vk: { kind: 'interior', zone: 8, name: "The Engineer's Vault", parent: 'k1', look: 'vault', theme: 'hall', ambient: 0.42, tint: [0.07, 0.04, 0.0], npcs: [0, 0], chest: { kind: 'hpup', id: 'vk_chest' } },
   // ======== ZONE 10 - THE LIBRARY OF AGES (inside Arx Noctis, off the Crossing Hall behind a locked door: the Lord's archive, where haunted books fly and the Librarian keeps the KEY OF GOLD that opens the Shadow Throne)
+  // THE INDEX STAIR: the climb from the Archive Passage up to the Library of Ages
+  xl: { kind: 'tower', zone: 10, name: 'The Index Stair', w: [26, 30], h: [44, 46], top: [9, 11], tall: true, abilities: ['djump', 'dash', 'ember'], opts: { ...LOOK[10], ambient: 0.4 }, candles: [2, 3], barrels: [1, 2], mix: { tome: [3, 4], grimoire: [1, 1], ghost: [1, 2], bat: [2, 3] } },
   tl: { kind: 'teleport', zone: 10, name: 'Waystone Reading Room', opts: LOOK[10], abilities: ['djump', 'dash', 'ember'] },
   l1: { kind: 'corridor', zone: 10, name: 'The Stacks', w: [84, 98], deck: true, opts: { ...LOOK[10], ambient: 0.32 }, abilities: ['djump', 'dash', 'ember'],
     mods: [{ t: 'door', to: 'sl', kind: 'wood' }, { t: 'cell', gate: 'crack', kind: 'hpup', id: 'l1_hp' }, { t: 'tablet', id: 'tab20', near: 'start', text: 'THE LORD READ EVERY BOOK IN THE WORLD AND FOUND THE ENDING WRONG. HE HAS BEEN REWRITING IT EVER SINCE, AND THE BOOKS HAVE LEARNED TO FIGHT BACK.' }],
@@ -210,6 +216,9 @@ const SPEC = {
     opts: { ...LOOK[10], ambient: 0.3, boss: 'librarian', music: 'boss' } },
   sl: { kind: 'sanctuary', zone: 10, name: 'Reading Nook', parent: 'l1' },
   // ======== ZONE 11 - THE FROZEN CAVERNS (beyond the Cistern, behind a wall of ice that only fire melts; the ice floors are slippery; walls of ice bar the way and hide treasure; at the far end the RIMEWYRM guards the KEY OF ANTIMONY, which opens the Library)
+  // THE FREEZING DEEP: down from the Cistern's wall of ice, far under the earth, into the Frozen Caverns: falls half turned to ice, pools cold enough to chill the blood, loose icicles overhead
+  fd: { kind: 'shaft', zone: 11, name: 'The Freezing Deep', w: [28, 32], T: 12, S: 6, G: 6, levels: [12, 12], bottomEdge: true, water: { pools: 5 }, freezing: true, spikes: true, dress: 'ice', torchEvery: 3, barrels: [1, 1], abilities: ['djump', 'dash', 'ember'], theme: 'ice', opts: { ...LOOK[11], ambient: 0.34, weather: 'snow' }, foes: [['wraith', 3], ['frostwyrm', 2], ['zombie', 3], ['skeleton', 3], ['bat', 2]] },
+  fb: { kind: 'shaft', zone: 11, name: 'The Black Ice Falls', w: [28, 32], T: 12, S: 6, G: 6, levels: [8, 8], bottomEdge: true, water: { pools: 4 }, freezing: true, spikes: true, dress: 'ice', torchEvery: 3, barrels: [1, 1], abilities: ['djump', 'dash', 'ember'], theme: 'ice', opts: { ...LOOK[11], ambient: 0.28, weather: 'snow' }, foes: [['wraith', 3], ['frostwyrm', 2], ['skeleton', 3], ['bat', 2]] },          // (deeper still, to the Frozen Caverns themselves)
   ti: { kind: 'teleport', zone: 11, name: 'Waystone Rime Hollow', opts: LOOK[11], abilities: ['djump', 'dash', 'ember'] },
   i1: { kind: 'corridor', zone: 11, name: 'The Frozen Gallery', w: [102, 116], leverCell: true, opts: { ...LOOK[11], fog: 0.15 }, abilities: ['djump', 'dash', 'ember'],
     mods: [{ t: 'iceWall' }, { t: 'door', to: 'si', kind: 'wood' }, { t: 'cell', gate: 'ice', kind: 'hpup', id: 'i1_hp' }, { t: 'tablet', id: 'tab22', near: 'start', text: 'THE COLD CAME UP FROM THE FOUNDATIONS THE DAY THE SUN WAS TAKEN. NOTHING THAT FELL IN HAS THAWED. NOTHING THAT WALKS HERE FEELS IT.' }],
@@ -237,8 +246,8 @@ const SPEC = {
   // THE CROSSING HALL, likewise, is four short places: the waystone, the barricaded way to the Crypts (and the hidden page), the Library's door, and last the Throne's door.
   hx: { kind: 'teleport', zone: 3, name: 'The Crossing Waystone', abilities: ['djump', 'dash', 'ember'], opts: { ...LOOK[3], ambient: 0.34 } },          // the waystone, alone
   hub2: { kind: 'corridor', zone: 3, name: 'The Barricaded Gallery', w: [48, 56], calm: true, abilities: ['djump', 'dash', 'ember'], opts: { ...LOOK[3], ambient: 0.34, fog: 0.4 }, mods: [{ t: 'cell', gate: 'crack', hollow: true, kind: 'hpup', secret: true, id: 'hub2_hp' }], candles: [2, 3], mix: {} },          // only the barricaded door to the Crypts
-  hl: { kind: 'corridor', zone: 3, name: 'The Archive Passage', w: [42, 50], calm: true, abilities: ['djump', 'dash', 'ember'], opts: { ...LOOK[3], ambient: 0.32, fog: 0.4 }, mods: [], candles: [2, 3], mix: {} },          // only the Library's locked door
-  ht: { kind: 'corridor', zone: 3, name: 'The Throne Approach', w: [44, 52], calm: true, closedRight: true, abilities: ['djump', 'dash', 'ember'], opts: { ...LOOK[3], ambient: 0.28, fog: 0.4 }, mods: [], candles: [2, 3], mix: {} },          // the last door: the Shadow Throne
+  hl: { kind: 'corridor', zone: 3, name: 'The Archive Passage', w: [42, 50], calm: true, closedRight: true, abilities: ['djump', 'dash', 'ember'], opts: { ...LOOK[3], ambient: 0.32, fog: 0.4 }, mods: [], candles: [2, 3], mix: {} },          // only the Library's locked door
+  ht: { kind: 'corridor', zone: 3, name: 'The Throne Approach', w: [44, 52], calm: true, abilities: ['djump', 'dash', 'ember'], opts: { ...LOOK[3], ambient: 0.28, fog: 0.4 }, mods: [], candles: [2, 3], mix: {} },          // the last door: the Shadow Throne
 
   // ======== ZONE 4 - THE CRYPTS (ruled by the Crimson Count; it was the clockwork Underworks - the rooms are the same, the dead have moved in)
   tu: { kind: 'teleport', zone: 4, name: 'Waystone Charnel', opts: LOOK[4] },
@@ -254,6 +263,8 @@ const SPEC = {
   vu: { kind: 'interior', zone: 4, name: "The Count's Treasury", parent: 'u1', look: 'vault', theme: 'chapel', ambient: 0.4, tint: [0.0, 0.05, 0.06], npcs: [0, 0], chest: { kind: 'atkup', id: 'vu_chest' } },
 
   // ======== ZONE 5 - THE SHADOW THRONE (the waystone chamber is the last thing before the Shadow Lord)
+  // THE BLACK STAIR: the long climb from the Throne Approach up to the Lord's own floors
+  xt: { kind: 'tower', zone: 5, name: 'The Black Stair', w: [26, 30], h: [96, 100], top: [9, 11], tall: true, abilities: ['djump', 'dash', 'ember', 'thunder'], opts: { ...LOOK[5], ambient: 0.34, weather: 'embers' }, candles: [3, 4], barrels: [1, 2], mix: { wraith: [3, 4], skeleton: [3, 4], bat: [3, 4], fireskull: [3, 3], zealot: [2, 3] } },
   tt: { kind: 'teleport', zone: 5, name: 'Waystone Antechamber', opts: LOOK[5] },
   t1: { kind: 'corridor', zone: 5, name: 'Hall of Shadows', w: [80, 92], deck: true, opts: { ...LOOK[5], fog: 0.55 },
     mods: [{ t: 'door', to: 's4', kind: 'wood' }, { t: 'door', to: 'sht', kind: 'wood', label: 'THE KEEPER', hint: 'SOMETHING IN THE DARK SELLS WHAT THE DEAD NO LONGER NEED.' }, { t: 'deckDoor', to: 'ta', kind: 'wood' }, { t: 'cell', gate: 'crystal', kind: 'mpup', id: 't1_mp' }, { t: 'tablet', id: 'tab8', near: 'start', text: 'HE WAITS ABOVE. THE ONE WHO TOOK THE SUN. TURN BACK, STRANGER - OR BRING THE DAWN.' }],
@@ -266,7 +277,7 @@ const SPEC = {
   s4: { kind: 'sanctuary', zone: 5, name: 'Last Sanctuary', parent: 't1' },
   ta: { kind: 'interior', zone: 5, name: 'The Hidden Study', parent: 't1', look: 'study', theme: 'hall', ambient: 0.5, tint: [0.03, 0.0, 0.05], npc: { kind: 'oldman', title: 'THE LORD\'S SCRIBE', text: 'I WROTE DOWN EVERYTHING HE DID, AND NEVER ONCE LOOKED UP. NOW I CANNOT STOP LOOKING. HE IS ABOVE US. TAKE THIS, STRANGER - AND WHEN YOU MEET HIM, DO NOT LET HIM SPEAK.', again: 'I HAVE NO MORE PAGES. ONLY THE ONES I CANNOT BURN.', gifts: ['it_holy', 'it_holy', 'heart'], sells: { item: 'holy', price: 50 } } },
 };
-const ORDER = ['v0', 'vq', 'vt', 'v1', 'tv', 'v2', 'v3', 'vd', 'vb', 'vs', 'br', 'ot', 'og', 'sv', 'tg', 'g1', 'g2', 'g4', 'vg', 'g3', 'pd', 'ls', 's1', 'hw', 'hub1', 'hk', 'hr', 'sr', 'tw', 'w1', 'w2', 'vw', 'w3', 'wb', 'sw', 'tq', 'q1', 'q2', 'q3', 'qb', 'tf', 'sq', 'th', 'h1', 'h5', 'h2', 'vh', 'h4', 'h3', 's2', 'tc', 'c1', 'c2', 'vc', 'c3', 's3', 'dc', 'hx', 'hub2', 'hl', 'ht', 'tu', 'u1', 'vu', 'u2', 'u3', 's5', 'tk', 'k1', 'vk', 'k2', 'k3', 'kb', 'sk', 'tl', 'l1', 'l2', 'l3', 'lb', 'sl', 'ti', 'i1', 'i2', 'i3', 'ib', 'ic', 'si', 'shc', 'shu', 'shl', 'sht', 'tt', 't1', 'tp', 't2', 's4', 'hv1', 'hv2', 'hv3', 'hv4', 'hc', 'shk', 'ga', 'wa', 'ha', 'ta', 'mr'];
+const ORDER = ['v0', 'vq', 'vt', 'v1', 'tv', 'v2', 'v3', 'vd', 'vb', 'vs', 'br', 'ot', 'og', 'sv', 'tg', 'g1', 'g2', 'g4', 'vg', 'g3', 'pd', 'ls', 's1', 'hw', 'hub1', 'hk', 'hr', 'sr', 'lr', 'tw', 'w1', 'w2', 'vw', 'w3', 'wb', 'sw', 'q0', 'tq', 'q1', 'q2', 'q3', 'qb', 'tf', 'sq', 'th', 'h1', 'h5', 'h2', 'vh', 'h4', 'h3', 's2', 'tc', 'c1', 'c2', 'vc', 'c3', 's3', 'dc', 'hx', 'hub2', 'hl', 'ht', 'tu', 'u1', 'vu', 'u2', 'u3', 's5', 'tk', 'k1', 'vk', 'k2', 'k3', 'kb', 'sk', 'xl', 'tl', 'l1', 'l2', 'l3', 'lb', 'sl', 'fd', 'fb', 'ti', 'i1', 'i2', 'i3', 'ib', 'ic', 'si', 'shc', 'shu', 'shl', 'sht', 'xt', 'tt', 't1', 'tp', 't2', 's4', 'hv1', 'hv2', 'hv3', 'hv4', 'hc', 'shk', 'ga', 'wa', 'ha', 'ta', 'mr'];
 // The castle is a GRAPH, not a road.  Each chain is a run of rooms joined edge to edge (a's right end opens into b's left end); the chains meet at two crossroads (hub1, hub2), whose doors are signed:
 //   village - graveyard - hub1 -+- the Mire (a door high on a ledge: needs the double jump) - the Mother's Hollow (a dead end: its return door drops you back at hub1)
 //                               +- the Great Hall (Entrance Hall - Restless Tower - Portrait Gallery - ...) -- back to hub1.  The Restless Tower is a tall shaft: along its floor, on to the Portrait Gallery; up its steps, a door to the Chapel with two sigils (the Hall's boss and the Rimewyrm)
@@ -278,21 +289,21 @@ const ORDER = ['v0', 'vq', 'vt', 'v1', 'tv', 'v2', 'v3', 'vd', 'vb', 'vs', 'br',
 // and a wall of ice that only fire melts, and so on into the Frozen Caverns, whose far end drops you back on the bridge.
 const CHAINS = [
   ['v0', 'vt', 'v1', 'tv', 'v2', 'v3', 'vd', 'vb', 'vs', 'br', 'tg', 'g1', 'g2', 'g4', 'g3', 'pd', 'hw', 'hub1', 'hk', 'hr'],
-  ['tw', 'w1', 'w2', 'w3', 'wb'],
+  ['lr', 'tw', 'w1', 'w2', 'w3', 'wb'],          // (down the Lower Road to the Mire)
   ['th', 'h1', 'h5', 'h2', 'h4', 'h3'],          // (the Entrance Hall, the Restless Tower - its top door is the Chapel's way in - the Portrait Gallery, the Phantom Stable, the Belfry)
-  ['tc', 'c1', 'c2', 'c3', 'hx', 'hub2', 'hl', 'ht'],
+  ['tc', 'c1', 'c2', 'c3', 'hx', 'hub2', 'ht', 'hl'],
   ['tu', 'u1', 'u2', 'u3'],
-  ['tt', 't1', 'tp', 't2'],
+  ['xt', 'tt', 't1', 'tp', 't2'],          // (up the Black Stair)
   ['tk', 'k1', 'k2', 'k3', 'kb'],
-  ['tl', 'l1', 'l2', 'l3', 'lb'],
-  ['tq', 'q1', 'q2', 'q3', 'qb', 'tf', 'ti', 'i1', 'i2', 'i3', 'ib'],          // (the Cistern, then - through the ice wall at the end of the waystone room 'tf' - the Frozen Caverns)
+  ['xl', 'tl', 'l1', 'l2', 'l3', 'lb'],          // (up the Index Stair)
+  ['q0', 'tq', 'q1', 'q2', 'q3', 'qb', 'tf', 'fd', 'fb', 'ti', 'i1', 'i2', 'i3', 'ib'],          // (the Pier Falls and the Cistern, then - through the ice wall at the end of the waystone room 'tf' - the Frozen Caverns)
 ];
 const LINKS = CHAINS.flatMap(c => c.slice(1).map((id, i) => [c[i], 'R', id, 'L'])).concat([['vq', 'R', 'v0', 'L']]);          // (the secret hollow joins the hill's left edge)
 // the crossroads' doors (two-way): hub a, its door tag ta, the first room of the branch b, the tag of that room's door tb; mod = how the door is built (see genCorridor), lock = boss flags it needs
 const PAIRS = [
   { a: 'hk', ta: 'hall', b: 'th', tb: 'in', kind: 'wood', mod: 'door', label: 'ARX NOCTIS: THE GREAT HALL', hint: 'THE GATE OF THE KEEP. EVERYTHING BEYOND IT BELONGS TO THE LORD.' },
-  { a: 'hub1', ta: 'mire', b: 'tw', tb: 'in', kind: 'crypt', mod: 'djDoor', label: 'THE WEEPING MIRE', hint: 'THE DOOR IS HIGH. ONLY A WINGED LEAP WILL REACH IT. THE MIRE ENDS WHERE ITS MOTHER WAITS.' },
-  { a: 'h5', ta: 'chapel', b: 'tc', tb: 'in', kind: 'crypt', side: 'T', label: 'ARX NOCTIS: THE MOONLIT CHAPEL', hint: 'THE DOOR AT THE TOP OF THE RESTLESS TOWER. IT OPENS ONLY WHEN THE MASTERS OF THE GREAT HALL AND OF THE FROZEN CAVERNS ARE DEAD. THE FROZEN CAVERNS LIE BEYOND THE CISTERN, UNDER KARLUV BRIDGE IN PRAGUE.', lock:['boss_h4', 'boss_ib'] },
+  { a: 'hub1', ta: 'mire', b: 'lr', tb: 'in', kind: 'crypt', mod: 'djDoor', label: 'THE LOWER ROAD', hint: 'THE DOOR IS HIGH. ONLY A WINGED LEAP WILL REACH IT. THE ROAD GOES DOWN TO THE WEEPING MIRE, WHICH ENDS WHERE ITS MOTHER WAITS.' },          // (down the Lower Road, and by a door at its foot into the Mire)
+  { a: 'h5', ta: 'chapel', b: 'tc', tb: 'in', kind: 'crypt', side: 'B', label: 'ARX NOCTIS: THE MOONLIT CHAPEL', hint: 'THE DOOR AT THE FOOT OF THE OUBLIETTE. IT OPENS ONLY WHEN THE MASTERS OF THE GREAT HALL AND OF THE FROZEN CAVERNS ARE DEAD. THE FROZEN CAVERNS LIE BEYOND THE CISTERN, UNDER KARLUV BRIDGE IN PRAGUE.', lock:['boss_h4', 'boss_ib'] },
   { a: 'hub2', ta: 'crypts', b: 'tu', tb: 'in', kind: 'crypt', mod: 'cellDoor', gate: 'barricade', label: 'THE CRYPTS', hint: 'THE WAY IS BARRICADED. FIRE WILL CLEAR IT.' },
   // the Clockwork Dungeon is entered through the Orloj Tower, in PRAGUE: a locked door high on a ledge (a double jump) in Smouldering Lane...
   { a: 'v2', ta: 'orloj', b: 'ot', tb: 'in', kind: 'crypt', mod: 'djDoor', key: 'key_crypt', wide: true, label: 'THE ORLOJ TOWER', hint: 'THE DOOR IS HIGH, AND LOCKED. IT NEEDS THE KEY OF TIN.' },
@@ -301,9 +312,9 @@ const PAIRS = [
   // ...which opens into the Boiler Loft, whose far door (sealed by the golem's sigil) is the way on into the Clockwork Dungeon
   { a: 'og', ta: 'forge', b: 'tk', tb: 'in', kind: 'crypt', side: 'R', lock: ['boss_og'], hint: 'THE BOILER GOLEM STILL BARS THE WAY ON.' },
   // the Cistern: a door in the pier under Karluv Bridge (a fall through the planks, then the double jump and the dash, to its ledge; no gate: the way in is the fall).  Beyond the Flooded Gate, past a second waystone, a wall of ice (fire melts it) is the way on into the Frozen Caverns.  The Library: a locked door, its key (the KEY OF ANTIMONY) is held by the Rimewyrm at the far end of the Frozen Caverns
-  { a: 'br', ta: 'cistern', b: 'tq', tb: 'in', kind: 'crypt', mod: 'vaultDoor' },
-  { a: 'hl', ta: 'library', b: 'tl', tb: 'in', kind: 'crypt', mod: 'door', key: 'key_frost', label: 'ARX NOCTIS: THE LIBRARY OF AGES', hint: 'LOCKED. THE KEY LIES IN THE FROZEN CAVERNS. THE LIBRARIAN KEEPS THE KEY TO THE THRONE.' },
-  { a: 'ht', ta: 'throne', b: 'tt', tb: 'in', kind: 'crypt', mod: 'cellDoor', gate: 'crystal', key: 'key_gold', label: 'THE SHADOW THRONE', hint: 'CRYSTAL SEALS THE WAY, TWO SIGILS MUST BURN (THE COUNT OF THE CRYPTS AND THE LORD OF THE CLOCKWORK DUNGEON), AND THE DOOR IS LOCKED: THE LIBRARIAN KEEPS THE KEY.', lock: ['boss_u3', 'boss_kb'] },
+  { a: 'br', ta: 'cistern', b: 'q0', tb: 'in', kind: 'crypt', mod: 'vaultDoor' },          // (down through the Pier Falls, and by a door at their foot into the Waystone Culvert: DOOR_LINK 'q0>tq')
+  { a: 'hl', ta: 'library', b: 'xl', tb: 'in', kind: 'crypt', mod: 'door', key: 'key_frost', label: 'ARX NOCTIS: THE LIBRARY OF AGES', hint: 'LOCKED. THE KEY LIES IN THE FROZEN CAVERNS. THE LIBRARIAN KEEPS THE KEY TO THE THRONE.' },
+  { a: 'ht', ta: 'throne', b: 'xt', tb: 'in', kind: 'crypt', mod: 'cellDoor', gate: 'crystal', key: 'key_gold', label: 'THE SHADOW THRONE', hint: 'CRYSTAL SEALS THE WAY, TWO SIGILS MUST BURN (THE COUNT OF THE CRYPTS AND THE LORD OF THE CLOCKWORK DUNGEON), AND THE DOOR IS LOCKED: THE LIBRARIAN KEEPS THE KEY.', lock: ['boss_u3', 'boss_kb'] },
 ];
 // one-way doors: the far end of a branch drops you at its crossroads' door  [room, its door tag, hub, the hub door it arrives at]
 const RETURNS = [['wb', 'out', 'hub1', 'mire'], ['h3', 'out', 'hk', 'hall'], ['u3', 'out', 'hub2', 'crypts'], ['kb', 'out', 'ot', 'clockwork'], ['lb', 'out', 'hl', 'library'], ['ic', 'out', 'br', 'cistern'], ['ls', 'out', 'pd', undefined]];
@@ -313,7 +324,7 @@ export const PROGRESS = {
   doors: { mire: { needs: ['djump'] }, hall: {}, chapel: { bosses: ['h4', 'ib'] }, crypts: { needs: ['ember'] }, orloj: { needs: ['djump'], key: 'key_crypt' }, clockwork: {}, forge: { bosses: ['og'] }, cistern: { needs: ['djump', 'dash'] }, library: { key: 'key_frost' }, throne: { needs: ['thunder'], bosses: ['u3', 'kb'], key: 'key_gold' } },
 };
 // some neighbouring areas are joined by a DOOR at each end (UP) instead of an open edge: 'a>b' = a's far-right door leads to b's far-left door.  (Only when both are generated rooms: the hand-built classic ones keep their open edges.)
-const DOOR_LINK = { 'tp>t2': 'crypt', 'v2>v3': 'wood', 'g1>g2': 'crypt', 'w1>w2': 'wood', 'c1>c2': 'wood', 'u1>u2': 'wood', 'k1>k2': 'wood', 'q1>q2': 'wood' };          // (consecutive rooms of a chain that are joined by doors instead)
+const DOOR_LINK = { 'xl>tl': 'wood', 'xt>tt': 'crypt', 'lr>tw': 'crypt', 'q0>tq': 'crypt', 'tp>t2': 'crypt', 'v2>v3': 'wood', 'g1>g2': 'crypt', 'w1>w2': 'wood', 'c1>c2': 'wood', 'u1>u2': 'wood', 'k1>k2': 'wood', 'q1>q2': 'wood' };          // (consecutive rooms of a chain that are joined by doors instead)
 // abilities the player owns when coming BACK through a zone (they've beaten that zone's boss by then)
 const BACK = { 10: ['djump', 'dash', 'ember'], 11: ['djump', 'dash', 'ember'], 9: ['djump', 'dash'], 8: ['djump', 'dash', 'ember'], 6: [], 1: ['djump'], 7: ['djump'], 2: ['djump', 'dash'], 3: ['djump', 'dash', 'ember'], 4: ['djump', 'dash', 'ember', 'thunder'], 5: ['djump', 'dash', 'ember', 'thunder', 'dawn'] };
 // Everything after Baelphegaz (who gives the double jump) is built for a hero who HAS it - Prague and the Graveyard (zones 6 and 1) are not.  Such a room's baseline abilities include the double jump.
@@ -780,7 +791,6 @@ function genCorridor(id, spec, r) {
 function genTower(id, spec, r) {
   const DJ = hasDJ(spec), DASH = (spec.abilities || []).includes('dash');          // (with the dash in hand the steps can lie much further apart)
   const W = r.i(spec.w[0], spec.w[1]), H = r.i(spec.h[0], spec.h[1]), floor = H - 2, top = r.i(spec.top[0], spec.top[1]);
-  const D = !!spec.descent, mx = (x, len = 1) => D ? W - x - len : x;          // (a DESCENT is a tower seen the other way round: the very same steps, mirrored, so that you come in on the top landing at the LEFT and go down to leave along the floor at the RIGHT - the Bell Tower Descent, back to street level.  Climbing back up it is just a tower's climb, so the validator proves both ways)
   const b = new B(id, spec.name, spec.zone, W, H, { ...spec.opts, horizon: floor }); b.def.interior = true;                  // (a tower is a building: brickwork and narrow windows behind you, never open sky)
   b.floor(0, W, floor).ceil(0, W, 2);
   const plats = []; let prev = { x: r.i(3, 6), len: r.i(5, 6), row: floor - r.i(2, 3) }; plats.push(prev); let dir = 1, guard = 0;
@@ -801,15 +811,14 @@ function genTower(id, spec, r) {
     p.moves = true; const c = (p.x + p.len / 2) * 16;
     movers.push({ x0: Math.round(c - AMPT * 16), y0: p.row * 16, x1: Math.round(c + AMPT * 16), y1: p.row * 16, w: p.len * 16, period: 260 + r.i(0, 40), ph: r.f(), style: mstyle });
   });
-  if (D && movers.length) throw new Error('a descent has no moving steps (only the towers of Prague are made as descents)');
-  for (const p of plats) if (!p.moves) b.plat(mx(p.x, p.len), p.len, p.row);
+  for (const p of plats) if (!p.moves) b.plat(p.x, p.len, p.row);
   if (movers.length) b.def.movers = movers;
-  b.plat(D ? 0 : W - 14, 14, top);                                           // the top landing (one-way, so you can jump up through it)
+  b.plat(W - 14, 14, top);                                                   // the top landing (one-way, so you can jump up through it)
   if (spec.orloj) { const sc = 1.45, hpx = 112 * sc; b.d('cog', W / 2 - 8.2, top - 6.5, { r: 40, n: 15, spin: 0.011, a: 0.8 }).d('cog', W / 2 + 7.6, top - 1.5, { r: 30, n: 11, spin: -0.0145, phase: 0.5, a: 0.8 }).d('cog', W / 2 - 6.5, top + 3.5, { r: 22, n: 8, spin: 0.020, a: 0.8 }).d('cog', W / 2 + 6.4, top - 9, { r: 18, n: 7, spin: 0.023, phase: 1, a: 0.8 });
     b.d('animgear', W / 2 - 11, top - 2, { img: 'gear_b', scale: 1.1, rate: 0.5, a: 0.36 }).d('animgear', W / 2 + 11, top + 6, { img: 'gear_a', scale: 1.2, rate: -0.45, a: 0.36 }).d('animgear', W / 2 - 3, top + 11, { img: 'gear_c', scale: 1.0, rate: 0.5, a: 0.32 });          // (accents from the Animated Gears pack, beside the generated cogs)
     b.d('img', W / 2 - 0.5, top - 4.2 + hpx / 32, { img: 'orloj', back: true, scale: sc });
     b.d('pendulum', 4, top - 11, { len: 112, bob: 10, speed: 0.032, swing: 0.3 }).d('pendulum', W - 5, top - 11, { len: 112, bob: 10, speed: 0.032, phase: 3.1, swing: 0.3 }); }          // THE ORLOJ: centred in the shaft, behind everything, its centre a little above the landing where the door to the Clockwork Dungeon stands
-  const meta = { abilities: [...new Set([...(spec.abilities || []), ...(DJ ? ['djump'] : [])])], back: BACK[spec.zone], entry: D ? { L: { tx: 1, gy: top }, R: { tx: W - 2, gy: floor } } : { L: { tx: 1, gy: floor }, R: { tx: W - 2, gy: spec.exitLow ? floor : top } }, must: [], items: [] };          // (exitLow: the way on to the right is along the FLOOR, not off the top landing;  a descent: in at the top on the left, out along the floor on the right)
+  const meta = { abilities: [...new Set([...(spec.abilities || []), ...(DJ ? ['djump'] : [])])], back: BACK[spec.zone], entry: { L: { tx: 1, gy: floor }, R: { tx: W - 2, gy: spec.exitLow ? floor : top } }, must: [], items: [] };          // (exitLow: the way on to the right is along the FLOOR, not off the top landing)
   if (spec.doorL) { b.door(W - 9, floor, spec.doorL.to, 0, 0, spec.doorL.kind); patchDoor(b, spec.doorL); }                       // the door from the previous area
   if (spec.doorR) { b.door(W - 11, top, spec.doorR.to, 3, 12, spec.doorR.kind || 'crypt'); patchDoor(b, spec.doorR); meta.entry.R = null; }          // a door on the top landing: the way back to a crossroads
   if (spec.doorT) {          // a door on the top landing that is a way ON, not a way back (the Restless Tower's: up to the Moonlit Chapel), with its sigils and a signpost beside it
@@ -901,6 +910,121 @@ function genSanctuary(id, spec, r) {
   const col = r.pick(['#5a2a6a', '#2a3a6a', '#6a2a3a']); b.d('banner', 9, 2, { len: 5, color: col }).d('banner', 13, 2, { len: 5, color: col });
   b.def.meta = { abilities: [], entry: {}, start: { tx: 3, gy: 12 }, must: [{ tx: 11, gy: 12, name: 'altar' }], items: [] }; b.def.entries = {};
   const v = validateRoom(b.def); if (!v.ok) return { ok: false, errs: v.errs, def: b.def };
+  return { ok: true, def: b.def };
+}
+
+// ------------------------------------------------------------------------------------------------ SHAFTS (the ways DOWN: the Pier Falls, the Bell Tower Descent, the Lower Road, the Oubliette, the Freezing Deep)
+// A SERPENTINE descent, so that nobody can find a wall and drop the whole height past everything: the shaft is cut into levels, each a ledge that reaches from one wall nearly to the other, the way down being
+// a single opening that changes sides from level to level - so every level has to be crossed, monsters and all.  In each opening a plank step hangs half way (to climb back up by) and, against the wall, a stub
+// of rock juts out under it (with spikes on top where spec.spikes), so hugging the wall is no short cut either.  The ledges are ragged: rubble lying on them, rock hanging under them, snags on the walls.
+// Optional: pools with water pouring into them (spec.water), icicles (dress 'ice'), bones built into walls and planks (spec.boneWalls), a HATCH in the middle of the top walkway (spec.hatch: the Oubliette,
+// whose top is the passage between two rooms).  No column may offer a longer fall than one level and the next (shaftDrop), and the validator proves it both ways: down, and back up.
+function shaftDrop(b, top, floor) {          // the longest stretch of open air in any column between the way in (the top level) and the floor
+  const W = b.w; let best = 0;
+  for (let x = 0; x < W; x++) { let run = 0; for (let y = top; y < floor; y++) { if (b.def.tiles[y * W + x] === TILE.EMPTY) best = Math.max(best, ++run); else run = 0; } }
+  return best;
+}
+function genShaft(id, spec, r) {
+  const S = spec.S || 5, G = spec.G || 6, W = r.i(spec.w[0], spec.w[1]);
+  let T, floor, H, n;
+  if (spec.sameHeightAs) { H = spec.h[0]; floor = H - 2; T = spec.top[0]; n = spec.bottomEdge ? 2 * Math.round((floor - T) / S / 2) : Math.round((floor - T) / S); }          // (the Bell Tower Descent: exactly as tall as the Bell Tower; the levels as near S apart as an even count of them allows)
+  else { T = spec.T || 7; n = r.i(spec.levels[0], spec.levels[1]); if (spec.bottomEdge && n % 2) n++; floor = T + n * S; H = floor + 2; }          // (an even number of levels lands you on the left, to cross the floor to a way out on the right)
+  const rows = []; for (let k = 0; k <= n; k++) rows.push(Math.round(T + k * (floor - T) / n));
+  const b = new B(id, spec.name, spec.zone, W, H, { ...spec.opts, horizon: floor, ...(spec.theme ? { theme: spec.theme } : {}) }); b.def.interior = true;
+  const set = (x, y, v) => b.put(x, y, v), at = (x, y) => (x < 0 || x >= W || y < 0 || y >= H ? TILE.SOLID : b.def.tiles[y * W + x]);
+  b.floor(0, W, floor).ceil(0, W, 2);
+  const hx = (W >> 1) - 2, side = k => (k % 2 === 0 ? 'R' : 'L');          // (side: where level k's opening is)
+  const spans = k => spec.hatch && k === 0 ? [[0, hx - 1], [hx + 4, W - 1]] : side(k) === 'R' ? [[0, W - G - 1]] : [[G, W - 1]];
+  for (let k = 0; k < n; k++) for (const [x0, x1] of spans(k)) b.rect(x0, rows[k], x1 - x0 + 1, 1);
+  // the openings: the step, and the stub of rock against the wall
+  for (let k = 0; k < n; k++) {
+    const mid = rows[k] + Math.floor((rows[k + 1] - rows[k]) / 2);
+    if (spec.hatch && k === 0) { b.plat(hx, 3, mid); continue; }
+    const R = side(k) === 'R';
+    b.plat(R ? W - G : G - 3, 3, mid);
+    if (rows[k + 1] - (mid + 1) >= 2) for (const x of R ? [W - 2, W - 1] : [0, 1]) { set(x, mid + 1, TILE.SOLID); if (spec.spikes) set(x, mid, TILE.SPIKE); }          // (not in a low shaft: the stub would stop the way along the level below)
+  }
+  // the doors and the ways in and out
+  const topDoor = spec.doorL ? { x: 4, gy: T } : null, bottomSpec = spec.doorB || spec.doorR || null;
+  const outLeft = n % 2 === 1;          // (the last opening is on the right when there is an odd number of levels: the door below is then on the left, and the other way round)
+  const bottom = bottomSpec ? { x: outLeft ? 4 : W - 5, gy: floor } : null;
+  const keep = [];          // [x0, x1, level]: columns left level and plain (doors, entries, signs)
+  keep.push([0, 7, 0]); if (spec.topExit) keep.push([W - 5, W - 1, 0]); if (bottom) keep.push([bottom.x - 6, bottom.x + 5, n]); if (spec.bottomEdge) keep.push([W - 6, W - 1, n]); if (spec.hatch) keep.push([hx - 2, hx + 5, 0]);
+  const plain = (x, k) => !keep.some(([a, z, q]) => q === k && x >= a && x <= z);
+  // the pools (a one-tile hollow with a floor under it) and the water falling into them
+  const pools = [], poolAt = [];
+  if (spec.water) {
+    const order = r.shuffle(Array.from({ length: n - 1 }, (_, i) => i + 1)); order.unshift(n);
+    for (const k of order) {
+      if (pools.length >= spec.water.pools) break;
+      const [x0, x1] = k === n ? [0, W - 1] : spans(k)[0], pw = r.i(4, 5), cand = [];
+      for (let x = x0 + 3; x + pw <= x1 - 2; x++) if (Array.from({ length: pw + 2 }, (_, i) => x - 1 + i).every(c => plain(c, k))) cand.push(x);
+      if (!cand.length) continue;
+      const px = r.pick(cand), y = rows[k];
+      for (let x = px - 1; x <= px + pw; x++) { if (y + 1 < H) set(x, y + 1, TILE.SOLID); set(x, y, x >= px && x < px + pw ? TILE.EMPTY : TILE.SOLID); }
+      pools.push({ x0: px * 16, x1: (px + pw) * 16, y: y * 16, yb: (y + 1) * 16 }); poolAt.push([px, px + pw - 1, k]);
+    }
+    b.def.pools = pools;
+  }
+  const inPool = (x, k, m = 0) => poolAt.some(([a, z, q]) => q === k && x >= a - m && x <= z + m);
+  // ragged ledges: rubble lying on them, rock hanging beneath them, snags on the walls
+  for (let k = 1; k <= n; k++) for (let tries = 0, made = 0; rows[k] - rows[k - 1] >= 5 && tries < 12 && made < 2; tries++) {          // (rubble only where there is headroom over it)
+    const [x0, x1] = k === n ? [0, W - 1] : spans(k)[0], len = r.i(2, 3), x = r.i(x0 + 3, Math.max(x0 + 3, x1 - len - 2));
+    if (x + len > x1 - 2 || !Array.from({ length: len + 4 }, (_, i) => x - 2 + i).every(c => plain(c, k) && !inPool(c, k, 1))) continue;
+    for (let i = 0; i < len; i++) set(x + i, rows[k] - 1, TILE.SOLID); made++;
+  }
+  for (let k = 0; k < n; k++) for (const [x0, x1] of spans(k)) for (let x = x0 + 1; x < x1 - 1; x += r.i(3, 6)) if (r.chance(0.45) && rows[k + 1] - rows[k] >= 6 && !inPool(x, k, 1) && !(topDoor && k === 0 && x < 6)) { set(x, rows[k] + 1, TILE.SOLID); if (r.chance(0.5)) set(x + 1, rows[k] + 1, TILE.SOLID); }
+  for (let k = 1; k < n; k++) { const x = side(k) === 'R' ? 0 : W - 1, y = rows[k] - r.i(1, 2); if (at(x, y) === TILE.EMPTY) set(x, y, TILE.SOLID); }
+  // headroom: wherever rubble below and rock above would leave less than three rows to walk in, clear them
+  for (let k = 1; k <= n; k++) for (let x = 0; x < W; x++) {
+    const air = () => { const top = at(x, rows[k] - 1) === TILE.SOLID ? rows[k] - 1 : rows[k]; let m = 0; while (m < 3 && at(x, top - 1 - m) !== TILE.SOLID) m++; return m; };
+    if (at(x, rows[k]) !== TILE.SOLID || air() >= 3) continue;
+    if (at(x, rows[k - 1]) === TILE.SOLID) set(x, rows[k - 1] + 1, TILE.EMPTY); else set(x, rows[k - 1], TILE.EMPTY);
+    if (air() < 3 && x > 1 && x < W - 2) set(x, rows[k] - 1, TILE.EMPTY);
+  }
+  for (const x of [0, W - 1]) { for (let y = T - 3; y < T; y++) set(x, y, TILE.EMPTY); }          // (the doorways of the top passage)
+  if (spec.bottomEdge) for (let y = floor - 3; y < floor; y++) { set(W - 1, y, TILE.EMPTY); set(W - 2, y, TILE.EMPTY); }
+  // the water falling into each pool from whatever hangs over it
+  for (const [a, z, k] of poolAt.slice(0, 5)) { const fx = (a + z + 1) >> 1; let ty = rows[k] - 2; while (ty > 1 && at(fx, ty) !== TILE.SOLID) ty--; if (rows[k] - ty >= 3) b.d('waterfall', fx, rows[k] + 1, { top: (ty + 1) * 16, w: 14 }); }
+  if (topDoor) { b.door(topDoor.x, topDoor.gy, spec.doorL.to, 3, 12, spec.doorL.kind || 'crypt'); patchDoor(b, spec.doorL); }
+  if (bottom) {
+    b.door(bottom.x, bottom.gy, bottomSpec.to, 3, 12, bottomSpec.kind || 'crypt'); patchDoor(b, bottomSpec);
+    if (bottomSpec.lock) b.d('sigils', bottom.x, bottom.gy, { flags: bottomSpec.lock });
+  }
+  const sign = bottom && bottomSpec.label ? { tx: bottom.x + (outLeft ? 4 : -4), gy: floor } : null;
+  const meta = { abilities: [...new Set([...(spec.abilities || []), ...(hasDJ(spec) ? ['djump'] : [])])], back: BACK[spec.zone], must: [], items: [],
+    entry: { L: topDoor ? null : { tx: 1, gy: T }, R: spec.topExit ? { tx: W - 2, gy: T } : spec.bottomEdge ? { tx: W - 2, gy: floor } : null } };
+  meta.start = topDoor ? { tx: topDoor.x, gy: topDoor.gy } : { tx: 1, gy: T };
+  const down = bottom ? { tx: bottom.x, gy: bottom.gy } : spec.bottomEdge ? { tx: W - 2, gy: floor } : { tx: W >> 1, gy: floor };
+  meta.must.push({ ...down, name: 'the way out below' }); if (spec.topExit) meta.must.push({ tx: W - 2, gy: T, name: 'the passage on' }); if (sign) meta.must.push({ ...sign, name: 'sign' });
+  b.def.meta = meta; b.def.entries = { L: meta.entry.L, R: meta.entry.R };
+  if (sign) b.tablet(sign.tx, sign.gy, signText(bottomSpec), 'sign_' + id + '_0', bottomSpec.tag);
+  for (const t of (spec.mods || []).filter(m => m.t === 'tablet')) { const tx = topDoor ? 8 : 5; b.tablet(tx, T, t.text, t.id); meta.must.push({ tx, gy: T, name: 'tablet' }); }
+  if (spec.boneWalls) b.def.boneWalls = true;
+  if (spec.freezing) b.def.freezing = true;
+  if (shaftDrop(b, T, floor) > 2 * S + 2) return { ok: false, errs: ['a column of the shaft can be fallen too far'], def: b.def };
+  const v = validateRoom(b.def); if (!v.ok) return { ok: false, errs: v.errs, def: b.def };
+  const back = validateRoom({ ...b.def, meta: { ...meta, entry: {}, start: down, must: [{ ...meta.start, name: 'the way back up' }] } }); if (!back.ok) return { ok: false, errs: back.errs, def: b.def };
+  // the haunts: spread over the levels from the second down, never beside a door, never in the water
+  const spots = [];
+  for (let k = 2; k <= n; k++) { const list = k === n ? [[0, W - 1]] : spans(k); for (const [x0, x1] of list) for (let x = x0 + 2; x <= x1 - 2; x++) if (plain(x, k) && !inPool(x, k, 1) && at(x, rows[k]) === TILE.SOLID && [1, 2, 3].every(q => at(x, rows[k] - q) === TILE.EMPTY)) spots.push({ x, y: rows[k], k }); }
+  const used = [], take = () => { for (let t = 0; t < 80 && spots.length; t++) { const s = r.pick(spots); if (used.some(u => u.k === s.k && Math.abs(u.x - s.x) < 5)) continue; used.push(s); return s; } return null; };
+  for (const [type, count] of spec.foes || []) for (let i = 0; i < count; i++) { const s = take(); if (!s) break; b.e(type, s.x, FLYERS.has(type) ? s.y - 2 : s.y); }
+  for (let i = 0, m = spec.barrels ? r.i(spec.barrels[0], spec.barrels[1]) : 0; i < m; i++) { const s = take(); if (s) b.e('barrel', s.x, s.y, { drop: 'coin' }); }
+  // light and furniture
+  for (let k = 1; k <= n; k++) { const x = k === n ? (outLeft ? W - 2 : 1) : side(k) === 'R' ? 1 : W - 2, y = rows[k] - 3; if (at(x, y) === TILE.EMPTY && k % (spec.torchEvery || 1) === 0) b.torches([x], y); }
+  if (bottom) b.d('brazier', bottom.x + (outLeft ? 8 : -8), floor);
+  if (spec.dress === 'ice') {
+    const traps = [];
+    for (let k = 0; k < n; k++) for (const [x0, x1] of spans(k)) for (let x = x0 + 2; x < x1 - 1; x += r.i(5, 9)) {
+      if (at(x, rows[k] + 1) !== TILE.EMPTY) continue;
+      if (r.chance(0.55)) b.d('icicles', x, rows[k] + 1, { n: r.i(2, 3) });
+      else if (traps.length < 5 && k > 0 && [2, 3, 4].every(q => at(x, rows[k] + q) === TILE.EMPTY)) traps.push({ x: x * 16 + 8, y: (rows[k] + 1) * 16, len: r.i(18, 26), w: r.i(6, 8) });
+    }
+    if (traps.length) b.def.icicleTraps = traps;
+    for (const s of spots) if (r.chance(0.05)) b.d('crystals', s.x, s.y, { n: r.i(2, 4) });
+  } else for (const s of spots) if (r.chance(spec.dress === 'bones' ? 0.07 : 0.04)) b.d('img', s.x, s.y, { img: 'dg_urn_' + r.i(1, 3), back: true });
+  const sp = checkSpawns(b.def); if (sp.length) return { ok: false, errs: sp, def: b.def };
   return { ok: true, def: b.def };
 }
 
@@ -1138,7 +1262,7 @@ function genChasm(id, spec, r) {
   return { ok: true, def: b.def };
 }
 
-const GEN = { chasm: genChasm, despair: genDespair, abyss: genAbyss, well: genWell, shop: genShop, gatetower: genGateTower, cellar: genCellar, gears: genGears, disco: genDisco, authored: id => ({ ok: true, def: authoredDef(id) }), corridor: genCorridor, tower: genTower, arena: genArena, sanctuary: genSanctuary, teleport: genTeleport, interior: genInterior };
+const GEN = { shaft: genShaft, chasm: genChasm, despair: genDespair, abyss: genAbyss, well: genWell, shop: genShop, gatetower: genGateTower, cellar: genCellar, gears: genGears, disco: genDisco, authored: id => ({ ok: true, def: authoredDef(id) }), corridor: genCorridor, tower: genTower, arena: genArena, sanctuary: genSanctuary, teleport: genTeleport, interior: genInterior };
 
 // ------------------------------------------------------------------------------------------------ authored fallback + linking
 function authoredDef(id) {
@@ -1185,14 +1309,18 @@ function checkLinks(rooms) {
 // ------------------------------------------------------------------------------------------------ the map
 // The map is PACKED: rooms are blocks of cells that touch, with no space and no line between areas.  Every chain of rooms is a strip hung from the room its first room is entered from, on the side it prefers;
 // side rooms (sanctuaries, houses, lairs) sit against their parent.  The packing itself is in maplayout.js; the map screen (MapScreen, ui.js) draws what it is given.
-const MAP_SIDES = [[], ['right'], ['right'], ['above'], ['above'], ['right'], ['above'], ['above'], ['below']];          // where each chain (in the order of CHAINS) prefers to sit against its anchor: the Cistern below the bridge (required), the others wherever the whole map comes out biggest on the screen (found by trying every combination, on several seeds, among the layouts where every room touches another and every zone is one piece)
-const MAP_ABOVE = ['ot', 'og'];          // (the Orloj Tower is a climb, and the Boiler Loft lies atop it: on the map they sit ABOVE Smouldering Lane, and the Clockwork Dungeon (chain 6, which prefers 'above') goes on up from there - not down, as it did)
-const MAP_FIRST = [8];          // (the Cistern and the Frozen Caverns are set against the bridge before the main row's side rooms: the Cistern lies UNDER Karluv Bridge on the map, as it does in the castle)
+const MAP_SIDES = [null, 'below', 'beside', 'beside', 'below', 'above', 'above', 'above', 'below'];          // (where each chain, in the order of CHAINS, sits against the room it is entered from: the Lower Road and the Mire under the Mire Road; the Great Hall beside the keep's gate; the Moonlit Chapel beside the FOOT of the Oubliette, down in the lower levels; the Crypts below their door; the Throne, the Library above; the Clockwork Dungeon on up from the Boiler Loft; the Pier Falls, the Cistern and (far down) the Frozen Caverns under the bridge)
+const MAP_ORDER = [0, 8, 2, 3, 4, 1, 6, 7, 5];          // (the order the branches are placed in: those that must lie closest to their door first)
+const MAP_ABOVE = ['ot', 'og'];          // (side rooms set ABOVE their parent: the Orloj Tower is a climb, and the Boiler Loft lies atop it)
 function layoutMap(rooms) {
   const ids = ORDER.filter(id => rooms[id] && !rooms[id].hidden), size = {}, zone = {}, parent = {}, anchor = {};
   for (const id of ids) { size[id] = mapCells(rooms[id]); zone[id] = rooms[id].zone; if (SPEC[id].parent) parent[id] = SPEC[id].parent; }
   CHAINS.forEach((c, ci) => { if (ci) { const p = PAIRS.find(q => q.b === c[0]); if (p) anchor[ci] = p.a; } });
-  const pos = packMap({ ids, size, zone, chains: CHAINS, anchor, parent, sides: MAP_SIDES, first: MAP_FIRST, above: MAP_ABOVE });
+  // every room is set level with the doorway before it: the cell row the map draws the way through in (MapScreen, ui.js) - an open edge, or, for rooms joined by a door, where the door stands
+  const row = (r, to) => { const e = rooms[r].exits.find(q => q.room === to), d = e ? null : rooms[r].doors.find(q => q.room === to); return e || d ? Math.floor(Math.max(0, Math.min(0.999, (e ? (e.from + e.to) / 2 : d.gy - 2) / rooms[r].h)) * size[r].ch) : null; };
+  const steps = {}, step = (prev, id) => { if (!rooms[prev] || !rooms[id]) return; const out = row(prev, id), into = row(id, prev); if (out !== null && into !== null) steps[id] = out - into; };
+  CHAINS.forEach((c, ci) => { c.forEach((id, i) => { if (i) step(c[i - 1], id); }); if (ci && MAP_SIDES[ci] === 'beside') step(anchor[ci], c[0]); });
+  const pos = packMap({ ids, size, zone, chains: CHAINS, anchor, parent, sides: MAP_SIDES, order: MAP_ORDER, above: MAP_ABOVE, early: MAP_ABOVE, steps });
   for (const id of ORDER) if (rooms[id]) rooms[id].map = pos[id] || (SPEC[id].parent && pos[SPEC[id].parent]) || { x: 0, y: 0 };          // (a secret room is not on the map: it takes its parent's place)
 }
 
@@ -1207,7 +1335,7 @@ function* buildSteps(seed, opts = {}) {
   const isHand = () => false;                                // (there is no hand-built castle any more: every room but Market Street is generated, whatever the seed)
   const ends = {};                                           // the doors that join neighbouring areas
   for (const [k, kind] of Object.entries(DOOR_LINK)) { const [a, b2] = k.split('>'); (ends[a] ||= {}).doorR = { to: b2, kind }; (ends[b2] ||= {}).doorL = { to: a, kind }; }
-  for (const p of PAIRS) { if (p.side === 'R') (ends[p.a] ||= {}).doorR = { to: p.b, tag: p.ta, destTag: p.tb, kind: p.kind, lock: p.lock, hint: p.hint }; else if (p.side === 'T') (ends[p.a] ||= {}).doorT = { to: p.b, tag: p.ta, destTag: p.tb, kind: p.kind, lock: p.lock, hint: p.hint, label: p.label }; else ((ends[p.a] ||= {}).mods ||= []).push({ t: p.mod, to: p.b, tag: p.ta, destTag: p.tb, kind: p.kind, label: p.label, hint: p.hint, lock: p.lock, gate: p.gate, key: p.key, wide: p.wide }); (ends[p.b] ||= {}).doorL = { to: p.a, tag: p.tb, destTag: p.ta, kind: p.kind }; }
+  for (const p of PAIRS) { if (p.side === 'R') (ends[p.a] ||= {}).doorR = { to: p.b, tag: p.ta, destTag: p.tb, kind: p.kind, lock: p.lock, hint: p.hint }; else if (p.side === 'B') (ends[p.a] ||= {}).doorB = { to: p.b, tag: p.ta, destTag: p.tb, kind: p.kind, lock: p.lock, hint: p.hint, label: p.label }; else if (p.side === 'T') (ends[p.a] ||= {}).doorT = { to: p.b, tag: p.ta, destTag: p.tb, kind: p.kind, lock: p.lock, hint: p.hint, label: p.label }; else ((ends[p.a] ||= {}).mods ||= []).push({ t: p.mod, to: p.b, tag: p.ta, destTag: p.tb, kind: p.kind, label: p.label, hint: p.hint, lock: p.lock, gate: p.gate, key: p.key, wide: p.wide }); (ends[p.b] ||= {}).doorL = { to: p.a, tag: p.tb, destTag: p.ta, kind: p.kind }; }
   for (const [a, ta, b2, tb] of RETURNS) (ends[a] ||= {}).doorR = { to: b2, tag: ta, destTag: tb, kind: 'crypt' };
   let stepNo = 0;
   for (const id of ORDER) {
