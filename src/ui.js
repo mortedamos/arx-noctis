@@ -363,23 +363,26 @@ export function foundItems(g) {
   for (const k of KEYS) if (F['has_' + k.id] && !F['unlocked_' + k.id]) rows.push({ ic: 'key', name: k.name, has: true, key: k, title: k.name, desc: 'IT OPENS ' + (KEY_USE[k.id] || 'ONE LOCKED DOOR.') + ' THE DOOR IS DRAWN WITH ITS PADLOCK IN THE KEY\'S OWN COLOUR.' });
   return rows;
 }
-// the list: each row's place (the keys sit in a grid under the list)
+// the list: where each row's middle is (the keys sit in one row under the list).  It is set small: with every power and relic found there are thirteen rows, and the eight keys under them must still be on the screen
+const FOUND_Y = 57, FOUND_STEP = 9, FOUND_TEXT = 0.8;
 function foundLayout(rows) {
-  const list = rows.filter(r => !r.key), step = list.length > 8 ? 11 : 13, y0 = 59 + list.length * step + 3, pos = [];
-  let ki = 0; for (const r of rows) { if (r.key) { pos.push({ x: 22 + (ki % 6) * 18, y: y0 + 14 + Math.floor(ki / 6) * 17, w: 16, h: 16, key: true }); ki++; } else pos.push({ x: 14, y: 59 + pos.length * step - 5, w: 112, h: step, key: false }); }
+  const list = rows.filter(r => !r.key), y0 = FOUND_Y + list.length * FOUND_STEP + 1, pos = [];
+  let ki = 0; for (const r of rows) { if (r.key) { pos.push({ x: 19 + ki * 14.5, y: y0 + 15, key: true }); ki++; } else pos.push({ x: 20, y: FOUND_Y + pos.length * FOUND_STEP, key: false }); }
   return { pos, y0, list };
 }
+// is a tap on that thing?
+const foundAt = (p, t) => (p.key ? Math.abs(t.x - p.x) <= 7.25 && Math.abs(t.y - p.y) <= 10 : t.x >= 8 && t.x <= 132 && Math.abs(t.y - p.y) <= FOUND_STEP / 2);
 function foundPanel(ctx, g, pm) {
   const rows = foundItems(g), L = foundLayout(rows), sel = pm && pm.foc === 'found' ? pm.sel : -1;
   panel(ctx, 8, 36, 124, 174); drawText(ctx, 'FOUND', 70, 42, { align: 'center', color: GOLD, scale: 1.3 });
   let ki = 0;
   rows.forEach((r, i) => {
     const p = L.pos[i], on = i === sel;
-    if (!r.key) { const y = p.y + 5; if (on) { ctx.fillStyle = 'rgba(232,184,74,0.18)'; ctx.fillRect(10, y - 6, 120, p.h); } icon(ctx, r.ic, 21, y, 1, r.has ? 1 : 0.2); drawText(ctx, r.name, 33, y - 4, { color: !r.has ? '#4a4458' : on ? GOLD : PALE }); if (on) drawText(ctx, '>', 12, y - 4, { color: GOLD }); }
+    if (!r.key) { if (on) { ctx.fillStyle = 'rgba(232,184,74,0.18)'; ctx.fillRect(10, p.y - 4.5, 120, FOUND_STEP); } icon(ctx, r.ic, p.x, p.y, 0.6, r.has ? 1 : 0.2); drawText(ctx, r.name, 29, p.y - 3, { scale: FOUND_TEXT, color: !r.has ? '#4a4458' : on ? GOLD : PALE }); if (on) drawText(ctx, '>', 11, p.y - 3, { scale: FOUND_TEXT, color: GOLD }); }
     else {
-      if (ki === 0) drawText(ctx, 'KEYS', 14, L.y0 - 2, { color: DIM }); ki++;
-      if (on) { ctx.fillStyle = 'rgba(232,184,74,0.25)'; ctx.fillRect(p.x - 8, p.y - 9, 17, 19); }
-      drawKey(ctx, r.key.rgb, p.x, p.y, 1.1); ctx.fillStyle = 'rgb(' + r.key.rgb.join(',') + ')'; ctx.fillRect(p.x - 5, p.y + 8, 10, 2);
+      if (ki === 0) drawText(ctx, 'KEYS', 14, L.y0, { scale: FOUND_TEXT, color: DIM }); ki++;
+      if (on) { ctx.fillStyle = 'rgba(232,184,74,0.25)'; ctx.fillRect(p.x - 7, p.y - 9, 14, 19); }
+      drawKey(ctx, r.key.rgb, p.x, p.y, 0.9); ctx.fillStyle = 'rgb(' + r.key.rgb.join(',') + ')'; ctx.fillRect(p.x - 4, p.y + 7, 8, 2);
     }
   });
 }
@@ -399,7 +402,7 @@ export class PauseMenu {
   // LEFT moves the cursor over to the list of found things: UP / DOWN read each one out (what it is, what it does); RIGHT, BACK or OK returns to the menu.  A tap on a thing reads it out too.
   update() { if (this.mode === 'main') {
       const rows = foundItems(this.g), L = foundLayout(rows);
-      for (const t of Input.taps) { const i = L.pos.findIndex(p => t.x >= p.x - 8 && t.x <= p.x + p.w && t.y >= p.y - 8 && t.y <= p.y + p.h); if (i >= 0 && t.x < 132) { this.foc = 'found'; this.sel = i; A.sfx('select'); } }
+      for (const t of Input.taps) { const i = L.pos.findIndex(p => foundAt(p, t)); if (i >= 0 && t.x < 132) { this.foc = 'found'; this.sel = i; A.sfx('select'); } }
       if (this.foc === 'found') {
         if (this.sel >= rows.length) this.sel = Math.max(0, rows.length - 1);
         if (Input.pressed.up && rows.length) { this.sel = (this.sel + rows.length - 1) % rows.length; A.sfx('click'); } if (Input.pressed.down && rows.length) { this.sel = (this.sel + 1) % rows.length; A.sfx('click'); }
