@@ -1,31 +1,41 @@
 // WHAT THE PUZZLE ROOMS ARE MADE OF (the rules are in puzzle.js): the levers, and the things they light - candelabra, altar candles, bog vents, frost lenses - with the beam that crosses the lenses and the carved stone
-// beside the vents.  A lever can be pulled as often as you like, and each pull works its rule on the pattern (kept in the save flag 'pzc_<room>').  A two-position lever stays where it is put ('pzl_<room>', a bit for
-// each); a lever on a spring swings over and comes back.  When the pattern wanted is made the chest unlocks (flag 'pzs_<room>') and the levers are done with.
+// beside the vents.  A lever can be pulled as often as you like: each pull throws it from off to on or back ('pzl_<room>', a bit for each lever that is on) and works its rule on the pattern (kept in 'pzc_<room>').  When the pattern wanted is made the chest unlocks (flag 'pzs_<room>') and the levers are done with.
 import { Lever, Chest } from './props.js';
 import { drawDeco, candelabraWicks } from './decor.js';
 import { pull, candlesNow } from './puzzle.js';
+import { latticeArt } from './latticeart.js';
 import { Audio_ as A } from './audio.js';
 import { rand } from './util.js';
 
 const isLit = (g, pz, i) => !!((candlesNow(g.save.flags, pz) >> i) & 1);
 
+// FUMBLING HAS A PRICE: every third pull that does not solve a puzzle (counted across visits: save flag 'pzn_<room>') calls up one of the area's own monsters (the puzzle's `foes`), at whichever end of the room is
+// farther from the hero.  A ring burns on the floor for a moment first.
+const PULLS_PER_FOE = 3, SUMMON_AT = [6, 18], FLIES = new Set(['bat', 'ghost', 'wraith', 'fireskull', 'wyrm', 'frostwyrm', 'emberwyrm']);
+function summon(g, foes) {
+  const room = g.room, kind = foes[Math.floor(Math.random() * foes.length)], tx = SUMMON_AT.reduce((a, b) => Math.abs(b * 16 + 8 - g.player.x) > Math.abs(a * 16 + 8 - g.player.x) ? b : a), x = tx * 16 + 8, row = FLIES.has(kind) ? 8 : 12;
+  A.sfx('seal'); g.shake(1.5, 24); g.fx.quad({ kind: 'circle', x, y: 12 * 16 - 1, w: 72, h: 28, color: [0.8, 0.3, 1], life: 54, spin: 0.05, p: [0, 12], a0: 1, a1: 0, order: 1 });
+  g.after(36, () => { if (g.room !== room || !g.spawnEnemy(kind, tx, row, {})) return; A.sfx('ghost'); g.fx.smoke(x, row * 16 - 12, 10, { s0: 10, s1: 30 }); g.fx.burst(x, row * 16 - 12, 18, [[0.85, 0.55, 1], [0.35, 0.1, 0.6]], { speed: 2.2 }); });
+}
+
 export class PuzzleLever extends Lever {
   constructor(x, y, o, flags) {
-    super(x, y); this.pz = o.pz; this.i = o.i; this.hold = 0; this.up = !o.pz.spring && !!(((flags['pzl_' + o.pz.id] ?? o.pz.levers) >> o.i) & 1); this.open = !!flags['pzs_' + o.pz.id]; this.k = this.up ? 1 : -1;          // (open: solved - nothing left to do with it)
+    super(x, y); this.pz = o.pz; this.i = o.i; this.hold = 0; this.up = !!(((flags['pzl_' + o.pz.id] ?? o.pz.levers) >> o.i) & 1); this.open = !!flags['pzs_' + o.pz.id]; this.k = this.up ? 1 : -1;          // (up: on.  open: solved - nothing left to do with it)
   }
   update(g) {
-    this.t++; if (this.hold > 0) this.hold--; const to = this.up || this.hold ? 1 : -1; this.k += Math.max(-0.14, Math.min(0.14, to - this.k));
-    if (!this.open) { g.fx.glow(this.x, this.y - 12, 14, [1, 0.85, 0.6], 0.14 + 0.05 * Math.sin(this.t * 0.06)); if (this.t % 11 === 0) g.fx.emit({ x: this.x + rand(-11, 11), y: this.y - rand(2, 18), vx: 0, vy: -rand(0.12, 0.34), life: rand(45, 80), s0: rand(5, 8), s1: 2, c0: [1, 0.86, 0.5], c1: [1, 1, 0.92], a0: 1, a1: 0, kind: 6 }); }
+    this.t++; if (this.hold > 0) this.hold--; const to = this.up ? 1 : -1; this.k += Math.max(-0.14, Math.min(0.14, to - this.k));
+    g.fx.glow(this.x, this.y - 4, 11, this.up ? [0.4, 1, 0.5] : [1, 0.3, 0.2], 0.28);          // (the lamp on its base: green when on, red when off)
+    if (!this.open) { if (this.t % 11 === 0) g.fx.emit({ x: this.x + rand(-11, 11), y: this.y - rand(2, 18), vx: 0, vy: -rand(0.12, 0.34), life: rand(45, 80), s0: rand(5, 8), s1: 2, c0: [1, 0.86, 0.5], c1: [1, 1, 0.92], a0: 1, a1: 0, kind: 6 }); }
   }
   interact(g) {
-    const f = g.save.flags, id = this.pz.id, done = 'pzs_' + id; if (f[done]) return false; if (this.hold) return true;          // (still swinging back)
+    const f = g.save.flags, id = this.pz.id, done = 'pzs_' + id; if (f[done]) return false; if (this.hold) return true;          // (still swinging over)
     const was = candlesNow(f, this.pz), now = pull(this.pz.rules[this.i], was); f['pzc_' + id] = now;
-    if (this.pz.spring) this.hold = 18; else { const levers = (f['pzl_' + id] ?? this.pz.levers) ^ (1 << this.i); f['pzl_' + id] = levers; this.up = !!((levers >> this.i) & 1); }
+    const levers = (f['pzl_' + id] ?? this.pz.levers) ^ (1 << this.i); f['pzl_' + id] = levers; this.up = !!((levers >> this.i) & 1); this.hold = 14;
     A.sfx('click'); A.sfx('gear'); if (now & ~was) A.sfx('fire'); g.fx.sparks(this.x, this.y - 14, 6, [[1, 0.9, 0.6], [0.8, 0.8, 1]], 2, { gy: 0.1 });
     if (now === this.pz.goal) {
       f[done] = true; for (const o of g.props) if (o instanceof PuzzleLever) o.open = true;
       g.after(40, () => { A.sfx('seal'); A.sfx('item'); g.shake(1.5, 20); const c = g.props.find(o => o instanceof Chest && o.lock === done); if (c) { g.fx.ring(c.x, c.y - 10, 40, [1, 0.85, 0.5], 30, 0.15); g.fx.sparks(c.x, c.y - 10, 18, [[1, 0.9, 0.5], [0.7, 0.7, 0.8]], 2.6, { gy: 0.12 }); g.popup(c.x, c.y - 32, 'UNLOCKED', '#ffe9a0'); } });
-    }
+    } else { const n = (f['pzn_' + id] || 0) + 1; f['pzn_' + id] = n; if (n % PULLS_PER_FOE === 0 && this.pz.foes) summon(g, this.pz.foes); }
     return true;
   }
 }
@@ -85,77 +95,83 @@ class PuzzleVent extends Piece {
   }
 }
 
-// a frosted-glass lens in a brass ring: CLEAR when its bit is set, FROSTED when not.  The third lies flat, in the beam's lower branch
-const LENS_UP = [74, 74, 44];          // (how high each hangs over the floor)
+// a lens in a toothed brass ring (latticeart.js): CLEAR when its bit is set, FROSTED over when not.  The third lies flat, in the beam's lower branch
+const LENS_UP = [80, 80, 46];          // (how high the middle of each hangs over the floor)
 class PuzzleLens extends Piece {
   constructor(x, y, o) { super(x, y - LENS_UP[o.i], o); this.flat = o.i === 2; }
-  get box() { return { x: this.x - 14, y: this.y - 14, w: 28, h: 28 }; }
-  change(g, lit) { g.fx.sparks(this.x, this.y, 8, lit ? [[0.9, 0.97, 1], [0.6, 0.8, 1]] : [[1, 1, 1], [0.75, 0.85, 0.95]], 1.4, { gy: 0.04 }); }
+  get box() { return { x: this.x - 22, y: this.y - 23, w: 44, h: 46 }; }
+  change(g, lit) { g.fx.sparks(this.x, this.y, 12, lit ? [[0.9, 0.97, 1], [0.6, 0.8, 1]] : [[1, 1, 1], [0.75, 0.85, 0.95]], 1.6, { gy: 0.04 }); g.fx.ring(this.x, this.y, 22, [0.7, 0.9, 1], 14, 0.2); }
   draw(ctx, cx, cy) {
-    const x = Math.round(this.x - cx), y = Math.round(this.y - cy), rx = this.flat ? 13 : 5, ry = this.flat ? 5 : 13;
-    ctx.strokeStyle = '#4a4456'; ctx.lineWidth = 1; ctx.beginPath();          // what holds it
-    if (this.i === 0) { ctx.moveTo(x, y - ry); ctx.lineTo(x, Math.round(32 - cy)); }
-    else if (this.i === 1) { ctx.moveTo(x - 3, y - ry); ctx.lineTo(x - 18, Math.round(32 - cy)); ctx.moveTo(x + 3, y - ry); ctx.lineTo(x + 18, Math.round(32 - cy)); }
-    else { ctx.moveTo(x - rx, y); ctx.lineTo(x - 24, y); ctx.lineTo(x - 24, y + 44); }
-    ctx.stroke();
-    ctx.save(); ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
-    ctx.fillStyle = this.lit ? 'rgba(150,205,240,0.28)' : 'rgba(222,236,246,0.93)'; ctx.fill();
-    if (!this.lit) { ctx.clip(); ctx.fillStyle = '#ffffff'; for (let k = 0; k < 14; k++) ctx.fillRect(x - rx + ((k * 53) % (rx * 2)), y - ry + ((k * 31) % (ry * 2)), 2, 1); ctx.fillStyle = '#a9c4d8'; for (let k = 0; k < 8; k++) ctx.fillRect(x - rx + ((k * 29) % (rx * 2)), y - ry + ((k * 47) % (ry * 2)), 1, 2); }
-    ctx.restore();
-    ctx.strokeStyle = '#c9a14a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); ctx.stroke();
-    if (this.lit) { ctx.fillStyle = '#ffffff'; ctx.fillRect(x - (this.flat ? 7 : 2), y - (this.flat ? 2 : 7), this.flat ? 5 : 1, this.flat ? 1 : 5); }          // (a glint: you see through it)
+    const A = latticeArt(), im = (this.flat ? A.lensFlat : A.lensUp)[this.lit ? 1 : 0], x = Math.round(this.x - cx), y = Math.round(this.y - cy);
+    ctx.drawImage(im, x - (im.width >> 1), y - (im.height >> 1));
+    if (this.lit && this.t % 90 < 24) {          // (now and then a gleam runs across the clear glass)
+      const k = this.t % 90 / 24, gx = Math.round(x + (this.flat ? -12 + k * 24 : -4 + k * 8)), gy = Math.round(y + (this.flat ? 3 - k * 6 : 12 - k * 24)); ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(gx, gy - 1, 1, 3); ctx.fillRect(gx - 1, gy, 3, 1);
+    }
   }
 }
 
 export const puzzlePiece = (x, y, o) => o.pz.look === 'vent' ? new PuzzleVent(x, y, o) : o.pz.look === 'lens' ? new PuzzleLens(x, y, o) : new PuzzleCandle(x, y, o);
 
-// THE BEAM of the lens room, all of it: the brazier it comes from, the way it goes, the two side crystals and the node in the middle that must NOT be struck.
+// THE BEAM of the lens room, all of it: the iron lattice behind, the brazier it comes from, the way it goes, the two side crystals and the node in the middle that must NOT be struck (their art: latticeart.js).
 // It runs level through lens 1 (if frosted it scatters there and is lost) to lens 2.  Lens 2 clear: straight on into the node.  Lens 2 frosted: it splits, one branch up to a crystal, the other down through lens 3 to the
 // second crystal (a frosted lens 3 scatters that one).  So both crystals shine, and the node stays dark, only with lens 1 clear, 2 frosted and 3 clear.
 class PuzzleBeam {
   constructor(x, y, o) { const px = tx => tx * 16 + 8; this.pz = o.pz; this.floor = y; this.h = y - LENS_UP[0]; this.src = px(o.src); this.g1 = px(o.g1); this.g2 = px(o.g2); this.node = px(o.node); this.x = x; this.y = y; this.t = 0; this.dead = false; this.s = o.pz.start; }
-  get box() { return { x: this.src - 10, y: this.floor - 140, w: this.node - this.src + 20, h: 140 }; }
+  get box() { return { x: this.src - 20, y: this.floor - 160, w: this.node - this.src + 40, h: 160 }; }
   paths() {          // the straight runs of light, where it scatters, and what it strikes
-    const clear = i => !!((this.s >> i) & 1), H = this.h, top = this.floor - 124, low = this.floor - 14, out = { runs: [[this.src, H, this.g1, H]], lost: null, top: false, low: false, node: false };
+    const clear = i => !!((this.s >> i) & 1), H = this.h, low3 = this.floor - LENS_UP[2], out = { runs: [[this.src, H, this.g1, H]], lost: null, split: false, top: false, low: false, node: false };
     if (!clear(0)) { out.lost = [this.g1, H]; return out; }
     out.runs.push([this.g1, H, this.g2, H]);
-    if (clear(1)) { out.runs.push([this.g2, H, this.node, H]); out.node = true; return out; }
-    out.runs.push([this.g2, H, this.g2, top], [this.g2, H, this.g2, this.floor - LENS_UP[2]]); out.top = true;
-    if (clear(2)) { out.runs.push([this.g2, this.floor - LENS_UP[2], this.g2, low]); out.low = true; } else out.lost = [this.g2, this.floor - LENS_UP[2]];
+    if (clear(1)) { out.runs.push([this.g2, H, this.node - 8, H]); out.node = true; return out; }
+    out.split = true; out.runs.push([this.g2, H, this.g2, this.floor - 120], [this.g2, H, this.g2, low3]); out.top = true;
+    if (clear(2)) { out.runs.push([this.g2, low3, this.g2, this.floor - 24]); out.low = true; } else out.lost = [this.g2, low3];
     return out;
   }
   update(g) {
     this.t++; this.s = candlesNow(g.save.flags, this.pz); const p = this.paths(), warm = [1, 0.75, 0.4];
-    g.fx.flame(this.src, this.h + 3, { scale: 1.3, seed: this.src, sparks: false }); g.fx.light(this.src, this.h, 80, 0.9);
-    for (const [x0, y0, x1, y1] of p.runs) g.fx.light((x0 + x1) / 2, (y0 + y1) / 2, 44, 0.45, warm);
-    if (p.lost) { g.fx.glow(p.lost[0], p.lost[1], 30, warm, 0.45 + 0.1 * Math.sin(this.t * 0.2)); if (this.t % 6 === 0) g.fx.sparks(p.lost[0], p.lost[1], 1, [[1, 0.85, 0.5], [1, 1, 0.9]], 1.2, { gy: 0.03 }); }
-    for (const [on, cy] of [[p.top, this.floor - 130], [p.low, this.floor - 8]]) if (on) { g.fx.glow(this.g2, cy, 30, [1, 0.85, 0.55], 0.55); g.fx.light(this.g2, cy, 60, 0.8, warm); }
-    if (p.node) { g.fx.glow(this.node, this.h, 34 + 5 * Math.sin(this.t * 0.4), [1, 0.25, 0.15], 0.6); if (this.t % 5 === 0) g.fx.sparks(this.node, this.h, 2, [[1, 0.4, 0.2], [1, 0.85, 0.5]], 2, { gy: 0.08 }); }
+    g.fx.flame(this.src, this.h + 4, { scale: 1.5, seed: this.src, sparks: false }); g.fx.light(this.src, this.h, 90, 0.9);
+    for (const [x0, y0, x1, y1] of p.runs) g.fx.light((x0 + x1) / 2, (y0 + y1) / 2, 48, 0.45, warm);
+    if (p.lost) { g.fx.glow(p.lost[0], p.lost[1], 22, warm, 0.18 + 0.06 * Math.sin(this.t * 0.2)); if (this.t % 4 === 0) g.fx.sparks(p.lost[0], p.lost[1], 1, [[1, 0.85, 0.5], [1, 1, 0.9]], 1.4, { gy: 0.03 }); }
+    if (p.split) g.fx.glow(this.g2, this.h, 26, [1, 0.9, 0.7], 0.4);
+    for (const [on, cy] of [[p.top, this.floor - 132], [p.low, this.floor - 14]]) if (on) { g.fx.glow(this.g2, cy, 38, [1, 0.85, 0.55], 0.55 + 0.08 * Math.sin(this.t * 0.11)); g.fx.light(this.g2, cy, 72, 0.85, warm); if (this.t % 9 === 0) g.fx.emit({ x: this.g2 + rand(-10, 10), y: cy + rand(-10, 10), vx: 0, vy: -rand(0.1, 0.4), life: 40, s0: 5, s1: 1, c0: [1, 0.9, 0.6], c1: [1, 1, 1], a0: 1, a1: 0, kind: 6 }); }
+      else g.fx.light(this.g2, cy, 26, 0.25, [0.5, 0.75, 1]);
+    if (p.node) { g.fx.glow(this.node, this.h, 40 + 6 * Math.sin(this.t * 0.4), [1, 0.25, 0.15], 0.6); g.fx.light(this.node, this.h, 60, 0.8, [1, 0.35, 0.2]); if (this.t % 4 === 0) g.fx.sparks(this.node, this.h, 2, [[1, 0.4, 0.2], [1, 0.85, 0.5]], 2.4, { gy: 0.08 }); }
+    else g.fx.light(this.node, this.h, 24, 0.2, [0.6, 0.5, 0.9]);
   }
   draw(ctx, cx, cy) {
-    const p = this.paths(), X = v => Math.round(v - cx), Y = v => Math.round(v - cy), H = this.h;
-    // the brazier on its iron stand
-    ctx.fillStyle = '#2a2833'; ctx.fillRect(X(this.src) - 2, Y(H) + 8, 4, this.floor - H - 8); ctx.fillRect(X(this.src) - 9, Y(this.floor) - 3, 18, 3);
-    ctx.fillStyle = '#48465a'; ctx.beginPath(); ctx.moveTo(X(this.src) - 10, Y(H) + 3); ctx.lineTo(X(this.src) + 10, Y(H) + 3); ctx.lineTo(X(this.src) + 6, Y(H) + 10); ctx.lineTo(X(this.src) - 6, Y(H) + 10); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#8a8aa0'; ctx.fillRect(X(this.src) - 10, Y(H) + 3, 20, 1);
-    // the light
+    const A = latticeArt(), p = this.paths(), X = v => Math.round(v - cx), Y = v => Math.round(v - cy), H = this.h, ceil = 32, floor = this.floor;
+    const chain = (x0, y0, x1, y1) => {          // links of iron, one flat, one edge on
+      const len = Math.hypot(x1 - x0, y1 - y0), n = Math.max(1, Math.floor(len / 4));
+      for (let i = 0; i < n; i++) { const x = X(x0 + (x1 - x0) * (i + 0.5) / n), y = Y(y0 + (y1 - y0) * (i + 0.5) / n); if (i % 2) { ctx.fillStyle = '#8a93b4'; ctx.fillRect(x, y - 2, 1, 5); } else { ctx.fillStyle = '#565c7c'; ctx.fillRect(x - 1, y - 2, 3, 5); ctx.fillStyle = '#15121f'; ctx.fillRect(x, y - 1, 1, 3); } }
+    };
+    ctx.save(); ctx.globalAlpha = 0.75; ctx.drawImage(A.frame, X((this.src + this.node) / 2) - (A.frame.width >> 1), Y(ceil)); ctx.restore();
+    // what holds the lenses: a chain for the first, a pair spread wide for the second (clear of the crystal), an iron arm off the node's pillar for the third
+    chain(this.g1, ceil, this.g1, H - 22); chain(this.g2 - 28, ceil, this.g2 - 2, H - 22); chain(this.g2 + 28, ceil, this.g2 + 2, H - 22);
+    const ay = Y(floor - LENS_UP[2]); ctx.fillStyle = '#15121f'; ctx.fillRect(X(this.g2) + 22, ay - 2, X(this.node) - X(this.g2) - 26, 5); ctx.fillStyle = '#565c7c'; ctx.fillRect(X(this.g2) + 22, ay - 1, X(this.node) - X(this.g2) - 26, 3); ctx.fillStyle = '#9aa4c8'; ctx.fillRect(X(this.g2) + 22, ay - 1, X(this.node) - X(this.g2) - 26, 1);
+    ctx.strokeStyle = '#565c7c'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X(this.node) - 10, ay + 16); ctx.quadraticCurveTo(X(this.node) - 30, ay + 14, X(this.node) - 34, ay + 2); ctx.stroke();
+    ctx.drawImage(A.pillar, X(this.node) - 11, Y(floor) - A.pillar.height);
+    // the two crystals: one hangs point down from the roof, one stands on the floor
+    chain(this.g2, ceil, this.g2, ceil + 12);
+    ctx.save(); ctx.translate(X(this.g2), Y(floor - 119)); ctx.scale(1, -1); ctx.drawImage(A.crystal[p.top ? 1 : 0], -13, 0); ctx.restore();
+    ctx.fillStyle = '#8a6a2c'; ctx.fillRect(X(this.g2) - 11, Y(floor - 150), 22, 4); ctx.fillStyle = '#e8c068'; ctx.fillRect(X(this.g2) - 11, Y(floor - 150), 22, 1);
+    ctx.drawImage(A.crystal[p.low ? 1 : 0], X(this.g2) - 13, Y(floor) - 29);
+    ctx.drawImage(A.brazier, X(this.src) - 17, Y(floor) - A.brazier.height);
+    // the light: a soft halo, a hot core, and motes carried along it
     ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
     const k = 0.85 + 0.15 * Math.sin(this.t * 0.17);
-    for (const [w, col] of [[9, 'rgba(255,140,40,' + (0.16 * k).toFixed(3) + ')'], [4, 'rgba(255,180,80,' + (0.4 * k).toFixed(3) + ')'], [1.5, 'rgba(255,240,190,0.95)']]) {
+    for (const [w, col] of [[11, 'rgba(255,130,40,' + (0.12 * k).toFixed(3) + ')'], [6, 'rgba(255,160,60,' + (0.26 * k).toFixed(3) + ')'], [3, 'rgba(255,205,110,' + (0.6 * k).toFixed(3) + ')'], [1, 'rgba(255,250,225,1)']]) {
       ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath(); for (const [x0, y0, x1, y1] of p.runs) { ctx.moveTo(X(x0), Y(y0)); ctx.lineTo(X(x1), Y(y1)); } ctx.stroke();
     }
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    for (const [x0, y0, x1, y1] of p.runs) { const len = Math.hypot(x1 - x0, y1 - y0); for (let m = 0; m < len / 18; m++) { const q = ((this.t * 1.3 + m * 18) % len) / len, wob = Math.sin(this.t * 0.2 + m * 2) * 2; ctx.fillRect(X(x0 + (x1 - x0) * q + (y1 !== y0 ? wob : 0)), Y(y0 + (y1 - y0) * q + (y1 !== y0 ? 0 : wob)), 1, 1); } }
+    const star = (sx, sy, r) => { ctx.strokeStyle = 'rgba(255,235,180,0.85)'; ctx.lineWidth = 1; ctx.beginPath(); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 + this.t * 0.02, rr = i % 2 ? r * 0.55 : r; ctx.moveTo(X(sx), Y(sy)); ctx.lineTo(X(sx) + Math.cos(a) * rr, Y(sy) + Math.sin(a) * rr); } ctx.stroke(); };
     ctx.restore();
-    // the node: a black stone in an iron cage on a post
-    const nx = X(this.node), ny = Y(H);
-    ctx.fillStyle = '#2a2833'; ctx.fillRect(nx - 2, ny + 8, 4, this.floor - H - 8); ctx.fillRect(nx - 7, Y(this.floor) - 3, 14, 3);
-    ctx.fillStyle = p.node ? '#ff5a30' : '#17121c'; ctx.beginPath(); ctx.arc(nx, ny, 7, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#6c6c80'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(nx, ny, 8.5, 0, Math.PI * 2); ctx.moveTo(nx - 8, ny); ctx.lineTo(nx + 8, ny); ctx.moveTo(nx, ny - 8); ctx.lineTo(nx, ny + 8); ctx.stroke();
-    // the two side crystals
-    for (const [on, wy, up] of [[p.top, this.floor - 130, false], [p.low, this.floor - 8, true]]) {
-      const x = X(this.g2), y = Y(wy);
-      ctx.fillStyle = on ? '#ffd890' : '#3a5a78'; ctx.beginPath(); ctx.moveTo(x, y - 8); ctx.lineTo(x + 6, y); ctx.lineTo(x, y + 8); ctx.lineTo(x - 6, y); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = on ? '#fff4d0' : '#6f9cc0'; ctx.beginPath(); ctx.moveTo(x, y - 8); ctx.lineTo(x - 6, y); ctx.lineTo(x, y); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = '#4a4456'; if (up) ctx.fillRect(x - 8, y + 7, 16, 2); else { ctx.fillRect(x - 8, y - 10, 16, 2); ctx.fillRect(x - 1, Y(32), 2, y - 10 - Y(32)); }
-    }
+    ctx.drawImage(A.node[p.node ? 1 : 0], X(this.node) - 16, Y(H) - 16);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    if (p.split) star(this.g2, H, 17 + Math.sin(this.t * 0.2) * 2);
+    if (p.lost) star(p.lost[0] - (p.lost[1] === H ? 6 : 0), p.lost[1], 11 + Math.sin(this.t * 0.31) * 3);          // (it breaks up on the frost, at the face the light comes in by)
+    if (p.top) star(this.g2, floor - 122, 9); if (p.low) star(this.g2, floor - 25, 9);
+    ctx.restore();
   }
 }
 

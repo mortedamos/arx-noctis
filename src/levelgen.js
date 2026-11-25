@@ -119,10 +119,10 @@ const SPEC = {
   // THE LOWER ROAD: the way down from the Mire Road to the Weeping Mire, past ledges of black earth and standing water
   // two more PUZZLE ROOMS off the shafts (see puzzle.js).  THE WISP CAUSEWAY: four bog vents and four levers; the first, third and fourth must burn.  Lever 1 toggles vents 1 and 2; lever 2 lights 2 and puts out 3; lever 3
   // toggles 3 and 4; lever 4 puts out 1 and toggles 4.  (Counted 0..3 here.)
-  wv: { kind: 'interior', zone: 7, name: 'The Wisp Causeway', parent: 'lr', look: 'puzzle', w: [24, 24], theme: 'swamp', ambient: 0.36, tint: [0.0, 0.05, 0.03], fog: 0.22, empty: true, puzzle: { look: 'vent', spring: true, count: 4, start: [], goal: [0, 2, 3], rules: [{ flip: [0, 1] }, { on: [1], off: [2] }, { flip: [2, 3] }, { off: [0], flip: [3] }], chest: { kind: 'seal', id: 'wv_chest' } } },
+  wv: { kind: 'interior', zone: 7, name: 'The Wisp Causeway', parent: 'lr', look: 'puzzle', w: [24, 24], theme: 'swamp', ambient: 0.36, tint: [0.0, 0.05, 0.03], fog: 0.22, empty: true, puzzle: { look: 'vent', foes: ['swampspider', 'swampthing', 'ghost'], count: 4, start: [], goal: [0, 2, 3], rules: [{ flip: [0, 1] }, { on: [1], off: [2] }, { flip: [2, 3] }, { off: [0], flip: [3] }], chest: { kind: 'seal', id: 'wv_chest' } } },
   // THE GLACIAL LATTICE: a beam of light through three lenses (a bit set = CLEAR); 1 and 3 clear and 2 frosted split it onto both side crystals.  Lever 1 toggles lens 1 and frosts 2; lever 2 toggles 2 and 3; lever 3
   // clears 1 and toggles 3.  No start needs more than two pulls, so it starts where two are needed (hardest)
-  lz: { kind: 'interior', zone: 11, name: 'The Glacial Lattice', parent: 'fb', look: 'puzzle', w: [24, 24], theme: 'ice', ambient: 0.34, tint: [0.0, 0.03, 0.08], empty: true, puzzle: { look: 'lens', spring: true, count: 3, hardest: true, goal: [0, 2], rules: [{ flip: [0], off: [1] }, { flip: [1, 2] }, { on: [0], flip: [2] }], chest: { kind: 'seal', id: 'lz_chest' } } },
+  lz: { kind: 'interior', zone: 11, name: 'The Glacial Lattice', parent: 'fb', look: 'puzzle', w: [24, 24], theme: 'ice', ambient: 0.34, tint: [0.0, 0.03, 0.08], empty: true, puzzle: { look: 'lens', foes: ['wraith', 'frostwyrm', 'skeleton'], count: 3, hardest: true, goal: [0, 2], rules: [{ flip: [0], off: [1] }, { flip: [1, 2] }, { on: [0], flip: [2] }], chest: { kind: 'seal', id: 'lz_chest' } } },
   lr: { kind: 'shaft', zone: 7, name: 'The Lower Road', sideDoor: { to: 'wv' }, w: [28, 32], T: 7, S: 6, G: 6, levels: [12, 12], water: { pools: 4 }, spikes: true, torchEvery: 2, barrels: [1, 2], abilities: ['djump'], theme: 'swamp', opts: { ...LOOK[7], ambient: 0.34, weather: null, fog: 0.4 }, foes: [['swampthing', 3], ['zombie', 3], ['swampspider', 2], ['ghost', 2], ['bat', 2]] },
   tw: { kind: 'teleport', zone: 7, name: 'Waystone Boardwalk', outdoor: true, abilities: ['djump'], opts: LOOK[7] },
   w1: { kind: 'corridor', zone: 7, name: 'Mire Edge', w: [88, 102], outdoor: true, abilities: ['djump'], pools: [0, 3], opts: { ...LOOK[7], fog: 0.75 },
@@ -213,8 +213,8 @@ const SPEC = {
   kb: { kind: 'arena', zone: 8, name: "The Hierophant's Foundry", w: [44, 50], h: 16, boss: 'colossus', reward: 'spring', plats: 2, rise: 3, seal: 'left', abilities: ['djump'], decor: 'brazier', candles: [2, 2], jets: 3,
     opts: { ...LOOK[8], ambient: 0.32, boss: 'colossus', music: 'boss' } },
   sk: { kind: 'sanctuary', zone: 8, name: 'Brass Sanctuary', parent: 'k1' },
-  // A PUZZLE ROOM (see puzzle.js): three levers, three candelabras, and a chest that stays locked until all three burn.  each lever toggles two of the candelabras, counted 0, 1, 2 from the left
-  kp: { kind: 'interior', zone: 8, name: 'The Winding Room', parent: 'k2', look: 'puzzle', w: [24, 24], theme: 'hall', ambient: 0.4, tint: [0.07, 0.04, 0.0], empty: true, puzzle: { count: 3, rules: [{ flip: [0, 1] }, { flip: [1, 2] }, { flip: [0, 2] }], goal: [0, 1, 2], chest: { kind: 'seal', id: 'kp_chest' } } },
+  // A PUZZLE ROOM (see puzzle.js): three levers, three candelabras, and a chest that stays locked until all three burn.  (The second starts lit, so the THIRD lever lights the rest at once - and it is the only way: pulls of the other two have to be taken back.)  levers 1 and 3 toggle two candelabras each and lever 2 only the middle one (counted 0, 1, 2 from the left)
+  kp: { kind: 'interior', zone: 8, name: 'The Winding Room', parent: 'k2', look: 'puzzle', w: [24, 24], theme: 'hall', ambient: 0.4, tint: [0.07, 0.04, 0.0], empty: true, puzzle: { count: 3, rules: [{ flip: [0, 1] }, { flip: [1] }, { flip: [0, 2] }], goal: [0, 1, 2], start: [1], randomLevers: true, foes: ['sorcerer', 'fireskull', 'hound'], chest: { kind: 'seal', id: 'kp_chest' } } },
   vk: { kind: 'interior', zone: 8, name: "The Engineer's Vault", parent: 'k1', look: 'vault', theme: 'hall', ambient: 0.42, tint: [0.07, 0.04, 0.0], npcs: [0, 0], chest: { kind: 'hpup', id: 'vk_chest' } },
   // ======== ZONE 10 - THE LIBRARY OF AGES (inside Arx Noctis, off the Crossing Hall behind a locked door: the Lord's archive, where haunted books fly and the Librarian keeps the KEY OF GOLD that opens the Shadow Throne)
   // THE INDEX STAIR: the climb from the Archive Passage up to the Library of Ages
@@ -265,9 +265,9 @@ const SPEC = {
   // THE CROSSING HALL, likewise, is four short places: the waystone, the barricaded way to the Crypts (and the hidden page), the Library's door, and last the Throne's door.
   hx: { kind: 'teleport', zone: 3, name: 'The Crossing Waystone', abilities: ['djump', 'dash', 'ember'], opts: { ...LOOK[3], ambient: 0.34 } },          // the waystone, alone
   hub2: { kind: 'corridor', zone: 3, name: 'The Barricaded Gallery', w: [48, 56], calm: true, abilities: ['djump', 'dash', 'ember'], opts: { ...LOOK[3], ambient: 0.34, fog: 0.4 }, mods: [{ t: 'cell', gate: 'crack', hollow: true, kind: 'hpup', secret: true, id: 'hub2_hp' }], candles: [2, 3], mix: {}, sideDoor: { to: 'vy', kind: 'wood', head: 5 } },          // the barricaded door to the Crypts, and the Vestry's door
-  // THE VESTRY, a puzzle room (see puzzle.js): four altar candles on a ledge, three levers on springs, soot on the wall to show which candles should burn (the second and fourth), and a locked chest.
+  // THE VESTRY, a puzzle room (see puzzle.js): four altar candles on a ledge, three levers, soot on the wall to show which candles should burn (the second and fourth), and a locked chest.
   // Lever 1 lights the first two and puts out the third; lever 2 puts out the second and third and lights the fourth; lever 3 toggles the first.  (Candles are counted 0..3 from the left here.)
-  vy: { kind: 'interior', zone: 3, name: 'The Vestry', parent: 'hub2', look: 'puzzle', w: [24, 24], theme: 'chapel', ambient: 0.38, tint: [0.03, 0.02, 0.07], empty: true, puzzle: { look: 'altar', spring: true, count: 4, start: [], goal: [1, 3], rules: [{ on: [0, 1], off: [2] }, { on: [3], off: [1, 2] }, { flip: [0] }], chest: { kind: 'seal', id: 'vy_chest' } } },
+  vy: { kind: 'interior', zone: 3, name: 'The Vestry', parent: 'hub2', look: 'puzzle', w: [24, 24], theme: 'chapel', ambient: 0.38, tint: [0.03, 0.02, 0.07], empty: true, puzzle: { look: 'altar', foes: ['acolyte', 'ghost', 'ghoul'], count: 4, start: [], goal: [1, 3], rules: [{ on: [0, 1], off: [2] }, { on: [3], off: [1, 2] }, { flip: [0] }], chest: { kind: 'seal', id: 'vy_chest' } } },
   hl: { kind: 'corridor', zone: 3, name: 'The Archive Passage', w: [42, 50], calm: true, closedRight: true, abilities: ['djump', 'dash', 'ember'], opts: { ...LOOK[3], ambient: 0.32, fog: 0.4 }, mods: [], candles: [2, 3], mix: {} },          // only the Library's locked door
   ht: { kind: 'corridor', zone: 3, name: 'The Throne Approach', w: [44, 52], calm: true, abilities: ['djump', 'dash', 'ember'], opts: { ...LOOK[3], ambient: 0.28, fog: 0.4 }, mods: [], candles: [2, 3], mix: {} },          // the last door: the Shadow Throne
 
@@ -325,6 +325,7 @@ const CHAINS = [
 ];
 // SPURS: a room off the side of another, by an open edge on its own at a height of its own (the left of the Belfry's top landing: def.spurExit), not part of any chain
 const SPURS = [{ of: 'h3', id: 'tbf' }, { of: 'h5', id: 'ob' }];          // (and off the Oubliette, half way down)
+const BESIDE = [{ of: 'k2', id: 'kp' }];          // (side rooms drawn to the RIGHT of their parent on the map, level with their door)
 const UNDER = [{ of: 'wc', id: 'h5' }];          // (a room reached by falling into it sits right under its room on the map)
 const LINKS = CHAINS.flatMap(c => c.slice(1).map((id, i) => [c[i], 'R', id, 'L'])).concat([['vq', 'R', 'v0', 'L']]);          // (the secret hollow joins the hill's left edge)
 // the crossroads' doors (two-way): hub a, its door tag ta, the first room of the branch b, the tag of that room's door tb; mod = how the door is built (see genCorridor), lock = boss flags it needs
@@ -395,8 +396,8 @@ function ledgeDoor(b, sd, movers, floor, top) {
   const W = b.w, mid = Math.round((floor + top) / 2);
   const crowded = (x0, row, LEN) => { for (let y = row - 4; y <= row + 2; y++) for (let x = x0; x < x0 + LEN; x++) if (b.def.tiles[y * W + x] !== TILE.EMPTY) return true;
     return movers.some(m => (Math.max(m.x0, m.x1) + m.w / 2) / 16 > x0 - 1 && (Math.min(m.x0, m.x1) - m.w / 2) / 16 < x0 + LEN + 1 && m.y0 / 16 > row - 5 && m.y0 / 16 < row + 3); };
-  for (const LEN of [8, 6]) for (let k = 0; k <= 8; k++) for (const row of k ? [mid - k, mid + k] : [mid]) for (const x0 of [W - LEN, 0]) {          // (a shorter ledge only where a long one will not go)
-    if (row < top + 6 || row > floor - 7 || crowded(x0, row, LEN)) continue;
+  for (const right of [true, false]) for (const LEN of [8, 6, 5]) for (let k = 0; k <= (LEN === 5 ? 9 : 8); k++) for (const row of k ? [mid - k, mid + k] : [mid]) {          // (against the right-hand wall wherever it will go at all - the map draws the room to the right; a shorter ledge only where a long one will not)
+    const x0 = right ? W - LEN : 0; if (row < top + 6 || row > floor - 7 || Math.abs(row - mid) > (floor - top) * 0.23 || crowded(x0, row, LEN)) continue;          // (never further from half way than a quarter of the climb)
     const x = x0 ? W - 4 : 3, before = Uint8Array.from(b.def.tiles); b.plat(x0, LEN, row);
     if (!validateMoving({ ...b.def, doors: [...b.def.doors, { x, gy: row, room: sd.to }] }, movers).ok) { b.def.tiles.set(before); continue; }
     const close = (px, py) => px >= x0 - 1 && px <= x0 + LEN && py > row - 5 && py <= row + 1;
@@ -1532,7 +1533,7 @@ function layoutMap(rooms) {
   const row = (r, to) => { const e = rooms[r].exits.find(q => q.room === to), d = e ? null : rooms[r].doors.find(q => q.room === to); return e || d ? Math.floor(Math.max(0, Math.min(0.999, (e ? (e.from + e.to) / 2 : d.gy - 2) / rooms[r].h)) * size[r].ch) : null; };
   const steps = {}, step = (prev, id) => { if (!rooms[prev] || !rooms[id]) return; const out = row(prev, id), into = row(id, prev); if (out !== null && into !== null) steps[id] = out - into; };
   CHAINS.forEach((c, ci) => { c.forEach((id, i) => { if (i) step(c[i - 1], id); }); if (ci && MAP_SIDES[ci] === 'beside') step(anchor[ci], c[0]); });
-  const spurs = [...UNDER.map(s => ({ ...s, below: true })), ...SPURS.map(s => ({ ...s, dy: row(s.of, s.id) - row(s.id, s.of) }))];
+  const spurs = [...UNDER.map(s => ({ ...s, below: true })), ...SPURS.map(s => ({ ...s, dy: row(s.of, s.id) - row(s.id, s.of) })), ...BESIDE.filter(s => rooms[s.id]).map(s => ({ ...s, right: true, dy: row(s.of, s.id) - row(s.id, s.of) }))];
   const pos = packMap({ ids, size, zone, chains: CHAINS, anchor, parent, sides: MAP_SIDES, order: MAP_ORDER, above: MAP_ABOVE, early: MAP_ABOVE, steps, spurs });
   for (const id of ORDER) if (rooms[id]) rooms[id].map = pos[id] || (SPEC[id].parent && pos[SPEC[id].parent]) || { x: 0, y: 0 };          // (a secret room is not on the map: it takes its parent's place)
 }

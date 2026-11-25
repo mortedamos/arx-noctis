@@ -375,7 +375,7 @@ export class Chest {
 
 // ------------------------------------------------------------------------------------------------ lever
 // A great iron lever set in a plate in the floor.  UP throws it over (once, for good: the flag o.id is kept in the save), and the gate it works - a portcullis somewhere else in the room - rises (Game.pullLever).
-// Until it is thrown its knob glows red and it sends up a spark now and then, so it is seen; afterwards it stands over, with a dull green knob.
+// OFF it leans back to the left, with a red grip and a red lamp on its base; ON it stands over to the right, both green.  (Until it is thrown it also sends up a spark now and then, so it is seen.)
 const LEVER_S = 0.7;
 export class Lever {
   constructor(x, y, o = {}) { this.x = x; this.y = y; this.id = o.id; this.open = !!o.open; this.k = this.open ? 1 : -1; this.t = 0; this.dead = false; }          // (k: where the handle is, -1 (back) .. 1 (over); `open` is what Game.nearInteractable reads to leave a thrown lever alone)
@@ -389,18 +389,19 @@ export class Lever {
   }
   interact(g) { if (this.open) return false; this.open = true; g.pullLever(this); return true; }
   draw(ctx, cx, cy) {
-    const x = Math.round(this.x - cx), y = Math.round(this.y - cy), ang = this.k * 0.8;          // the handle swings from leaning back (-0.8 rad) to leaning forward (+0.8)
+    const x = Math.round(this.x - cx), y = Math.round(this.y - cy), ang = this.k * 0.85, on = this.k > 0;          // the handle swings from leaning left (off) to leaning right (on)
     ctx.save(); ctx.translate(x, y); ctx.scale(LEVER_S, LEVER_S);          // (drawn at its own size, then scaled: LEVER_S)
     ctx.fillStyle = '#17151c'; ctx.fillRect(-15, -3, 30, 3); ctx.fillStyle = '#34323e'; ctx.fillRect(-14, -6, 28, 3); ctx.fillStyle = '#5a5870'; ctx.fillRect(-14, -6, 28, 1);          // the floor plate
     ctx.fillStyle = '#8a8aa0'; for (const bx of [-11, 10]) ctx.fillRect(bx, -5, 2, 2);                                                                                                  // its bolts
     ctx.fillStyle = '#0d0c11'; ctx.fillRect(-8, -11, 16, 6); ctx.fillStyle = '#2a2833'; ctx.fillRect(-7, -10, 14, 4); ctx.fillStyle = '#48465a'; ctx.fillRect(-7, -10, 14, 1);          // the housing the handle comes out of
     ctx.save(); ctx.translate(0, -9); ctx.rotate(ang);
     ctx.fillStyle = '#0d0c11'; ctx.fillRect(-2.5, -21, 5, 22); ctx.fillStyle = '#b4b4c6'; ctx.fillRect(-1.5, -20, 3, 20); ctx.fillStyle = '#e4e4f0'; ctx.fillRect(-1.5, -20, 1, 20); ctx.fillStyle = '#6c6c80'; ctx.fillRect(1, -20, 1, 20);          // the iron shaft
-    ctx.fillStyle = '#0d0c11'; ctx.fillRect(-4.5, -25, 9, 5); ctx.fillStyle = '#8a8aa0'; ctx.fillRect(-3.5, -24, 7, 3); ctx.fillStyle = '#d4d4e4'; ctx.fillRect(-3.5, -24, 7, 1);          // a plain iron grip across the end of the shaft
+    ctx.fillStyle = '#0d0c11'; ctx.beginPath(); ctx.arc(0, -23, 6, 0, 6.3); ctx.fill(); ctx.fillStyle = on ? '#3fbf58' : '#c8362c'; ctx.beginPath(); ctx.arc(0, -23, 4.6, 0, 6.3); ctx.fill(); ctx.fillStyle = on ? '#c8ffd0' : '#ffc0b0'; ctx.fillRect(-3, -26, 3, 2);          // the round grip, green or red
     ctx.restore();
-    ctx.fillStyle = this.open ? '#5fae6e' : '#d8463c'; ctx.fillRect(4, -9, 2, 2);          // a tiny lamp on the housing: red until the lever is thrown, then green
     ctx.fillStyle = '#c8a24a'; ctx.beginPath(); ctx.arc(0, -9, 2.4, 0, 6.3); ctx.fill(); ctx.fillStyle = '#6a4e18'; ctx.beginPath(); ctx.arc(0, -9, 1, 0, 6.3); ctx.fill();          // the pivot pin
     ctx.restore();
+    // the lamp on the front of the base (drawn at the game's own size, so that it stays crisp): two lenses, the left lit red when off, the right lit green when on
+    ctx.fillStyle = '#0d0c11'; ctx.fillRect(x - 8, y - 2, 16, 5); ctx.fillStyle = on ? '#4a1c1a' : '#ff5444'; ctx.fillRect(x - 6, y - 1, 4, 3); ctx.fillStyle = on ? '#6cff86' : '#16381e'; ctx.fillRect(x + 2, y - 1, 4, 3);
   }
 }
 

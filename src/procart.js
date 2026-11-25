@@ -3,7 +3,7 @@
 const hex = h => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255, 255]; };
 const mulc = (c, k, add = 0) => [Math.min(255, c[0] * k + add), Math.min(255, c[1] * k + add), Math.min(255, c[2] * k + add), c[3]];
 
-class Px {
+export class Px {
   constructor(w, h) { this.w = w; this.h = h; this.d = new Uint8ClampedArray(w * h * 4); }
   inb(x, y) { return x >= 0 && y >= 0 && x < this.w && y < this.h; }
   set(x, y, c) { x = Math.round(x); y = Math.round(y); if (!this.inb(x, y)) return; const i = (y * this.w + x) * 4, d = this.d; d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = c[3] === undefined ? 255 : c[3]; }

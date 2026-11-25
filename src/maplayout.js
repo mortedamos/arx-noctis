@@ -12,7 +12,8 @@ export const mapCells = r => ({ cw: clamp(Math.round(r.w / 24), 1, 7), ch: clamp
 // ids: the rooms to put on the map, in a fixed order; size[id] = { cw, ch }; zone[id]; chains: [[ids]] (the first is the main row); anchor[i] = the room chain i is entered from;
 // parent[id] = the room a side room hangs from; sides[i] = 'beside' | 'below' | 'above' for chain i; order = the chain indices in the order to place them; steps[id] = how many cells id's top lies below
 // the top of the room before it (above, if negative) - for the first room of a strip, below the top of its anchor.  -> { id: { x, y } } in cells, the whole map starting at 0, 0
-// spurs: [{ id, of, dy }] a room to the LEFT of room `of`, dy cells below its top (the chambers off the top of the Belfry and half way down the Oubliette); or { id, of, below: true } a room right UNDER `of` (the Oubliette, under the Warder's grate)
+// spurs: [{ id, of, dy }] a room to the LEFT of room `of`, dy cells below its top (the chambers off the top of the Belfry and half way down the Oubliette); { id, of, right: true, dy } the same to its RIGHT (the Winding Room, half way up
+// the Mainspring Shaft); or { id, of, below: true } a room right UNDER `of` (the Oubliette, under the Warder's grate)
 export function packMap({ ids, size, zone, chains, anchor, parent, sides, order, above = [], early = [], steps = {}, spurs = [], log }) {
   const pos = {}, occ = new Map(), key = (x, y) => x + ',' + y, has = id => !!size[id];
   const free = (x, y, cw, ch) => { for (let j = 0; j < ch; j++) for (let i = 0; i < cw; i++) if (occ.has(key(x + i, y + j))) return false; return true; };
@@ -55,7 +56,7 @@ export function packMap({ ids, size, zone, chains, anchor, parent, sides, order,
   const placeSpurs = () => { for (let again = true; again;) { again = false; for (const s of spurs) if (has(s.id) && !pos[s.id] && pos[s.of]) {
     const { cw, ch } = size[s.id], p = pos[s.of];
     if (s.below) { const x0 = p.x + Math.floor((size[s.of].cw - cw) / 2), y0 = p.y + size[s.of].ch; for (let d = 0; d < 30 && !pos[s.id]; d++) for (const dx of spread(3)) if (!pos[s.id] && free(x0 + dx, y0 + d, cw, ch)) { put(s.id, x0 + dx, y0 + d); again = true; } }          // (it must have a place: other strips hang from it)
-    else if (free(p.x - cw, p.y + (s.dy || 0), cw, ch)) { put(s.id, p.x - cw, p.y + (s.dy || 0)); again = true; }
+    else { const sx = s.right ? p.x + size[s.of].cw : p.x - cw; if (free(sx, p.y + (s.dy || 0), cw, ch)) { put(s.id, sx, p.y + (s.dy || 0)); again = true; } }
   } } };
 
   // ---- the main row, the rooms that must have their places before the branches do (`early`), the branches in the blueprint's order, and last the side rooms

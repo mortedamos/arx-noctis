@@ -163,9 +163,9 @@ A gamepad also works (A jump, X attack, B dash, Y use selected, bumpers move the
   if you stand in it (walking upstream still works).
 * **The Library's secret (spoiler).** Nothing in the game points to it. One bookcase on the ground floor of the Spiral Stair (the right-hand one) breaks at the third blow and shows a door to **the Book Nook**, a warm little room with a fire, a cat and a lever.
   The lever slides a bookcase aside in **The Stacks**, and behind it is **the Sealed Archive** with a Sal Martis. Until each is found, its door is not drawn, cannot be used and is not on the map (`hiddenDoor` in `levelgen.js`).
-* **Puzzle rooms (spoilers).** Four single rooms off the vertical ways and the gallery, each with levers and a chained chest holding a Temporal Seal. Every lever has a rule (candles it puts out, lights, then toggles); the rules are in `puzzle` of the room's entry in `levelgen.js`,
+* **Puzzle rooms (spoilers).** Four single rooms off the vertical ways and the gallery, each with levers and a chained chest holding a Temporal Seal. Every lever is either off (red) or on (green); each pull throws it over and works its rule (candles it puts out, lights, then toggles). **Every third pull that does not solve it summons one of the area's monsters.** The rules and monsters are in `puzzle` of the room's entry in `levelgen.js`,
   and `tools/test-world.mjs` proves each puzzle can be solved from wherever the levers can bring it.
-  * **The Winding Room** (half way up the Mainspring Shaft): each of three levers toggles two of three candelabras; light all three. One candelabrum starts lit, which is what makes it solvable, so one pull of the right lever does it.
+  * **The Winding Room** (half way up the Mainspring Shaft): levers 1 and 3 each toggle two of three candelabras and lever 2 only the middle one; light all three. The middle one starts lit, so the third lever does it, and nothing else will (pulls of the other two have to be taken back).
   * **The Vestry** (the Barricaded Gallery): four altar candles; the soot on the wall shows that the second and fourth should burn. Lever 1 lights 1 and 2 and puts out 3; lever 2 puts out 2 and 3 and lights 4; lever 3 toggles 1. From all dark: levers 2, 1, 3.
   * **The Wisp Causeway** (the Lower Road): four bog vents; the carved stone shows 1, 3 and 4 burning and 2 not (sludge covers the lock while it does). Lever 1 toggles 1 and 2; lever 2 lights 2 and puts out 3; lever 3 toggles 3 and 4; lever 4 puts out 1 and toggles 4. From all dormant: levers 2, 1, 3.
   * **The Glacial Lattice** (the Black Ice Falls): a beam through three lenses, clear or frosted, must light both side crystals and miss the node: lenses 1 and 3 clear, 2 frosted. Lever 1 toggles 1 and frosts 2; lever 2 toggles 2 and 3; lever 3 clears 1 and toggles 3. No start needs more than two pulls.
@@ -225,7 +225,7 @@ src/
   gears.js          the turning gears of the gear room: each tooth is a moving platform that carries the hero      scenes.js   scripted scenes (the Cinder Warden setting Prague alight)
   validate.js       reachability prover (jump simulation + search)       physics.js   movement constants shared with the player
   enchant.js        sword enchantment data + effects
-  puzzle.js         the lever puzzles' rules, solver and starting patterns      puzzleprops.js   their levers, candles, vents, lenses and beam
+  puzzle.js         the lever puzzles' rules, solver and starting patterns      puzzleprops.js   their levers, candles, vents, lenses and beam      latticeart.js   the pixel art of the lens room
   fx.js             three.js effects: particles, flame shaders, lightning, rings, magic circles, light/darkness
   procart.js        code-drawn pixel art: bat, icons, props
   audio.js          music manager + synthesized sound effects      ui.js   HUD, menus, map, story screens
