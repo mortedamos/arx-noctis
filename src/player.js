@@ -31,7 +31,7 @@ const CROUCH_ATTACK = seq({ sheet: 'hero_crouch_slash', crouch: true, durs: [4, 
 // THE ALEMBIC STRIKE (the Seraph of Ash's gift): in the air, hold Down and attack - a quick slash in an arc beneath him (frame 2 of the air swing, gathered, then frame 3, cloak flung up).  What it lands on - a foe, a barrel,
 // a statue, spikes - throws him back up, ONCE between touching the ground: no chaining one bounce off the next.
 const DOWN_STRIKE = seq({ sheet: 'hero_jump_attack', air: true, down: true, frames: [2, 3, 3], durs: [3, 8, 6], active: [1, 1], dmg: 1.0, reach: 40, kb: 1.2 });
-const BOUNCE = -4.6, BOUNCE_HOLD = 14;          // (the bounce, and for how long letting go of jump does not cut it short)
+const BOUNCE = -3.2, BOUNCE_HOLD = 14;          // (the bounce - it lifts him about 23 px, half what it first did - and for how long letting go of jump does not cut it short)
 const WET_RUN = 0.5, WET_JUMP = Math.SQRT1_2;          // standing in water: half the running speed, and a jump half as HIGH (the height of a jump goes with the square of its speed, so the speed is 0.707 of the usual)
 const CROUCH_H = 22;                         // hitbox height while ducking (standing is PH)
 const JUMP_CY = [56, 46, 31, 24.5, 31.5];      // vertical centre of each hero_jump frame (the art bakes the jump arc into the cell)
