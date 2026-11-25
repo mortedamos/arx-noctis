@@ -4,7 +4,8 @@
 //     Browser) it is fetched afresh.  The size, not the ETag: GitHub Pages gives every file a new ETag on every publish, which would download all the music again after each push.
 //     The game's lists of files (music/files.json, assets/sfx/files.json) also let go of stored sounds that are no longer listed (renamed or removed);
 //   * EVERYTHING ELSE (the page, the code, the pictures, the text files) comes from the network exactly as before, so a new build is seen at once.  The copy kept here is used only when the
-//     network fails: the game still starts offline, with whatever it has already fetched.
+//     network fails: the game still starts offline, with whatever it has already fetched.  A file is passed on only once ALL of it has arrived, and is asked for again if it did not: a
+//     connection that dropped half way through one script used to stop the whole game from starting ("error loading dynamically imported module").
 // Nothing is downloaded in advance: the background loader (src/loader.js) still decides what to fetch and when, so a phone on mobile data fetches no more than before.
 const CACHE = 'arx-noctis-1';          // (change the number to throw away everything stored, on every player's device)
 const AUDIO = /\.(mp3|ogg|wav|m4a|flac|opus)$/i;
@@ -12,6 +13,7 @@ const AUDIO = /\.(mp3|ogg|wav|m4a|flac|opus)$/i;
 // (Cache-Control: max-age=600), and a plain fetch() here obeys that - so a returning player kept the old build (and the old build date on the title screen) for up to ten minutes after a publish.
 // Pictures and fonts are left to the browser's own cache: they change rarely, and there are hundreds of them.
 const REVALIDATE = /(\.(html|js|mjs|css|json|txt|webmanifest)|\/)$/i;
+const TRIES = 3;                  // how often a file is asked for before giving up on the network
 const RECHECK = 12 * 3600e3;          // ms between two checks of the same sound
 const LISTS = [[/\/(music\/files\.json|__music)$/, 'music/'], [/\/(assets\/sfx\/files\.json|__sfx)$/, 'assets/sfx/']];          // (a list of files -> the folder it lists)
 
@@ -28,19 +30,36 @@ self.addEventListener('fetch', e => {
   e.respondWith(AUDIO.test(url.pathname) ? sound(e, req, key) : fresh(e, req, key, url));
 });
 
-// the network first; the stored copy when the network fails
+// the network first (the whole file, asked for again if it breaks off); the stored copy when the network fails
 async function fresh(e, req, key, url) {
-  try {
-    const res = await fetch(req, REVALIDATE.test(url.pathname) ? { cache: 'no-cache' } : undefined);          // ('no-cache' = check with the server first, whatever max-age says)
-    if (res.status === 200 && res.type === 'basic') {
-      keep(e, store(key, res.clone()));
-      const list = LISTS.find(([re]) => re.test(url.pathname)); if (list) keep(e, prune(res.clone(), list[1]));
+  let failed, hit = null;
+  for (let go = 0; go < TRIES; go++) {
+    try {
+      const res = await fetch(req, REVALIDATE.test(url.pathname) ? { cache: 'no-cache' } : undefined);          // ('no-cache' = check with the server first, whatever max-age says)
+      if (res.status !== 200 || res.type !== 'basic') return res;
+      const whole = await complete(res);          // (throws if the transfer breaks off)
+      keep(e, store(key, whole.clone()));
+      const list = LISTS.find(([re]) => re.test(url.pathname)); if (list) keep(e, prune(whole.clone(), list[1]));
+      return whole;
+    } catch (err) {
+      failed = err;
+      if (!go) hit = await stored(req, key);
+      if ((hit && go) || self.navigator.onLine === false) break;          // (with a copy kept here: one more go, straight away, and then that - so starting offline is hardly slower)
+      if (!hit && go < TRIES - 1) await new Promise(r => setTimeout(r, 400 * (go + 1)));
     }
-    return res;
-  } catch (err) {
-    const c = await caches.open(CACHE), hit = (await c.match(key)) || (req.mode === 'navigate' ? (await c.match(self.registration.scope)) || (await c.match(self.registration.scope + 'index.html')) : null);
-    if (hit) return hit; throw err;
   }
+  hit ||= await stored(req, key);
+  if (hit) return hit; throw failed;
+}
+async function stored(req, key) {
+  const c = await caches.open(CACHE);
+  return (await c.match(key)) || (req.mode === 'navigate' ? (await c.match(self.registration.scope)) || (await c.match(self.registration.scope + 'index.html')) : null) || null;
+}
+// the same answer, with every byte of it already here.  (What arrived is already unpacked, so the headers that describe how it travelled are put right.)
+async function complete(res) {
+  const body = await res.arrayBuffer(), headers = new Headers(res.headers);
+  headers.delete('Content-Encoding'); headers.set('Content-Length', String(body.byteLength));
+  return new Response(body, { status: res.status, statusText: res.statusText, headers });
 }
 // (a copy is written only when it differs from the one already kept: a file published again unchanged keeps its stored copy)
 async function store(key, res) {
