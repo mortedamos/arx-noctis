@@ -198,6 +198,7 @@ src/
   stain.js          cloak stains: what singes / dirties / bloodies the cloak, and how fast they fade or wash off
   player.js         the stranger (movement, ducking, sword, dash, spells)      cloak.js   the white cloak: a hanging cloth drawn behind the sprite
   enemies.js        regular monsters + the wyrms      beasts.js   villagers, swamp creatures, cultists, zealots
+  slash.js          the sword swipes: the crescent painted on three attack frames is cut out of the sprite at load (assets.js) and drawn back in three.js, in the same shape, sweeping, streaked and fading, in the enchantment's colour
   bosses.js         the nine bosses + telegraphed hazard columns
   mirror.js         the Mirror Room: the mirror (frame, glass, cracks) and the items the Reflection throws
   items.js itemdata.js   throwable items: the data (limits, pack sizes) and the thrown objects / effects

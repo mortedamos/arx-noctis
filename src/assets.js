@@ -84,6 +84,7 @@ export async function loadAll(progress = () => {}) {
   ]);
   buildCyberTooth(cyberImg);              // the skull-headed serpent: one big grid sliced into strips
   buildRecolors();
+  liftSwipes();                           // the painted sword swipes are taken out of the hero's pictures (three.js draws them: see slash.js).  Before the twin, the white cloak and the enchantments, so none of them has one
   buildEvil();                            // the mirror twin: the hero in silver and violet (hero_*_evil)
   buildWhiteCape();                       // the hero's baked red cape -> white (used while the White Cloak option is on)
   buildLady();                            // the ghost who walks behind him
@@ -264,6 +265,38 @@ export function sheetExtents(id) {
   const ex = { lo, hi, blo, bhi }; EXT.set(id, ex); return ex;
 }
 
+// ---------- the painted sword swipes, lifted out of the hero's pictures ----------
+// Three frames of the Gothic Hero have a big cream crescent painted over them (the motion of the blade): hero_attack 2, hero_jump_attack 4 and hero_crouch_slash 1.
+// They are cut out here, and what was cut is remembered per frame (sheet.swipe[f]) so that slash.js can draw the swipe in three.js instead, in exactly the same place and shape.
+// A crescent is a CONNECTED patch of the four cream tones of at least 50 pixels: the face and hair use the same tones, but their patches are at most 45.
+const SWIPE_CREAM = new Set([0xffd9b9, 0xaf9785, 0xffdbb9, 0xc69985]), SWIPE_SHADE = new Set([0xaf9785, 0xc69985]);          // (the crouch sheet's creams differ by a hair from the others')
+// the point the blade turns about, in cell pixels: the swipe sweeps round it from its tail (the larger angle) to its head (the smaller)
+const SWIPE_PIVOT = { hero_attack: [62, 17], hero_jump_attack: [50, 22], hero_crouch_slash: [45, 8] };
+function liftSwipes() {
+  for (const [id, pivot] of Object.entries(SWIPE_PIVOT)) {
+    const s = SHEET[id]; if (!s) continue;
+    const c = canvasOf(s.img.width, s.img.height), g = c.getContext('2d'); g.drawImage(s.img, 0, 0);
+    const d = g.getImageData(0, 0, c.width, c.height), p = d.data; s.swipe = [];
+    for (let f = 0; f < s.n; f++) {
+      const at = (x, y) => (y * c.width + f * s.w + x) * 4, rgb = i => (p[i] << 16) | (p[i + 1] << 8) | p[i + 2], cream = (x, y) => { const i = at(x, y); return p[i + 3] >= 10 && SWIPE_CREAM.has(rgb(i)); };
+      const seen = new Uint8Array(s.w * s.h), px = [];
+      for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) {
+        if (seen[y * s.w + x] || !cream(x, y)) continue;
+        const stack = [[x, y]], comp = []; seen[y * s.w + x] = 1;
+        while (stack.length) { const [a, b] = stack.pop(); comp.push([a, b]);
+          for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const nx = a + dx, ny = b + dy; if (nx >= 0 && ny >= 0 && nx < s.w && ny < s.h && !seen[ny * s.w + nx] && cream(nx, ny)) { seen[ny * s.w + nx] = 1; stack.push([nx, ny]); } } }
+        if (comp.length >= 50) px.push(...comp);
+      }
+      if (!px.length) continue;
+      const pts = px.map(([x, y]) => [x, y, SWIPE_SHADE.has(rgb(at(x, y))) ? 1 : 0]);
+      let a0 = Infinity, a1 = -Infinity; for (const [x, y] of px) { const a = Math.atan2(y + 0.5 - pivot[1], x + 0.5 - pivot[0]); a0 = Math.min(a0, a); a1 = Math.max(a1, a); }
+      s.swipe[f] = { px: pts, pivot, a0, a1 };
+      for (const [x, y] of px) p[at(x, y) + 3] = 0;          // (cut out of the picture)
+    }
+    g.putImageData(d, 0, 0); s.img = c;
+  }
+}
+
 // ---------- sword enchantments: recolored slash-arc sheets, and sample points to emit particles from ----------
 // The Gothic Hero's sword swings leave a cream-coloured slash arc baked into the attack frames.  Face and hair use the same two cream tones,
 // but those patches are small (<= 10px wide), so we take cream clusters wider than 12px as "arc" - those get recolored per enchantment and
@@ -288,6 +321,7 @@ function buildEnchants() {
           for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const nx = a + dx, ny = b + dy; if (nx >= 0 && ny >= 0 && nx < s.w && ny < s.h && !seen[ny * s.w + nx] && CREAM.has(key(nx, ny))) { seen[ny * s.w + nx] = 1; stack.push([nx, ny]); } } }
         if (x1 - x0 > 12) for (const p of comp) { px.push(p); arcMask[p[1] * src.width + f * s.w + p[0]] = 1; }
       }
+      const sw = SHEET[id.replace(/_cw$/, '')].swipe; if (sw && sw[f]) for (const [x, y] of sw[f].px) px.push([x, y]);          // (the lifted swipe still gives its places to the enchantment's sparks and to the swing's wind)
       pts.push(thin(px, 56));
     }
     s.pts = pts;

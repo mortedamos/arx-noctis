@@ -1169,6 +1169,7 @@ export class BossMirror extends Boss {
   ai(g) {
     const p = g.player, spd = this.spd, d = Math.abs(this.dx()), [hx, hy] = this.hand(); this.live = false;
     for (const q of this.trail) q.life--; this.trail = this.trail.filter(q => q.life > 0);
+    this.stepSwipe(g);
     if (this.landT > 0) { this.landT--; if (!this.warns) this.warns = [{ type: 'ring', x: this.landX, y: this.y, r: 26 }]; }
     g.fx.light(this.x, this.y - 20, 56, 0.45, [0.65, 0.5, 1]); g.fx.glow(this.x + this.dir * 4, this.y - 28, 7, [1, 0.12, 0.2], 0.75);
     if (this.t % 5 === 0) g.fx.emit({ x: this.x + rand(-6, 6), y: this.y - rand(4, 34), vx: rand(-0.15, 0.15), vy: -rand(0.2, 0.6), life: 28, s0: 5, s1: 1, c0: [0.65, 0.4, 1], c1: [0.2, 0.05, 0.4], a0: 0.6, a1: 0, kind: 6 });      // a faint violet haze
@@ -1252,6 +1253,12 @@ export class BossMirror extends Boss {
     const g = this.g; g.fx.flash([0.7, 0.5, 1], 0.5); g.shake(5, 24); A.sfx('enchant'); g.fx.ring(this.x, this.cy, 90, [0.7, 0.5, 1], 34, 0.14);          // (phase two: the hero's own sword-enchant shing)
     const X = x => clamp(x, 20, g.room.pw - 20); dropItem(g, 'heart', X(this.x - 36), this.cy - 20); dropItem(g, 'heart', X(this.x + 36), this.cy - 20); dropItem(g, 'mana', X(this.x), this.cy - 30);          // (a breather, as every boss gives)
     this.state = 'idle'; this.st = -40; this.plan = null; g.banner('IT LEARNS', 'FROM YOU', 150, { y: 60, color: '#c9c0ff' });
+  }
+  // its sword swipes, as the hero's own are (see slash.js), in its violet
+  stepSwipe(g) {
+    const fi = this.pose(), key = fi.sheet + ':' + fi.f; if (key === this.swipeKey) return; this.swipeKey = key;
+    if (this.reflecting || this.dying) return; const jump = fi.cy !== undefined;
+    g.fx.swipe({ sheet: fi.sheet, f: fi.f, dir: this.dir, ay: jump ? fi.cy / fi.ch : undefined, follow: () => ({ x: this.x, y: jump ? this.y - this.h / 2 + 1 : this.y }), pal: { bright: [236, 226, 255], mid: [170, 130, 255], dark: [84, 44, 150] } });
   }
   // inside the glass: you, mirrored, turning silver and violet as the cracks spread (the glass itself is MirrorView's)
   drawReflection(ctx, cx, cy) {

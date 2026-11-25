@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { W, H, rand, clamp, noise1, TAU } from './util.js';
 import { Cloak } from './cloak.js';
 import { Post } from './post.js';
+import { Slashes } from './slash.js';
 
 const FXS = 2;   // effect canvas is rendered at 2x the pixel-art resolution (soft glows over crisp sprites)
 
@@ -359,6 +360,7 @@ export class FX {
     this.wisps = new Wisps(this);                  // will-o'-the-wisps (see Wisps)
     this.focus = null;                              // the hero's position {x, y}: wisps will not let it come near
     this.cloak = new Cloak(this.scene);          // the hero's white cloak (see cloak.js)
+    this.slashes = new Slashes(this.scene);      // the sword swipes (see slash.js)
     this.alpha = new PSystem(800, false, this.scene, 1);
     this.add = new PSystem(5000, true, this.scene, 2);
     this.quads = []; this.quadPool = []; this.bolts = []; this.lights = []; this.flameList = [];
@@ -368,9 +370,13 @@ export class FX {
     this.onThunder = null;
   }
 
+  // a sword swipe, for whoever has just swung (see Slashes.add in slash.js; nothing happens unless that frame of that sheet had a painted swipe)
+  swipe(o) { return this.slashes.add(o); }
+
   // wipe everything (used when changing rooms)
   reset() {
     this.waterU.uN.value = 0; this.waterMesh.visible = false;
+    this.slashes.reset();
     this.add.n = 0; this.alpha.n = 0; this.gusts.length = 0; this.wisps.set(0); this.lights.length = 0; this.pendingThunder.length = 0; this.flashA = 0; this.hurt = 0;
     for (const q of this.quads) { q.m.visible = false; this.quadPool.push(q.m); } this.quads.length = 0;
     for (const b of this.bolts) { for (const m of b.parts) { this.scene.remove(m); m.material.dispose(); } for (const g of b.geos) g.dispose(); } this.bolts.length = 0;
@@ -580,7 +586,7 @@ export class FX {
   update(dt = 1) {
     this.time += dt / 60;
     { const u = this.waterU, n = u.uN.value; for (let i = 0; i < n; i++) { const q = u.uQ.value[i]; q.w += q.y * dt / 60; } }          // (each stream's pattern flows on at its own speed: see the water shader)
-    this.add.update(dt); this.alpha.update(dt);
+    this.add.update(dt); this.alpha.update(dt); this.slashes.update(dt);
     for (let i = this.gusts.length - 1; i >= 0; i--) {
       const g = this.gusts[i]; g.life += dt; if (g.life > g.max) { this.gusts.splice(i, 1); continue; }
       g.x += g.vx * 0.35 * dt; g.y += g.vy * 0.35 * dt; g.k = g.s * Math.pow(1 - g.life / g.max, 1.5); this.add.push(g); this.alpha.push(g);

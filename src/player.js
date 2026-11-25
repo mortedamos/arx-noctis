@@ -265,7 +265,7 @@ export class Player extends Entity {
     // run animation (the hero makes no footstep sound)
     if (this.onGround && Math.abs(this.vx) > 0.3) this.runT += Math.abs(this.vx) * 0.13; else this.runT = 0;
     this.idleT = (Math.abs(this.vx) < 0.1 && this.onGround) ? this.idleT + 1 : 0;
-    this.updateEnchant(); this.updateStains(); this.stepChill(); this.updateHeal(); this.swishWind(); this.stepCloak(); this.stepLantern();
+    this.updateEnchant(); this.updateStains(); this.stepChill(); this.updateHeal(); this.swishWind(); this.stepSwipe(); this.stepCloak(); this.stepLantern();
     if (touchesSpikes(this, room)) this.hurtSpikes();
   }
   updateHeal() {            // bandage: life flows back over ~1.5s
@@ -379,6 +379,12 @@ export class Player extends Entity {
     fx.gust(tx, ty, vx, vy, 30, Math.min(1.5, sp / 3.2)); fx.gust(cx, cy, vx * 0.6, vy * 0.6, 26, 0.8);
   }
   // the white cloak lives in the three.js layer: a hanging chain of points pinned to the shoulders (see cloak.js)
+  // a frame of a swing that had a painted swipe has come up: three.js draws it (see slash.js), following him, in the colour of the sword's enchantment
+  stepSwipe() {
+    const fi = this.frameInfo(), key = fi.sheet + ':' + fi.f; if (key === this.swipeKey) return; this.swipeKey = key;
+    if (this.dead) return; const jump = fi.cy !== undefined;
+    this.g.fx.swipe({ sheet: fi.sheet, f: fi.f, dir: this.dir, ay: jump ? fi.cy / fi.ch : undefined, follow: () => ({ x: this.x, y: jump ? this.y - this.h / 2 + 1 : this.y }), pal: this.ench ? ENCH[this.ench.type].pal : null });
+  }
   stepCloak() {
     const c = this.g.fx.cloak; if (!c) return;
     c.setStain(this.stain);
