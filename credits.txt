@@ -11,27 +11,29 @@
 ; Longer licence texts and links are in CREDITS.md and in assets/credits/.
 
 # ARX NOCTIS
+## The Citadel of Shadow
 A gothic adventure
 
 ---
 
 ## A message from ArxNWorks
 
-This is my first game.
+This is my first published game, and it fulfills a lifelong goal. 
 
-As an individual developer, I have immense gratitude to the community of creators who chose to author and share their resources - the artists, sound designers, type designers, and programmers. They have made Arx Noctis possible.
+As an individual developer, I have immense gratitude to the community of creators who chose to share their creations and resources - the artists, sound designers, type designers, and programmers. They have made Arx Noctis possible.
 
 Thank you.
 
-- ArxNWorks
-  2026-11-21
+ArxNWorks
+2026-11-25
 
 ---
 
 ## AI disclaimer
-Arx Noctis is the work of one developer, and AI tools were part of the process.
-The music was made with Suno, an AI music generator, for this game.
-The fifteen portraits on the castle walls were made by the project owner with Google Gemini.
+Arx Noctis is the work of one director, and AI tools were part of the process that enabled its creation.
+
+The music was made with Suno for this game. suno.com/@abstractchord957
+The fifteen portraits on the castle walls were made by ArxNWorks with Google Gemini and heavily edited for use in this project. 
 The game's code was written with the help of an AI assistant (Claude, by Anthropic), directed and edited by the project owner.
 
 ---
@@ -85,8 +87,7 @@ Hero's Journey - Moon Graveyard
 anokolisa.itch.io/moon-graveyard
 
 ## ArxNWorks
-The Prague Orloj - photo
-15 portraits, made by the project owner with Google Gemini, originally for our other game, The Kingdom Marches.
+Photos of the Prague Orloj and Stone Tower, edited for use in this game.
 
 ## heosphorus
 Animated Gears - Pixel Art Steampunk Machinery (turning gear accents in the Orloj Tower and the Clockwork Dungeon) - heosphorus.itch.io/animated-gears
@@ -556,7 +557,16 @@ pixabay.com/sound-effects/film-special-effects-wet-squelch-276679
 ---
 
 # MUSIC
-Made for this game.
+Made with Suno
+suno.com/@abstractchord957
+
+Full Album at:
+suno.com/album/468ee47b-014a-4b98-9cd2-02b9469f55a8
+
+---
+
+# STORY
+Story by ArxNWorks
 
 ---
 
