@@ -21,15 +21,15 @@ Everything in ARX NOCTIS that was not made for it: who made it, the licence it c
 | Free for commercial use, on the author's own terms | Anokolisa, Eddie's Workshop, assets2D, Icko, CaptainSkolot, Worlds Without End, heosphorus, CraftPix; the fonts Morris Roman, Blackletter, Eroded Motta and Livingstone; the Pixabay sounds | follow each author's note (see [Free for commercial use](#free-for-commercial-use)) |
 | SIL Open Font License 1.1 | Pirata One, Almendra, Elementary Gothic Bookhand | keep the licence text with the font (done) |
 | MIT | three.js | keep the licence notice (`lib/three/LICENSE`, done) |
-| **Not confirmed** | the music | see [Open items before publishing](#open-items-before-publishing) |
+| Suno's Terms of Service, paid plan (Pro) | the music | use only tracks downloaded on the paid plan, no remixes; no credit asked (see [Music](#music)) |
 
 ## Open items before publishing
 
 These are the things to settle before the game goes on a store or is sold. Each is also marked where it appears below.
 
-| # | Item | The problem | Used for | What to do |
-|---|---|---|---|---|
-| 1 | **The music** | Made with Suno. Whether the tracks may be used commercially depends on the plan they were generated on. | all the music | Keep the plan and Suno's terms at the time on file. |
+None at present.
+
+**Settled:** the music. On 2026-11-25 the project owner confirmed a Suno Pro subscription; the terms it rests on are under [Music](#music).
 
 **Settled:** the Keeper's sprites (a CraftPix freebie) first came from the Free Game Assets page on itch.io, which has no licence text. On 2026-11-21 the same pack was downloaded again from CraftPix (`craftpix-net-922426-free-city-trader-character-sprite-sheets-pixel-art.zip`): it is byte-for-byte the same file (SHA-256 `34355955EC96A6C205D3B9C57C183725977A2535674BA117A665CE6F4C45C955`), and its `Licens.txt` holds only the address https://craftpix.net/file-licenses/ . So the licence is that page's section 2 (Freebie Products), as followed here.
 
@@ -62,7 +62,7 @@ Some stores ask developers to say which shipped content was made with AI. This i
 | Content | What is known | Used for |
 |---|---|---|
 | The fifteen portraits | made by the project owner with Google Gemini | the framed pictures and haunted portraits |
-| The music | made with Suno (open item 1) | all the music |
+| The music | made with Suno on a Pro plan (see [Music](#music)) | all the music |
 | The game's code | written with the help of an AI assistant (Claude, by Anthropic), directed and edited by the project owner | the code, including the level generator and the shaders (stated on the credits screen under "AI disclaimer") |
 | [Magic Books](https://captainskolot.itch.io/magic-books-pixelart-pixel-art-sprite-grimoire-pack-for-rpg-fantasy), CaptainSkolot | the itch.io page says "AI Assisted" | the flying books and their pages |
 | [Graveyard 400 Assets](https://worldswithoutend.itch.io/graveyard-2d-game-assets), Worlds Without End | the itch.io page says "AI Assisted" | headstones, flowers, fences and statues |
@@ -304,7 +304,18 @@ Only the recorded sounds are listed here; every other sound is synthesized in co
 
 ## Music
 
-Made for this game by the project owner; see `music/TRACKLIST.txt` (a working file that is not published; the game reads `music/tracks.txt`). See open item 1 about the terms.
+Made for this game by the project owner with [Suno](https://suno.com/); see `music/TRACKLIST.txt` (a working file that is not published; the game reads `music/tracks.txt`).
+
+**Rights.** The project owner has a Suno Pro subscription, profile [@abstractchord957](https://suno.com/@abstractchord957) (as stated by the owner, recorded 2026-11-25). Under Suno's [Terms of Service](https://suno.com/terms-of-service) (revised 2026-08-10, in force from 2026-09-03, read 2026-11-25):
+
+* a track may be used commercially if it was obtained as a download on a Pro or Premier plan, within the plan's download allowance;
+* remixes, and songs from the free plan, are for non-commercial use;
+* the right to a download is permanent, and survives cancelling the subscription;
+* no credit is asked for.
+
+Keep on file: the Pro receipts and a copy of those terms. Suno's help pages word the test differently ("made while subscribed"), so the safe case is a track both made and downloaded on Pro.
+
+**The files.** All 20 tracks were downloaded from Suno on 2026-11-25; none is a Remix (as stated by the owner). The files in `music/` are re-encoded from those downloads to 128 kbps (to save download size), with the volume raised by up to 1.5 dB to match the game's earlier mix. Each carries its download's whole tag block byte for byte: title, artist, comment, lyrics, cover, song link and the signed content credential (C2PA). The credential's file hash therefore matches the untouched download, not the file in `music/`. Suno's terms allow editing and format conversion that is incidental to a permitted use, and forbid removing or altering its fingerprints, watermarks or metadata to conceal or misrepresent a track's provenance, plan or status. The credentials date the songs from 2026-11-07 to 2026-11-20, so for the "made while subscribed" reading the Pro subscription has to go back to 2026-11-07. Untouched downloads are kept in `music/Arx Noctis Soundtrack (Suno Download)/` (not published; keep a second copy elsewhere). A new or replaced track is made the same way, with `tools/encode-suno.mjs`.
 
 ## Code and libraries
 

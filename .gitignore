@@ -22,6 +22,9 @@ play.ps1
 tools/
 # listening copies made by tools/humanize-music.mjs (the music with a little imperfection added); nothing here is used by the game until you copy a file into music/
 music-humanized/
+# the music as downloaded from Suno (kept untouched: the proof of the paid download) and copies kept from before a replacement; the game loads only the files directly in music/
+music/Arx Noctis Soundtrack (Suno Download)/
+music/backup/
 
 # --- editor / assistant settings, and general clutter ----------------------------------------------------------------------------
 .claude/
