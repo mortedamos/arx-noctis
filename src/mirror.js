@@ -8,6 +8,8 @@ import { drawFrameRect } from './portraitart.js';
 import { Audio_ as A } from './audio.js';
 import { T, rand, clamp } from './util.js';
 import { FirePatch } from './projectiles.js';
+import { saltWorld, plankUnder, outOfWall, standsIn, saltShine, saltBites } from './items.js';
+import { SHADOW_SALT } from './salt.js';
 
 export const JUMP_CY = [56, 46, 31, 24.5, 31.5], JATK_CY = [59, 49, 34, 27.5, 22.5, 29.5];      // the heights of the centres of the hero's jump / air-swing frames (see player.js)
 
@@ -126,24 +128,31 @@ export class TwinTorch extends Throw {
   draw(ctx, cx, cy) { ctx.save(); ctx.translate(Math.round(this.x - cx), Math.round(this.y - cy)); ctx.rotate(this.rot); ctx.fillStyle = '#6a4220'; ctx.fillRect(-1, -2, 2, 8); ctx.fillStyle = '#2a1a0c'; ctx.fillRect(-2, -3, 4, 3); ctx.restore(); }
 }
 
-// a pool of holy water on the floor: it burns the one who made the mistake of standing in it (pierce: it stays when it hurts)
-class TwinPool {
-  constructor(x, y, dmg = 5) { this.x = x; this.y = y; this.dmg = dmg; this.life = 190; this.owner = 'enemy'; this.dead = false; this.t = 0; this.w = 44; this.h = 8; this.vx = 0; this.vy = 0; this.pierce = true; this.hazard = true; }
-  get box() { return { x: this.x - this.w / 2, y: this.y - this.h, w: this.w, h: this.h }; }
+// the twin's salt, violet: it rolls and falls as yours does (salt.js), and hurts you while you stand where it lies (pierce: it stays when it hurts)
+class TwinSaltBed {
+  constructor(g, cloud, at, dmg = 7) { this.x = at.x; this.y = at.floor !== undefined ? at.floor : at.y; this.dmg = dmg; this.life = 190; this.owner = 'enemy'; this.dead = false; this.t = 0; this.pierce = true; this.hazard = true; this.cloud = cloud; this.patches = []; this.under = null; g.fx.salt.burst(cloud, this, at); }
+  get box() { const q = this.under; return q ? { x: q.x0, y: q.y - 8, w: q.x1 - q.x0, h: 8 } : { x: -9999, y: -9999, w: 0, h: 0 }; }          // (the patch you are standing in, if any)
   explode() { this.dead = true; }
   update(g) {
-    this.t++; if (--this.life <= 0) { this.dead = true; return; } const k = Math.min(1, this.life / 40);
-    if (this.t % 3 === 0) g.fx.emit({ x: this.x + rand(-this.w / 2, this.w / 2), y: this.y - 2, vx: rand(-0.1, 0.1), vy: -rand(0.5, 1.2), life: rand(24, 44), s0: 4, s1: 1, c0: [1, 0.97, 0.7], c1: [0.7, 0.9, 1], a0: k, a1: 0, kind: 6 });
-    g.fx.glow(this.x, this.y - 4, 30, [0.8, 0.9, 1], 0.28 * k); g.fx.light(this.x, this.y - 6, 70, 0.8 * k);
+    this.t++; if (--this.life <= 0) { this.dead = true; return; }
+    if (this.t % 4 === 1) this.patches = g.fx.salt.lies(this.cloud);
+    saltShine(g, this.patches, [0.72, 0.6, 1], Math.min(1, this.life / 40));
+    const p = g.player; this.under = p.dead ? null : this.patches.find(q => standsIn(q, p.x, p.y, p.w)) || null;
+    if (this.under && this.t % 24 === 1) saltBites(g, this.cloud, this.under, p.x);
   }
-  draw(ctx, cx, cy) { const k = Math.min(1, this.life / 40), x = Math.round(this.x - cx), y = Math.round(this.y - cy), w = this.w; ctx.fillStyle = `rgba(190,225,255,${0.45 * k})`; ctx.fillRect(x - w / 2, y - 2, w, 2); ctx.fillStyle = `rgba(255,250,210,${0.55 * k})`; ctx.fillRect(x - w / 2 + 3, y - 3, w - 6, 1); }
+  draw() {}
 }
-export class TwinFlask extends Throw {
-  constructor(x, y, vx, dmg = 6) { super(x, y, vx, -2.5, { dmg, w: 8, h: 8, grav: 0.16, life: 130, spin: 0.2 * (vx >= 0 ? 1 : -1) }); }
-  shatter(g, y) { g.addProjectile(new TwinPool(this.x, y, 7)); g.fx.burst(this.x, y - 3, 10, [[0.85, 0.93, 1], [1, 0.97, 0.7]], { speed: 1.8, s0: 8 }); g.fx.ring(this.x, y - 3, 22, [0.8, 0.9, 1], 16, 0.25); A.sfx('break'); this.dead = true; }
-  update(g) { const r = this.step(g); if (r === 'floor') this.shatter(g, Math.floor((this.y + 4) / T) * T); else if (r === 'wall') this.shatter(g, Math.floor(this.y / T + 1) * T); }
-  explode(g) { this.shatter(g, g.groundBelow(this.x, this.y)); }
-  draw(ctx, cx, cy) { ctx.save(); ctx.translate(Math.round(this.x - cx), Math.round(this.y - cy)); ctx.rotate(this.rot); ctx.fillStyle = '#d8ecff'; ctx.fillRect(-3, -2, 6, 6); ctx.fillStyle = '#9ccaf0'; ctx.fillRect(-2, 0, 4, 3); ctx.fillStyle = '#c9a14a'; ctx.fillRect(-1, -4, 2, 2); ctx.restore(); }
+export class TwinSalt extends Throw {
+  constructor(g, x, y, vx, dmg = 6) { super(outOfWall(g, x, y, vx >= 0 ? 1 : -1), y, vx, -2.05, { dmg, w: 10, h: 8, grav: 0.16, life: 130 }); this.cloud = g.fx.salt.throwSalt(this, saltWorld(g), SHADOW_SALT); }
+  burst(g, at) { this.dead = true; A.sfx('salt'); g.addProjectile(new TwinSaltBed(g, this.cloud, { x: this.x, y: this.y, dir: this.dir, ...at })); }
+  update(g) {
+    g.fx.light(this.x, this.y, 36, 0.55, [0.75, 0.6, 1]);
+    const plank = plankUnder(g, this); if (plank !== null) return this.burst(g, { floor: plank });
+    const r = this.step(g);
+    if (r === 'floor') this.burst(g, { floor: Math.floor((this.y + this.vy + 2) / T) * T }); else if (r === 'wall') this.burst(g, { wall: true });
+  }
+  explode(g) { this.burst(g, {}); }          // (it struck you: it showers down about your feet)
+  draw() {}
 }
 
 // the magic arrow, turned: it bends toward YOU (slowly enough to be outrun round a corner) and the sword can cut it down

@@ -16,7 +16,7 @@ import { Projectile, Shockwave, FirePatch, RollingGear, HomingWisp } from './pro
 import { dropItem, rollEnchantDrop } from './props.js';
 import { drawText } from './font.js';
 import { PW as HPW, PH as HPH } from './physics.js';
-import { heroFrame, JUMP_CY, JATK_CY, TwinDagger, TwinTorch, TwinFlask, TwinArrow } from './mirror.js';
+import { heroFrame, JUMP_CY, JATK_CY, TwinDagger, TwinTorch, TwinSalt, TwinArrow } from './mirror.js';
 import { clamp, rand, approach, overlap } from './util.js';
 import { Icicle } from './icicles.js';
 
@@ -51,7 +51,7 @@ const ATTACKS = {
   dagger: { label: 'DAGGERS', rgb: [200, 205, 240], icon: 'dagger' },
   torch: { label: 'TORCH', rgb: [255, 140, 60], icon: 'torchi' },
   marrow: { label: 'MAGIC ARROW', rgb: [200, 190, 255], icon: 'marrow' },
-  holy: { label: 'AQUA VITAE', rgb: [190, 225, 255], icon: 'holy' },
+  salt: { label: 'SAL TERRAE', rgb: [238, 234, 222], icon: 'salt' },
   tideorbs: { label: 'WATER ORBS', rgb: [120, 200, 255], icon: 'orb' },
   geysers: { label: 'GEYSERS', rgb: [140, 205, 255], glyph: 'bars' },
   submerge: { label: 'SUBMERGE', rgb: [150, 210, 255], glyph: 'diag' },
@@ -1226,11 +1226,11 @@ export class BossGolem extends Boss {
 
 // ============================================================================================== THE REFLECTION (the Mirror Room's optional boss)
 // The mirror on the back wall shows you, mirrored across its middle.  Walk in front of it and meet your reflection in the middle: the glass cracks, the reflection turns silver and violet and crashes out to fight you: with a SWORD (a two-blow combo, three in the
-// second half), a SHADOW DASH that cuts as it ends, a LEAP (second half), and the very same things you can carry - DAGGERS (flat: duck under them), an AXE and a TORCH and HOLY WATER (lobbed at where you
+// second half), a SHADOW DASH that cuts as it ends, a LEAP (second half), and the very same things you can carry - DAGGERS (flat: duck under them), an AXE and a TORCH and SALT (lobbed at where you
 // stand: the landing spot is marked), a homing MAGIC ARROW (cut it down, or outrun it) - and it will bind its wounds with a BANDAGE if it can find a quiet moment (that is your opening).
 // While it is still a reflection it IS the boss: its position tracks yours mirrored across the glass (x = 2 * axis - yours) and it draws itself clipped to the glass (see mirror.js).
-const TOSS = new Set(['dagger', 'torch', 'marrow', 'holy']), LOB = { torch: [42, 3], holy: [39, 3] };          // LOB: [frames in the air, fastest sideways speed]
-const P1 = ['slash', 'slash', 'dash', 'dagger', 'torch', 'marrow', 'holy'], P2 = ['slash', 'slash', 'dash', 'dash', 'dagger', 'torch', 'marrow', 'holy', 'leap'];
+const TOSS = new Set(['dagger', 'torch', 'marrow', 'salt']), LOB = { torch: [42, 3], salt: [34, 3] };          // LOB: [frames in the air, fastest sideways speed]
+const P1 = ['slash', 'slash', 'dash', 'dagger', 'torch', 'marrow', 'salt'], P2 = ['slash', 'slash', 'dash', 'dash', 'dagger', 'torch', 'marrow', 'salt', 'leap'];
 export class BossMirror extends Boss {
   constructor(g, x, y, o) {
     super(g, x, y, HPW, HPH, o); this.hp = this.maxHp = 400; this.dmg = 17; this.xp = 220; this.bossName = 'THE REFLECTION'; this.voice = 'mirror'; this.sub = 'WHAT THE GLASS KEPT'; this.dir = -1; this.deathFx = [[0.85, 0.85, 1], [0.3, 0.2, 0.6]]; this.ice = { w: 30, h: 56 };
@@ -1239,7 +1239,7 @@ export class BossMirror extends Boss {
   }
   get spd() { return this.phase === 2 ? 1.18 : 1; }
   cry(die) { if (die) super.cry(true); else A.sfx('jump'); }          // (no voice of its own while it lives: it is you, so it makes your sounds - leaping out of the glass is your jump, the sword, dash, items and bandage already use yours.  Only its death is its own: the glass going - boss_mirror_die)
-  tele(k) { return Math.round({ slash: 46, dash: 50, dagger: 46, torch: 48, marrow: 46, holy: 48, leap: 54, bandage: 34 }[k] / this.spd); }
+  tele(k) { return Math.round({ slash: 46, dash: 50, dagger: 46, torch: 48, marrow: 46, salt: 48, leap: 54, bandage: 34 }[k] / this.spd); }
   dangerous() { return this.live; }
   physics() { if (this.reflecting) return; super.physics(); }                 // (inside the glass it has no body: nothing pushes it about)
   update() {
@@ -1278,7 +1278,7 @@ export class BossMirror extends Boss {
     const p = g.player, [hx, hy] = this.hand(), d = this.dir; A.sfx(k === 'dagger' ? 'slash' : 'cast'); this.lastToss = this.t;
     if (k === 'dagger') { const n = this.phase === 2 ? 3 : 1; for (let i = 0; i < n; i++) g.addProjectile(new TwinDagger(hx, hy, d, (i - (n - 1) / 2) * 0.32)); }
     else if (k === 'torch') g.addProjectile(new TwinTorch(hx, hy - 2, this.lobVx(k)));
-    else if (k === 'holy') g.addProjectile(new TwinFlask(hx, hy - 2, this.lobVx(k)));
+    else if (k === 'salt') g.addProjectile(new TwinSalt(g, hx, hy - 2, this.lobVx(k)));
     else if (k === 'marrow') g.addProjectile(new TwinArrow(hx, hy, d));
     if (LOB[k]) { this.landX = this.lobLand(k); this.landT = LOB[k][0] - 6; }                    // (the spot stays marked while it is in the air)
     g.fx.ring(hx, hy, 14, [0.75, 0.6, 1], 12, 0.2);
@@ -1319,7 +1319,7 @@ export class BossMirror extends Boss {
           if (this.st % 2 === 0) this.trail.push({ x: this.x, y: this.y, fi: this.pose(), dir: this.dir, life: 14 });
         } else { this.vx = approach(this.vx, 0, 0.6); if (this.st > T0 + run + 22) { this.state = 'idle'; this.st = -10; } }
         break; }
-      case 'dagger': case 'torch': case 'marrow': case 'holy': {
+      case 'dagger': case 'torch': case 'marrow': case 'salt': {
         const k = this.state, T0 = this.tele(k), V = k === 'dagger' ? 2 : this.phase === 2 ? 2 : 1, gap = k === 'dagger' ? 16 : 26; this.vx = approach(this.vx, 0, 0.3);
         if (this.st === 1) { this.faceP(); this.thrown = 0; this.tx = clamp(p.x, 30, g.room.pw - 30); }
         if (this.st < T0) this.tell(k, this.st / T0, k === 'dagger' ? [{ type: 'lane', x0: hx, x1: hx + this.dir * 220, y: this.y - 6 }] : k === 'marrow' ? [{ type: 'line', x0: hx, y0: hy, x1: p.x, y1: p.y - 20 }] : [{ type: 'ring', x: this.lobLand(k), y: this.y, r: 28 }]);

@@ -3,11 +3,11 @@ export const ITEMS = {
   dagger: { name: 'THROWING DAGGER', short: 'DAGGER', price: 25, max: 30, pack: 5, icon: 'dagger', weight: 5, desc: 'FAST AND WEAK. ONE DAGGER PER THROW.' },
   marrow: { name: 'MAGIC ARROW', short: 'ARROW', price: 40, max: 20, pack: 4, icon: 'marrow', weight: 4, desc: 'LIKE A DAGGER, BUT IT SEEKS OUT THE NEAREST FOE, TRAILING WHITE SPARKS.' },
   torch: { name: 'TORCH', short: 'TORCH', price: 35, max: 10, pack: 2, icon: 'torchi', weight: 3, desc: 'THROW IT TO SET A FOE ABLAZE. IT ALSO BURNS WOODEN BARRICADES.' },
-  holy: { name: 'AQUA VITAE', short: 'AQUA VITAE', price: 55, max: 6, pack: 1, icon: 'holy', weight: 2, desc: 'SHATTERS INTO A POOL OF LIGHT. THE UNDEAD BURN IN IT.' },
+  salt: { name: 'SAL TERRAE', short: 'SAL TERRAE', price: 55, max: 6, pack: 1, icon: 'salt', weight: 2, desc: 'A HANDFUL OF SALT. WHAT STANDS IN IT SUFFERS, THE UNDEAD MOST.' },
   bandage: { name: 'PANACEA', short: 'PANACEA', price: 80, max: 3, pack: 1, icon: 'bandage', weight: 1, desc: 'HEALS A THIRD OF YOUR LIFE. VERY FEW CAN BE CARRIED.' },
 };
 // what a merchant asks for one pack of an item, in coins (gold): about two or three coin drops
-export const ITEM_ORDER = ['dagger', 'marrow', 'torch', 'holy', 'bandage'];
+export const ITEM_ORDER = ['dagger', 'marrow', 'torch', 'salt', 'bandage'];
 
 export const itemCount = (S, id) => (S.items && S.items[id]) || 0;
 // add n of an item (capped at its maximum); returns how many were actually added

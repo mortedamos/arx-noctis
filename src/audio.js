@@ -225,6 +225,8 @@ export const Audio_ = {
     seal() { this.tone(90, 400, 0.6, 'sawtooth', 0.12); this.noise(0.6, 300, 3000, 0.12, 'bandpass', 1.5); },
     unseal() { this.tone(500, 80, 0.7, 'sawtooth', 0.1); this.noise(0.7, 3000, 300, 0.1, 'bandpass', 1.5); },
     break() { this.noise(0.4, 1200, 120, 0.3, 'lowpass', 0.8); this.tone(120, 40, 0.3, 'square', 0.14); },
+    salt() { this.noise(0.22, 6500, 3800, 0.16, 'highpass', 0.7); for (let i = 0; i < 9; i++) this.noise(0.025, 5200 + Math.random() * 3000, 3200, 0.1, 'bandpass', 4, 0.03 + i * 0.022 + Math.random() * 0.012); },          // a handful of grains pattering down
+    sizzle() { this.noise(0.18, 7000, 2600, 0.09, 'bandpass', 1.4); },          // salt biting what stands in it
     page() { for (let i = 0; i < 4; i++) this.noise(0.07, 4200 - i * 500, 1500, 0.07, 'bandpass', 2.2, i * 0.045); },          // a flutter of paper (the haunted books)
     ink() { this.noise(0.16, 700, 160, 0.2, 'lowpass', 1); this.tone(220, 90, 0.12, 'sine', 0.12); this.noise(0.08, 3000, 1200, 0.05, 'bandpass', 2, 0.03); },          // a wet splat
     shatter() { this.noise(0.35, 7000, 2000, 0.3, 'highpass', 0.7); [2400, 3100, 1900].forEach((f, i) => this.tone(f, f * 0.55, 0.22, 'triangle', 0.06, i * 0.03)); this.noise(0.3, 1500, 200, 0.12, 'lowpass', 0.8, 0.04); },          // ice breaking: glassy

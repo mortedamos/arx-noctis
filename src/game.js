@@ -286,6 +286,7 @@ export class Game {
     const s = this.loadSave(); if (s) this.useSave(s); else { this.save = newSave(this.world); this.save.flags.opening_seen = true; } this.player = new Player(this, 0, 0); this.boss = null; this.slow = 0; this.save.hp = this.save.maxHp; this.save.mp = this.save.maxMp; this.beginPlay(true);
   }
   useSave(s) { if (s.flags && s.flags.got_tide) { s.flags.got_alembic = true; delete s.flags.got_tide; }          // (Aqua Regia became the Alembic Strike: whoever had the one has the other)
+    if (s.items && s.items.holy) { s.items.salt = Math.min(6, (s.items.salt || 0) + s.items.holy); delete s.items.holy; } if (s.sel === 'holy') s.sel = 'salt';          // (Aqua Vitae became Sal Terrae: the flasks you carried are salt now)
     s.items ||= {}; s.bestiary ||= {}; delete s.items.caltrops; delete s.items.axe; if (s.sel === 'caltrops' || s.sel === 'axe') s.sel = 'dagger'; this.save = s; this.world = buildWorld(s.seed || 0);
     if (s.gv !== GEN_VERSION || !this.world.rooms[s.room]) { s.gv = GEN_VERSION; s.room = this.world.start.room; s.spawnX = this.world.start.x * 16 + 8; s.spawnY = this.world.start.gy * 16; s.visited = {}; s.flags.opening_seen = true; }          // (a save made before the castle's layout last changed: the rooms are not where they were, so the hero wakes at the start with everything they carry; the maps fill in again)
   }                       // (caltrops were removed from the game)

@@ -28,7 +28,7 @@ const SHOP = { woman: ['WELCOME, STRANGER. I HAVE A LITTLE TO SPARE - FOR A PRIC
 // (the words are read from assets/dialogue.txt; the ones above are only what is said if a section is missing there)
 const fileList = (kind, part, fallback) => D.lines('villager ' + kind + ' ' + part) || [].concat(fallback);
 const shouts = () => D.lines('villager shouts') || SHOUTS, thanks = () => D.lines('villager thanks') || THANKS;
-const GIFTS = { woman: ['it_bandage'], bearded: ['it_dagger'], hatman: ['coin', 'it_torch'], oldman: ['it_holy', 'heart'] };
+const GIFTS = { woman: ['it_bandage'], bearded: ['it_dagger'], hatman: ['coin', 'it_torch'], oldman: ['it_salt', 'heart'] };
 export class Villager extends Enemy {
   constructor(g, x, y, o) {
     super(g, x, y, 12, 40, o); this.name = 'villager'; this.hp = this.maxHp = 99; this.invuln = true; this.harmless = true; this.kind = o.kind || ['woman', 'bearded', 'hatman', 'oldman'][Math.floor(rand(4))];

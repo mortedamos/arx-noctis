@@ -78,7 +78,7 @@ function batFrame(p, k) {
 // ------------------------------------------------------------------------------------------------
 // ICONS (14x14) and props
 // ------------------------------------------------------------------------------------------------
-export const ICON = ['heart', 'potion', 'mana', 'coin', 'gem', 'key', 'feather', 'boot', 'ember', 'thunder', 'hpup', 'mpup', 'atkup', 'skull', 'orb', 'scroll', 'e_fire', 'e_ice', 'e_sun', 'e_aegis', 'dagger', 'axe', 'torchi', 'marrow', 'holy', 'bandage', 'shoes', 'lock', 'mantle', 'lantern', 'shard', 'spring', 'astrolabe', 'ouroboros', 'athanor', 'alembic', 'seal'];
+export const ICON = ['heart', 'potion', 'mana', 'coin', 'gem', 'key', 'feather', 'boot', 'ember', 'thunder', 'hpup', 'mpup', 'atkup', 'skull', 'orb', 'scroll', 'e_fire', 'e_ice', 'e_sun', 'e_aegis', 'dagger', 'axe', 'torchi', 'marrow', 'salt', 'bandage', 'shoes', 'lock', 'mantle', 'lantern', 'shard', 'spring', 'astrolabe', 'ouroboros', 'athanor', 'alembic', 'seal'];
 const IW = 14;
 function iconFrame(p, k) {
   const R = hex('#d4263a'), R2 = hex('#ff7a86'), GL = hex('#f2c14e'), GL2 = hex('#fff0a8'), BL = hex('#3a8bff'), BL2 = hex('#a8d4ff'), WH = hex('#f4f6ff');
@@ -108,7 +108,10 @@ function iconFrame(p, k) {
     case 'axe': p.line(3, 12, 10, 3, hex('#8a5a2a'), 2); p.poly([[8, 1], [13, 3], [12, 8], [9, 6]], hex('#cfd6e6')); p.poly([[9, 2], [12, 3], [11, 6]], WH); p.rect(2, 11, 2, 2, hex('#6a3a1a')); break;
     case 'torchi': p.line(4, 12, 8, 6, hex('#8a5a2a'), 2); p.rect(7, 5, 3, 2, hex('#3a2410')); p.poly([[9, 0], [12, 4], [11, 7], [8, 7], [7, 4], [8, 2]], hex('#ff6a1e')); p.poly([[9, 3], [11, 5], [10, 7], [8, 6]], hex('#ffd24a')); break;
     case 'marrow': p.line(2, 12, 10, 4, hex('#c6d2ff'), 2); p.poly([[8, 1], [13, 1], [13, 6], [11, 4], [9, 3]], WH); p.poly([[1, 9], [4, 8], [3, 11], [0, 12]], hex('#8fa8ff')); p.poly([[5, 12], [6, 9], [9, 10], [4, 13]], hex('#8fa8ff')); p.set(11, 8, WH); p.set(12, 10, hex('#cfe0ff')); p.set(3, 4, WH); p.set(5, 2, hex('#cfe0ff')); break;
-    case 'holy': p.rect(6, 1, 3, 2, GL); p.poly([[6, 3], [9, 3], [12, 9], [11, 12], [4, 12], [3, 9]], hex('#d8ecff')); p.poly([[4, 8], [11, 8], [12, 9], [11, 12], [4, 12], [3, 9]], hex('#8fc4f0')); p.rect(5, 9, 2, 1, WH); p.rect(8, 5, 1, 2, WH); break;
+    case 'salt': { const BAG = hex('#b99a68'), BAG2 = hex('#d9c08c'), TIE = hex('#5a3418'), MARK = hex('#3a2414'), W2 = hex('#cdd3e6');          // (a tied bag marked with the sign of salt, a little of it spilt)
+      p.poly([[2, 0], [4, 2], [6, 0], [8, 2], [9, 0], [8, 4], [4, 4]], BAG2); p.poly([[4, 4], [8, 4], [11, 8], [10, 12], [2, 12], [1, 8]], BAG); p.rect(3, 6, 1, 3, BAG2); p.rect(4, 3, 5, 2, TIE);
+      p.disc(6, 8.5, 2.9, MARK); p.disc(6, 8.5, 1.7, BAG2); p.rect(4, 8, 5, 1, MARK);
+      p.rect(10, 12, 4, 1, WH); p.rect(11, 11, 2, 1, WH); p.set(13, 11, W2); p.set(9, 13, W2); p.set(12, 9, WH); break; }
     case 'bandage': p.disc(6.5, 6.5, 5.2, hex('#efeadb')); p.disc(6.5, 6.5, 2.2, hex('#b9b09a')); p.rect(2, 5, 10, 1, hex('#cfc7b2')); p.rect(2, 8, 10, 1, hex('#cfc7b2')); p.rect(6, 4, 2, 6, R); p.rect(4, 6, 6, 2, R); break;
     case 'shoes': p.poly([[2, 4], [6, 4], [6, 8], [12, 9], [12, 12], [2, 12]], hex('#e0409c')); p.rect(2, 10, 10, 2, hex('#fff2f8')); p.rect(3, 5, 2, 1, hex('#ffb0dc')); p.poly([[7, 1], [12, 0], [11, 4], [8, 4]], hex('#9cf0ff')); p.rect(8, 8, 3, 1, hex('#fff2f8')); break;
     case 'lock': p.rect(4, 2, 1, 5, hex('#b9c0d0')); p.rect(9, 2, 1, 5, hex('#b9c0d0')); p.rect(5, 1, 4, 1, hex('#b9c0d0')); p.rect(3, 6, 8, 7, GL); p.rect(3, 6, 8, 1, GL2); p.rect(6, 8, 2, 2, hex('#3a2a10')); p.rect(6, 10, 2, 2, hex('#3a2a10')); break;

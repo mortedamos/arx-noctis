@@ -3,7 +3,7 @@
 //   dagger   - weak, fast, long flat throw
 //   torch    - slow arc; sets what it hits ablaze (damage over time), burns wooden barricades, leaves a short ground fire
 //   marrow   - the magic arrow: a dagger that homes in on the nearest foe, trailing white sparks
-//   holy     - a flask that shatters into a pool of holy light; the undead take much more      bandage - heals 35% of your max HP over ~1.5 s
+//   salt     - Sal Terrae: a handful of salt that lies where it falls; whatever stands in it is hurt, the undead much more      bandage - heals 35% of your max HP over ~1.5 s
 import { Audio_ as A } from './audio.js';
 import { COLORS } from './fx.js';
 import { T, rand, clamp, choice } from './util.js';
@@ -114,34 +114,73 @@ class ThrownTorch extends Thrown {
   draw(ctx, cx, cy) { ctx.save(); ctx.translate(Math.round(this.x - cx), Math.round(this.y - cy)); ctx.rotate(this.rot); ctx.fillStyle = '#6a4220'; ctx.fillRect(-1, -2, 2, 8); ctx.fillStyle = '#2a1a0c'; ctx.fillRect(-2, -3, 4, 3); ctx.restore(); }
 }
 
-// holy water
-class HolyPool {
-  constructor(x, y, dmg) { this.x = x; this.y = y; this.dmg = dmg; this.life = 210; this.owner = 'player'; this.dead = false; this.t = 0; this.w = 44; this.h = 8; this.vx = 0; this.vy = 0; this.seen = new Map(); }
+// SAL TERRAE: a handful of salt.  It flies as one, in a low arc, and strikes: the grains (salt.js) bounce, roll and drop off ledges, and WHEREVER they come to lie - on the floor struck, on a plank, on a floor
+// below an edge near enough - whatever stands in them is hurt.
+class SaltBed {
+  constructor(g, dmg, cloud, at) { this.x = at.x; this.y = at.floor !== undefined ? at.floor : at.y; this.dmg = dmg; this.life = 210; this.owner = 'player'; this.dead = false; this.t = 0; this.seen = new Map(); this.cloud = cloud; this.patches = []; g.fx.salt.burst(cloud, this, at); }
   get box() { return { x: -9999, y: -9999, w: 0, h: 0 }; }
   explode() { this.dead = true; }
   update(g) {
     this.t++; if (--this.life <= 0) { this.dead = true; return; }
-    const k = Math.min(1, this.life / 40);
-    if (this.t % 3 === 0) g.fx.emit({ x: this.x + rand(-this.w / 2, this.w / 2), y: this.y - 2, vx: rand(-0.1, 0.1), vy: -rand(0.5, 1.2), life: rand(24, 44), s0: 4, s1: 1, c0: [1, 0.97, 0.7], c1: [0.7, 0.9, 1], a0: k, a1: 0, kind: 6 });
-    g.fx.glow(this.x, this.y - 4, 30, [0.8, 0.9, 1], 0.28 * k); g.fx.light(this.x, this.y - 6, 70, 0.8 * k);
+    if (this.t % 4 === 1) this.patches = g.fx.salt.lies(this.cloud);          // (where it lies now: it may still be rolling)
+    saltShine(g, this.patches, [0.95, 0.94, 0.86], Math.min(1, this.life / 40));
     for (const e of g.enemies) {
-      if (e.dead || e.invuln || Math.abs(e.x - this.x) > this.w / 2 + e.w / 2 || e.y < this.y - 6 || e.y - e.h > this.y + 4) continue;
-      const last = this.seen.get(e) || -99; if (this.t - last < 24) continue; this.seen.set(e, this.t);
-      e.hurt(Math.round(this.dmg * (UNDEAD.has(e.name) ? 1.8 : 1)), 0, { id: hitId(), color: '#fff6c8', noKb: true }); g.fx.sparks(e.x, e.cy, 4, [[1, 1, 0.8], [0.7, 0.9, 1]], 1.6, { gy: -0.03 });
+      if (e.dead || e.invuln) continue;
+      const last = this.seen.get(e) ?? -99; if (this.t - last < 24) continue;
+      const at = this.patches.find(q => standsIn(q, e.x, e.y, e.w)); if (!at) continue; this.seen.set(e, this.t);
+      e.hurt(saltDmg(this.dmg, e), 0, { id: hitId(), color: '#f4f1e6', noKb: true }); saltBites(g, this.cloud, at, e.x);
     }
   }
-  draw(ctx, cx, cy) { const k = Math.min(1, this.life / 40), x = Math.round(this.x - cx), y = Math.round(this.y - cy), w = this.w; ctx.fillStyle = `rgba(190,225,255,${0.45 * k})`; ctx.fillRect(x - w / 2, y - 2, w, 2); ctx.fillStyle = `rgba(255,250,210,${0.55 * k})`; ctx.fillRect(x - w / 2 + 3, y - 3, w - 6, 1); }
+  draw() {}
 }
-class HolyFlask extends Thrown {
-  constructor(g, x, y, dir, dmg) { super(x, y, dir * 2.0, -2.5, { dmg, w: 8, h: 8, grav: 0.16, life: 120, spin: 0.2 * dir }); }
-  shatter(g, y) { g.addProjectile(new HolyPool(this.x, y, this.dmg)); g.fx.burst(this.x, y - 3, 10, [[0.85, 0.93, 1], [1, 0.97, 0.7]], { speed: 1.8, s0: 8 }); g.fx.ring(this.x, y - 3, 22, [0.8, 0.9, 1], 16, 0.25); A.sfx('break'); this.dead = true; }
+class SaltThrow extends Thrown {
+  constructor(g, x, y, dir, dmg) { super(outOfWall(g, x, y, dir), y, dir * 1.95, -2.05, { dmg, w: 10, h: 8, grav: 0.16, life: 120 }); this.cloud = g.fx.salt.throwSalt(this, saltWorld(g)); }          // (a flatter arc than the old flask's: it rises two thirds as high and lands a little shorter)
+  burst(g, at) { this.dead = true; A.sfx('salt'); g.addProjectile(new SaltBed(g, this.dmg, this.cloud, { x: this.x, y: this.y, dir: this.dir, ...at })); }
   update(g) {
+    g.fx.light(this.x, this.y, 36, 0.55, [0.95, 0.95, 0.9]);
+    const plank = plankUnder(g, this); if (plank !== null) return this.burst(g, { floor: plank });
     const r = this.step(g);
-    if (r === 'floor') return this.shatter(g, Math.floor((this.y + 4) / T) * T);
-    if (r === 'wall') return this.shatter(g, Math.floor(this.y / T + 1) * T);      // slides down the wall and breaks at its foot
-    for (const e of this.touching(g)) { this.shatter(g, e.y); return; }
+    if (r === 'floor') return this.burst(g, { floor: Math.floor((this.y + this.vy + 2) / T) * T });
+    if (r === 'wall') return this.burst(g, { wall: true });          // it strikes the wall and showers down its foot
+    for (const e of this.touching(g)) {
+      const y = floorUnder(g, e.x, e.y - 4);
+      if (y === null || e.y < y - 6) this.strike(g, e, saltDmg(this.dmg, e), '#f4f1e6', { noKb: true });          // (a foe in the air is hit by the handful itself; one on the ground will be standing in it)
+      return this.burst(g, {});
+    }
   }
-  draw(ctx, cx, cy) { ctx.save(); ctx.translate(Math.round(this.x - cx), Math.round(this.y - cy)); ctx.rotate(this.rot); ctx.fillStyle = '#d8ecff'; ctx.fillRect(-3, -2, 6, 6); ctx.fillStyle = '#9ccaf0'; ctx.fillRect(-2, 0, 4, 3); ctx.fillStyle = '#c9a14a'; ctx.fillRect(-1, -4, 2, 2); ctx.restore(); }
+  draw() {}
+}
+
+// ------------------------------------------------------------------------------------------------ salt (the player's, and the twin's: mirror.js)
+// what a grain can strike in this room (see salt.js)
+export function saltWorld(g) { const r = g.room; return { solid: (x, y) => r.solid(Math.floor(x / T), Math.floor(y / T)), plank: (x, y) => r.get(Math.floor(x / T), Math.floor(y / T)) === TILE.PLAT, slabs: () => (r.movers ? r.movers.list : []), bottom: r.h * T }; }
+// the floor at or under (x, y): stone or planks; null over a bottomless drop
+export function floorUnder(g, x, y) {
+  const r = g.room, tx = Math.floor(x / T);
+  for (let ty = Math.max(0, Math.floor(y / T)); ty < r.h; ty++) if (r.solid(tx, ty) || (r.get(tx, ty) === TILE.PLAT && ty * T >= y - 2)) return ty * T;
+  return null;
+}
+// the hand (12 px ahead of the thrower) may be inside a wall they stand against: then the salt leaves from the thrower, and strikes that wall
+export const outOfWall = (g, x, y, dir) => (g.room.solid(Math.floor(x / T), Math.floor(y / T)) ? x - dir * 12 : x);
+// a thrown thing about to fall through the top of a plank or of a moving platform: where that top is (null: it is not)
+export function plankUnder(g, o) {
+  const vy = o.vy + o.grav; if (vy <= 0) return null;
+  if (g.room.movers) for (const m of g.room.movers.list) if (m.active && Math.abs(o.x - m.x) <= m.w / 2 && o.y + 2 <= m.y && o.y + vy + 2 >= m.y) return m.y;
+  const ty = Math.floor((o.y + vy + 2) / T);
+  return g.room.get(Math.floor(o.x / T), ty) === TILE.PLAT && o.y + 2 <= ty * T ? ty * T : null;
+}
+export const standsIn = (patch, x, y, w) => x + w / 2 > patch.x0 && x - w / 2 < patch.x1 && y >= patch.y - 6 && y <= patch.y + 10;          // (feet in it: what flies over is spared)
+const saltDmg = (dmg, e) => Math.round(dmg * (UNDEAD.has(e.name) ? 1.8 : 1));
+// the pale light off the salt where it lies
+export function saltShine(g, patches, col, k) {
+  let best = null; for (const q of patches) { if (q.n >= 16) g.fx.glow((q.x0 + q.x1) / 2, q.y - 3, Math.max(10, (q.x1 - q.x0) * 0.55), col, 0.09 * k); if (!best || q.n > best.n) best = q; }
+  if (best) g.fx.light((best.x0 + best.x1) / 2, best.y - 6, 58, 0.62 * k, col);          // (one light a throw: the room has only so many)
+}
+// something standing in it is hurt: grains jump, a hiss of white
+export function saltBites(g, cloud, patch, x) {
+  const at = Math.max(patch.x0, Math.min(patch.x1, x));
+  g.fx.salt.kick(cloud, patch, at); g.fx.sparks(at, patch.y - 3, 5, [[1, 1, 1], [0.8, 0.85, 0.95]], 1.4, { gy: -0.03 });
+  g.fx.smoke(at, patch.y - 2, 2, { c0: [0.82, 0.82, 0.8], c1: [0.5, 0.5, 0.52], s0: 4, s1: 13, a: 0.32, l: 0.6 }); A.sfx('sizzle');
 }
 
 // ------------------------------------------------------------------------------------------------ using an item
@@ -161,7 +200,7 @@ export function releaseItem(g, p, id) {            // called mid-animation
     case 'dagger': g.addProjectile(new Dagger(g, x, y, d, Math.max(2, Math.round(5.6 * k)))); A.sfx('slash'); break;
     case 'torch': g.addProjectile(new ThrownTorch(g, x, y - 2, d, Math.max(1, Math.round(2.6 * k)), Math.max(1, Math.round(1.76 * k)))); A.sfx('cast'); break;
     case 'marrow': g.addProjectile(new MagicArrow(g, x, y, d, Math.max(2, Math.round(5.36 * k)))); A.sfx('cast'); break;
-    case 'holy': g.addProjectile(new HolyFlask(g, x, y - 2, d, Math.max(1, Math.round(1.96 * k)))); A.sfx('cast'); break;
+    case 'salt': g.addProjectile(new SaltThrow(g, x, y - 2, d, Math.max(1, Math.round(1.96 * k)))); A.sfx('cast'); break;
     case 'bandage': p.healT = 100; p.healPer = S.maxHp * 0.35 / 100; A.sfx('heal'); g.fx.ring(p.x, p.y - 18, 20, [0.95, 0.95, 0.9], 18, 0.2); g.popup(p.x, p.y - 42, 'PANACEA', '#f2efe6'); break;
   }
   if (S.items[id] <= 0) delete S.items[id];

@@ -6,6 +6,7 @@ import { W, H, rand, clamp, noise1, TAU } from './util.js';
 import { Cloak } from './cloak.js';
 import { Post } from './post.js';
 import { Slashes } from './slash.js';
+import { SaltGrains } from './salt.js';
 
 const FXS = 2;   // effect canvas is rendered at 2x the pixel-art resolution (soft glows over crisp sprites)
 
@@ -387,6 +388,7 @@ export class FX {
     this.focus = null;                              // the hero's position {x, y}: wisps will not let it come near
     this.cloak = new Cloak(this.scene);          // the hero's white cloak (see cloak.js)
     this.slashes = new Slashes(this.scene);      // the sword swipes (see slash.js)
+    this.salt = new SaltGrains(this.scene);      // thrown salt and the beds it lies in (see salt.js)
     this.alpha = new PSystem(800, false, this.scene, 1);
     this.add = new PSystem(5000, true, this.scene, 2);
     this.quads = []; this.quadPool = []; this.bolts = []; this.lights = []; this.flameList = [];
@@ -402,7 +404,7 @@ export class FX {
   // wipe everything (used when changing rooms)
   reset() {
     this.water = []; this.waterU.uN.value = 0; this.waterMesh.visible = false;
-    this.slashes.reset();
+    this.slashes.reset(); this.salt.reset();
     this.add.n = 0; this.alpha.n = 0; this.gusts.length = 0; this.wisps.set(0); this.lights.length = 0; this.pendingThunder.length = 0; this.flashA = 0; this.hurt = 0;
     for (const q of this.quads) { q.m.visible = false; this.quadPool.push(q.m); } this.quads.length = 0;
     for (const b of this.bolts) { for (const m of b.parts) { this.scene.remove(m); m.material.dispose(); } for (const g of b.geos) g.dispose(); } this.bolts.length = 0;
@@ -616,7 +618,7 @@ export class FX {
   update(dt = 1) {
     this.time += dt / 60;
     for (const o of this.water) o.ph += (o.type > 1.5 ? Math.abs(o.v) : o.v) * dt / 60;          // (each stream's pattern flows on at its own speed: see the water shader)
-    this.add.update(dt); this.alpha.update(dt); this.slashes.update(dt);
+    this.add.update(dt); this.alpha.update(dt); this.slashes.update(dt); this.salt.update(dt);
     for (let i = this.gusts.length - 1; i >= 0; i--) {
       const g = this.gusts[i]; g.life += dt; if (g.life > g.max) { this.gusts.splice(i, 1); continue; }
       g.x += g.vx * 0.35 * dt; g.y += g.vy * 0.35 * dt; g.k = g.s * Math.pow(1 - g.life / g.max, 1.5); this.add.push(g); this.alpha.push(g);
@@ -654,7 +656,7 @@ export class FX {
     { const R = this.rainU; R.uCount.value = this.rainCount === undefined ? 0.52 : this.rainCount; R.uAmt.value += ((this.ambient === 'rain' ? (this.rainK === undefined ? 1 : this.rainK) : 0) - R.uAmt.value) * 0.06; this.rainMesh.visible = R.uAmt.value > 0.01; if (this.rainMesh.visible) R.uTime.value = this.time; }          // (rain: one full-screen shader, fading in and out)
     if (this.waterMesh.visible) { this.pickWater(); this.waterU.uCam.value.set(this.camX + this.shakeX, this.camY + this.shakeY); this.waterU.uTime.value = this.time; }
     this.add.mat.uniforms.uTime.value = this.time; this.alpha.mat.uniforms.uTime.value = this.time;
-    this.add.upload(); this.alpha.upload();
+    this.add.upload(); this.alpha.upload(); this.salt.upload();
     for (const q of this.quads) {
       const t = q.hold ? 0.5 : clamp(q.life / q.max, 0, 1), m = q.m, uu = m.userData.mat.uniforms;
       const w = q.w + (q.w1 - q.w) * (q.hold ? 1 : 1 - Math.pow(1 - t, 2)), h = q.h + (q.h1 - q.h) * (q.hold ? 1 : 1 - Math.pow(1 - t, 2));
