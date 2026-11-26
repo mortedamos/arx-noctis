@@ -7,7 +7,7 @@
 import { fmtTime } from './util.js';
 import { Audio_ as A } from './audio.js';
 import { PWA, isIOS, isStandalone } from './pwa.js';
-import { isNative, shareFileNative } from './native.js';
+import { isNative, saveFileNative, shareFileNative } from './native.js';
 
 const zip = typeof CompressionStream === 'function' && typeof DecompressionStream === 'function';
 const pipe = async (bytes, stream) => new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer());
@@ -64,10 +64,13 @@ function makePanel(title, done) {
   const el = (tag, cls, txt, parent) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt) e.textContent = txt; if (parent) parent.appendChild(e); return e; };
   const root = el('div'); root.id = 'arxfile'; root.setAttribute('data-own-keys', '');          // (the game's own keys are not read while this is up: see input.js)
   const box = el('div', 'box', '', root); el('h2', '', title, box);
-  let closed = false, msg = null;
+  let closed = false, msg = null, pressed = false;
+  // A menu item acts as the finger LANDS, so the panel can appear under a finger that is still down; lifting it then "clicks" whatever is under it (LOAD GAME opened and closed itself at once).
+  // So a button answers a pointer only after a press that began on the panel.  (A click from the keyboard has detail 0.)
+  root.addEventListener('pointerdown', () => { pressed = true; }, true);
   const P = {
     el: (tag, cls, txt) => el(tag, cls, txt, box), row: () => el('div', 'row', '', box),
-    btn: (row, label, fn, cls) => { const b = el('button', cls, label, row); b.type = 'button'; b.addEventListener('click', fn); return b; },
+    btn: (row, label, fn, cls) => { const b = el('button', cls, label, row); b.type = 'button'; b.addEventListener('click', e => { if (!e.detail || pressed) fn(e); }); return b; },
     say: (t, bad = false) => { if (!msg) msg = el('div', 'msg', '', box); msg.textContent = t; msg.classList.toggle('bad', bad); msg.scrollIntoView({ block: 'nearest' }); },          // (a small phone may have to scroll the panel to show it)
     close: ok => {
       if (closed) return; closed = true; removeEventListener('keydown', keys, true); root.remove();
@@ -92,15 +95,21 @@ export function openSavePanel(g, save, onClose, note = '') {
   P.el('p', '', 'This writes your game to a file named ArxN Save, with today\'s date and time, ending in .bin. Keep it anywhere you like: LOAD GAME (on the title screen, or in the pause menu) brings the game back, here or on another device.');
   if (isIOS() && !isStandalone()) P.el('p', 'warn', 'On an iPhone or iPad, Safari erases a website\'s quick saves after about a week without a visit. A save file is safe. A game added to your Home Screen (Share, then Add to Home Screen) keeps its saves, but they are kept apart from Safari\'s: carry a game across with a save file.');
   const row = P.row(); let file = null;
+  const native = isNative();          // (the Android app)
   const preferShare = isIOS() && isStandalone();          // (a Home Screen game on an iPhone cannot be trusted to download a file: the share sheet has Save to Files)
   const saveB = P.btn(row, 'SAVE FILE', async () => { if (!file) return;
-    if (isNative()) {          // (the Android app: a WebView cannot download a blob, so the file goes to Android's share sheet - Drive, Files, mail ...)
-      try { await shareFileNative(file); A.sfx('select'); P.say('Choose where to keep ' + file.name + ' (Drive, Files, mail ...). Keep it somewhere safe.'); }
-      catch (e) { if (!/cancel/i.test(String(e && (e.message || e)))) P.say('Could not open the share sheet.', true); }
+    if (native) {          // (a WebView cannot download a blob, so Android's "save as" screen asks where to put it)
+      try { const name = await saveFileNative(file); if (name) { A.sfx('select'); P.say('Saved as ' + name + '. Keep it somewhere safe.'); } }
+      catch { P.say('Could not save the file there: try another folder, or SHARE FILE.', true); }
       return;
     }
     download(file); A.sfx('select'); P.say('Saved as ' + file.name + '. Look in your Downloads folder, and keep the file somewhere safe.'); }, preferShare ? '' : 'main');
-  const shareB = navigator.share ? P.btn(row, 'SHARE FILE', async () => {
+  const shareB = native || navigator.share ? P.btn(row, 'SHARE FILE', async () => {
+    if (native) {
+      try { await shareFileNative(file); }
+      catch (e) { if (!/cancel/i.test(String(e && (e.message || e)))) P.say('Could not open the share sheet.', true); }
+      return;
+    }
     try { await navigator.share({ files: [file], title: 'ARX NOCTIS save' }); P.say('Shared. Choose Save to Files (or a cloud folder) to keep it.'); }
     catch (e) { if (e && e.name !== 'AbortError') P.say('Could not share: use SAVE FILE instead.', true); }
   }, preferShare ? 'main' : '') : null;
@@ -112,7 +121,7 @@ export function openSavePanel(g, save, onClose, note = '') {
   saveB.disabled = true;
   packSave(JSON.stringify(save)).then(bytes => {
     file = new File([bytes], saveFileName(save), { type: 'application/octet-stream' });          // (octet-stream goes with .bin: the browser has no reason to add .txt or .gz to the name)
-    saveB.disabled = false; if (shareB && navigator.canShare && navigator.canShare({ files: [file] })) shareB.hidden = false;
+    saveB.disabled = false; if (shareB && (native || (navigator.canShare && navigator.canShare({ files: [file] })))) shareB.hidden = false;
     (preferShare && !shareB.hidden ? shareB : saveB).focus({ preventScroll: true });
   });
 }
