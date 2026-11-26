@@ -6,9 +6,10 @@
 //   * the install prompt of Chrome / Edge is kept (PWA.install) so the SAVE GAME panel can offer an INSTALL button.  iPhones have no such prompt: the player is told to use Share > Add to Home Screen.
 // Why it matters on an iPhone: Safari erases a website's storage (the save!) after about a week without a visit, but not a game added to the Home Screen.  See savefile.js for the other half.
 export const PWA = { install: null, persisted: null, sw: false };
+import { isNative } from './native.js';
 
 const q = new URLSearchParams(location.search), local = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
-const want = q.get('sw') === '1' || (!local && q.get('sw') !== '0');
+const want = !isNative() && (q.get('sw') === '1' || (!local && q.get('sw') !== '0'));          // (never inside the Android app: its files are in the app, and a worker would only store the music a second time)
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   const reg = () => navigator.serviceWorker.register('./sw.js').then(() => { PWA.sw = true; }).catch(e => console.warn('service worker not registered:', e.message));
   if (want) { if (document.readyState === 'complete') reg(); else addEventListener('load', reg); }          // (after the page has loaded: it must not slow the start)

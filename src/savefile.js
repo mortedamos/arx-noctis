@@ -7,6 +7,7 @@
 import { fmtTime } from './util.js';
 import { Audio_ as A } from './audio.js';
 import { PWA, isIOS, isStandalone } from './pwa.js';
+import { isNative, shareFileNative } from './native.js';
 
 const zip = typeof CompressionStream === 'function' && typeof DecompressionStream === 'function';
 const pipe = async (bytes, stream) => new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer());
@@ -92,7 +93,13 @@ export function openSavePanel(g, save, onClose, note = '') {
   if (isIOS() && !isStandalone()) P.el('p', 'warn', 'On an iPhone or iPad, Safari erases a website\'s quick saves after about a week without a visit. A save file is safe. A game added to your Home Screen (Share, then Add to Home Screen) keeps its saves, but they are kept apart from Safari\'s: carry a game across with a save file.');
   const row = P.row(); let file = null;
   const preferShare = isIOS() && isStandalone();          // (a Home Screen game on an iPhone cannot be trusted to download a file: the share sheet has Save to Files)
-  const saveB = P.btn(row, 'SAVE FILE', () => { if (!file) return; download(file); A.sfx('select'); P.say('Saved as ' + file.name + '. Look in your Downloads folder, and keep the file somewhere safe.'); }, preferShare ? '' : 'main');
+  const saveB = P.btn(row, 'SAVE FILE', async () => { if (!file) return;
+    if (isNative()) {          // (the Android app: a WebView cannot download a blob, so the file goes to Android's share sheet - Drive, Files, mail ...)
+      try { await shareFileNative(file); A.sfx('select'); P.say('Choose where to keep ' + file.name + ' (Drive, Files, mail ...). Keep it somewhere safe.'); }
+      catch (e) { if (!/cancel/i.test(String(e && (e.message || e)))) P.say('Could not open the share sheet.', true); }
+      return;
+    }
+    download(file); A.sfx('select'); P.say('Saved as ' + file.name + '. Look in your Downloads folder, and keep the file somewhere safe.'); }, preferShare ? '' : 'main');
   const shareB = navigator.share ? P.btn(row, 'SHARE FILE', async () => {
     try { await navigator.share({ files: [file], title: 'ARX NOCTIS save' }); P.say('Shared. Choose Save to Files (or a cloud folder) to keep it.'); }
     catch (e) { if (e && e.name !== 'AbortError') P.say('Could not share: use SAVE FILE instead.', true); }

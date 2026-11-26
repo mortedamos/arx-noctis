@@ -5,6 +5,7 @@
 //   * the buttons along the top: MAP, MENU (pause), full screen.  In menus only the D-pad, OK and BACK show; tapping a menu item picks it, and tapping the item box in the corner changes the item.
 // Every button holds the same named actions a key would (Input.touchHold / touchRelease), so the game does not know the difference.
 import { Input, ownKeys } from './input.js';
+import { isNative } from './native.js';
 
 const W = 384, H = 216;
 const CSS = `
@@ -124,7 +125,7 @@ export const Touch = {
     top(-1.875, 1.15, 'MAP', ['map'], ['play']);
     top(-0.575, 1.45, 'MENU', ['pause', 'back', 'esc'], ALL).style.fontSize = 'calc(var(--u) * 0.34)';          // (four letters, so a smaller size than MAP's: the word has to fit inside the button)
     const de = document.documentElement, reqFs = de.requestFullscreen || de.webkitRequestFullscreen, exitFs = document.exitFullscreen || document.webkitExitFullscreen;
-    if (reqFs) {                                                                                                                       // (phones that have no full screen, such as the iPhone's Safari, get no button)
+    if (reqFs && !isNative()) {                                                                                                        // (phones that have no full screen, such as the iPhone's Safari, get no button; nor does the Android app, which is full screen already)
       const fs = top(1.025, 0.8, '⛶', [], ALL); fs.addEventListener('pointerup', () => {
         try { if (document.fullscreenElement || document.webkitFullscreenElement) exitFs.call(document); else { const p = reqFs.call(de); if (p && p.then) p.then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {})).catch(() => {}); } } catch {}
       });
