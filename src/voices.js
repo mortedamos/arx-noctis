@@ -115,6 +115,7 @@ export function setStyle(s) { if (STYLES[s]) style = s; }
 const PITCH = 2 ** (-4 / 12);          // the instruments speak four semitones under an octave above the notes (all voices "a little lower")
 const LEVEL = { marimba: 0.85, kalimba: 0.66, harp: 1.7, piano: 0.62, drop: 1.15, flute: 0.95, glass: 0.7 };          // (so that each is about as loud as the others)
 const PLUCKS = new WeakMap(), BRISK = 0.6;
+const VOLUME = 1.4;          // every voice, over the level it was first balanced at (the user: "slightly" louder in game); SFX volume and MUTE still rule
 // a plucked string (Karplus-Strong): a burst of soft noise running round a delay one wavelength long, losing a little brightness every turn
 function pluck(ctx, f) {
   let m = PLUCKS.get(ctx); if (!m) PLUCKS.set(ctx, m = new Map()); if (m.has(f)) return m.get(f);
@@ -157,12 +158,12 @@ export function syllable(key, ctx = A.ctx, out = A.sfxGain, tone = null, how = s
   if (how !== 'hum') {
     const { f } = pick(key, tone), t = ctx.currentTime + 0.008, lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = Math.max(v.lp || 3600, f * 4); lp.Q.value = 0.5; lp.connect(out);
     const send = ctx.createGain(); send.gain.value = v.room === undefined ? 0.25 : v.room; lp.connect(send); send.connect(roomFor(ctx, out));
-    const loud = v.vol * (LEVEL[how] || 1), hz = f * 2 * PITCH; strike(how, ctx, lp, hz, t, loud, v); if (v.twin) strike(how, ctx, lp, hz * v.twin[0] * 2 ** (v.twin[2] / 1200), t, loud * v.twin[1] * 0.7, v);
+    const loud = v.vol * (LEVEL[how] || 1) * VOLUME, hz = f * 2 * PITCH; strike(how, ctx, lp, hz, t, loud, v); if (v.twin) strike(how, ctx, lp, hz * v.twin[0] * 2 ** (v.twin[2] / 1200), t, loud * v.twin[1] * 0.7, v);
     if (v.bass && bass) undertone(ctx, out, hz / 2, t, loud * 0.65);          // (past the voice's own low-pass and room: it stays clean)
     return;
   }
   const { f, own } = pick(key, tone), vowel = tone ? tone.vowel : own, size = v.size || 1, att = v.att * BRISK, dur = v.dur * BRISK, t = ctx.currentTime + 0.008, top = t + att, end = top + dur, g = ctx.createGain();
-  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v.vol, top); g.gain.setTargetAtTime(0, top + 0.008, dur / 3.2); g.gain.setTargetAtTime(0, end, 0.02);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v.vol * VOLUME, top); g.gain.setTargetAtTime(0, top + 0.008, dur / 3.2); g.gain.setTargetAtTime(0, end, 0.02);
   const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = v.lp || 3200; lp.Q.value = 0.5; g.connect(lp); lp.connect(out);
   const send = ctx.createGain(); send.gain.value = v.room === undefined ? 0.25 : v.room; lp.connect(send); send.connect(roomFor(ctx, out));
   const [vr, vc] = v.vib || [5.5, 10], lfo = ctx.createOscillator(), depth = ctx.createGain(); lfo.frequency.value = vr * (0.9 + 0.2 * Math.random()); depth.gain.value = vc; lfo.connect(depth); lfo.start(t); lfo.stop(end + 0.2);
@@ -173,7 +174,7 @@ export function syllable(key, ctx = A.ctx, out = A.sfxGain, tone = null, how = s
     k.gain.value = loud; o.connect(k); k.connect(g); o.start(t); o.stop(end + 0.2);
   };
   sing(1, 1, 0, wave); if (v.twin) sing(v.twin[0], v.twin[1], v.twin[2], wave); if (v.ring) sing(v.ring[0], v.ring[1], 0, null);
-  if (v.breath && A.noiseBuf) { const s = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), k = ctx.createGain(); s.buffer = A.noiseBuf; bp.type = 'bandpass'; bp.frequency.value = v.breath[1]; bp.Q.value = 1.1; k.gain.setValueAtTime(0, t); k.gain.linearRampToValueAtTime(v.breath[0], top); k.gain.setTargetAtTime(0, top, dur / 3.5); s.connect(bp); bp.connect(k); k.connect(lp); s.start(t, Math.random()); s.stop(end + 0.2); }
+  if (v.breath && A.noiseBuf) { const s = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), k = ctx.createGain(); s.buffer = A.noiseBuf; bp.type = 'bandpass'; bp.frequency.value = v.breath[1]; bp.Q.value = 1.1; k.gain.setValueAtTime(0, t); k.gain.linearRampToValueAtTime(v.breath[0] * VOLUME, top); k.gain.setTargetAtTime(0, top, dur / 3.5); s.connect(bp); bp.connect(k); k.connect(lp); s.start(t, Math.random()); s.stop(end + 0.2); }
 }
 // THE PACE OF SPEECH: words appear at TEXT_RATE letters a step, and rest after a comma, longer after the end of a sentence (so the voice does too)
 export const TEXT_RATE = 0.585;          // about seven words a second, so that each word's note can be heard (it was 1.2, then 0.96, then 0.83)
