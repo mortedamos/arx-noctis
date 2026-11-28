@@ -15,6 +15,8 @@
 ;    [keeper greet|thanks|poor]                        the Keeper (the merchant in the dark): every line is one alternative
 ;    [door locked]            {KEY} is replaced by the name of the key        [door sigils]  {LIT} {TOTAL} {HINTS}        [lockhint <boss flag>]  where a boss that still lives is to be found
 ;    [opening] [ending] [intro] [bell] [lantern] [chase] [shadowlord revive]   the story scenes (see each)
+;    [guide <which>]                                   where she says to go next, when a sigil has been lit (see WHERE NEXT)
+;    [farewell ...] [ending after] [ending wenzel] [ending more]   the end of the story, which grows with the Pages found (see HER FAREWELL)
 ;
 ;  In [bell], [lantern] and [chase] each line is a box of its own ([chase] is one box) and is said by HER VOICE, in her handwriting.  Start a line with a name and a colon to give it to someone else, as in a [convo]:
 ;      The Lady: Oh! It will hold me.        The Stranger: I will carry you.
@@ -25,7 +27,7 @@
 ; =====================================================================================================================
 
 [opening]
-TITLE: PRAGUE  1541
+TITLE: BOHEMIA  1541
 SUN: THE SUN HAS NOT RISEN SINCE ARX NOCTIS ROSE FROM SHADOW.
 FIRE: AND NOW FIRES IN THE CITY...
 SWORD: SILBERZAHN: THE SILVER FANG. 
@@ -48,6 +50,67 @@ LINE: THE STRANGER RETURNS TO HER GRAVE,
 LINE: AND THE SUN FALLS ON THE STONE.
 LINE: FOR A MOMENT HIS SORROW ABATES AS HE KNOWS
 LINE: SHE STANDS BESIDE HIM.
+
+; ---------------------------------------------------------------------------------------------------------------------
+;  HER FAREWELL  (at the grave, after the sunrise; one box a line, the same rule as [bell]).  She says, in this order: [farewell], her father, then Pages 5, 6, 3, 4, 1, [farewell all pages], [farewell last].
+;  Only the Pages found in that game count.
+; ---------------------------------------------------------------------------------------------------------------------
+
+; said by everyone who finishes
+[farewell]
+The Lady: Look. The sun... as it rises, I am called away.
+The Lady: The Great Work is ended, and Arx Noctis banished. Thank you.
+
+; ...then this, unless Page 2 has been found
+[farewell father]
+The Lady: I am so sorry for what my father did.
+
+; if Page 1 (The Levy) has been found
+[farewell page 1]
+The Lady: Try to remember what you were like before this. Before that winter.
+
+; if Page 2 (The House on the Hill) has been found: in place of [farewell father]
+[farewell page 2]
+The Lady: My father wanted power over nature. I was blind to it. I loved him. I still do.
+
+; if Page 3 (The Road Back) has been found
+[farewell page 3]
+The Lady: That sword was in the ice before any of our sorrow. If you had never taken it up, I wonder if we would still... No. I will not leave you with that.
+
+; if Page 4 (The Newlyweds) has been found
+[farewell page 4]
+The Lady: Your friend Niklas is out there. Find him. Do not be alone.
+
+; if Page 5 (Homecoming) has been found
+[farewell page 5]
+The Lady: I wrote that I could not be happier. It was true. Keep that happy day to remember me.
+
+; if Page 6 (The Name I Left) has been found
+[farewell page 6]
+The Lady: You write that you would not stop... but it is over. You can stop now.
+
+; only with all six Pages
+[farewell all pages]
+The Lady: You left your name in my grave. Take it back, Wenzel. Please.
+
+; the last thing she says, always
+[farewell last]
+The Lady: Let me go, now. Remember our love.
+
+; the narration once she has gone (in capitals, like [ending]): short of all six Pages...
+[ending after]
+LINE: THE STRANGER RISES FROM THE GRAVE.
+LINE: THE SWORD COMES WITH HIM.
+
+; ...and with all six
+[ending wenzel]
+LINE: WENZEL RISES, AND GOES DOWN TO THE CITY.
+LINE: THE SWORD GOES WITH HIM.
+
+; the card at the very end, short of all six ({FOUND} and {TOTAL} are filled in)
+[ending more]
+{FOUND} OF {TOTAL} PAGES FOUND.
+SHE HAS MORE TO SAY.
 
 [chase]
 The Lady: The flames are right behind you! Jump! Climb higher!
@@ -164,13 +227,13 @@ The Rimewyrm: Did you?
 The Rimewyrm: An end... The sword is kind, after all...
 
 [boss THE BRAZEN HIEROPHANT before]
-The Brazen Hierophant: Nigredo, Albedo, Citrinitas - and now you, the impurity in my Rubedo. The Great Work must be finished!
-The Stranger: You... you stopped the sun.
-The Brazen Hierophant: I held it. That is what a vessel does. A little longer, and time itself would have been mine.
-The Stranger: Your time is done.
+The Brazen Hierophant: Welcome, Stranger. You are too late. The Great Work is done!
+The Stranger: Your work stopped the sun. It allowed Arx Noctis to rise!
+The Brazen Hierophant: Unforeseen, but not unwelcome. Our new lord promises much. We have already achieved much.
+The Stranger: Achieved? The shadow has taken your daughter. Has taken my... 
 
 [boss THE BRAZEN HIEROPHANT after]
-The Brazen Hierophant: The gears... they are still turning... who will wind them now?
+The Brazen Hierophant: Then it is you. The Great Work... has cost me everything...
 
 [boss THE SHADOW LORD before]
 The Shadow Lord: So. The last spark of the old world. I have watched you, Stranger.
@@ -190,6 +253,62 @@ The Shadow Lord: I stole the light from the world, and I will take yours as well
 The Lady: I am here. I never left you. Let me be the light to guide our way.
 
 ; ---------------------------------------------------------------------------------------------------------------------
+;  WHERE NEXT  (she comes and says these when a master falls whose death lights a sigil; one box a line, the same rule as [bell])
+; ---------------------------------------------------------------------------------------------------------------------
+
+; the Phantom Steed has fallen (the first sigil of the chapel door); the Drowned Warden still holds the fire
+[guide sulphur]
+The Lady: One sigil burns on the chapel door, my love. The other is held by a wyrm under the ice, far below the city.
+The Lady: Drop through the loose planks of Karluv Bridge. Leap twice as you fall, and let quicksilver carry you to the door in the pier.
+The Lady: The keeper of the waters down there holds the fire that will melt your way to the ice.
+
+; ...the same, if he already has the fire
+[guide sulphur fire]
+The Lady: One sigil burns on the chapel door. The other is held by the wyrm under the ice.
+The Lady: Past the flooded gate of the Cistern stands a wall of ice. Burn it, and go down.
+
+; (the Rimewyrm fallen before the Steed: cannot happen as the castle stands, but just in case)
+[guide water]
+The Lady: One sigil burns on the chapel door. The other belongs to the steed that rides in the Great Hall.
+
+; both of the chapel door's sigils burn
+[guide chapel open]
+The Lady: Both sigils burn. The chapel door will open to you now.
+The Lady: Between the Entrance Hall and the Portrait Gallery, draw back the grate, and go down to the foot of the Oubliette.
+
+; the Crimson Count has fallen; the Hierophant still lives
+[guide salt]
+The Lady: One sigil burns on the throne door. The other is the Hierophant's, who winds the great works of the clock.
+The Lady: His road begins in Prague, behind the high door above Smouldering Lane, up through the Orloj Tower.
+
+; ...added to the one above if he has not found the Key of Tin
+[guide tin]
+The Lady: That door is locked. The Key of Tin lies at the top of the Bone Stair.
+
+; the Hierophant has fallen: what she says first, as she comes out to him (where to go next follows)
+[guide hierophant]
+The Lady: Father... what did you do? What had you become?
+
+; the Hierophant has fallen; the Count still lives
+[guide air]
+The Lady: One sigil burns on the throne door. The other is the Count's, who keeps his table in the Crypts.
+The Lady: Their door is in the Barricaded Gallery. Burn the barricade, and go down.
+
+; both of the throne door's sigils burn
+[guide throne open]
+The Lady: Both sigils burn on the throne door. It waits in the Throne Approach, below the Black Stair.
+The Lady: Break the crystal that bars it with your lightning.
+
+; ...added to the one above if he has not got the Key of Gold
+[guide gold]
+The Lady: It is locked as well. The Librarian keeps the Key of Gold, at the top of the Index Stair.
+
+; the Boiler Golem has fallen
+[guide earth]
+The Lady: The golem's seal is lit. The way on from the Boiler Loft is open to you.
+The Lady: Go through to the clockwork. The one who winds it holds a sigil you will need.
+
+; ---------------------------------------------------------------------------------------------------------------------
 ;  GRAVESTONES AND TABLETS  (the comment above each says where it stands)
 ; ---------------------------------------------------------------------------------------------------------------------
 
@@ -201,11 +320,15 @@ YOU CANNOT READ THIS BECAUSE OF THE TEARS IN YOUR EYES. YOU MISS HER TERRIBLY.
 [tablet tabyew]
 A FLAT STONE UNDER AN OLD YEW. A FOLDED PAGE LIES UNDERNEATH.
 
+; the same stone, once the page has been taken
+[tablet tabyew after]
+A FLAT STONE UNDER AN OLD YEW.
+
 [tablet tabdark]
 The Lady: There is no floor in the dark ahead, and no wall to lean on. Only the serpent that eats its own tail can cross it: strike, and leap, and leap again, and do not come down. I left it with the Librarian, among the books he never lends. I will be your light.
 
 [tablet tabv0]
-The Lady: Go down to the city. I will follow where I can. In arcane light, perhaps you can see me.
+The Lady: Go down to the city. I will be with you, when I can. 
 
 ; in room v1
 [tablet tab0]
@@ -233,7 +356,7 @@ The Lady: Here the faithful prayed, and here they were taken. I used to light ca
 
 ; in room c2
 [tablet tab6]
-The Lady: The gulf is too wide for any leap. Only quicksilver crosses a gulf like this. Dash, and do not look down.
+The Lady: The gulf is too wide for any leap. Only quicksilver crosses a gap like this. Dash, and do not look down.
 
 ; in room u1
 [tablet tab7]
@@ -261,7 +384,7 @@ The Lady: The mire takes what the grave refuses.
 
 ; in room w3
 [tablet tab13]
-The Lady: Something sings beneath the water, and it knows your name. I think I know it, but my link to the world of the living wanes...
+The Lady: Something sings beneath the water, and it knows your name. I think I once knew it, too, but... some things are becoming hard to remember.
 
 ; in room q1
 [tablet tab14]
@@ -269,7 +392,7 @@ The Lady: The old city drew its water from these vaults. You have the look of a 
 
 ; in room q3
 [tablet tab15]
-The Lady: Beyond the last sluice is something older than Prague. It will try to drown you. I miss you... but it is not yet your time.
+The Lady: Beyond the last sluice is something older than the city. It will try to drown you. I miss you... but it is not yet your time.
 
 ; in room k1
 [tablet tab16]
@@ -318,6 +441,10 @@ THE GREAT HALL OF ARX NOCTIS - THE GATE OF THE KEEP. THE DOMAIN OF THE LORD OF S
 
 [sign chapel]
 THE MOONLIT CHAPEL OF ARX NOCTIS - THE DOOR AT THE FOOT OF THE OUBLIETTE. IT OPENS WHEN THE MASTERS OF THE GREAT HALL AND OF THE FROZEN CAVERNS ARE DEAD.
+
+; (the signpost in the middle of the floor at the foot of the Weeping Falls, past the Mire Mother)
+[sign falls]
+THE WEEPING FALLS - TO THE LEFT, THE WAYSTONE. TO THE RIGHT, THE SHRINE.
 
 ; (the sign before the Keeper's door)
 [sign shc]

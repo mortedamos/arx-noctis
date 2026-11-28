@@ -18,6 +18,8 @@ import { BestiaryScreen } from './bestiary.js';
 import { LetterBook, savePages, PAGE_COUNT } from './letters.js';
 import { mapCells } from './maplayout.js';
 import { openSavePanel, openLoadPanel } from './savefile.js';
+import { farewell } from './farewell.js';
+import { voiceOf, chatter, typeStep } from './voices.js';
 import { isIOS, isStandalone } from './pwa.js';
 
 const GOLD = '#e8b84a', PALE = '#e8dcc0', DIM = '#8a7d9a', RED = '#c23b2a';
@@ -115,9 +117,11 @@ export function drawExitArrow(ctx, x, y, t, dir) {
 
 export class Dialog {
   constructor(text, o = {}) { this.font = o.font || (o.name && /^the stranger$/i.test(o.name) && hasFace('stranger') ? 'stranger' : o.name ? (hasFace('npc') ? 'npc' : 'mixed') : undefined); if (this.font === 'hand') text = handText(text); else if (this.font === 'mixed' || this.font === 'stranger' || this.font === 'npc') text = sentenceCase(text);          // (the Stranger speaks in his own bookhand)          // (a named speaker - an NPC, a boss - talks in sentence case; the gravestones in their own face)
-    this.lines = wrapText(text, 300, 1, this.font); this.full = this.lines.join('\n'); this.t = 0; this.done = false; this.closed = false; this.name = o.name || null; this.onClose = o.onClose || null; this.choices = o.choices || null; this.sel = o.sel || 0; this.choice = -1; this.footer = o.footer || null; }
+    this.lines = wrapText(text, 300, 1, this.font); this.full = this.lines.join('\n'); this.t = 0; this.done = false; this.closed = false; this.name = o.name || null; this.onClose = o.onClose || null; this.choices = o.choices || null; this.sel = o.sel || 0; this.choice = -1; this.footer = o.footer || null; this.voice = o.voice || voiceOf(o.name); this.spoken = {}; this.type = {}; }          // (voice: their speaking notes, voices.js; nobody named, no sound)
   update() {
-    this.t += 1.2; const skip = Input.pressed.confirm || Input.pressed.back || Input.pressed.attack || Input.pressed.jump;
+    const skip = Input.pressed.confirm || Input.pressed.back || Input.pressed.attack || Input.pressed.jump;
+    if (skip) this.type.rest = 0; this.t = typeStep(this.type, this.full, this.t);          // (the words appear, resting at commas and full stops: voices.js)
+    if (skip) this.spoken.mute = true; else chatter(this.spoken, this.voice, this.full, this.t);          // (they talk while the words fill the box, a note to a word; hurrying the words hushes them)
     if (this.choices && this.t >= this.full.length) {                                       // a question: LEFT / RIGHT (or UP / DOWN) choose, ENTER / SPACE answers, ESC says no
       this.done = true; const n = this.choices.length;
       if (Input.pressed.left || Input.pressed.up) { this.sel = (this.sel + n - 1) % n; A.sfx('click'); } if (Input.pressed.right || Input.pressed.down) { this.sel = (this.sel + 1) % n; A.sfx('click'); }
@@ -647,10 +651,16 @@ export class GameOver {
   }
 }
 
+// THE ENDING, on the hill above Prague.  The sun rises and the narration is read; then SHE speaks (her farewell grows with the Pages found: farewell.js) and goes into the light; he rises, the sword still in his
+// hand - with all six Pages he goes down toward the city - the last words come, and in the quiet after them the blade HUMS once and glints.  Short of all six, a card says how many were found.  Then CONTINUE.
+// phases: dawn, speak, fade, rise, last, hum, card.  Holding a button hurries the wordless parts along.
+const DAWN_END = 720, FADE_END = 170;
+const FLOWERS = [['gy_lily', 30, 170], ['gy_rose', 39, 172], ['gy_posy', 47, 171], ['gy_daisy', 25, 173], ['gy_lily', 52, 173], ['gy_rose', 34, 175]];          // (one more on her grave for every Page found)
 export class Ending {
-  constructor(g) { this.g = g; this.t = 0; this.menu = null; this.cr = null; }
+  constructor(g) { this.g = g; this.t = 0; this.menu = null; this.cr = null; this.F = farewell(g.save); this.phase = 'dawn'; this.p = 0; this.i = 0; this.dlg = null; this.hummed = false; }
   // after the ending, CONTINUE rolls the credits (credits.txt) over the dawn; the ending music goes on playing underneath.  UP / DOWN speed it up, ESC leaves.  At the end: back to the title.
-  startCredits() { this.menu = null; loadCredits(this.cr = { lines: null, scroll: -(H - 24 - 14), t: 0, done: false }); A.sfx('select'); }
+  startCredits() { this.menu = null; A.hush = 1; loadCredits(this.cr = { lines: null, scroll: -(H - 24 - 14), t: 0, done: false }); A.sfx('select'); }
+  enter(phase) { this.phase = phase; this.p = 0; }
   update() {
     this.t++;
     if (this.cr) {
@@ -658,14 +668,32 @@ export class Ending {
       if (c.lines && !c.done) { c.scroll += Input.held.down ? 1.6 : Input.held.up ? -0.6 : 0.32; c.scroll = Math.max(-(H - 38), c.scroll); if (c.scroll > c.lines.height + 24) { c.done = true; this.menu = new Menu([{ label: 'RETURN TO TITLE', action: () => this.g.toTitle() }]); } }
       if (Input.pressed.esc || (!c.done && Input.taps.length)) { this.g.toTitle(); return; } if (this.menu) this.menu.update(this.g); return;
     }
-    if (this.t > 780 && !this.menu) this.menu = new Menu([{ label: 'CONTINUE', action: () => this.startCredits() }]); if (this.menu) this.menu.update(this.g);
+    this.p += this.phase !== 'speak' && (Input.held.confirm || Input.held.attack || Input.held.jump) ? 4 : 1;
+    if (this.phase === 'dawn') { if (this.p > DAWN_END) this.enter('speak'); }
+    else if (this.phase === 'speak') {
+      if (!this.dlg) { const line = this.F.lines[this.i]; if (!line) { this.enter('fade'); A.sfx('ghost'); return; } const [who, words, font] = line; this.dlg = new Dialog(words, { name: who, font }); return; }
+      this.dlg.update(); if (this.dlg.closed) { this.dlg = null; this.i++; }
+    } else if (this.phase === 'fade') { if (this.p > FADE_END) this.enter('rise'); }
+    else if (this.phase === 'rise') { if (this.p > (this.F.all ? 400 : 110)) this.enter('last'); }
+    else if (this.phase === 'last') { if (this.p > 50 + this.F.after.length * 60 + 110) { this.enter('hum'); A.hush = 0.12; } }          // (the music all but stops, so the blade is heard)
+    else if (this.phase === 'hum') { if (!this.hummed && this.p > 60) { this.hummed = true; this.humAt = this.t; A.sfx('hum'); } if (this.p > 300) this.enter(this.F.card ? 'card' : 'done'); }
+    else if (!this.menu && this.p > (this.phase === 'card' ? 110 : 20)) this.menu = new Menu([{ label: 'CONTINUE', action: () => this.startCredits() }]);
+    if (this.menu) this.menu.update(this.g);
   }
-  draw(ctx) {
-    const t = this.t, g = this.g, S = g.save; const a = clamp(t / 240, 0, 1);
+  // where he is: kneeling at the grave, then standing; with all six Pages, walking down off the hill toward the city
+  hero() {
+    const ph = this.phase, before = ph === 'dawn' || ph === 'speak' || ph === 'fade';
+    if (before) return { sheet: 'hero_crouch', f: 0, x: 68, y: 169, dir: -1, sc: 1, blade: null };
+    if (!this.F.all) return { sheet: 'hero_idle', f: this.t / 10, x: 68, y: 169, dir: -1, sc: 1, blade: [5, -13] };
+    const d = ph === 'rise' ? clamp((this.p - 70) / 320, 0, 1) : 1, walking = d > 0 && d < 1, sc = 1 - 0.18 * d;
+    return { sheet: walking ? 'hero_run' : 'hero_idle', f: walking ? this.t / 7 : this.t / 10, x: 68 + 150 * d, y: 169 + 9 * d, dir: d > 0 ? 1 : -1, sc, blade: d > 0 ? [-5 * sc, -13 * sc] : [5, -13] };
+  }
+  draw(ctx, top) {
+    const t = this.t, ph = this.phase, p = this.p, a = clamp(t / 240, 0, 1);
     // THE HILL ABOVE PRAGUE AT DAWN: the sky warms from violet to gold, the sun climbs from behind the mountains and the city, and the light spreads over the hill
-    const lerp3 = (A, B, C, k) => { const p = k < 0.5 ? [A, B, k * 2] : [B, C, (k - 0.5) * 2]; return p[0].map((v, i) => Math.round(v + (p[1][i] - v) * p[2])); };
-    const k = easeOut(clamp((t - 40) / 520, 0, 1)), top = lerp3([22, 14, 44], [120, 72, 120], [255, 214, 150], k), bot = lerp3([54, 28, 66], [236, 122, 78], [255, 236, 180], k), hz = 158;
-    const grd = ctx.createLinearGradient(0, 0, 0, hz); grd.addColorStop(0, `rgb(${top})`); grd.addColorStop(1, `rgb(${bot})`); ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
+    const lerp3 = (A, B, C, k) => { const q = k < 0.5 ? [A, B, k * 2] : [B, C, (k - 0.5) * 2]; return q[0].map((v, i) => Math.round(v + (q[1][i] - v) * q[2])); };
+    const k = easeOut(clamp((t - 40) / 520, 0, 1)), skyTop = lerp3([22, 14, 44], [120, 72, 120], [255, 214, 150], k), bot = lerp3([54, 28, 66], [236, 122, 78], [255, 236, 180], k), hz = 158;
+    const grd = ctx.createLinearGradient(0, 0, 0, hz); grd.addColorStop(0, `rgb(${skyTop})`); grd.addColorStop(1, `rgb(${bot})`); ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
     const sx = Math.round(W * 0.84), sy = hz + 30 - k * 128;                                              // (it rises behind the mountains and the city)
     const halo = ctx.createRadialGradient(sx, sy, 4, sx, sy, 150); halo.addColorStop(0, `rgba(255,236,170,${0.75 * k})`); halo.addColorStop(1, 'rgba(255,170,80,0)'); ctx.fillStyle = halo; ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = `rgb(255,${Math.round(236 + 14 * k)},${Math.round(170 + 70 * k)})`; ctx.beginPath(); ctx.arc(sx, sy, 20 + k * 8, 0, Math.PI * 2); ctx.fill();
@@ -674,21 +702,33 @@ export class Ending {
     ctx.fillStyle = `rgba(255,170,90,${0.3 * k})`; ctx.fillRect(0, 0, W, H); const gl = ctx.createLinearGradient(0, hz - 50, 0, hz + 10); gl.addColorStop(0, 'rgba(255,200,120,0)'); gl.addColorStop(1, `rgba(255,210,130,${0.45 * k})`); ctx.fillStyle = gl; ctx.fillRect(0, hz - 50, W, 60);          // (morning light on the roofs)
     const hill = `rgb(${Math.round(10 + 70 * k)},${Math.round(6 + 56 * k)},${Math.round(18 + 22 * k)})`; ctx.fillStyle = hill; ctx.beginPath(); ctx.moveTo(0, H); ctx.lineTo(0, 150); ctx.quadraticCurveTo(70, 140, 150, 160); ctx.quadraticCurveTo(250, 182, W, 172); ctx.lineTo(W, H); ctx.fill();          // the hill, lit from the sun's side as the day comes
     ctx.strokeStyle = `rgba(255,226,150,${0.7 * k})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, 150.5); ctx.quadraticCurveTo(70, 140.5, 150, 160.5); ctx.quadraticCurveTo(250, 182.5, W, 172.5); ctx.stroke();
-    if (t > 200) { const k = clamp((t - 200) / 60, 0, 1); drawText(ctx, STORY.ending.title, W / 2, 30, { align: 'center', scale: 2, color: '#fff0b0', outline: '#3a1008', alpha: k }); }
-    STORY.ending.lines.map((txt, i) => [txt, 50 + i * 12, 330 + i * 40]).forEach(([txt, yy, t0]) => { if (t > t0) drawText(ctx, txt, W / 2, yy, { align: 'center', scale: 1.15, color: '#3a1008', alpha: clamp((t - t0) / 60, 0, 1) }); });
-    if (t > 560) { const k = clamp((t - 560) / 60, 0, 1), sec = secretStats(g); panel(ctx, 96, 104, W - 192, 70, 0.8 * k); ctx.globalAlpha = k; drawText(ctx, `TIME ${fmtTime(S.time)}    LEVEL ${S.level}`, W / 2, 109, { align: 'center', color: PALE }); drawText(ctx, `FOES SLAIN ${g.kills + (S.kills || 0)}    ITEMS ${g.itemPercent()}%`, W / 2, 121, { align: 'center', color: PALE }); drawText(ctx, `SECRETS FOUND ${sec.found} / ${sec.total}`, W / 2, 133, { align: 'center', color: sec.found === sec.total && sec.total ? GOLD : PALE }); drawText(ctx, 'THANK YOU FOR PLAYING', W / 2, 155, { align: 'center', color: GOLD }); ctx.globalAlpha = 1; }
-    if (t > 300) {                                                                    // the hill above Prague, in the sunlight: the Stranger kneels at her grave - and she is beside him, seen at last without any blue light
-      const hk = SHEET.hero_crouch_cw ? 'hero_crouch_cw' : 'hero_crouch', fa = clamp((t - 300) / 60, 0, 1), ga = clamp((t - 480) / 120, 0, 1);
+    // the words: the first narration under the dawn, and again at the end, what became of him
+    const title = al => { if (al > 0) drawText(ctx, STORY.ending.title, W / 2, 30, { align: 'center', scale: 2, color: '#fff0b0', outline: '#3a1008', alpha: al }); };
+    const narrate = (list, y0, since, gap, fade) => list.forEach((txt, i) => { const al = clamp((since - i * gap) / 60, 0, 1) * fade; if (al > 0) drawText(ctx, txt, W / 2, y0 + i * 12, { align: 'center', scale: 1.15, color: '#3a1008', alpha: al }); });
+    if (ph === 'dawn' || (ph === 'speak' && p < 40)) { const out = ph === 'speak' ? 1 - p / 40 : 1; title(clamp((t - 200) / 60, 0, 1) * out); narrate(STORY.ending.lines, 50, ph === 'dawn' ? p - 330 : 1e9, 40, out); }
+    if (ph === 'last' || ph === 'hum' || ph === 'card' || ph === 'done') { const out = ph === 'card' ? 1 - clamp(p / 40, 0, 1) : 1; title(clamp((ph === 'last' ? p : 1e9) / 60, 0, 1) * out); narrate(this.F.after, 56, ph === 'last' ? p - 40 : 1e9, 60, out); }
+    // the hill above Prague, in the sunlight: her grave and its flowers, the Stranger, and her beside him - seen at last without any blue light
+    if (t > 300) {
+      const fa = clamp((t - 300) / 60, 0, 1), H0 = this.hero(), key = SHEET[H0.sheet + '_cw'] ? H0.sheet + '_cw' : H0.sheet;
       ctx.fillStyle = '#0a0612'; ctx.beginPath(); ctx.moveTo(34, 169); ctx.lineTo(34, 150); ctx.quadraticCurveTo(41, 141, 48, 150); ctx.lineTo(48, 169); ctx.fill();
-      drawSheet(ctx, hk, 0, 68, 169, { dir: -1, alpha: fa });
-      drawSheet(ctx, 'ghost_lady', Math.floor(t / 10) % 7, 94, 169, { dir: -1, alpha: ga * 0.92 });
+      FLOWERS.slice(0, this.F.pages.size).forEach(([nm, x, y]) => { const im = IMG[nm]; if (!im) return; ctx.globalAlpha = fa; ctx.drawImage(im, Math.round(x - im.width * 0.6), Math.round(y - im.height * 1.2), Math.round(im.width * 1.2), Math.round(im.height * 1.2)); ctx.globalAlpha = 1; });
+      drawSheet(ctx, key, H0.f, H0.x, H0.y, { dir: H0.dir, alpha: fa, scale: H0.sc });
+      const going = ph === 'fade' ? clamp(p / FADE_END, 0, 1) : 0, here = ph === 'dawn' ? clamp((t - 480) / 120, 0, 1) : ph === 'speak' ? 1 : ph === 'fade' ? 1 - going : 0;
+      if (here > 0) drawSheet(ctx, 'ghost_lady', t / 10, 94, 169 - going * going * 30, { dir: -1, alpha: here * 0.92 });
+      if (going > 0) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; for (let i = 0; i < 26; i++) { const r = (i * 0.6180339) % 1, q = clamp(going * 1.6 - r * 0.6, 0, 1); if (q <= 0 || q >= 1) continue; ctx.fillStyle = `rgba(215,232,255,${(0.9 * (1 - q)).toFixed(3)})`; ctx.fillRect(Math.round(94 + Math.sin(i * 2.4 + q * 4) * (4 + r * 12)), Math.round(165 - r * 34 - q * 62), 1 + (i % 5 === 0), 1 + (i % 5 === 0)); } ctx.restore(); }          // (she goes up into the light)
+      // THE HUM: a cold light runs on the blade, once
+      if (this.hummed && H0.blade) { const e = (t - this.humAt) / 130; if (e < 1) { const v = Math.sin(Math.PI * Math.min(1, e * 1.15)) ** 2, bx = H0.x + H0.blade[0], by = H0.y + H0.blade[1], wob = 1 + 0.12 * Math.sin(t * 1.9);
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; const gr = ctx.createRadialGradient(bx, by, 0, bx, by, 22 * wob); gr.addColorStop(0, `rgba(150,200,255,${(0.85 * v).toFixed(3)})`); gr.addColorStop(1, 'rgba(90,140,255,0)'); ctx.fillStyle = gr; ctx.fillRect(bx - 26, by - 26, 52, 52);
+        ctx.fillStyle = `rgba(235,245,255,${v.toFixed(3)})`; const s = Math.round(3 + 5 * v), X = Math.round(bx), Y = Math.round(by); ctx.fillRect(X - s, Y, s * 2 + 1, 1); ctx.fillRect(X, Y - s, 1, s * 2 + 1); ctx.fillRect(X - 1, Y - 1, 3, 3); ctx.restore(); } }
     }
+    if (ph === 'speak' && this.dlg && top) { const boxH = this.dlg.lines.length * 11 + 16; top.save(); top.translate(0, 28 - (H - boxH - 14)); this.dlg.draw(top); top.restore(); }          // (her words stand at the top, clear of the two of them)
+    if (this.F.card && (ph === 'card') && !this.cr) { const al = clamp((p - 30) / 40, 0, 1); ctx.globalAlpha = al * 0.85; ctx.fillStyle = '#0a0612'; ctx.fillRect(0, 48, W, 48); ctx.globalAlpha = 1; this.F.card.forEach((txt, i) => drawText(ctx, txt, W / 2, 60 + i * 16, { align: 'center', scale: i ? 1.1 : 1.3, color: i ? '#cfe0ff' : GOLD, outline: '#000', alpha: al })); }
     if (this.cr) {
-      const c = this.cr, top = 24, view = H - top - 14; ctx.fillStyle = 'rgba(6,4,14,0.97)'; ctx.fillRect(0, 0, W, H);
-      if (!c.done) { drawCreditLines(ctx, c, top, view); const f1 = ctx.createLinearGradient(0, top, 0, top + 18); f1.addColorStop(0, 'rgba(6,4,14,1)'); f1.addColorStop(1, 'rgba(6,4,14,0)'); ctx.fillStyle = f1; ctx.fillRect(0, top, W, 18); const f2 = ctx.createLinearGradient(0, H - 30, 0, H - 14); f2.addColorStop(0, 'rgba(6,4,14,0)'); f2.addColorStop(1, 'rgba(6,4,14,1)'); ctx.fillStyle = f2; ctx.fillRect(0, H - 30, W, 16); }
-      else { const k = clamp((c.t - 0) / 60, 0, 1); drawText(ctx, 'THANK YOU FOR PLAYING', W / 2, H / 2 - 22, { align: 'center', scale: 1.6, color: GOLD, outline: '#000', font: 'hand' }); }
+      const c = this.cr, head = 24, view = H - head - 14; ctx.fillStyle = 'rgba(6,4,14,0.97)'; ctx.fillRect(0, 0, W, H);
+      if (!c.done) { drawCreditLines(ctx, c, head, view); const f1 = ctx.createLinearGradient(0, head, 0, head + 18); f1.addColorStop(0, 'rgba(6,4,14,1)'); f1.addColorStop(1, 'rgba(6,4,14,0)'); ctx.fillStyle = f1; ctx.fillRect(0, head, W, 18); const f2 = ctx.createLinearGradient(0, H - 30, 0, H - 14); f2.addColorStop(0, 'rgba(6,4,14,0)'); f2.addColorStop(1, 'rgba(6,4,14,1)'); ctx.fillStyle = f2; ctx.fillRect(0, H - 30, W, 16); }
+      else { const kk = clamp((c.t - 0) / 60, 0, 1); drawText(ctx, 'THANK YOU FOR PLAYING', W / 2, H / 2 - 22, { align: 'center', scale: 1.6, color: GOLD, outline: '#000', font: 'hand' }); }
       if (!c.done) drawText(ctx, Input.touchOn ? 'TAP TO LEAVE' : 'DOWN SPEEDS UP     ESC LEAVES', W / 2, H - 12, { align: 'center', color: DIM });
     }
-    if (this.menu) this.menu.draw(ctx, W / 2, this.cr ? H / 2 + 4 : H - 38, 14);
+    if (this.menu) this.menu.draw(ctx, W / 2, this.cr ? H / 2 + 4 : H - 28, 14);
   }
 }

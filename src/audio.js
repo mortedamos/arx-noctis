@@ -231,6 +231,10 @@ export const Audio_ = {
     ink() { this.noise(0.16, 700, 160, 0.2, 'lowpass', 1); this.tone(220, 90, 0.12, 'sine', 0.12); this.noise(0.08, 3000, 1200, 0.05, 'bandpass', 2, 0.03); },          // a wet splat
     shatter() { this.noise(0.35, 7000, 2000, 0.3, 'highpass', 0.7); [2400, 3100, 1900].forEach((f, i) => this.tone(f, f * 0.55, 0.22, 'triangle', 0.06, i * 0.03)); this.noise(0.3, 1500, 200, 0.12, 'lowpass', 0.8, 0.04); },          // ice breaking: glassy
     crumble() { this.noise(0.55, 500, 90, 0.26, 'lowpass', 0.8); for (let i = 0; i < 4; i++) this.noise(0.05, 1800, 600, 0.1, 'bandpass', 2, 0.08 * i); },          // a slab giving way: gravel
+    hum() {          // the blade Silberzahn, once, at the very end: a low note that swells out of the quiet and beats against itself, with a thin ring over it
+      const c = this.ctx; if (!c) return; const t = c.currentTime, g = c.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22, t + 0.7); g.gain.setValueAtTime(0.22, t + 1.2); g.gain.exponentialRampToValueAtTime(0.025, t + 3.3); g.gain.linearRampToValueAtTime(0, t + 3.8); g.connect(this.sfxGain);
+      for (const [f, v, type] of [[73.4, 1, 'sine'], [74.7, 0.7, 'sine'], [146.8, 0.45, 'triangle'], [221.1, 0.14, 'sine'], [1318.5, 0.025, 'sine']]) { const o = c.createOscillator(), k = c.createGain(); o.type = type; o.frequency.value = f; k.gain.value = v; o.connect(k); k.connect(g); o.start(t); o.stop(t + 3.9); }
+    },
     candle() { this.noise(0.12, 2500, 1200, 0.1, 'bandpass', 2); this.tone(1400, 900, 0.1, 'triangle', 0.07); },
     thunder(o) { const p = o.power || 1; this.noise(2.4, 700, 50, 0.5 * p, 'lowpass', 0.6, 0); this.noise(1.2, 300, 40, 0.4 * p, 'lowpass', 0.6, 0.35); this.tone(60, 28, 1.6, 'sine', 0.3 * p); },
     crack() { this.noise(0.3, 6000, 800, 0.35, 'highpass', 0.8); this.noise(0.5, 900, 80, 0.3, 'lowpass', 0.8, 0.05); },

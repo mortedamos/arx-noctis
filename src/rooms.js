@@ -264,7 +264,7 @@ export function arrangeCandelabras(def) {
   b.def.keepLook = true; b.floor(0, 26, 12); b.block(0, 9, 3, 3).block(3, 11, 1, 1);          // the hill rises behind it, on the left
   b.d('img', 5, 12, { img: 'forest_tree_4', back: true }).d('img', 9, 12, { img: 'forest_tree_2', back: true }).d('img', 17, 12, { img: 'forest_tree_1', back: true }).d('img', 21, 12, { img: 'forest_tree_3', back: true });
   b.d('img', 12, 12, { img: 'cemetery_stone-4' }).d('img', 15, 12, { img: 'cemetery_bush-small' }).d('img', 19, 12, { img: 'cemetery_stone-2' }).d('img', 23, 12, { img: 'cemetery_bush-small' });
-  b.e('tablet', 11, 12, { id: 'tabyew', narr: true, text: 'A flat stone under an old yew, worn smooth, as if someone sat here a long time in the rain. A folded page lies under a smaller stone, kept dry.' });          // (the flat stone he sat on)
+  b.e('tablet', 11, 12, { id: 'tabyew', narr: true, text: 'A flat stone under an old yew, worn smooth, as if someone sat here a long time in the rain. A folded page lies under a smaller stone, kept dry.', after: 'page6', afterText: 'A flat stone under an old yew.' });          // (the flat stone he sat on; once PAGE 6 is taken it says less: [tablet tabyew after])
   b.e('upgrade', 13, 12, { kind: 'page', n: 6, id: 'page6', secret: true });          // PAGE 6: THE NAME I LEFT
   b.exit('R', 9, 11, 'v0', 1, 12);
   add(b);

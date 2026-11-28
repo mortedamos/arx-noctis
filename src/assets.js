@@ -89,6 +89,7 @@ export async function loadAll(progress = () => {}) {
   buildWhiteCape();                       // the hero's baked red cape -> white (used while the White Cloak option is on)
   buildLady();                            // the ghost who walks behind him
   buildGraveyard();                       // her stones and flowers, trimmed and shrunk
+  crownSwampTrees();                      // the swamp's great trees: a ragged crown in place of the flat block
   levelFeet(['ars_gnu_r0', 'ars_gnu_r1', 'ars_gnu_r2', 'ars_gnu_r3']);          // the Cinder Warden: every frame's feet on the ground line
   drawProcedural(addSheet, SHEET, IMG);   // custom pixel art: bat, icons, props
   buildEnchants();                        // enchanted sword variants (needs the hero sheets)
@@ -153,6 +154,29 @@ function buildLady() {
   }
   g.putImageData(d, 0, 0);
   addSheet('ghost_lady', c, s.n, s.w, s.h, { face: s.face, ax: s.ax, ay: s.ay, dx: s.dx, dy: s.dy });
+}
+
+// The great swamp trees were drawn to hang from the top of a screen: their canopy is a flat dark BLOCK with a straight top and straight sides.  In the two-floor rooms the camera sees over it, and it showed as a
+// hard-edged rectangle behind the upper floor.  Cut the block into a ragged crown (clumps of leaves round a low dome; the trunks and the leaves hanging below are untouched) and light its new edge with the
+// tree's own greens.
+function crownSwampTrees() {
+  const im = IMG.swamp_trees; if (!im || !im.width) return;
+  const W0 = im.width, H0 = im.height, c = canvasOf(W0, H0), g = c.getContext('2d'); g.drawImage(im, 0, 0);
+  const d = g.getImageData(0, 0, W0, H0), p = d.data, hash = n => { const q = Math.sin(n * 127.1 + 311.7) * 43758.5453; return q - Math.floor(q); };
+  const greens = []; for (let i = 0; i < p.length && greens.length < 400; i += 4) if (p[i + 3] > 220 && p[i + 1] > p[i] + 8 && p[i + 1] > p[i + 2] + 4) greens.push([p[i], p[i + 1], p[i + 2]]);
+  if (!greens.length) greens.push([34, 62, 32]);
+  const clumps = [[13, 54, 13], [W0 - 14, 54, 13]];
+  for (let i = 0, x = 20; x < W0 - 16; i++, x += 19 + Math.floor(hash(i) * 8)) clumps.push([x, 24 + 24 * ((x - W0 / 2) / (W0 / 2)) ** 2 + (hash(i + 40) - 0.5) * 12, 13 + hash(i + 80) * 9]);
+  const keep = (x, y) => y >= 60 || (y >= 44 && x >= 20 && x < W0 - 20) || clumps.some(([cx, cy, r]) => { const a = Math.atan2(y - cy, x - cx); return Math.hypot(x - cx, y - cy) < r + 2.2 * Math.sin(a * 7 + cx) + 1.4 * Math.sin(a * 13 + cy); });
+  const cut = new Uint8Array(W0 * 60);          // (1 = taken away)
+  for (let y = 0; y < 60; y++) for (let x = 0; x < W0; x++) if (p[(y * W0 + x) * 4 + 3] > 0 && !keep(x, y)) { p[(y * W0 + x) * 4 + 3] = 0; cut[y * W0 + x] = 1; }
+  for (let y = 0; y < 64; y++) for (let x = 0; x < W0; x++) {          // leaves along the new edge: thick right at it, thinning into the dark
+    const i = (y * W0 + x) * 4; if (p[i + 3] < 200) continue;
+    let depth = 0; for (let k = 1; k <= 7 && !depth; k++) if (y - k < 0 ? false : cut[(y - k) * W0 + x]) depth = k;
+    if (!depth) continue; const h = hash((x >> 1) * 3.1 + (y >> 1) * 57.7);
+    if (h < 0.62 - depth * 0.08) { const col = greens[Math.floor(hash((x >> 1) + (y >> 1) * 91.3) * greens.length)], k = 1 - depth * 0.07; p[i] = col[0] * k; p[i + 1] = col[1] * k; p[i + 2] = col[2] * k; }
+  }
+  g.putImageData(d, 0, 0); IMG.swamp_trees = c;
 }
 
 // The Graveyard pack's pieces come on 128x128 canvases with the object small in the middle: cut each to its own outline and shrink it (smoothly) to its height in game pixels.

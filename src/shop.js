@@ -1,6 +1,7 @@
 // THE KEEPER: a hooded figure in a dark little room off a corridor in the later zones.  It sells what the dead no longer need - for the gold the hero has gathered: a blade steeped in fire, frost or sun,
 // healing and mana, throwing weapons, and a few things that make the hero lastingly stronger (each of those only once per stall).
 // Shopkeeper  - the prop you speak to (UP);  ShopScreen - the menu that opens (game.state 'shop').
+import { chatter, typeStep } from './voices.js';
 import { drawText, wrapText, hasFace } from './font.js';
 import { Input } from './input.js';
 import { Audio_ as A } from './audio.js';
@@ -55,7 +56,7 @@ export class Shopkeeper {
 
 export class ShopScreen {
   constructor(g, keeper) {
-    this.g = g; this.keeper = keeper; this.t = 0; this.sel = 0; this.top = 0; this.hit = []; this.say = pickOf(kl('greet', GREET)); this.sayT = 0;
+    this.g = g; this.keeper = keeper; this.t = 0; this.sel = 0; this.top = 0; this.hit = []; this.say = pickOf(kl('greet', GREET)); this.shown = 0; this.type = {};
     this.pose = new Pose(); this.pose.play(SEQ_GREET);          // (he opens his cloak on his wares as he greets you)
     this.stock = this.build();
   }
@@ -84,9 +85,10 @@ export class ShopScreen {
     S.gold -= e.price; e.buy(); A.sfx('coin'); A.sfx('item'); this.speak(pickOf(kl('thanks', THANKS))); this.pose.play(SEQ_THANKS); this.stock = this.build();
     this.sel = Math.min(this.sel, this.stock.length - 1);          // (a ware that is gone once bought - the folded page - leaves the list a row shorter: the cursor must not be left below its end, or the next frame draws a ware that is not there and the screen freezes)
   }
-  speak(s) { this.say = s; this.sayT = 0; }
+  speak(s) { this.say = s; this.shown = 0; this.type = {}; this.spoken = {}; }
   update() {
-    this.t++; this.sayT++; this.pose.update(); const n = this.stock.length;
+    this.t++; this.pose.update(); const n = this.stock.length;
+    this.shown = typeStep(this.type, this.say, this.shown); chatter(this.spoken ||= {}, 'keeper', this.say, this.shown);          // (the Keeper's words appear, with its voice, at the pace of all speech)
     for (const tp of Input.taps || []) {
       if (tp.x < 112 || tp.x > W - 6 || tp.y < 8 || tp.y > H - 6) { this.close(); return; }
       for (let k = 0; k < this.hit.length; k++) { const r = this.hit[k]; if (r && tp.x >= r.x0 && tp.x <= r.x1 && tp.y >= r.y0 && tp.y <= r.y1) { if (this.sel === r.i) this.buy(); else { this.sel = r.i; A.sfx('click'); } return; } }
@@ -102,7 +104,7 @@ export class ShopScreen {
     // the Keeper, large, at the left, with what it says beneath
     const kx = 54, ky = 142; const gl = ctx.createRadialGradient(kx, ky - 40, 4, kx, ky - 40, 70); gl.addColorStop(0, 'rgba(150,80,220,0.35)'); gl.addColorStop(1, 'rgba(60,20,110,0)'); ctx.fillStyle = gl; ctx.fillRect(0, 40, 112, 130);
     const [ksheet, kfr] = this.pose.cell; drawSheet(ctx, ksheet, kfr, kx, ky, { ay: 1, scale: 2, dir: 1 });
-    const words = this.say.slice(0, Math.floor(this.sayT / 1.2)), sf = hasFace('npc') ? 'npc' : 'mixed'; wrapText(words, 100, 1, sf).forEach((ln, i) => drawText(ctx, ln, 8, 148 + i * 10, { color: VIOLET, font: sf }));
+    const words = this.say.slice(0, Math.floor(this.shown)), sf = hasFace('npc') ? 'npc' : 'mixed'; wrapText(words, 100, 1, sf).forEach((ln, i) => drawText(ctx, ln, 8, 148 + i * 10, { color: VIOLET, font: sf }));
     drawText(ctx, 'THE KEEPER', 8, 12, { color: VIOLET, scale: 1.3, outline: '#000' });
     // the wares
     panel(ctx, 112, 8, W - 118, H - 16, 0.92); drawText(ctx, 'WARES', 122, 14, { color: GOLD, scale: 1.2 }); drawText(ctx, 'GOLD ' + S.gold, W - 12, 14, { align: 'right', color: GOLD, scale: 1.2 });

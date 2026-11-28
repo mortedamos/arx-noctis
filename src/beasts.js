@@ -43,7 +43,7 @@ export class Villager extends Enemy {
     this.dir = g.player.x >= this.x ? 1 : -1;
     if (this.sells && !(first && gifts.length)) { g.save.flags[key] = true; return this.offer(g, name, first ? shopSay() : (nf('AGAIN') || this.o.again || shopSay())); }       // a merchant: a greeting and the offer in one box
     const text = first ? (nf('TEXT') || this.o.text || (this.calm ? L.home : pickOne(L.street))) : (nf('AGAIN') || this.o.again || pickOne(L.again));
-    g.showDialog(text, { name, onClose: () => {
+    g.showDialog(text, { name, voice: kind, onClose: () => {
       if (first) {
         g.save.flags[key] = true; const hx = this.x + this.dir * 8, hy = this.y - 22;
         for (const k of gifts) dropItem(g, k, hx + rand(-6, 6), hy);
@@ -55,11 +55,12 @@ export class Villager extends Enemy {
   // A MERCHANT'S OFFER: a pack of one item for coins.  If you can pay, a YES / NO box asks; if you cannot, he says so.  He only has so much stock, and will not sell what you cannot carry.
   offer(g, name, greeting) {
     const S = g.save, s = this.sells, it = ITEMS[s.item], stockKey = 'stock_' + (this.uid || g.room.id), sold = S.flags[stockKey] || 0, have = itemCount(S, s.item), pre = greeting ? greeting + ' ' : '';
-    if (sold >= (s.stock || 3)) return g.showDialog(pre + 'I HAVE NOTHING MORE TO SELL YOU.', { name });
-    if (have >= it.max) return g.showDialog(pre + 'YOU ARE ALREADY CARRYING ALL THE ' + it.short + ' YOU CAN HOLD.', { name });
+    const voice = LINES[this.kind] ? this.kind : 'woman';
+    if (sold >= (s.stock || 3)) return g.showDialog(pre + 'I HAVE NOTHING MORE TO SELL YOU.', { name, voice });
+    if (have >= it.max) return g.showDialog(pre + 'YOU ARE ALREADY CARRYING ALL THE ' + it.short + ' YOU CAN HOLD.', { name, voice });
     const qty = Math.min(s.qty || it.pack, it.max - have), price = s.price || it.price, line = pre + 'I CAN SELL YOU ' + qty + ' ' + plural(qty, it.short) + ' FOR ' + price + ' COINS.';
-    if (S.gold < price) return g.showDialog(line + ' BUT YOU DO NOT HAVE ENOUGH. COME BACK WHEN YOU DO.', { name, footer: 'COINS ' + S.gold });
-    g.showDialog(line + ' WILL YOU TAKE IT?', { name, choices: ['YES', 'NO'], footer: 'COINS ' + S.gold, onClose: ch => {
+    if (S.gold < price) return g.showDialog(line + ' BUT YOU DO NOT HAVE ENOUGH. COME BACK WHEN YOU DO.', { name, voice, footer: 'COINS ' + S.gold });
+    g.showDialog(line + ' WILL YOU TAKE IT?', { name, voice, choices: ['YES', 'NO'], footer: 'COINS ' + S.gold, onClose: ch => {
       if (ch !== 0) return;
       S.gold -= price; const n = addItem(S, s.item, qty); S.flags[stockKey] = sold + 1; A.sfx('coin');
       g.popup(g.player.x, g.player.y - 46, '+' + n + ' ' + plural(n, it.short), '#ffe9a0'); g.popup(this.x, this.y - 58, '-' + price, '#ffd36a');

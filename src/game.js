@@ -26,6 +26,7 @@ import { Projectile, Shockwave, FirePatch } from './projectiles.js';
 import { Skull, SKULL_COUNT, Bell, LitCandle, Statue, Barrel, Altar, Waystone, Tablet, Chest, Lever, Upgrade, Relic, Pickup, chestGift, ABILITIES, UPGRADES, SecretCase } from './props.js';
 import { PuzzleLever, puzzlePiece, puzzleDress } from './puzzleprops.js';
 import { drawDeco, isBack, roomFlames, drawFlames2D, drawFireWall, decoCoversHazard, platesOver, sigilOf, drawSigilCard } from './decor.js';
+import { guideLines } from './guide.js';
 import { drawIce } from './enchant.js';
 import { drawSheet, IMG } from './assets.js';
 import { noteSeen, noteKill } from './bestiary.js';
@@ -339,7 +340,7 @@ export class Game {
       else if (s.type === 'litcandle') this.props.push(new LitCandle(x, y, { ...o, open: !!S.flags[o.id] }));
       else if (s.type === 'skull') { if (!S.flags[o.id]) this.props.push(new Skull(x, y, o)); }
       else if (s.type === 'lever') this.props.push(new Lever(x, y, { ...o, open: !!S.flags[o.id] }));
-      else if (s.type === 'chest') { const c = new Chest(x, y, o); if (S.flags[o.id]) { c.open = true; if (!S.flags[o.id + '_u']) chestGift(this, x, y - 22, o.contents, o.id + '_u'); } this.props.push(c); }
+      else if (s.type === 'chest') { const c = new Chest(x + (o.dx || 0), y, o); if (/^page[0-9]$/.test(o.contents) && S.flags[o.contents]) S.flags[o.id] = true; /* (its page is already held: it stands open) */ if (S.flags[o.id]) { c.open = true; if (!S.flags[o.id + '_u']) chestGift(this, c.x, y - 22, o.contents, o.id + '_u'); } this.props.push(c); }
       else if (s.type === 'upgrade') { if (!S.flags[o.id] && (o.kind !== 'silberzahn' || !S.flags.opening_seen || S.flags.sword_lost)) this.props.push(new Upgrade(x, y - 12 + 0, o)); }
       else if (s.type.startsWith('boss_')) {
         if (bossDone) { if (o.reward2 && UPGRADES[o.reward2] && !S.flags['bu_' + id + '_2'] && !S.flags['got_' + o.reward2]) this.props.push(new Upgrade(this.roomCenterX(def) - 44, this.groundBelow(this.roomCenterX(def) - 44, 6 * 16) - 12, { kind: o.reward2, id: 'bu_' + id + '_2' })); if (o.page && !S.flags['page' + o.page]) this.props.push(new Upgrade(this.roomCenterX(def) + 44, this.groundBelow(this.roomCenterX(def) + 44, 6 * 16) - 12, { kind: 'page', n: o.page, id: 'page' + o.page, secret: true })); if (UPGRADES[o.reward]) { if (!S.flags['bu_' + id]) this.props.push(new Upgrade(this.roomCenterX(def), this.groundBelow(this.roomCenterX(def), 6 * 16) - 12, { kind: o.reward, id: 'bu_' + id })); }
@@ -587,19 +588,30 @@ export class Game {
     for (let ty = 0; ty < r.h; ty++) for (let tx = 0; tx < r.w; tx++) if (r.get(tx, ty) === TILE.SEAL) r.set(tx, ty, TILE.EMPTY);
     A.sfx('unseal'); this.shake(5, 30);
     const sg = sigilOf('boss_' + r.id);          // a boss whose death lights a sigil on a sealed door: the sigil is shown first, before anything else (his dying words, the reward, the ending)
+    if (sg) { S.flags.guide = 'boss_' + r.id; this.guideT = 0; }          // (she will come and say where to go next: see ladyGuides)
     if (sg) { const p = this.player; p.invT = 99999; p.vx = 0; this.playerFrozen = true; this.sigilCard = { name: sg, t: 0, dur: 240 }; A.sfx('item'); this.fx.flash([1, 0.8, 0.45], 0.25); this.after(240, () => { this.sigilCard = null; this.playerFrozen = false; p.invT = 90; this.bossAftermath(b); }); return; }
     this.bossAftermath(b);
   }
   bossAftermath(b) {
     const S = this.save, r = this.room;
     if (b.reward === 'dawn') { const toEnding = () => { this.state = 'ending'; this.ending = new Ending(this); A.play('ending', { fade: 2 }); this.fx.setAmbient(0, [0, 0, 0], 0); this.fx.setStorm(false); this.fx.setAmbientFx('dust'); S.kills = (S.kills || 0) + this.kills; }; const tk = STORY.talk[b.bossName]; this.after(120, () => { if (tk && tk.after) this.talk(tk.after, toEnding); else toEnding(); }); return; }          // (his dying words, then the sun)
-    if (b.reward === 'well') { this.startWell(); return; }          // (the Rimewyrm drops nothing: the ice of the floor gives way, and its treasure waits below)
+    if (b.reward === 'well') { this.ladyGuides(() => this.startWell()); return; }          // (the Rimewyrm drops nothing: she speaks first, then the ice of the floor gives way, and its treasure waits below)
     const gy = this.groundBelow(b.x, b.y - 8);
     if (UPGRADES[b.reward]) this.props.push(new Upgrade(b.x, gy - 12, { kind: b.reward, id: 'bu_' + r.id })); else this.props.push(new Relic(b.x, gy, b.reward)); if (b.o && b.o.reward2 && UPGRADES[b.o.reward2] && !S.flags['got_' + b.o.reward2]) this.props.push(new Upgrade(b.x - 44, this.groundBelow(b.x - 44, b.y - 8) - 12, { kind: b.o.reward2, id: 'bu_' + r.id + '_2' }));          // (a second gift lands beside the first: the Librarian leaves the Key of Gold AND the Ouroboros)
     if (b.o && b.o.page && !S.flags['page' + b.o.page]) this.props.push(new Upgrade(b.x + 44, gy - 12, { kind: 'page', n: b.o.page, id: 'page' + b.o.page, secret: true }));          // (Baelphegaz harvests misery: a letter he was carrying falls from him)
     for (const [kind, dx] of [['it_bandage', -26], ['it_' + randomItemId(), 26], ['it_dagger', 38]]) this.pickups.push(new Pickup(kind, b.x + dx, b.cy - 20));       // a boss leaves supplies behind
     { const tk = STORY.talk[b.bossName]; if (tk && tk.after) this.after(110, () => { if (this.state === "play") this.talk(tk.after); }); }          // and a few more as it dies
-    this.after(420, () => { if (this.state === 'play' && !this.boss) A.play(ZONES[r.zone].music, { fade: 2 }); });
+    const music = () => { if (this.state === 'dialog' || this.state === 'pause') { this.after(30, music); return; } if (this.state === 'play' && !this.boss) A.play(ZONES[this.room.zone].music, { fade: 2 }); };          // (not while words are up, or the music would never come back)
+    this.after(420, music);
+  }
+  // THE LADY SAYS WHERE TO GO NEXT (guide.js): she appears beside him - out of the wisp, once he carries it - he stands still while she speaks, and she fades again.  save.flags.guide holds the master whose sigil
+  // she has still to speak of, so it is not lost by walking out of the room first.  done: what happens afterwards (the Rimewyrm's floor)
+  ladyGuides(done) {
+    const S = this.save, boss = S.flags.guide, lines = boss && guideLines(S.flags, boss); delete S.flags.guide; if (!lines) { if (done) done(); return; }
+    const gh = this.ghost, p = this.player; this.playerFrozen = true; p.vx = 0; p.invT = Math.max(p.invT, 120); this.bannerObj = null; gh.snapped = false; gh.scene = 900; gh.reveal(900);
+    A.sfx('ghost'); this.fx.ring(p.x - p.dir * 22, p.y - 22, 60, [0.55, 0.78, 1], 40, 0.1); this.fx.flash([0.5, 0.75, 1], 0.2);
+    const speak = () => { if (this.state !== 'play') { this.after(20, speak); return; } this.talk(lines, () => { gh.scene = 40; gh.force = 40; this.playerFrozen = false; p.invT = Math.max(p.invT, 40); this.saveGame(); if (done) done(); }); };
+    this.after(60, speak);
   }
   // THE WELL.  The hero stands on the ice; cracks run out across the floor; then it all shatters and he falls (into the Frozen Well, a room of its own).  Falling out of the broken arena again later
   // brings him back to the well, so the chests can always be reached.
@@ -631,7 +643,7 @@ export class Game {
     };
     this.after(90, go);
   }
-  enterWell() { if (this.trans) return; this.player.invT = Math.max(this.player.invT, 600); this.player.vx = 0; this.changeRoom({ room: 'ic', x: 15 * 16 + 8, y: 3 * 16 }, 1); }
+  enterWell() { if (this.trans) return; this.playerFrozen = false; this.player.invT = 120; this.player.vx = 0; this.changeRoom({ room: 'ic', x: 15 * 16 + 8, y: 3 * 16 }, 1); }          // (SET, not raised: the 99999 he was given while the floor broke must end here, or he blinks and cannot be hurt for half an hour)
   gainAbility(kind, x, y) {
     const S = this.save, a = ABILITIES[kind]; S.abilities[kind] = true; S.flags['got_' + kind] = true; this.cutscene = { t: 0, kind, x, y }; this.playerFrozen = true; this.player.invT = 999;
     A.sfx('ability'); A.play(ZONES[this.room.zone].music, { fade: 0.2 });
@@ -703,6 +715,7 @@ export class Game {
     S.time += 1 / 60; if (S.flags.got_athanor && S.mp < S.maxMp) { S.mpAcc = (S.mpAcc || 0) + 1.75 / 540; if (S.mpAcc >= 1) { S.mpAcc -= 1; p.gainMp(1); } }          // (the Athanor: one point of mana every 5.1 seconds, for ever - 75% quicker than its first nine)
     fx.clearLights(); if (this.room && this.room.maskDirty) { this.room.maskDirty = false; fx.setShadowMask(this.room); }
     this.checkVillageScene(); this.checkOpening(); this.discoStep(); this.stepChase();
+    if (S.flags.guide && !this.boss && !this.cutscene && !this.playerFrozen && !this.trans && !this.well && !p.dead && p.onGround && (this.guideT = (this.guideT || 0) + 1) > 150) this.ladyGuides();          // (after the sigil and the master's last words)
     if (this.room.movers) { this.room.movers.step(false, this); for (const m of this.room.movers.list) fx.light(m.x, m.y + 6, 70, 0.5, [1, 0.8, 0.45]); }          // the brass platforms glide, and glow a little
     if (this.icicles && this.icicles.length > 14) this.icicles = this.icicles.filter(i => !i.dead); for (const ic of this.icicles || []) ic.step(this); for (const j of this.jets || []) j.step(this);                          // loose icicles: shiver when the hero comes close, then drop
     if (this.smokeSpots && this.smokeSpots.length && this.frame % 5 === 0) for (const sp of this.smokeSpots) if (sp.x > this.camera.x - 40 && sp.x < this.camera.x + W + 40 && sp.y > this.camera.y - 60 && sp.y < this.camera.y + H + 40 && Math.random() < 0.3) fx.smoke(sp.x + rand(-6, 6), sp.y, 1, { c0: [0.5, 0.47, 0.46], c1: [0.28, 0.26, 0.27], s0: 7, s1: 26, l: 1.5, a: 0.4 });          // (the burnt city smoulders: the fires are out - no flames - but smoke still rises from the ruins)
@@ -819,7 +832,7 @@ export class Game {
     const fx = this.fx;
     if (this.state === 'title') { this.title.draw(ctx); if (this.loadingWorld) this.drawGathering(ctx); fx.setCamera(0, 0); this.finishFrame(); return; }
     if (this.state === 'intro') { ctx.fillStyle = '#05030a'; ctx.fillRect(0, 0, W, H); this.intro.draw(ctx); fx.setCamera(0, 0); this.finishFrame(); return; }
-    if (this.state === 'ending') { this.ending.draw(ctx); this.finishFrame(); return; }
+    if (this.state === 'ending') { this.ending.draw(ctx, top); this.finishFrame(); return; }
     if (!this.room) { this.finishFrame(); return; }
     const r = this.room, p = this.player;
     let sx = 0, sy = 0; if (this.shakeT > 0) { const a = this.shakeA * Math.min(1, this.shakeT / 6); sx = (Math.random() * 2 - 1) * a; sy = (Math.random() * 2 - 1) * a; }

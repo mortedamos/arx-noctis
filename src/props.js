@@ -332,12 +332,12 @@ export class Waystone {
 
 // ------------------------------------------------------------------------------------------------ lore tablet
 export class Tablet {
-  constructor(x, y, o) { this.x = x; this.y = y; this.text = (o.sign && dtext('sign ' + o.sign)) || STORY.tablets[o.id] || o.text; this.id = o.id; this.sign = /^sign_/.test(o.id || ''); this.narr = !!o.narr; this.convo = STORY.convos && STORY.convos[o.id] || null; this.t = 0; this.dead = false; }          // (a signpost is a sign; every gravestone and tablet is her: see story.js)
+  constructor(x, y, o) { this.x = x; this.y = y; this.text = (o.sign && dtext('sign ' + o.sign)) || STORY.tablets[o.id] || o.text; this.id = o.id; this.sign = /^sign_/.test(o.id || ''); this.narr = !!o.narr; this.convo = STORY.convos && STORY.convos[o.id] || null; this.after = o.after || null; this.afterText = this.after ? STORY.tablets[o.id + ' after'] || o.afterText : null; this.t = 0; this.dead = false; }          // (after: a flag of the save that changes what the stone says, to [tablet <id> after])          // (a signpost is a sign; every gravestone and tablet is her: see story.js)
   get box() { return this.narr ? { x: this.x - 20, y: this.y - 30, w: 40, h: 30 } : { x: this.x - 12, y: this.y - 26, w: 24, h: 26 }; }          // (a narr stone is only a place to read: the picture is the grave scenery already there, and the words are the game speaking, not her)
   update(g) { this.t++; if (!this.sign && !this.narr) { const unread = !g.save.flags['read_' + this.id]; g.fx.glow(this.x, this.y - 13, 22 + 2 * Math.sin(this.t * 0.05), [0.6, 0.8, 1], (unread ? 0.3 : 0.14) + 0.04 * Math.sin(this.t * 0.04)); }          // (her stones glow faintly, softly: that is what tells them from the headstones that are only scenery, and from signs)
     if (this.t % 10 === 0 && !g.save.flags['read_' + this.id]) g.fx.emit({ x: this.x + rand(-5, 5), y: this.y - 18, vx: 0, vy: -rand(0.2, 0.5), life: 40, s0: 5, s1: 1, c0: [0.7, 0.85, 1], a0: 0.8, a1: 0, kind: 6 }); }
   interact(g) { g.save.flags['read_' + this.id] = true; if (this.convo) { if (g.save.flags.got_lantern) g.player.lanFlare = 260; else g.ghost.reveal(900); const c = this.convo, run = i => { if (i >= c.length) return; const [who, words, font] = c[i]; g.showDialog(words, font ? { name: who, font, onClose: () => run(i + 1) } : { name: who, onClose: () => run(i + 1) }); }; run(0); A.sfx('select'); return true; }          // (a talking gravestone: two voices)
-    if (this.narr) { g.showDialog(this.text, { font: 'mixed' }); A.sfx('select'); return true; } if (!this.sign) { if (g.save.flags.got_lantern) g.player.lanFlare = 260; else g.ghost.reveal(280); } if (this.sign) g.showDialog(this.text, {}); else { const [who, words, font] = voiced(this.text); g.showDialog(words, font ? { name: who, font } : { name: who }); }          A.sfx('select'); return true; }          // (her words are in her own handwriting)
+    if (this.narr) { g.showDialog(this.after && g.save.flags[this.after] ? this.afterText : this.text, { font: 'mixed' }); A.sfx('select'); return true; } if (!this.sign) { if (g.save.flags.got_lantern) g.player.lanFlare = 260; else g.ghost.reveal(280); } if (this.sign) g.showDialog(this.text, {}); else { const [who, words, font] = voiced(this.text); g.showDialog(words, font ? { name: who, font } : { name: who }); }          A.sfx('select'); return true; }          // (her words are in her own handwriting)
   draw(ctx, cx, cy) {
     if (this.narr) return;
     const x = this.x - cx, y = this.y - cy;
@@ -354,6 +354,7 @@ export class Tablet {
 // ------------------------------------------------------------------------------------------------ chest
 // what comes out of a chest: a floating upgrade, or (when the contents are named e_fire, e_ice, e_sun) a gem of that blade that lies there until it is taken
 export function chestGift(g, x, y, contents, id) {
+  if (/^page[0-9]$/.test(contents)) { if (!g.save.flags[contents]) g.props.push(new Upgrade(x, y, { kind: 'page', n: +contents.slice(4), id: contents })); return; }          // (a page of the story: it keeps its own flag, however it was come by)
   if (String(contents).startsWith('e_')) { const pk = new Pickup(contents, x, y, 0, -1); pk.life = 1e9; g.pickups.push(pk); g.save.flags[id] = true; } else g.props.push(new Upgrade(x, y, { kind: contents, id }));
 }
 export class Chest {
