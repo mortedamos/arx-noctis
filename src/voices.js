@@ -52,8 +52,15 @@ export function voiceOf(name) {
 const last = {};
 // which of the five comes next, when there are no words to go by: any but the one just played
 export function nextNote(key) {
-  const n = VOICES[key].notes.length; let i = Math.floor(Math.random() * (n - (last[key] === undefined ? 0 : 1))); if (last[key] !== undefined && i >= last[key]) i++;
+  const n = VOICES[key].notes.length, was = typeof last[key] === 'number' ? last[key] : undefined; let i = Math.floor(Math.random() * (n - (was === undefined ? 0 : 1))); if (was !== undefined && i >= was) i++;
   last[key] = i; return i;
+}
+// THE FALL: whatever its letters, the last word of a sentence drops below all five notes - three semitones under the lowest (one more if the sentence before ended just there: never the same tone twice).
+// -> { f: its pitch, own: the lowest note's vowel, i: the note it stands in for, or the one the words chose }
+function pick(key, tone) {
+  const notes = VOICES[key].notes;
+  if (tone && tone.end) { const again = last[key] === 'fall'; last[key] = again ? 'fell' : 'fall'; return { f: notes[0][0] * 2 ** ((again ? -4 : -3) / 12), own: notes[0][1] }; }
+  const i = tone ? noteFor(key, tone) : nextNote(key); return { f: notes[i][0], own: notes[i][1] };
 }
 // THE WORDS CHOOSE: one note to each word (or syllable: see UNITS).  The share of vowels among its letters is a place from 0 (consonant-heavy, "strength": the lowest note) to 4 (a bare vowel, "I": the highest), and its first vowel
 // gives the mouth its shape (none: a closed "mm").  null: no letters there at all.
@@ -148,13 +155,13 @@ function undertone(ctx, to, f, t, loud) {
 export function syllable(key, ctx = A.ctx, out = A.sfxGain, tone = null, how = style) {          // (BRISK shortens every sound: one comes for every syllable)
   const v = VOICES[key]; if (!v || !ctx || (ctx === A.ctx && (ctx.state !== 'running' || A.silent || A.blurred))) return;
   if (how !== 'hum') {
-    const [f] = v.notes[tone ? noteFor(key, tone) : nextNote(key)], t = ctx.currentTime + 0.008, lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = Math.max(v.lp || 3600, f * 4); lp.Q.value = 0.5; lp.connect(out);
+    const { f } = pick(key, tone), t = ctx.currentTime + 0.008, lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = Math.max(v.lp || 3600, f * 4); lp.Q.value = 0.5; lp.connect(out);
     const send = ctx.createGain(); send.gain.value = v.room === undefined ? 0.25 : v.room; lp.connect(send); send.connect(roomFor(ctx, out));
     const loud = v.vol * (LEVEL[how] || 1), hz = f * 2 * PITCH; strike(how, ctx, lp, hz, t, loud, v); if (v.twin) strike(how, ctx, lp, hz * v.twin[0] * 2 ** (v.twin[2] / 1200), t, loud * v.twin[1] * 0.7, v);
     if (v.bass && bass) undertone(ctx, out, hz / 2, t, loud * 0.65);          // (past the voice's own low-pass and room: it stays clean)
     return;
   }
-  const [f, own] = v.notes[tone ? noteFor(key, tone) : nextNote(key)], vowel = tone ? tone.vowel : own, size = v.size || 1, att = v.att * BRISK, dur = v.dur * BRISK, t = ctx.currentTime + 0.008, top = t + att, end = top + dur, g = ctx.createGain();
+  const { f, own } = pick(key, tone), vowel = tone ? tone.vowel : own, size = v.size || 1, att = v.att * BRISK, dur = v.dur * BRISK, t = ctx.currentTime + 0.008, top = t + att, end = top + dur, g = ctx.createGain();
   g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v.vol, top); g.gain.setTargetAtTime(0, top + 0.008, dur / 3.2); g.gain.setTargetAtTime(0, end, 0.02);
   const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = v.lp || 3200; lp.Q.value = 0.5; g.connect(lp); lp.connect(out);
   const send = ctx.createGain(); send.gain.value = v.room === undefined ? 0.25 : v.room; lp.connect(send); send.connect(roomFor(ctx, out));
@@ -184,6 +191,8 @@ export function words(line) { const out = [], word = /[A-Za-z']+/g; let m; while
 export const UNITS = { word: words, syllable: syllables };
 export let unit = 'word';
 
+// is the word (or syllable) `s` the last of its sentence?  A full stop, ! ? or ... before the next one, or no next one at all
+export const ends = (text, s, next) => !next || /[.!?\u2026]/.test(text.slice(s.at, next.at));
 // CHATTER: call every frame as a speaker's words appear, with how many characters now show: each word sounds as it begins to appear.  (state: an object kept for that one box; state.mute: hushed)
 export function chatter(state, key, text, shown, how = style, per = unit) {
   if (!key || state.mute) return false;
@@ -191,5 +200,6 @@ export function chatter(state, key, text, shown, how = style, per = unit) {
   const list = state.list; while (state.i < list.length && list[state.i].at < shown - 6) state.i++;          // (the words ran far ahead: what was passed is not spoken after them)
   const s = list[state.i]; if (!s || s.at >= shown) return false;
   state.i++; const tone = toneFor(s.text);
+  if (tone) tone.end = ends(text, s, list[state.i]);
   syllable(key, undefined, undefined, tone, how); return true;
 }
